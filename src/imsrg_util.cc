@@ -2639,6 +2639,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    double Bnpnp = 2 * alpha1;
    double Bpnpn = -Bnpnp;
 
+   auto isoA = [alpha0,alpha1,alpha2] (int T,int Tp,int Tz) { return alpha0*(4*T-3) + 2*alpha1*Tz + 2*alpha2*T*( 3*std::abs(Tz) - 2) * (T==Tp) ; } ;
+   auto isoB = [alpha1] (int T,int Tp) { return 2*alpha1 * ((T+Tp)==1) ; };
+
    double hw = modelspace.GetHbarOmega();
    double bosc = HBARC/sqrt( hw * M_NUCLEON);
    double mpi = (2*PhysConst::M_PION_CHARGED + PhysConst::M_PION_NEUTRAL)/3;
@@ -2662,7 +2665,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
              double psi_nl   = HO_Radial_psi(n,l,hw,r);
              double psi_nplp = HO_Radial_psi(np,lp,hw,r);
              double x = sqrt(2) * r;
-             double fprime = -exp(-mpi * x/HBARC) / x * ( 1 + 1/(mpi*x/HBARC)); // Should the minus sign be here?
+             double fprime = -exp(-mpi * x/HBARC) / x * ( 1 + 1/(mpi*x/HBARC));
              the_integral += r*r * psi_nl * psi_nplp * fprime * dr;
            }
            IntegralLookup[{n,l,np,lp}] = the_integral;
@@ -2681,6 +2684,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      TwoBodyChannel& tbc_bra = modelspace.GetTwoBodyChannel(ch_bra);
      TwoBodyChannel& tbc_ket = modelspace.GetTwoBodyChannel(ch_ket);
      int J = tbc_bra.J;
+     int Tz = tbc_bra.Tz;
      int nbras = tbc_bra.GetNumberKets();
      int nkets = tbc_ket.GetNumberKets();
      for (int ibra=0; ibra<nbras; ibra++)
@@ -2705,37 +2709,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
          double jd = 0.5*ket.oq->j2;
          int eket = 2*nc+lc + 2*nd+ld;
 
+         std::string pn_case = "";
+         for ( auto tz : { bra.op->tz2, bra.oq->tz2 , ket.op->tz2, ket.oq->tz2} )
+         {
+            if (tz==-1) pn_case += "p";
+            else pn_case += "n";
+         }
+
          double vpt = 0;
          for (int S=0; S<=1; S++)
          {
            for (int Sp=0; Sp<=1; Sp++)
            {
 
-             double A_T = 0; 
-             double B_T = 0; 
-             if      ( tbc_bra.Tz ==  1) A_T = Annnn;
-             else if ( tbc_bra.Tz == -1) A_T = Apppp;
-             else if ( bra.op->tz2==-1 and ket.op->tz2==-1)
-             {
-                A_T = Anpnp;
-                B_T = Bnpnp;
-             }
-             else if ( bra.op->tz2==1  and ket.op->tz2==1)
-             {
-                A_T = Apnpn;
-                B_T = Bpnpn;
-             }
-             else if ( bra.op->tz2==1  and ket.op->tz2==-1) A_T = Apnnp;
-             else if ( bra.op->tz2==-1 and ket.op->tz2==1) A_T  = Anppn;
-      
-             if ( tbc_bra.Tz == 0 )
-             {
-                if      (bra.op->tz2 == 1 and ket.op->tz2 ==  1) B_T = Bnpnp;
-                else if (bra.op->tz2 == -1 and ket.op->tz2 == -1) B_T = Bpnpn;
-             }
-             double AplusB = 0;
-             if ( S+Sp == 1 ) AplusB += A_T;
-             if ( S==1 and Sp==1 ) AplusB += B_T;
 
              int Lmin = std::max( J-S, 0);
              int Lmax = J+S;
@@ -2760,12 +2746,28 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
                        for (int nprel=0; 2*nprel <= eket-(2*Ncm+Lcm); nprel++)
                        {
                          int lprel = eket - (2*Ncm+Lcm+2*nprel);
-                         if ((lprel + Sp)%2==0) continue; // factor [1 - (-1)^(lprel+Sp) ]
+                         double AplusB = 0;
+                         for (int Tp=std::abs(Tz); Tp<=1; Tp++)
+                         {
+                            int asymmfactor = 1 - AngMom::phase(lprel+Sp+Tp);
+                            for (int T=std::abs(Tz); T<=1; T++)
+                            {
+                               double iso_to_pn_factor = 1;  // This account for converting an isospin expression to pn formalism
+                               if (pn_case == "npnp") iso_to_pn_factor = 0.5;
+                               if (pn_case == "pnpn") iso_to_pn_factor = 0.5 * AngMom::phase( T+Tp ) ;
+                               if (pn_case == "nppn") iso_to_pn_factor = 0.5 * AngMom::phase( T+1  ) ;
+                               if (pn_case == "pnnp") iso_to_pn_factor = 0.5 * AngMom::phase( Tp+1 ) ;
+                               
+                               if ( (S+Sp)==1)           AplusB += iso_to_pn_factor * asymmfactor * isoA(T,Tp,Tz);
+                               if ( (S==1) and (Sp==1) ) AplusB += iso_to_pn_factor * asymmfactor * isoB(T,Tp);
+                            }
+                         }
+//                         if ((lprel + Sp)%2==0) continue; // factor [1 - (-1)^(lprel+Sp) ]
                          double threej = AngMom::ThreeJ( lrel,lprel,1, 0,0,0);
                          double sixj2 = AngMom::SixJ( lrel,L,Lcm,  Lp,lprel,1);
                          double mosh1 = AngMom::Moshinsky(Ncm,Lcm,nrel,lrel,na,la,nb,lb,L);
                          double mosh2 = AngMom::Moshinsky(Ncm,Lcm,nprel,lprel,nc,lc,nd,ld,L);
-                         double integral = IntegralLookup[{nrel,lrel,nprel,lprel}]; // TODO Look up from cache.
+                         double integral = IntegralLookup[{nrel,lrel,nprel,lprel}]; 
                          vpt += sqrt((2*S+1)*(2*Sp+1)) * AplusB * (2*L+1) * (2*Lp+1) * sixj1 * ninej1 * ninej2
                                * AngMom::phase(Lcm) * 2 * sqrt((2*lrel+1)*(2*lprel+1)) * threej * sixj2 * mosh1*mosh2 * integral;
                        }//nprel
