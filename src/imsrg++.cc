@@ -638,7 +638,7 @@ int main(int argc, char** argv)
       HNO = H3;
       std::cout << "Replacing HNO" << std::endl;
       std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
-      HNO.ThreeBody.SwitchToPN_and_discard();
+      // HNO.ThreeBody.SwitchToPN_and_discard();
     }
   }
 
@@ -891,6 +891,9 @@ int main(int argc, char** argv)
 
 
      HNO = HNO.Truncate(modelspace_imsrg);
+     if (IMSRG3) {
+       HNO.ThreeBody.SwitchToPN_and_discard();
+     }
 
 //     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
 //    hf.PrintSPEandWF();
@@ -898,6 +901,9 @@ int main(int argc, char** argv)
   else
   {
     HNO.SetModelSpace(modelspace_imsrg);
+    if (IMSRG3) {
+      HNO.ThreeBody.SwitchToPN_and_discard();
+    }
   }
 
  // After truncating, get the perturbative energies again to see how much things changed.
