@@ -43,6 +43,13 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
    return *this;
  }
 
+ TwoBodyME TwoBodyME::operator*(const double rhs) const
+ {
+   TwoBodyME out(*this);
+   out *=rhs;
+   return out;
+ }
+
  TwoBodyME& TwoBodyME::operator+=(const TwoBodyME& rhs)
  {
    for ( auto& itmat : MatEl )
@@ -764,3 +771,7 @@ TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs)
 }
 
 
+TwoBodyME operator*(const double lhs, const TwoBodyME& rhs)
+{
+  return rhs * lhs;
+}

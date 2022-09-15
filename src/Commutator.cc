@@ -5983,6 +5983,7 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+//  std::cout << "BEGIN " << __func__ << std::endl;
   double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -6030,6 +6031,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     size_t nkets = Tbc.GetNumberKets();
     std::vector<size_t> kets_kept;
     std::map<size_t,size_t> kept_lookup;
+//    std::cout << "    begin count " << std::endl;
     for (size_t iket=0; iket<nkets; iket++)
     {
       Ket3& ket = Tbc.GetKet(iket);
@@ -6049,6 +6051,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     Z.profiler.timer["_" + std::string(__func__) + "_count_kept"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
+//    std::cout << "    begin allocate " << std::endl;
 
     arma::mat X1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
     arma::mat Y1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
@@ -6061,7 +6064,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
-    #pragma omp parallel for schedule(dynamic,1)
+//    std::cout << "    begin fill " << std::endl;
+
+//    #pragma omp parallel for schedule(dynamic,1)
     for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
     {
       size_t ibra = kets_kept[index_bra];
@@ -6116,13 +6121,13 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
        }//a
       }//iperm
 
-      for (size_t iket=ibra; iket<nkets_kept; iket++ )
-      {
-         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
-         Y3MAT( ibra,iket ) = Y3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
-         X3MAT( iket,ibra ) = X3MAT(ibra,iket) * hermX;
-         Y3MAT( iket,ibra ) = Y3MAT(ibra,iket) * hermY;
-      }
+//      for (size_t iket=ibra; iket<nkets_kept; iket++ )
+//      {
+//         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+//         Y3MAT( ibra,iket ) = Y3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+//         X3MAT( iket,ibra ) = X3MAT(ibra,iket) * hermX;
+//         Y3MAT( iket,ibra ) = Y3MAT(ibra,iket) * hermY;
+//      }
 
 
     }// for ibra
@@ -6141,33 +6146,37 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //      }
 //    }
 
-////    #pragma omp parallel for schedule(dynamic,1) collapse(2)
+//    #pragma omp parallel for schedule(dynamic,1) collapse(2)
 //    #pragma omp parallel for schedule(dynamic,1)
-//    for (size_t ibra=0; ibra<nkets_kept; ibra++ )
-//    {
-////      for (size_t iket=0; iket<nkets_kept; iket++ )
-//      for (size_t iket=ibra; iket<nkets_kept; iket++ )
-//      {
-//         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
-//         Y3MAT( ibra,iket ) = Y3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
-//         X3MAT( iket,ibra ) = X3MAT(ibra,iket) * hermX;
-//         Y3MAT( iket,ibra ) = Y3MAT(ibra,iket) * hermY;
-//      }
-//    }
+    for (size_t ibra=0; ibra<nkets_kept; ibra++ )
+    {
+//      for (size_t iket=0; iket<nkets_kept; iket++ )
+      for (size_t iket=ibra; iket<nkets_kept; iket++ )
+      {
+         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+         Y3MAT( ibra,iket ) = Y3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+         X3MAT( iket,ibra ) = X3MAT(ibra,iket) * hermX;
+         Y3MAT( iket,ibra ) = Y3MAT(ibra,iket) * hermY;
+      }
+    }
 
     Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
+//    std::cout << "    begin matmult " << std::endl;
 
     // Do the matrix multiplication
-    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT;
+//    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT;
+    Z3MAT = X1MAT*Y3MAT ;
+    Z3MAT -= Y1MAT*X3MAT;
     Z3MAT -=  hermX*hermY * Z3MAT.t();
 
     Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
+//    std::cout << "    begin unpack " << std::endl;
     // unpack the result
-    #pragma omp parallel for schedule(dynamic,1)
+//    #pragma omp parallel for schedule(dynamic,1)
     for (size_t ibra=0; ibra<nkets_kept; ibra++ )
     {
       for (size_t iket=ibra; iket<nkets_kept; iket++ )
@@ -6190,6 +6199,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
  
   }// for ch3
+//  std::cout << "END " << __func__ << std::endl;
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }

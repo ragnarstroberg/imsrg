@@ -126,6 +126,7 @@ class IMSRGSolver
   int GetSystemDimension();
   double GetS(){return s;};
   Operator& GetH_s(){return FlowingOps[0];};
+  void SetH_s( Operator& Hset){ FlowingOps[0] = Hset;};
   Operator& GetEta(){return Eta;};
   Generator& GetGenerator(){return generator;};
 

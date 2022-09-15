@@ -68,6 +68,7 @@ class TwoBodyME
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);
 
   TwoBodyME& operator*=(const double);
+  TwoBodyME operator*(const double) const;
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
 
@@ -166,6 +167,7 @@ class TwoBodyME
 
 TwoBodyME operator+(const TwoBodyME& lhs, const TwoBodyME& rhs);
 TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs);
+TwoBodyME operator*(const double lhs, const TwoBodyME& rhs);
 
 
 #endif
