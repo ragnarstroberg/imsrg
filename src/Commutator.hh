@@ -39,6 +39,7 @@ namespace Commutator{
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
   extern bool use_imsrg3_n7;
+  extern bool use_imsrg3_mp4;
   extern bool perturbative_triples;
   extern bool bch_skip_ieq1;
   extern bool only_2b_omega;
@@ -61,6 +62,7 @@ namespace Commutator{
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);
   void SetUseIMSRG3N7(bool tf);
+  void SetUseIMSRG3_MP4(bool tf);
   void SetOnly2bOmega(bool tf);
   void SetBCHSkipiEq1(bool tf);
   void SetIMSRG3Noqqq(bool tf);

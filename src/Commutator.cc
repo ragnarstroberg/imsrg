@@ -30,6 +30,7 @@ bool use_goose_tank_correction = false;
 bool use_brueckner_bch = false;
 bool use_imsrg3 = false;
 bool use_imsrg3_n7 = false;
+bool use_imsrg3_mp4 = false;
 bool only_2b_omega = false;
 bool perturbative_triples = false;
 bool bch_skip_ieq1 = false;
@@ -89,6 +90,9 @@ void SetUseIMSRG3(bool tf)
 
 void SetUseIMSRG3N7(bool tf)
 {use_imsrg3_n7 = tf;}
+
+void SetUseIMSRG3_MP4(bool tf)
+{use_imsrg3_mp4 = tf;}
 
 void SetOnly2bOmega(bool tf)
 {only_2b_omega = tf;}
@@ -222,34 +226,12 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
         comm330ss(X, Y, Z); // scales as n^6
        }
 
-       if ( comm_term_on["comm331ss"])
-       {
-        //Maybe not so important, but I think relatively cheap
-        // std::cout << " comm331 " << std::endl;
-        comm331ss(X, Y, Z); // scales as n^7
-       }
-
        if ( comm_term_on["comm223ss"])
        {
         // This one is essential. If it's not here, then there are no induced 3 body terms
         // std::cout << " comm223 " << std::endl;
         comm223ss(X, Y, Z); // scales as n^7
 //       comm223ss_debug(X, Y, Z); // scales as n^7
-       }
-
-
-       if ( comm_term_on["comm231ss"])
-       {
-        // Demonstrated that this can have some effect
-        // std::cout << " comm231 " << std::endl;
-        comm231ss(X, Y, Z);  // scales as n^6
-       }
-
-       if ( comm_term_on["comm132ss"])
-       {
-        //no demonstrated effect yet, but it's cheap
-        // std::cout << " comm132 " << std::endl;
-        comm132ss(X, Y, Z); // scales as n^6
        }
 
        if ( comm_term_on["comm232ss"])
@@ -259,6 +241,30 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
          comm232ss(X, Y, Z);   // this is the slowest n^7 term
         //comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
+       }
+      
+       if (not use_imsrg3_mp4) {
+          if ( comm_term_on["comm331ss"])
+          {
+            //Maybe not so important, but I think relatively cheap
+            // std::cout << " comm331 " << std::endl;
+            comm331ss(X, Y, Z); // scales as n^7
+          }
+
+
+          if ( comm_term_on["comm231ss"])
+          {
+            // Demonstrated that this can have some effect
+            // std::cout << " comm231 " << std::endl;
+            comm231ss(X, Y, Z);  // scales as n^6
+          }
+
+          if ( comm_term_on["comm132ss"])
+          {
+            //no demonstrated effect yet, but it's cheap
+            // std::cout << " comm132 " << std::endl;
+            comm132ss(X, Y, Z); // scales as n^6
+          }
        }
 
       // This one is so important we always include it

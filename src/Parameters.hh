@@ -86,6 +86,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"relativistic_correction",   "false"},       // include the p^4 relativistic correction to the kinetic energy
   {"IMSRG3",                    "false"},       // include 3-body terms in commutators. 
   {"imsrg3_n7",                 "false"},       // include only n^7 scaling 3-body terms in commutators. Only does something if IMSRG3=true.
+  {"imsrg3_mp4",                 "false"},       // include only 4th order (in PT analysis) 3-body terms in commutators. Only does something if IMSRG3=true.
   {"imsrg3_at_end",             "false"},       // After doing Magnus IMSRG(2) to obtain Omega, evaluate e^Omega H e^-Omega at the IMSRG(3) level
   {"imsrg3_no_qqq",             "false"},       // After doing Magnus IMSRG(2) to obtain Omega, evaluate e^Omega H e^-Omega at the IMSRG(3) level
   {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
