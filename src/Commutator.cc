@@ -6020,7 +6020,6 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 // On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
 // On the CRC machines with up to 24 threads, linking agains MKL, parallelizing at the channel level is better by a factor 10.
 //  #pragma omp parallel for schedule(dynamic,1) 
- #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     double t_internal = omp_get_wtime();
@@ -6046,8 +6045,13 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     }
     size_t nkets_kept = kets_kept.size();
 
+<<<<<<< HEAD
     Z.profiler.timer["_" + std::string(__func__) + "_count_kept"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
+=======
+   Z.profiler.timer["_" + std::string(__func__) + "_count_kept"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+>>>>>>> b34c2c0 (Attempt to get to a better result in 133 via fine-grained parallelism.)
 
 //    std::cout << "    begin allocate " << std::endl;
 
@@ -6059,12 +6063,19 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
+<<<<<<< HEAD
     Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
 //    std::cout << "    begin fill " << std::endl;
 
 //    #pragma omp parallel for schedule(dynamic,1)
+=======
+   Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+    #pragma omp parallel for schedule(dynamic,100)
+>>>>>>> b34c2c0 (Attempt to get to a better result in 133 via fine-grained parallelism.)
     for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
     {
       size_t ibra = kets_kept[index_bra];
@@ -6119,6 +6130,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
        }//a
       }//iperm
 
+<<<<<<< HEAD
 //      for (size_t iket=ibra; iket<nkets_kept; iket++ )
 //      {
 //         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
@@ -6160,6 +6172,26 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
     Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
+=======
+    }// for ibra
+   Z.profiler.timer["_" + std::string(__func__) + "_fill_1Bmatrices"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+    // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
+    // index for the 3-body state we keep in this commutator
+    #pragma omp parallel for schedule(guided, 10000) collapse(2)
+    for (std::size_t local_bra_index = 0; local_bra_index < kets_kept.size(); local_bra_index += 1) {
+      for (std::size_t local_ket_index = 0; local_ket_index < kets_kept.size(); local_ket_index += 1) {
+        std::size_t ibra = kets_kept[local_bra_index];
+        std::size_t iket = kets_kept[local_ket_index];
+           X3MAT( local_bra_index, local_ket_index) = X3.GetME_pn_ch(ch3,ch3, ibra, iket);
+           Y3MAT( local_bra_index, local_ket_index) = Y3.GetME_pn_ch(ch3,ch3, ibra, iket);
+      }
+    }
+
+   Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+>>>>>>> b34c2c0 (Attempt to get to a better result in 133 via fine-grained parallelism.)
 
 //    std::cout << "    begin matmult " << std::endl;
 
@@ -6169,11 +6201,17 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     Z3MAT -= Y1MAT*X3MAT;
     Z3MAT -=  hermX*hermY * Z3MAT.t();
 
+<<<<<<< HEAD
     Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
+=======
+   Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+>>>>>>> b34c2c0 (Attempt to get to a better result in 133 via fine-grained parallelism.)
 
 //    std::cout << "    begin unpack " << std::endl;
     // unpack the result
+<<<<<<< HEAD
 //    #pragma omp parallel for schedule(dynamic,1)
     for (size_t ibra=0; ibra<nkets_kept; ibra++ )
     {
@@ -6194,6 +6232,19 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //    }
 
     Z.profiler.timer["_" + std::string(__func__) + "_unpack"] += omp_get_wtime() - t_internal;
+=======
+    #pragma omp parallel for schedule(dynamic, 1000) collapse(2)
+    for (std::size_t local_bra_index = 0; local_bra_index < kets_kept.size(); local_bra_index += 1) {
+      for (std::size_t local_ket_index = 0; local_ket_index < kets_kept.size(); local_ket_index += 1) {
+        std::size_t ibra = kets_kept[local_bra_index];
+        std::size_t iket = kets_kept[local_ket_index];
+        if ( iket < ibra ) continue;
+        Z3.AddToME_pn_ch(ch3,ch3, ibra, iket,  Z3MAT(local_bra_index, local_ket_index) );
+      }
+    }
+
+   Z.profiler.timer["_" + std::string(__func__) + "_unpack"] += omp_get_wtime() - t_internal;
+>>>>>>> b34c2c0 (Attempt to get to a better result in 133 via fine-grained parallelism.)
 
  
   }// for ch3
