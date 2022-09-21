@@ -13,3 +13,11 @@ target_link_libraries(comm223
     PhysicalConstants
     Version
 )
+
+add_executable(comm133 comm133.cc)
+target_link_libraries(comm133 
+    IMSRG
+    Parameters
+    PhysicalConstants
+    Version
+)
