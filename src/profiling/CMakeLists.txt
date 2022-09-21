@@ -21,3 +21,19 @@ target_link_libraries(comm133
     PhysicalConstants
     Version
 )
+
+add_executable(comm222pphh comm222pphh.cc)
+target_link_libraries(comm222pphh 
+    IMSRG
+    Parameters
+    PhysicalConstants
+    Version
+)
+
+add_executable(comm222ph comm222ph.cc)
+target_link_libraries(comm222ph 
+    IMSRG
+    Parameters
+    PhysicalConstants
+    Version
+)
