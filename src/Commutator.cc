@@ -6020,6 +6020,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 // On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
 // On the CRC machines with up to 24 threads, linking agains MKL, parallelizing at the channel level is better by a factor 10.
 //  #pragma omp parallel for schedule(dynamic,1) 
+ #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     double t_internal = omp_get_wtime();
