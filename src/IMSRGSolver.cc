@@ -314,13 +314,13 @@ void IMSRGSolver::Solve_magnus_backoff()
    WriteFlowStatus(std::cout);
 
    for (istep = 1; s < smax; ++istep) {
-     double saved_MP2 = FlowingOps[0].GetMP2_Energy();
-     if ((!in_backoff_phase_) && (std::abs(saved_MP2) < 1e-3)) {
+     double norm_eta = Eta.Norm();
+     // Factor 20.0 is somewhat arbitrary, but this should be relative to eta_criterion
+     if ((!in_backoff_phase_) && (std::abs(norm_eta) < eta_criterion * 20.0)) {
        in_backoff_phase_ = true;
-       std::cout << "Entering backoff phase.\n";
+       std::cout << "Entering soft landing phase.\n";
      }
 
-     double norm_eta = Eta.Norm();
      if (norm_eta < eta_criterion) {
        break;
      }
@@ -375,21 +375,19 @@ void IMSRGSolver::Solve_magnus_backoff()
      //      cumulative_error += EstimateStepError();
 
      if (magnus_adaptive) {
-       if (in_backoff_phase_) {
-         bool backoff =
-             (std::abs(FlowingOps[0].GetMP2_Energy()) > std::abs(saved_MP2));
-         if (backoff) {
+      if (Eta.Norm() > norm_eta) {
            double ds_new = ds * ds_backoff_factor_;
-           std::cout << "Backing off ds because of MP2 growth, ds = " << ds << " -> " << ds_new
+           std::cout << "Backing off ds because of Eta norm growth, ds = " << ds << " -> " << ds_new
                      << "\n";
            ds = ds_new;
-         }
        } else {
+        if (!in_backoff_phase_) {
          double ds_new = std::min(ds_max, ds * ds_max_growth_factor_);
          if (ds_new > ds) {
            std::cout << "Growing ds, ds = " << ds << " -> " << ds_new << "\n";
            ds = ds_new;
          }
+        }
        }
      }
 
