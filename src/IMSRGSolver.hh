@@ -73,8 +73,9 @@ class IMSRGSolver
   double ds_max_growth_factor_ = 1.2;
   // When abs(E_MP2(s + ds)) > abs(E_MP2(s)), ds will "back off" by this factor.
   double ds_backoff_factor_ = 0.5;
-  // Flag to signal when we are in the backoff phase
-  bool in_backoff_phase_ = false;
+  // Flag to signal when we are in the soft landing phase.
+  // Soft landing means no more growth, only backoff
+  bool in_soft_landing_phase_ = false;
 
 
   ~IMSRGSolver();

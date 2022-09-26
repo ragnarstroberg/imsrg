@@ -316,8 +316,8 @@ void IMSRGSolver::Solve_magnus_backoff()
    for (istep = 1; s < smax; ++istep) {
      double norm_eta = Eta.Norm();
      // Factor 20.0 is somewhat arbitrary, but this should be relative to eta_criterion
-     if ((!in_backoff_phase_) && (std::abs(norm_eta) < eta_criterion * 20.0)) {
-       in_backoff_phase_ = true;
+     if ((!in_soft_landing_phase_) && (std::abs(norm_eta) < eta_criterion * 20.0)) {
+       in_soft_landing_phase_ = true;
        std::cout << "Entering soft landing phase.\n";
      }
 
@@ -381,7 +381,7 @@ void IMSRGSolver::Solve_magnus_backoff()
                      << "\n";
            ds = ds_new;
        } else {
-        if (!in_backoff_phase_) {
+        if (!in_soft_landing_phase_) {
          double ds_new = std::min(ds_max, ds * ds_max_growth_factor_);
          if (ds_new > ds) {
            std::cout << "Growing ds, ds = " << ds << " -> " << ds_new << "\n";
