@@ -76,6 +76,8 @@ class IMSRGSolver
   // Flag to signal when we are in the soft landing phase.
   // Soft landing means no more growth, only backoff
   bool in_soft_landing_phase_ = false;
+  // We need the original ds_0 for when we change the generator
+  double ds_0 = ds;
 
 
   ~IMSRGSolver();
@@ -111,7 +113,7 @@ class IMSRGSolver
   Operator Transform_Partial(Operator&& OpIn, int n);
 
   void SetFlowFile(std::string s);
-  void SetDs(double d){ds = d;};
+  void SetDs(double d){ds = d; ds_0 = d;};
   void SetDsmax(double d){ds_max = d;};
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};

@@ -160,6 +160,10 @@ void IMSRGSolver::SetGenerator(std::string gen)
     Eta.Erase();
     NewOmega();
   }
+  if (magnus_adaptive) {
+    ds = ds_0;
+    in_soft_landing_phase_ = false;
+  }
 }
 
 void IMSRGSolver::SetDenominatorPartitioning(std::string dp)
