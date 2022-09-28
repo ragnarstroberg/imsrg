@@ -207,6 +207,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetMP2_3BEnergy", &Operator::GetMP2_Energy)
       .def("GetMP3_Energy", &Operator::GetMP3_Energy)
       .def("GetPPHH_Ladders", &Operator::GetPPHH_Ladders)
+      .def("ReadBinary", [](Operator& self, std::string fname){ std::ifstream ifs(fname,std::ios::binary);  self.ReadBinary(ifs);} , py::arg("filename") )
+      .def("WriteBinary", [](Operator& self, std::string fname){ std::ofstream ofs(fname,std::ios::binary);  self.WriteBinary(ofs);} , py::arg("filename") )
 //      .def("IsospinProject", &Operator::IsospinProject)
    ;
 
