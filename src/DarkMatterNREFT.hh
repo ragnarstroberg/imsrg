@@ -38,8 +38,8 @@ namespace DM_NREFT
   Operator Phip(    ModelSpace&, std::string IsoSV, int J, double q );
   Operator Phitp(   ModelSpace&, std::string IsoSV, int J, double q );
   Operator Phipp(   ModelSpace&, std::string IsoSV, int J, double q );
-  Operator Omega(   ModelSpace&, std::string IsoSV, int J, double q ); 
-  Operator Omegat(  ModelSpace&, std::string IsoSV, int J, double q ); // Not implemented
+  Operator Omega(   ModelSpace&, std::string IsoSV, int J, double q ); // Warning: neither Symmetrize nor AntiSymmetrize 
+  Operator Omegat(  ModelSpace&, std::string IsoSV, int J, double q );
 
 
 }

@@ -422,6 +422,7 @@ namespace DM_NREFT
         int nb  = ob.n;
         int lb  = ob.l;
         int j2b = ob.j2;
+        if (la==0) continue;
         if (lb==0) continue;
 
         double mab = 1.0 / sqrt(4.0*M_PI) * pow( -1, (2*L+j2b+1.0)*0.5 )
@@ -458,7 +459,9 @@ namespace DM_NREFT
 
   Operator Sigma( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    return Ms( modelspace, IsoSV, J, J, q);
+    Operator Sigma_op = Ms( modelspace, IsoSV, J, J, q);
+    Sigma_op.SetAntiHermitian();
+    return Sigma_op;
   }
 
 
@@ -530,6 +533,7 @@ namespace DM_NREFT
   {
     Operator Deltap_op = -sqrt(J/(2*J+1.)) * Mg(modelspace, IsoSV, J, J+1, q);
     if ( J > 0 )  Deltap_op += sqrt( (J+1.)/(2*J+1.) ) * Mg(modelspace, IsoSV, J, J-1, q);
+    Deltap_op.SetAntiHermitian();
     return Deltap_op;
   }
 
@@ -769,6 +773,7 @@ namespace DM_NREFT
     else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
     else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Phip_op(modelspace, J, Tz, parity, 2);
+    Phip_op.SetAntiHermitian();
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
     {
@@ -927,6 +932,7 @@ namespace DM_NREFT
     else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
     else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Omega_op(modelspace, J, Tz, parity, 2);
+    std::cout << "Warning: Omega is neither Symmetrize nor AntiSymmetrize !!!" << std::endl;
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
     {
@@ -982,12 +988,8 @@ namespace DM_NREFT
 
   Operator Omegat(  ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-//    double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
-//    double y = q*q*b2/4.0;
-    int Tz = 0;
-    int parity = 0;
-    Operator Omegat_op(modelspace, J, Tz, parity, 2);
-    std::cout << "OOPS! You asked for the Omegat operator, but it's not implemented..." << std::endl;
+    Operator Omegat_op = Omega(modelspace,IsoSV,J,q) + 0.5 * Sigmapp(modelspace, IsoSV, J, q);
+    Omegat_op.SetAntiHermitian();
     return Omegat_op;
   }
 
