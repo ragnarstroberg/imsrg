@@ -458,6 +458,25 @@ target_link_libraries(
 )
 
 add_library(
+    ReferenceImplementations
+    ReferenceImplementations.hh ReferenceImplementations.cc
+)
+target_link_libraries(
+    ReferenceImplementations
+    PUBLIC
+    ModelSpace
+    Operator
+    Commutator
+    PRIVATE
+    armadillo
+    PhysicalConstants
+    Version
+    imsrg_util
+    AngMom
+    OpenMP::OpenMP_CXX
+)
+
+add_library(
     UnitTest
     UnitTest.hh UnitTest.cc
 )
@@ -474,6 +493,7 @@ target_link_libraries(
     imsrg_util
     AngMom
     OpenMP::OpenMP_CXX
+    ReferenceImplementations
 )
 
 add_library(
@@ -509,6 +529,20 @@ add_executable(
 )
 target_link_libraries(
     imsrg++
+    PUBLIC
+    IMSRG
+    Parameters
+    PhysicalConstants
+    Version
+    OpenMP::OpenMP_CXX
+)
+
+add_executable(
+    unit_test
+    unit_test.cc
+)
+target_link_libraries(
+    unit_test
     PUBLIC
     IMSRG
     Parameters
