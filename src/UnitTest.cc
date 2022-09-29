@@ -47,7 +47,10 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
     for (auto& itmat : Rando.TwoBody.MatEl )
     {
       itmat.second.randn();
-      itmat.second += hermitian * itmat.second.t();
+      if ( itmat.first[0] == itmat.first[1] )
+      {
+         itmat.second += hermitian * itmat.second.t();
+      }
     }
   }
 
