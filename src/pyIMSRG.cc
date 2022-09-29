@@ -410,6 +410,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TransformHFToNATBasis",&HFMBPT::TransformHFToNATBasis)
       .def("GetNormalOrderedHNAT",&HFMBPT::GetNormalOrderedHNAT)
       .def("PrintSPEandWF",&HFMBPT::PrintSPEandWF)
+      .def_readwrite("C_HO2NAT",&HFMBPT::C_HO2NAT) // Unitary transformation
+      .def_readwrite("C_HF2NAT",&HFMBPT::C_HF2NAT) // Unitary transformation
    ;
 
 
