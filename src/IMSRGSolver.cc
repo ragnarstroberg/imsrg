@@ -1064,8 +1064,9 @@ double IMSRGSolver::EstimateBCHError( )
 double IMSRGSolver::GetPerturbativeTriples()
 {
   std::cout << __func__ << std::endl;
-  Operator Wbar( (*modelspace), 0,0,0,3);
-  Wbar.ThreeBody.SwitchToPN_and_discard();
+//  Operator Wbar( (*modelspace), 0,0,0,3);
+//  Wbar.ThreeBody.SwitchToPN_and_discard();
+  Operator Wbar( (*modelspace), 0,0,0,2);
   Operator& omega = Omega.back();
 
   Operator& Hs = FlowingOps[0];
@@ -1076,11 +1077,13 @@ double IMSRGSolver::GetPerturbativeTriples()
 
 
   Commutator::perturbative_triples = true;
-  Commutator::comm223ss( omega, Htilde, Wbar);
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
+  Commutator::comm223ss( omega, Htilde, Wbar);
+  double pert_triples = Wbar.ZeroBody;
 
-  double pert_triples = Wbar.GetMP2_3BEnergy();
+//  double pert_triples = Wbar.GetMP2_3BEnergy();
+//  double pert_triples = new_way;
   std::cout << "I GOT pert_triples = " << std::setw(14) << std::setprecision(8) << pert_triples
             << "  size of omega is " << Omega.size() << std::endl;
   Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations

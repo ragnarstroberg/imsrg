@@ -6900,26 +6900,33 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
        bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
      }
   }
+
+
+  // If we're doing perturbative triples, we can avoid allocating any 3-body structures.
+  // In this case, Z3 isn't allocated, so we need to manually specify which channels to loop over.
+  if (perturbative_triples)
+  {
+     size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+     for (size_t ch3=0; ch3<nch3; ch3++)
+     {
+       ThreeBodyChannel& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+       size_t nkets = Tbc.GetNumberKets();
+       for (size_t ibra=0; ibra<nkets; ibra++)
+       {
+         bra_ket_channels.push_back( { ch3,ch3, ibra } ); // (ch_bra, ch_ket,ibra)
+       }
+     }
+  }
   size_t n_bra_ket_ch = bra_ket_channels.size();
 
 
-//  for (int i=0; i<omp_get_max_threads(); i++)
-//  {
-//    std::ostringstream oss;
-//    oss << "__" << __func__ << "_" << i;
-//    if ( Z.profiler.timer.find( oss.str()) == Z.profiler.timer.end() )   Z.profiler.timer[ oss.str()] = 0;
-//    if ( Z.profiler.counter.find( oss.str()) == Z.profiler.counter.end() )   Z.profiler.counter[ oss.str()] = 0;
-//  }
-
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
-  #pragma omp parallel for schedule(dynamic,1)
+  double Emp2 = 0;
+  #pragma omp parallel for schedule(dynamic,1)  reduction( + : Emp2 )
   for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
   {
 
-//    double tlocal = omp_get_wtime();
-//    std::ostringstream oss_thread;
-//    oss_thread << "__" << __func__ << "_" << omp_get_thread_num();
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
     size_t ibra   = bra_ket_channels[ibra_ket][2];
@@ -7096,17 +7103,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                     sixj = j2a<twoJ  ?  Z.modelspace->GetSixJ(j6,ja,J1p, j3, 0.5*twoJ, J2p)
                                            :  Z.modelspace->GetSixJ(j6,0.5*twoJ,J2p, j3, ja, J1p) ;
                    }
-//                 does this even help? not noticeably...
-//                   if (std::abs(sixj)<1e-7) continue;
 
-                   // l = j+-1/2.     l = j-1/2 + (j-1/2+parity)%2.   e.g 7/2-:  3 + (3+1)%2 = 3
-//                   if ( la%2 != parity_a ) std::cout << "OOPS parity_a = " << parity_a << " and la= " <<la << std::endl;
-                   
                    double prefactor = rec_ijk * rec_lmn * sixj * hat_factor * phase_12 * phase_45;
-//                   continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=4 commutator from 19 s to 8 s.
                    for ( size_t a : Z.GetOneBodyChannel(la,j2a,tz2a)  )
                    {
-//                      continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=5 commutator from 19 s to 11 s.
                       size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));
                       if (ind_6a>nkets_1) continue;
                       size_t ind_3a = tbc2.GetLocalIndex(std::min(I3,a),std::max(I3,a));
@@ -7115,19 +7115,16 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
                       double phase_6a = I6>a ?  -Z.modelspace->phase((o6.j2+j2a-2*J1p)/2)  : 1;
                       if (I6==a) phase_6a *= PhysConst::SQRT2;
-//                      continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=4 commutator from 19 s to 15 s.
 
                       double phase_3a = I3>a ?  -Z.modelspace->phase((o3.j2+j2a-2*J2p)/2)  : 1;
                       if (I3==a) phase_3a *= PhysConst::SQRT2;
 
-//                      continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=4 commutator from 19 s to 15 s.
 
                      double x_126a =  phase_6a * XMAT1( ind_6a);
                      double y_126a =  phase_6a * YMAT1( ind_6a);
                      double x_3a45 =  phase_3a * XMAT2( ind_3a);
                      double y_3a45 =  phase_3a * YMAT2( ind_3a);
 
-//                      continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=4 commutator from 19 s to 16 s.
   
                      zijklmn += prefactor * (x_126a * y_3a45 - y_126a * x_3a45);
 
@@ -7141,13 +7138,39 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         }// for perm_ijk
 
 
-        Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
+        // If we're doing perturbative triples, we don't need to store the full 3N, we just want the energy contribution.
+        // The relevant one-body matrix elements should have been put in Z.
+        if (perturbative_triples)
+        {
+         double occ_ijk   = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
+         double occ_lmn   = (ket.op->occ) * (ket.oq->occ) * (ket.oR->occ);
+         double unocc_ijk = (1-bra.op->occ) * (1-bra.oq->occ) * (1-bra.oR->occ);
+         double unocc_lmn = (1-ket.op->occ) * (1-ket.oq->occ) * (1-ket.oR->occ);
+         double symm_ijk = 6;
+         if (i==j and i==k) symm_ijk = 1;
+         else if (i==j or i==k) symm_ijk = 3;
+         double symm_lmn = 6;
+         if (l==m and l==n) symm_lmn = 1;
+         else if (l==m or l==n) symm_lmn = 3;
 
-//        Z.profiler.counter[oss_thread.str()] ++;
+         double Eijk = Z.OneBody(i,i) + Z.OneBody(j,j) + Z.OneBody(k,k);
+         double Elmn = Z.OneBody(l,l) + Z.OneBody(m,m) + Z.OneBody(n,n);
+         Emp2 += 1./36 * symm_ijk*symm_lmn * (twoJ+1) *  zijklmn*zijklmn * ( occ_ijk*unocc_lmn - occ_lmn*unocc_ijk) / ( Eijk - Elmn) ;
+        }
+        else
+        {
+          Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  
+        }
+
       }// for iket
 //    }// for ibra
-//    Z.profiler.timer[oss_thread.str()] += omp_get_wtime() - tlocal;
   }// for ch3
+
+  // If we're doing perturbative triples, store the result in the zero-body part of Z since this function returns void.
+  if (perturbative_triples)
+  {
+     Z.ZeroBody = Emp2;
+  }
 
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 
