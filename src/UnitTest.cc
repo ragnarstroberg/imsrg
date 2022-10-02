@@ -382,24 +382,24 @@ bool UnitTest::TestCommutators()
 
   bool all_good = true;
 
-  all_good &= Test_comm110ss( X, Y );
-  all_good &= Test_comm220ss( X, Y );
+  // all_good &= Test_comm110ss( X, Y );
+  // all_good &= Test_comm220ss( X, Y );
 
-  all_good &= Test_comm111ss( X, Y );
-  all_good &= Test_comm121ss( X, Y );
-  all_good &= Test_comm221ss( X, Y );
+  // all_good &= Test_comm111ss( X, Y );
+  // all_good &= Test_comm121ss( X, Y );
+  // all_good &= Test_comm221ss( X, Y );
 
-  all_good &= Test_comm122ss( X, Y );
-  all_good &= Test_comm222_pp_hhss( X, Y );
-  all_good &= Test_comm222_phss( X, Y );
-  all_good &= Test_comm222_pp_hh_221ss( X, Y );
+  // all_good &= Test_comm122ss( X, Y );
+  // all_good &= Test_comm222_pp_hhss( X, Y );
+  // all_good &= Test_comm222_phss( X, Y );
+  // all_good &= Test_comm222_pp_hh_221ss( X, Y );
 
  if ( Commutator::use_imsrg3 )
  {
-  all_good &= Test_comm330ss(X,Y);
-  all_good &= Test_comm331ss(X,Y);
-  all_good &= Test_comm231ss(X,Y);
-  all_good &= Test_comm132ss(X,Y);
+  // all_good &= Test_comm330ss(X,Y);
+  // all_good &= Test_comm331ss(X,Y);
+  // all_good &= Test_comm231ss(X,Y);
+  // all_good &= Test_comm132ss(X,Y);
 
   all_good &= Test_comm232ss(X,Y);
 
@@ -997,7 +997,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y)
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_slow,  "comm232ss");
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_debug,  "comm232ss");
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
-  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
+  return Test_against_ref_impl(X,Y,  Commutator::comm232ss_expand,  ReferenceImplementations::comm232ss,  "comm232ss");
 }
 
 /// INCREDIBLY SLOW...

@@ -121,6 +121,7 @@ namespace Commutator{
   void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   size_t Hash_comm232_key( std::array<size_t,5>& kljJJ );
   void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
