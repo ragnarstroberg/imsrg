@@ -3432,7 +3432,39 @@ namespace {
       std::vector<std::size_t> pqr_lookup = std::vector<std::size_t>(wrap_factor * wrap_factor * wrap_factor, 0);
       std::vector<int> pqr_lookup_validity = std::vector<int>(wrap_factor * wrap_factor * wrap_factor, 0);
   };
-}
+
+void UnpackMatrix(std::size_t i_ch_3b,
+                  const Basis3BLookupSingleChannel &lookup_bra,
+                  const Basis3BLookupSingleChannel &lookup_ket,
+                  const Operator &op, arma::mat &mat);
+
+void Comm232Diagram1(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z);
+
+void Comm232Diagram2(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z);
+
+void Comm232Diagram3(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z);
+
+void Comm232Diagram4(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z);
 
 double GetSPStateJ(std::size_t orb_i, const Operator& Y) {
   return Y.modelspace->GetOrbit(orb_i).j2 * 0.5;
@@ -3450,6 +3482,8 @@ double GetSPStateOcc(std::size_t orb_i, const Operator& Y) {
 
 double GetSPStateOccBar(std::size_t orb_i, const Operator& Y) {
   return 1.0 - Y.modelspace->GetOrbit(orb_i).occ;
+}
+
 }
 
 void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z )
@@ -3483,316 +3517,411 @@ void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z )
         arma::mat X_ch(lookup_bra.GetNum3BStates(), lookup_ket.GetNum3BStates());
         arma::mat Y_ch(lookup_bra.GetNum3BStates(), lookup_ket.GetNum3BStates());
 
-        #pragma omp parallel for collapse(2)
-        for (std::size_t i_bra = 0; i_bra < lookup_bra.GetNum3BStates(); i_bra += 1) {
-          for (std::size_t i_ket = 0; i_ket < lookup_ket.GetNum3BStates(); i_ket += 1) {
-            double me_X = 0.0;
-            double me_Y = 0.0;
-            const auto& indices_bra = lookup_bra.GetRecouplingIndices(i_bra);
-            const auto& recoupling_bra = lookup_bra.GetRecouplingFactors(i_bra);
-            const auto& indices_ket = lookup_ket.GetRecouplingIndices(i_ket);
-            const auto& recoupling_ket = lookup_ket.GetRecouplingFactors(i_ket);
-            for (std::size_t i_bra_rec = 0; i_bra_rec < indices_bra.size(); i_bra_rec += 1) {
-              const auto bra_index = indices_bra[i_bra_rec];
-              const auto bra_factor= recoupling_bra[i_bra_rec];
-              for (std::size_t i_ket_rec = 0; i_ket_rec < indices_ket.size(); i_ket_rec += 1) {
-                const auto ket_index = indices_ket[i_ket_rec];
-                const auto ket_factor= recoupling_ket[i_ket_rec];
-                me_X += X.ThreeBody.GetME_pn_ch(i_ch_3b, i_ch_3b, bra_index, ket_index) * bra_factor * ket_factor;
-                me_Y += Y.ThreeBody.GetME_pn_ch(i_ch_3b, i_ch_3b, bra_index, ket_index) * bra_factor * ket_factor;
-              }
-            }
-            X_ch(i_bra, i_ket) = me_X;
-            Y_ch(i_bra, i_ket) = me_Y;
-          }
-        }
+        UnpackMatrix(i_ch_3b, lookup_bra, lookup_ket, X, X_ch);
+        UnpackMatrix(i_ch_3b, lookup_bra, lookup_ket, Y, Y_ch);
 
         // TODO:
         // Prestore occupations
 
-        // Term 1:
-        // Externally fixed:
-        // - J_ij=ch_2b_ket.J,
-        // - J_ab=ch_2b_bra.J,
-        // - JJ_3=ch_3b.twoJ
-        //
-        // Z^(J_ij)_ijkl = 
-        // 0.5 * hat(J_ab) / hat(J_ij) * hat(JJ_3)^2                // hat_factor
-        // sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
-        // six_j(                                                   // six_j
-        //  j_i j_j  J_ij
-        //  j_c JJ_3 J_ab
-        // )
-        // (
-        //   X^(J_ab)_cjab Y^(J_ab,J_ij,JJ_3)_abiklc
-        // - Y^(J_ab)_cjab X^(J_ab,J_ij,JJ_3)_abiklc
-        // )
-        {
-          const double J_ij = ch_2b_ket.J;
-          const double J_ab = ch_2b_bra.J;
-          const double J_3 = ch_3b.twoJ * 0.5;
-          // No factor of 1/2 because we use a >= b.
-          const double hat_factor = sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_ij + 1) * (2.0 * J_3 + 1);
-          #pragma omp parallel for collapse(2)
-          for (std::size_t ij_index = 0; ij_index < lookup_ket.GetNum2BStates(); ij_index += 1) {
-            for (std::size_t kl_index = 0; kl_index < lookup_ket.GetNum2BStates(); kl_index += 1) {
-              const auto i = lookup_ket.Get2BStateP(ij_index);
-              const auto j = lookup_ket.Get2BStateQ(ij_index);
-              const auto j_i = GetSPStateJ(i, Y);
-              const auto j_j = GetSPStateJ(j, Y);
+        Comm232Diagram1(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, X, Y_ch, 1.0, Z);
+        Comm232Diagram1(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, Y, X_ch, -1.0, Z);
 
-              const auto k = lookup_ket.Get2BStateP(kl_index);
-              const auto l = lookup_ket.Get2BStateQ(kl_index);
+        Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, X, Y_ch, 1.0, Z);
+        Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, Y, X_ch, -1.0, Z);
 
-              double me = 0.0;
+        Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, X, Y_ch, 1.0, Z);
+        Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, Y, X_ch, -1.0, Z);
 
-              for (std::size_t ab_index = 0; ab_index < lookup_bra.GetNum2BStates(); ab_index += 1) {
-                const auto a = lookup_bra.Get2BStateP(ab_index);
-                const auto b = lookup_bra.Get2BStateQ(ab_index);
-                if (!lookup_bra.IsStateValid(a, b, i)) continue;
-                double norm_factor = 1.0;
-                if (a == b) norm_factor = 0.5;
-                const double n_a_n_b = GetSPStateOcc(a, Y) * GetSPStateOcc(b, Y);
-                const double nbar_a_nbar_b = GetSPStateOccBar(a, Y) * GetSPStateOccBar(b, Y);
-                const std::size_t abi_index = lookup_bra.GetStateLocalIndex(a, b, i);
-
-                for (const std::size_t c : lookup_ket.Get3rdStateBasis()) {
-                  if (!lookup_ket.IsStateValid(k, l, c)) continue;
-                  const auto j_c = GetSPStateJ(c, Y);
-                  const double n_c = GetSPStateOcc(c, Y);
-                  const double occ_factor = norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
-                  const double six_j = Z.modelspace->GetSixJ(j_i, j_j, J_ij, j_c, J_3, J_ab);
-                  const std::size_t klc_index = lookup_ket.GetStateLocalIndex(k, l, c);
-
-                  const double me_X_cjab = X.TwoBody.GetTBME(i_ch_2b_bra, i_ch_2b_bra, c, j, a, b);
-                  const double me_Y_cjab = Y.TwoBody.GetTBME(i_ch_2b_bra, i_ch_2b_bra, c, j, a, b);
-                  const double me_Y_abiklc = Y_ch(abi_index, klc_index);
-                  const double me_X_abiklc = X_ch(abi_index, klc_index);
-
-                  me += occ_factor * six_j * me_X_cjab * me_Y_abiklc;
-                  me -= occ_factor * six_j * me_Y_cjab * me_X_abiklc;
-                }
-              }
-              Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ket, i_ch_2b_ket, i, j, k, l, hat_factor * me);
-            }
-          }
-        }
-
-        // Term 2:
-        // Externally fixed:
-        // - J_ij=ch_2b_ket.J,
-        // - J_ab=ch_2b_bra.J,
-        // - JJ_3=ch_3b.twoJ
-        //
-        // Z^(J_ij)_ijkl = 
-        // 0.5 * hat(J_ab) / hat(J_ij) * hat(JJ_3)^2               // hat_factor
-        // -1 (-1)^(j_i + j_j - J_ij)                             // phase_factor
-        // sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
-        // six_j(                                                   // six_j
-        //  j_j j_i  J_ij
-        //  j_c JJ_3 J_ab
-        // )
-        // (
-        //   X^(J_ab)_ciab Y^(J_ab,J_ij,JJ_3)_abjklc
-        // - Y^(J_ab)_ciab X^(J_ab,J_ij,JJ_3)_abjklc
-        // )
-        {
-          const double J_ij = ch_2b_ket.J * 1.0;
-          const int J_ij_int = ch_2b_ket.J;
-          const double J_ab = ch_2b_bra.J * 1.0;
-          const double J_3 = ch_3b.twoJ / 2.0;
-          // No factor of 1/2 because we use a >= b.
-          const double hat_factor = sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_ij + 1) * (2.0 * J_3 + 1);
-          #pragma omp parallel for collapse(2)
-          for (std::size_t ij_index = 0; ij_index < lookup_ket.GetNum2BStates(); ij_index += 1) {
-            for (std::size_t kl_index = 0; kl_index < lookup_ket.GetNum2BStates(); kl_index += 1) {
-              const auto i = lookup_ket.Get2BStateP(ij_index);
-              const auto j = lookup_ket.Get2BStateQ(ij_index);
-              const auto j_i = GetSPStateJ(i, Y);
-              const auto j_j = GetSPStateJ(j, Y);
-              const int phase_factor = -1 * GetPhase(i, j, J_ij_int, Y);
-
-              const auto k = lookup_ket.Get2BStateP(kl_index);
-              const auto l = lookup_ket.Get2BStateQ(kl_index);
-
-              double me = 0.0;
-
-              for (std::size_t ab_index = 0; ab_index < lookup_bra.GetNum2BStates(); ab_index += 1) {
-                const auto a = lookup_bra.Get2BStateP(ab_index);
-                const auto b = lookup_bra.Get2BStateQ(ab_index);
-                if (!lookup_bra.IsStateValid(a, b, j)) continue;
-                double norm_factor = 1.0;
-                if (a == b) norm_factor = 0.5;
-                const double n_a_n_b = GetSPStateOcc(a, Y) * GetSPStateOcc(b, Y);
-                const double nbar_a_nbar_b = GetSPStateOccBar(a, Y) * GetSPStateOccBar(b, Y);
-                const std::size_t abj_index = lookup_bra.GetStateLocalIndex(a, b, j);
-
-                for (const std::size_t c : lookup_ket.Get3rdStateBasis()) {
-                  if (!lookup_ket.IsStateValid(k, l, c)) continue;
-                  const auto j_c = GetSPStateJ(c, Y);
-                  const double n_c = GetSPStateOcc(c, Y);
-                  const double occ_factor = norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
-                  const double six_j = Y.modelspace->GetSixJ(j_j, j_i, J_ij, j_c, J_3, J_ab);
-                  const std::size_t klc_index = lookup_ket.GetStateLocalIndex(k, l, c);
-
-                  const double me_X_ciab = X.TwoBody.GetTBME(i_ch_2b_bra, i_ch_2b_bra, c, i, a, b);
-                  const double me_Y_ciab = Y.TwoBody.GetTBME(i_ch_2b_bra, i_ch_2b_bra, c, i, a, b);
-                  const double me_Y_abjklc = Y_ch(abj_index, klc_index);
-                  const double me_X_abjklc = X_ch(abj_index, klc_index);
-
-                  me += hat_factor * phase_factor *occ_factor * six_j * me_X_ciab * me_Y_abjklc;
-                  me -= hat_factor * phase_factor *occ_factor * six_j * me_Y_ciab * me_X_abjklc;
-                }
-              }
-              Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ket, i_ch_2b_ket, i, j, k, l,  me);
-            }
-          }
-        }
-
-        // Term 3:
-        // Externally fixed:
-        // - J_kl=ch_2b_bra.J,
-        // - J_ab=ch_2b_ket.J,
-        // - JJ_3=ch_3b.twoJ
-        //
-        // Z^(J_kl)_ijkl = 
-        // -0.5 * hat(J_ab) / hat(J_kl) * hat(JJ_3)^2                // hat_factor
-        // sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
-        // six_j(                                                   // six_j
-        //  j_k j_l  J_kl
-        //  j_c JJ_3 J_ab
-        // )
-        // (
-        //   X^(J_ab)_abcl Y^(J_kl,J_ab,JJ_3)_ijcabk
-        // - Y^(J_ab)_abcl X^(J_kl,J_ab,JJ_3)_ijcabk
-        // )
-        {
-          const double J_kl = ch_2b_bra.J * 1.0;
-          const double J_ab = ch_2b_ket.J * 1.0;
-          const double J_3 = ch_3b.twoJ / 2.0;
-          // No factor of 1/2 because we use a >= b.
-          const double hat_factor = -1 * sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_kl + 1) * (2.0 * J_3 + 1);
-          #pragma omp parallel for collapse(2)
-          for (std::size_t ij_index = 0; ij_index < lookup_bra.GetNum2BStates(); ij_index += 1) {
-            for (std::size_t kl_index = 0; kl_index < lookup_bra.GetNum2BStates(); kl_index += 1) {
-              const auto i = lookup_bra.Get2BStateP(ij_index);
-              const auto j = lookup_bra.Get2BStateQ(ij_index);
-
-              const auto k = lookup_bra.Get2BStateP(kl_index);
-              const auto l = lookup_bra.Get2BStateQ(kl_index);
-              const auto j_k = GetSPStateJ(k, Y);
-              const auto j_l = GetSPStateJ(l, Y);
-
-              double me = 0.0;
-
-              for (std::size_t ab_index = 0; ab_index < lookup_ket.GetNum2BStates(); ab_index += 1) {
-                const auto a = lookup_ket.Get2BStateP(ab_index);
-                const auto b = lookup_ket.Get2BStateQ(ab_index);
-                if (!lookup_ket.IsStateValid(a, b, k)) continue;
-                double norm_factor = 1.0;
-                if (a == b) norm_factor = 0.5;
-                const double n_a_n_b = GetSPStateOcc(a, Y) * GetSPStateOcc(b, Y);
-                const double nbar_a_nbar_b = GetSPStateOccBar(a, Y) * GetSPStateOccBar(b, Y);
-                const std::size_t abk_index = lookup_ket.GetStateLocalIndex(a, b, k);
-
-                for (const std::size_t c : lookup_bra.Get3rdStateBasis()) {
-                  if (!lookup_bra.IsStateValid(i, j, c)) continue;
-                  const auto j_c = GetSPStateJ(c, Y);
-                  const double n_c = GetSPStateOcc(c, Y);
-                  const double occ_factor = norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
-                  const double six_j = Y.modelspace->GetSixJ(j_k, j_l, J_kl, j_c, J_3, J_ab);
-                  const std::size_t ijc_index = lookup_bra.GetStateLocalIndex(i, j, c);
-
-                  const double me_X_abcl = X.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, l);
-                  const double me_Y_abcl = Y.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, l);
-                  const double me_Y_ijcabk = Y_ch(ijc_index, abk_index);
-                  const double me_X_ijcabk = X_ch(ijc_index, abk_index);
-
-                  me += occ_factor * six_j * me_X_abcl * me_Y_ijcabk;
-                  me -= occ_factor * six_j * me_Y_abcl * me_X_ijcabk;
-                }
-              }
-              Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_bra, i_ch_2b_bra, i, j, k, l, hat_factor * me);
-            }
-          }
-        }
-
-        // Term 4:
-        // Externally fixed:
-        // - J_kl=ch_2b_bra.J,
-        // - J_ab=ch_2b_ket.J,
-        // - JJ_3=ch_3b.twoJ
-        //
-        // Z^(J_kl)_ijkl = 
-        // -0.5 * hat(J_ab) / hat(J_kl) * hat(JJ_3)^2                // hat_factor
-        // -1 * (-1)^(j_k + j_l - J_kl)                             // phase_factor
-        // sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
-        // six_j(                                                   // six_j
-        //  j_k j_l  J_kl
-        //  j_c JJ_3 J_ab
-        // )
-        // (
-        //   X^(J_ab)_abck Y^(J_kl,J_ab,JJ_3)_ijcabl
-        // - Y^(J_ab)_abck X^(J_kl,J_ab,JJ_3)_ijcabl
-        // )
-        {
-          const double J_kl = ch_2b_bra.J * 1.0;
-          const int J_kl_int = ch_2b_bra.J;
-          const double J_ab = ch_2b_ket.J * 1.0;
-          const double J_3 = ch_3b.twoJ / 2.0;
-          // No factor of 1/2 because we use a >= b.
-          const double hat_factor = -1 * sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_kl + 1) * (2.0 * J_3 + 1);
-          #pragma omp parallel for collapse(2)
-          for (std::size_t ij_index = 0; ij_index < lookup_bra.GetNum2BStates(); ij_index += 1) {
-            for (std::size_t kl_index = 0; kl_index < lookup_bra.GetNum2BStates(); kl_index += 1) {
-              const auto i = lookup_bra.Get2BStateP(ij_index);
-              const auto j = lookup_bra.Get2BStateQ(ij_index);
-
-              const auto k = lookup_bra.Get2BStateP(kl_index);
-              const auto l = lookup_bra.Get2BStateQ(kl_index);
-              const auto j_k = GetSPStateJ(k, Y);
-              const auto j_l = GetSPStateJ(l, Y);
-              const int phase_factor = -1 * GetPhase(k, l, J_kl_int, Y);
-
-              double me = 0.0;
-
-              for (std::size_t ab_index = 0; ab_index < lookup_ket.GetNum2BStates(); ab_index += 1) {
-                const auto a = lookup_ket.Get2BStateP(ab_index);
-                const auto b = lookup_ket.Get2BStateQ(ab_index);
-                if (!lookup_ket.IsStateValid(a, b, l)) continue;
-                double norm_factor = 1.0;
-                if (a == b) norm_factor = 0.5;
-                const double n_a_n_b = GetSPStateOcc(a, Y) * GetSPStateOcc(b, Y);
-                const double nbar_a_nbar_b = GetSPStateOccBar(a, Y) * GetSPStateOccBar(b, Y);
-                const std::size_t abl_index = lookup_ket.GetStateLocalIndex(a, b, l);
-
-                for (const std::size_t c : lookup_bra.Get3rdStateBasis()) {
-                  if (!lookup_bra.IsStateValid(i, j, c)) continue;
-                  const auto j_c = GetSPStateJ(c, Y);
-                  const double n_c = GetSPStateOcc(c, Y);
-                  const double occ_factor = norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
-                  const double six_j = Y.modelspace->GetSixJ(j_l, j_k, J_kl, j_c, J_3, J_ab);
-                  const std::size_t ijc_index = lookup_bra.GetStateLocalIndex(i, j, c);
-
-                  const double me_X_abck = X.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, k);
-                  const double me_Y_abck = Y.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, k);
-                  const double me_Y_ijcabl = Y_ch(ijc_index, abl_index);
-                  const double me_X_ijcabl = X_ch(ijc_index, abl_index);
-
-                  me += occ_factor * six_j * me_X_abck * me_Y_ijcabl;
-                  me -= occ_factor * six_j * me_Y_abck * me_X_ijcabl;
-                }
-              }
-              Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_bra, i_ch_2b_bra, i, j, k, l, phase_factor * hat_factor * me);
-            }
-          }
-        }
+        Comm232Diagram4(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, X, Y_ch, 1.0, Z);
+        Comm232Diagram4(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket, Y, X_ch, -1.0, Z);
       }
     }
   }
 }
 
 namespace {
+
+void UnpackMatrix(std::size_t i_ch_3b,
+                  const Basis3BLookupSingleChannel &lookup_bra,
+                  const Basis3BLookupSingleChannel &lookup_ket,
+                  const Operator &op, arma::mat &mat) {
+#pragma omp parallel for collapse(2)
+  for (std::size_t i_bra = 0; i_bra < lookup_bra.GetNum3BStates(); i_bra += 1) {
+    for (std::size_t i_ket = 0; i_ket < lookup_ket.GetNum3BStates();
+         i_ket += 1) {
+      double me = 0.0;
+      const auto &indices_bra = lookup_bra.GetRecouplingIndices(i_bra);
+      const auto &recoupling_bra = lookup_bra.GetRecouplingFactors(i_bra);
+      const auto &indices_ket = lookup_ket.GetRecouplingIndices(i_ket);
+      const auto &recoupling_ket = lookup_ket.GetRecouplingFactors(i_ket);
+      for (std::size_t i_bra_rec = 0; i_bra_rec < indices_bra.size();
+           i_bra_rec += 1) {
+        const auto bra_index = indices_bra[i_bra_rec];
+        const auto bra_factor = recoupling_bra[i_bra_rec];
+        for (std::size_t i_ket_rec = 0; i_ket_rec < indices_ket.size();
+             i_ket_rec += 1) {
+          const auto ket_index = indices_ket[i_ket_rec];
+          const auto ket_factor = recoupling_ket[i_ket_rec];
+          me +=
+              op.ThreeBody.GetME_pn_ch(i_ch_3b, i_ch_3b, bra_index, ket_index) *
+              bra_factor * ket_factor;
+        }
+      }
+      mat(i_bra, i_ket) = me;
+    }
+  }
+}
+
+// Term 1:
+// Externally fixed:
+// - J_ij=ch_2b_ket.J,
+// - J_ab=ch_2b_bra.J,
+// - JJ_3=ch_3b.twoJ
+//
+// Z^(J_ij)_ijkl =
+// 0.5 * hat(J_ab) / hat(J_ij) * hat(JJ_3)^2                // hat_factor
+// sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
+// six_j(                                                   // six_j
+//  j_i j_j  J_ij
+//  j_c JJ_3 J_ab
+// )
+// (
+//   X^(J_ab)_cjab Y^(J_ab,J_ij,JJ_3)_abiklc
+// )
+void Comm232Diagram1(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z) {
+  const TwoBodyChannel &ch_2b_bra =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_bra);
+  const TwoBodyChannel &ch_2b_ket =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_ket);
+  const double J_ij = ch_2b_ket.J;
+  const double J_ab = ch_2b_bra.J;
+  const double J_3 = ch_3b.twoJ * 0.5;
+  // No factor of 1/2 because we use a >= b.
+  const double hat_factor =
+      sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_ij + 1) * (2.0 * J_3 + 1);
+#pragma omp parallel for collapse(2)
+  for (std::size_t ij_index = 0; ij_index < lookup_ket.GetNum2BStates();
+       ij_index += 1) {
+    for (std::size_t kl_index = 0; kl_index < lookup_ket.GetNum2BStates();
+         kl_index += 1) {
+      const auto i = lookup_ket.Get2BStateP(ij_index);
+      const auto j = lookup_ket.Get2BStateQ(ij_index);
+      const auto j_i = GetSPStateJ(i, X);
+      const auto j_j = GetSPStateJ(j, X);
+
+      const auto k = lookup_ket.Get2BStateP(kl_index);
+      const auto l = lookup_ket.Get2BStateQ(kl_index);
+
+      double me = 0.0;
+
+      for (std::size_t ab_index = 0; ab_index < lookup_bra.GetNum2BStates();
+           ab_index += 1) {
+        const auto a = lookup_bra.Get2BStateP(ab_index);
+        const auto b = lookup_bra.Get2BStateQ(ab_index);
+        if (!lookup_bra.IsStateValid(a, b, i))
+          continue;
+        double norm_factor = 1.0;
+        if (a == b)
+          norm_factor = 0.5;
+        const double n_a_n_b = GetSPStateOcc(a, X) * GetSPStateOcc(b, X);
+        const double nbar_a_nbar_b =
+            GetSPStateOccBar(a, X) * GetSPStateOccBar(b, X);
+        const std::size_t abi_index = lookup_bra.GetStateLocalIndex(a, b, i);
+
+        for (const std::size_t c : lookup_ket.Get3rdStateBasis()) {
+          if (!lookup_ket.IsStateValid(k, l, c))
+            continue;
+          const auto j_c = GetSPStateJ(c, X);
+          const double n_c = GetSPStateOcc(c, X);
+          const double occ_factor =
+              norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
+          const double six_j =
+              Z.modelspace->GetSixJ(j_i, j_j, J_ij, j_c, J_3, J_ab);
+          const std::size_t klc_index = lookup_ket.GetStateLocalIndex(k, l, c);
+
+          const double me_X_cjab =
+              X.TwoBody.GetTBME(i_ch_2b_bra, i_ch_2b_bra, c, j, a, b);
+          const double me_Y_abiklc = Y_mat(abi_index, klc_index);
+
+          me += occ_factor * six_j * me_X_cjab * me_Y_abiklc;
+        }
+      }
+      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ket, i_ch_2b_ket, i, j, k,
+                                              l,
+                                              overall_factor * hat_factor * me);
+    }
+  }
+}
+
+// Term 2:
+// Externally fixed:
+// - J_ij=ch_2b_ket.J,
+// - J_ab=ch_2b_bra.J,
+// - JJ_3=ch_3b.twoJ
+//
+// Z^(J_ij)_ijkl =
+// 0.5 * hat(J_ab) / hat(J_ij) * hat(JJ_3)^2               // hat_factor
+// -1 (-1)^(j_i + j_j - J_ij)                             // phase_factor
+// sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
+// six_j(                                                   // six_j
+//  j_j j_i  J_ij
+//  j_c JJ_3 J_ab
+// )
+// (
+//   X^(J_ab)_ciab Y^(J_ab,J_ij,JJ_3)_abjklc
+// )
+void Comm232Diagram2(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z) {
+  const TwoBodyChannel &ch_2b_bra =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_bra);
+  const TwoBodyChannel &ch_2b_ket =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_ket);
+  const double J_ij = ch_2b_ket.J * 1.0;
+  const int J_ij_int = ch_2b_ket.J;
+  const double J_ab = ch_2b_bra.J * 1.0;
+  const double J_3 = ch_3b.twoJ / 2.0;
+  // No factor of 1/2 because we use a >= b.
+  const double hat_factor =
+      sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_ij + 1) * (2.0 * J_3 + 1);
+#pragma omp parallel for collapse(2)
+  for (std::size_t ij_index = 0; ij_index < lookup_ket.GetNum2BStates();
+       ij_index += 1) {
+    for (std::size_t kl_index = 0; kl_index < lookup_ket.GetNum2BStates();
+         kl_index += 1) {
+      const auto i = lookup_ket.Get2BStateP(ij_index);
+      const auto j = lookup_ket.Get2BStateQ(ij_index);
+      const auto j_i = GetSPStateJ(i, X);
+      const auto j_j = GetSPStateJ(j, X);
+      const int phase_factor = -1 * GetPhase(i, j, J_ij_int, X);
+
+      const auto k = lookup_ket.Get2BStateP(kl_index);
+      const auto l = lookup_ket.Get2BStateQ(kl_index);
+
+      double me = 0.0;
+
+      for (std::size_t ab_index = 0; ab_index < lookup_bra.GetNum2BStates();
+           ab_index += 1) {
+        const auto a = lookup_bra.Get2BStateP(ab_index);
+        const auto b = lookup_bra.Get2BStateQ(ab_index);
+        if (!lookup_bra.IsStateValid(a, b, j))
+          continue;
+        double norm_factor = 1.0;
+        if (a == b)
+          norm_factor = 0.5;
+        const double n_a_n_b = GetSPStateOcc(a, X) * GetSPStateOcc(b, X);
+        const double nbar_a_nbar_b =
+            GetSPStateOccBar(a, X) * GetSPStateOccBar(b, X);
+        const std::size_t abj_index = lookup_bra.GetStateLocalIndex(a, b, j);
+
+        for (const std::size_t c : lookup_ket.Get3rdStateBasis()) {
+          if (!lookup_ket.IsStateValid(k, l, c))
+            continue;
+          const auto j_c = GetSPStateJ(c, X);
+          const double n_c = GetSPStateOcc(c, X);
+          const double occ_factor =
+              norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
+          const double six_j =
+              Z.modelspace->GetSixJ(j_j, j_i, J_ij, j_c, J_3, J_ab);
+          const std::size_t klc_index = lookup_ket.GetStateLocalIndex(k, l, c);
+
+          const double me_X_ciab =
+              X.TwoBody.GetTBME(i_ch_2b_bra, i_ch_2b_bra, c, i, a, b);
+          const double me_Y_abjklc = Y_mat(abj_index, klc_index);
+
+          me += occ_factor * six_j * me_X_ciab * me_Y_abjklc;
+        }
+      }
+      Z.TwoBody.AddToTBMENonHermNonNormalized(
+          i_ch_2b_ket, i_ch_2b_ket, i, j, k, l,
+          overall_factor * hat_factor * phase_factor * me);
+    }
+  }
+}
+
+// Term 3:
+// Externally fixed:
+// - J_kl=ch_2b_bra.J,
+// - J_ab=ch_2b_ket.J,
+// - JJ_3=ch_3b.twoJ
+//
+// Z^(J_kl)_ijkl =
+// -0.5 * hat(J_ab) / hat(J_kl) * hat(JJ_3)^2                // hat_factor
+// sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
+// six_j(                                                   // six_j
+//  j_k j_l  J_kl
+//  j_c JJ_3 J_ab
+// )
+// (
+//   X^(J_ab)_abcl Y^(J_kl,J_ab,JJ_3)_ijcabk
+// )
+void Comm232Diagram3(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z) {
+  const TwoBodyChannel &ch_2b_bra =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_bra);
+  const TwoBodyChannel &ch_2b_ket =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_ket);
+  const double J_kl = ch_2b_bra.J * 1.0;
+  const double J_ab = ch_2b_ket.J * 1.0;
+  const double J_3 = ch_3b.twoJ / 2.0;
+  // No factor of 1/2 because we use a >= b.
+  const double hat_factor =
+      -1 * sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_kl + 1) * (2.0 * J_3 + 1);
+#pragma omp parallel for collapse(2)
+  for (std::size_t ij_index = 0; ij_index < lookup_bra.GetNum2BStates();
+       ij_index += 1) {
+    for (std::size_t kl_index = 0; kl_index < lookup_bra.GetNum2BStates();
+         kl_index += 1) {
+      const auto i = lookup_bra.Get2BStateP(ij_index);
+      const auto j = lookup_bra.Get2BStateQ(ij_index);
+
+      const auto k = lookup_bra.Get2BStateP(kl_index);
+      const auto l = lookup_bra.Get2BStateQ(kl_index);
+      const auto j_k = GetSPStateJ(k, X);
+      const auto j_l = GetSPStateJ(l, X);
+
+      double me = 0.0;
+
+      for (std::size_t ab_index = 0; ab_index < lookup_ket.GetNum2BStates();
+           ab_index += 1) {
+        const auto a = lookup_ket.Get2BStateP(ab_index);
+        const auto b = lookup_ket.Get2BStateQ(ab_index);
+        if (!lookup_ket.IsStateValid(a, b, k))
+          continue;
+        double norm_factor = 1.0;
+        if (a == b)
+          norm_factor = 0.5;
+        const double n_a_n_b = GetSPStateOcc(a, X) * GetSPStateOcc(b, X);
+        const double nbar_a_nbar_b =
+            GetSPStateOccBar(a, X) * GetSPStateOccBar(b, X);
+        const std::size_t abk_index = lookup_ket.GetStateLocalIndex(a, b, k);
+
+        for (const std::size_t c : lookup_bra.Get3rdStateBasis()) {
+          if (!lookup_bra.IsStateValid(i, j, c))
+            continue;
+          const auto j_c = GetSPStateJ(c, X);
+          const double n_c = GetSPStateOcc(c, X);
+          const double occ_factor =
+              norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
+          const double six_j =
+              Z.modelspace->GetSixJ(j_k, j_l, J_kl, j_c, J_3, J_ab);
+          const std::size_t ijc_index = lookup_bra.GetStateLocalIndex(i, j, c);
+
+          const double me_X_abcl =
+              X.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, l);
+          const double me_Y_ijcabk = Y_mat(ijc_index, abk_index);
+
+          me += occ_factor * six_j * me_X_abcl * me_Y_ijcabk;
+        }
+      }
+      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_bra, i_ch_2b_bra, i, j, k,
+                                              l,
+                                              overall_factor * hat_factor * me);
+    }
+  }
+}
+
+// Term 4:
+// Externally fixed:
+// - J_kl=ch_2b_bra.J,
+// - J_ab=ch_2b_ket.J,
+// - JJ_3=ch_3b.twoJ
+//
+// Z^(J_kl)_ijkl =
+// -0.5 * hat(J_ab) / hat(J_kl) * hat(JJ_3)^2                // hat_factor
+// -1 * (-1)^(j_k + j_l - J_kl)                             // phase_factor
+// sum_abc (n_a n_b (1 - n_c) + (1 - n_a) (1 - n_b) n_c)    // occ_factor
+// six_j(                                                   // six_j
+//  j_k j_l  J_kl
+//  j_c JJ_3 J_ab
+// )
+// (
+//   X^(J_ab)_abck Y^(J_kl,J_ab,JJ_3)_ijcabl
+// )
+void Comm232Diagram4(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
+                     const ThreeBodyChannel &ch_3b,
+                     const Basis3BLookupSingleChannel &lookup_bra,
+                     const Basis3BLookupSingleChannel &lookup_ket,
+                     const Operator &X, const arma::mat &Y_mat,
+                     double overall_factor, Operator &Z) {
+  const TwoBodyChannel &ch_2b_bra =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_bra);
+  const TwoBodyChannel &ch_2b_ket =
+      X.modelspace->GetTwoBodyChannel(i_ch_2b_ket);
+  const double J_kl = ch_2b_bra.J * 1.0;
+  const int J_kl_int = ch_2b_bra.J;
+  const double J_ab = ch_2b_ket.J * 1.0;
+  const double J_3 = ch_3b.twoJ / 2.0;
+  // No factor of 1/2 because we use a >= b.
+  const double hat_factor =
+      -1 * sqrt(2.0 * J_ab + 1) / sqrt(2.0 * J_kl + 1) * (2.0 * J_3 + 1);
+#pragma omp parallel for collapse(2)
+  for (std::size_t ij_index = 0; ij_index < lookup_bra.GetNum2BStates();
+       ij_index += 1) {
+    for (std::size_t kl_index = 0; kl_index < lookup_bra.GetNum2BStates();
+         kl_index += 1) {
+      const auto i = lookup_bra.Get2BStateP(ij_index);
+      const auto j = lookup_bra.Get2BStateQ(ij_index);
+
+      const auto k = lookup_bra.Get2BStateP(kl_index);
+      const auto l = lookup_bra.Get2BStateQ(kl_index);
+      const auto j_k = GetSPStateJ(k, X);
+      const auto j_l = GetSPStateJ(l, X);
+      const int phase_factor = -1 * GetPhase(k, l, J_kl_int, X);
+
+      double me = 0.0;
+
+      for (std::size_t ab_index = 0; ab_index < lookup_ket.GetNum2BStates();
+           ab_index += 1) {
+        const auto a = lookup_ket.Get2BStateP(ab_index);
+        const auto b = lookup_ket.Get2BStateQ(ab_index);
+        if (!lookup_ket.IsStateValid(a, b, l))
+          continue;
+        double norm_factor = 1.0;
+        if (a == b)
+          norm_factor = 0.5;
+        const double n_a_n_b = GetSPStateOcc(a, X) * GetSPStateOcc(b, X);
+        const double nbar_a_nbar_b =
+            GetSPStateOccBar(a, X) * GetSPStateOccBar(b, X);
+        const std::size_t abl_index = lookup_ket.GetStateLocalIndex(a, b, l);
+
+        for (const std::size_t c : lookup_bra.Get3rdStateBasis()) {
+          if (!lookup_bra.IsStateValid(i, j, c))
+            continue;
+          const auto j_c = GetSPStateJ(c, X);
+          const double n_c = GetSPStateOcc(c, X);
+          const double occ_factor =
+              norm_factor * (n_a_n_b * (1 - n_c) + nbar_a_nbar_b * n_c);
+          const double six_j =
+              Z.modelspace->GetSixJ(j_l, j_k, J_kl, j_c, J_3, J_ab);
+          const std::size_t ijc_index = lookup_bra.GetStateLocalIndex(i, j, c);
+
+          const double me_X_abck =
+              X.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, k);
+          const double me_Y_ijcabl = Y_mat(ijc_index, abl_index);
+
+          me += occ_factor * six_j * me_X_abck * me_Y_ijcabl;
+        }
+      }
+      Z.TwoBody.AddToTBMENonHermNonNormalized(
+          i_ch_2b_bra, i_ch_2b_bra, i, j, k, l,
+          overall_factor * phase_factor * hat_factor * me);
+    }
+  }
+}
+
   int GetJJ1Max(const Operator& Y) {
     int jj1max = 1;
     for (const std::size_t& p : Y.modelspace->orbits_3body_space_) {
