@@ -300,6 +300,23 @@ target_link_libraries(
 )
 
 add_library(
+    Commutator232
+    Commutator232.hh Commutator232.cc
+)
+target_link_libraries(
+    Commutator232
+    PUBLIC
+    armadillo
+    Operator
+    TwoBodyME
+    ThreeLegME
+    PRIVATE
+    OpenMP::OpenMP_CXX
+    PhysicalConstants
+    AngMom
+)
+
+add_library(
     Commutator
     Commutator.hh Commutator.cc
 )
@@ -313,6 +330,7 @@ target_link_libraries(
     PRIVATE
     OpenMP::OpenMP_CXX
     PhysicalConstants
+    Commutator232
     AngMom
 )
 
