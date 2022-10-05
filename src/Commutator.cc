@@ -2329,9 +2329,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            double occnat_a = ket_ab.op->occ_nat;
            double occnat_b = ket_ab.oq->occ_nat;
 //      double occnat_c = bra.oR->occ_nat;
-           if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ei-e_fermi[tzi])) > Z.modelspace->GetdE3max() ) continue;
            if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ej-e_fermi[tzj])) > Z.modelspace->GetdE3max() ) continue;
-           if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i)) < Z.modelspace->GetOccNat3Cut() ) continue;
            if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j)) < Z.modelspace->GetOccNat3Cut() ) continue;
 
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
