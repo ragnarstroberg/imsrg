@@ -373,6 +373,7 @@ bool UnitTest::TestCommutators()
   arma::arma_rng::set_seed( random_seed );
   Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
   Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
+  modelspace->PreCalculateSixJ();
 
 //  std::cout << "===========================  Test Antisymmetry X =========================" << std::endl;
 //  Test3BodyAntisymmetry(X);
