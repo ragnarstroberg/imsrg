@@ -1191,6 +1191,18 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    OneBodyChannels[{l, j2, tz2}].insert(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
 }
 
+void ModelSpace::SetOcc(int n, int l, int j2, int tz2, double occ)
+{
+   Orbit& oi = GetOrbit( GetOrbitIndex(n,l,j2,tz2) );
+   oi.occ = occ;
+}
+
+void ModelSpace::SetOccNAT(int n, int l, int j2, int tz2, double occ_nat)
+{
+   Orbit& oi = GetOrbit( GetOrbitIndex(n,l,j2,tz2) );
+   oi.occ_nat = occ_nat;
+}
+
 
 void ModelSpace::FindEFermi()
 {

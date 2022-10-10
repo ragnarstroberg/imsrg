@@ -1537,7 +1537,54 @@ int main(int argc, char** argv)
        rw.CopyFile( inputfile.str(), outputfile.str() );
     }
 //    rw.WriteOmega(intfile,scratch, imsrgsolver.n_omega_written);
-    bool filesucess = hf.C.save(intfile+"C.mat");
+
+
+
+    std::ofstream file_occ;
+    std::ostringstream name_occ;
+    int wint = 4; int wdouble = 26; int pdouble = 16;
+    name_occ << intfile << "_occ.dat";
+    file_occ.open( name_occ.str(), std::ofstream::out);
+    for (auto i : modelspace.all_orbits)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      if ( std::abs(oi.occ)>1e-6 )
+      {
+        file_occ << std::setw(wint) << oi.n << std::setw(wint) << oi.l << std::setw(wint) << oi.j2 << std::setw(wint) << oi.tz2
+                 << std::setw(wdouble) << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << std::scientific << oi.occ << std::endl;
+      }
+    }
+    file_occ.close();
+    if (basis == "NAT")
+    {
+      name_occ.str("");
+      name_occ << intfile << "_occ_nat.dat";
+      file_occ.open( name_occ.str(), std::ofstream::out);
+      for (auto i : modelspace.all_orbits)
+      {
+        Orbit& oi = modelspace.GetOrbit(i);
+        if ( std::abs(oi.occ_nat)>1e-6 )
+        {
+          file_occ << std::setw(wint) << oi.n << std::setw(wint) << oi.l << std::setw(wint) << oi.j2 << std::setw(wint) << oi.tz2
+                   << std::setw(wdouble) << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << std::scientific << oi.occ_nat << std::endl;
+        }
+      }
+      file_occ.close();
+    }
+
+    bool filesucess = false;
+    if (basis == "HF")
+    {
+       filesucess = hf.C.save(intfile+"C.mat");
+    }
+    else if (basis == "NAT")
+    {
+       filesucess = hf.C_HO2NAT.save(intfile+"C.mat");
+    }
+
+
+
+//    bool filesucess = hf.C.save(intfile+"C.mat");
     if (filesucess == false)
     {
       std::cout<<"Couldn't save HF coefficient matrix."<<std::endl;

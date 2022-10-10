@@ -53,7 +53,7 @@ struct Orbit
    Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
            : n(n), l(l), j2(j2), tz2(tz2),occ(occ),occ_nat(occ),cvq(cvq),index(index) {};
 
-   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),occ_nat(orb.occ),cvq(orb.cvq),index(orb.index) {}
+   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),occ_nat(orb.occ_nat),cvq(orb.cvq),index(orb.index) {}
    bool operator==( const Orbit& rhs ) const { return  ( n==rhs.n and l==rhs.l and j2==rhs.j2 and tz2==rhs.tz2 ); };
 };
 
@@ -413,6 +413,8 @@ class ModelSpace
    void AddOrbit(Orbit orb);
    void AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq);  // cvq: 0=>core, 1=>valence, 2=>qspace
 //   void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
+   void SetOcc(int n, int l, int j2, int tz2, double occ);
+   void SetOccNAT(int n, int l, int j2, int tz2, double occ_nat);
    void FindEFermi();
    // Setter/Getters
    Orbit& GetOrbit(int i); 
