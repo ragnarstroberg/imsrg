@@ -86,26 +86,18 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
     }
 
     std::size_t num_2b_blocks = 0;
+    std::vector<std::pair<std::size_t, std::size_t>> block_ch_2b_indices;
+    std::vector<internal::OneBodyBasis> block_beta_bases;
 
     for (const auto &basis_ijc_full : bases_store) {
       const std::size_t i_ch_2b_ij = basis_ijc_full.first;
       const TwoBodyChannel &ch_2b_ij =
           Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
 
-      const internal::TwoBodyBasis &basis_ij = basis_ijc_full.second.BasisPQ();
-      const internal::TwoBodyBasis basis_ij_e3max =
-          basis_ijc_full.second.BasisPQE3Max();
-      const internal::OneBodyBasis &basis_c = basis_ijc_full.second.BasisR();
-      const internal::ThreeBodyBasis &basis_ijc =
-          basis_ijc_full.second.BasisPQR();
-
       for (const auto &basis_abalpha_full : bases_store) {
         const std::size_t i_ch_2b_ab = basis_abalpha_full.first;
         const TwoBodyChannel &ch_2b_ab =
             Z.modelspace->GetTwoBodyChannel(i_ch_2b_ab);
-
-        double factor = (sqrt(2 * ch_2b_ab.J + 1) / sqrt(2 * ch_2b_ij.J + 1)) *
-                        (ch_3b.twoJ + 1);
 
         // 3rd external index alpha constrained by being in state | (ab) J_ab
         // alpha >
@@ -121,17 +113,8 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         const int jj_min_beta = std::max(ch_2b_ij.J * 2 - jj_max_alpha, 0);
         const int jj_max_beta = std::min(ch_2b_ij.J * 2 + jj_max_alpha, jj1max);
 
-        const internal::TwoBodyBasis &basis_ab =
-            basis_abalpha_full.second.BasisPQ();
-        const internal::TwoBodyBasis &basis_ab_e3max =
-            basis_abalpha_full.second.BasisPQE3Max();
-        const internal::OneBodyBasis &basis_alpha =
-            basis_abalpha_full.second.BasisR();
-        const internal::ThreeBodyBasis &basis_abalpha =
-            basis_abalpha_full.second.BasisPQR();
-
         // Only basis not externally prestored
-        const internal::OneBodyBasis basis_beta =
+        internal::OneBodyBasis basis_beta =
             internal::OneBodyBasis::FromQuantumNumbers(
                 Z, jj_min_beta, jj_max_beta, parity_beta, tz2_beta);
 
@@ -139,73 +122,106 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
           continue;
         }
 
-        num_chans += 1;
-        num_2b_blocks += 1;
+        block_ch_2b_indices.push_back(std::make_pair(i_ch_2b_ij, i_ch_2b_ab));
+        block_beta_bases.push_back(std::move(basis_beta));
+      }
+    }
 
-        std::vector<double> six_js_ij = internal::GenerateSixJMatrixIJ(
-            Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
-            ch_2b_ab.J * 2);
-        std::vector<double> six_js_ji = internal::GenerateSixJMatrixJI(
-            Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
-            ch_2b_ab.J * 2);
-        std::vector<double> phases =
-            internal::GeneratePhases(Z, basis_ij, ch_2b_ij.J * 2);
-        std::vector<double> occs =
-            internal::GenerateOccsMatrix(Z, basis_ab_e3max, basis_c);
+    for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
+         block_index += 1) {
+      const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
+      const auto &bases_ijc = bases_store.at(i_ch_2b_ij);
+      const TwoBodyChannel &ch_2b_ij =
+          Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
 
-        // This block evaluates [X^(3), Y^(2)] = -1 [Y^(2), X^(3)].
-        {
-          int comm_factor = -1;
-          std::vector<double> X_mat_3b = internal::Generate3BMatrix(
-              X, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
-              basis_ab_e3max, basis_c);
-          std::vector<double> Y_mat_2b = internal::Generate2BMatrix(
-              Y, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
+      const internal::TwoBodyBasis &basis_ij = bases_ijc.BasisPQ();
+      const internal::TwoBodyBasis basis_ij_e3max = bases_ijc.BasisPQE3Max();
+      const internal::OneBodyBasis &basis_c = bases_ijc.BasisR();
+      const internal::ThreeBodyBasis &basis_ijc = bases_ijc.BasisPQR();
 
-          internal::EvaluateComm232Diagram1(
-              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
-          internal::EvaluateComm232Diagram2(
-              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
-          internal::EvaluateComm232Diagram3(
-              comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
-          internal::EvaluateComm232Diagram4(
-              comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
-        }
+      const std::size_t i_ch_2b_ab = block_ch_2b_indices[block_index].second;
+      const auto &bases_abalpha = bases_store.at(i_ch_2b_ab);
+      const TwoBodyChannel &ch_2b_ab =
+          Z.modelspace->GetTwoBodyChannel(i_ch_2b_ab);
 
-        // This block evaluates [X^(2), Y^(3)].
-        {
-          int comm_factor = 1;
-          std::vector<double> Y_mat_3b = internal::Generate3BMatrix(
-              Y, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
-              basis_ab_e3max, basis_c);
-          std::vector<double> X_mat_2b = internal::Generate2BMatrix(
-              X, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
+      double factor = (sqrt(2 * ch_2b_ab.J + 1) / sqrt(2 * ch_2b_ij.J + 1)) *
+                      (ch_3b.twoJ + 1);
 
-          internal::EvaluateComm232Diagram1(
-              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
-          internal::EvaluateComm232Diagram2(
-              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
-          internal::EvaluateComm232Diagram3(
-              comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
-          internal::EvaluateComm232Diagram4(
-              comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
-              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
-        }
+      const internal::TwoBodyBasis &basis_ab = bases_abalpha.BasisPQ();
+      const internal::TwoBodyBasis &basis_ab_e3max =
+          bases_abalpha.BasisPQE3Max();
+      const internal::OneBodyBasis &basis_alpha = bases_abalpha.BasisR();
+      const internal::ThreeBodyBasis &basis_abalpha = bases_abalpha.BasisPQR();
+
+      // Only basis not externally prestored
+      const internal::OneBodyBasis basis_beta = block_beta_bases[block_index];
+
+      num_chans += 1;
+      num_2b_blocks += 1;
+
+      std::vector<double> six_js_ij = internal::GenerateSixJMatrixIJ(
+          Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
+          ch_2b_ab.J * 2);
+      std::vector<double> six_js_ji = internal::GenerateSixJMatrixJI(
+          Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
+          ch_2b_ab.J * 2);
+      std::vector<double> phases =
+          internal::GeneratePhases(Z, basis_ij, ch_2b_ij.J * 2);
+      std::vector<double> occs =
+          internal::GenerateOccsMatrix(Z, basis_ab_e3max, basis_c);
+
+      // This block evaluates [X^(3), Y^(2)] = -1 [Y^(2), X^(3)].
+      {
+        int comm_factor = -1;
+        std::vector<double> X_mat_3b = internal::Generate3BMatrix(
+            X, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
+            basis_ab_e3max, basis_c);
+        std::vector<double> Y_mat_2b = internal::Generate2BMatrix(
+            Y, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
+
+        internal::EvaluateComm232Diagram1(
+            comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
+        internal::EvaluateComm232Diagram2(
+            comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
+        internal::EvaluateComm232Diagram3(
+            comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
+        internal::EvaluateComm232Diagram4(
+            comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
+      }
+
+      // This block evaluates [X^(2), Y^(3)].
+      {
+        int comm_factor = 1;
+        std::vector<double> Y_mat_3b = internal::Generate3BMatrix(
+            Y, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
+            basis_ab_e3max, basis_c);
+        std::vector<double> X_mat_2b = internal::Generate2BMatrix(
+            X, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
+
+        internal::EvaluateComm232Diagram1(
+            comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
+        internal::EvaluateComm232Diagram2(
+            comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
+        internal::EvaluateComm232Diagram3(
+            comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
+        internal::EvaluateComm232Diagram4(
+            comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
+            basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+            Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
       }
     }
     Print("NUM_2B_BLOCKS", num_2b_blocks);
