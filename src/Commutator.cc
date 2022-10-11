@@ -3644,7 +3644,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
           if (!Y3.IsOrbitIn3BodyEMaxTruncation(ket_kl.q)) continue;
           int e_k = 2*ket_kl.op->n + ket_kl.op->l;
           int e_l = 2*ket_kl.oq->n + ket_kl.oq->l;
-          if ( (e_k + e_l) > Z.modelspace->GetE3max()) continue;
+          // if ( (e_k + e_l) > Z.modelspace->GetE3max()) continue;
           double de_k = std::abs(e_k - e_fermi.at(ket_kl.op->tz2));
           double de_l = std::abs(e_l - e_fermi.at(ket_kl.oq->tz2));
           if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
