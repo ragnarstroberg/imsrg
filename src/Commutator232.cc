@@ -23,6 +23,7 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
+#include <utility>
 #include <vector>
 
 template <typename T> void Print(std::string prefix, const T &val) {
@@ -69,7 +70,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
 
   const int emax_3body = Z.modelspace->GetEMax3Body();
   const int e3max = Z.modelspace->GetE3max();
-  const int jj1max = internal::ExtractJJ1Max(Y);
+  const int jj1max = internal::ExtractJJ1Max(Z);
 
   std::size_t num_chans = 0;
 
@@ -79,36 +80,22 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
     const std::vector<std::size_t> chans_2b =
         internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
 
-    for (const std::size_t &i_ch_2b_ij : chans_2b) {
+    const auto bases_store = internal::PrestoreBases(i_ch_3b, jj1max, Z, e3max);
+
+    for (const auto &basis_ijc_full : bases_store) {
+      const std::size_t i_ch_2b_ij = basis_ijc_full.first;
       const TwoBodyChannel &ch_2b_ij =
           Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
 
-      const internal::TwoBodyBasis basis_ij =
-          internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ij, Z);
+      const internal::TwoBodyBasis &basis_ij = basis_ijc_full.second.BasisPQ();
       const internal::TwoBodyBasis basis_ij_e3max =
-          internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ij, Z,
-                                                              e3max);
+          basis_ijc_full.second.BasisPQE3Max();
+      const internal::OneBodyBasis &basis_c = basis_ijc_full.second.BasisR();
+      const internal::ThreeBodyBasis &basis_ijc =
+          basis_ijc_full.second.BasisPQR();
 
-      // 3rd contracted index c constrained by being in state | (ij) J_ij c >
-      const int tz2_c = ch_3b.twoTz - 2 * ch_2b_ij.Tz;
-      const int parity_c = (ch_3b.parity + ch_2b_ij.parity) % 2;
-      const int jj_min_c = std::abs(ch_3b.twoJ - ch_2b_ij.J * 2);
-      const int jj_max_c = std::min(ch_3b.twoJ + ch_2b_ij.J * 2, jj1max);
-
-      const internal::OneBodyBasis basis_c =
-          internal::OneBodyBasis::FromQuantumNumbers(Z, jj_min_c, jj_max_c,
-                                                     parity_c, tz2_c);
-
-      const internal::ThreeBodyBasis basis_ijc =
-          internal::ThreeBodyBasis::From2BAnd1BBasis(
-              i_ch_3b, i_ch_2b_ij, Z, basis_ij_e3max, basis_c, e3max);
-
-      if ((basis_ij.BasisSize() == 0) || (basis_ij_e3max.BasisSize() == 0) ||
-          (basis_c.BasisSize() == 0) || (basis_ijc.BasisSize() == 0)) {
-        continue;
-      }
-
-      for (const std::size_t &i_ch_2b_ab : chans_2b) {
+      for (const auto &basis_abalpha_full : bases_store) {
+        const std::size_t i_ch_2b_ab = basis_abalpha_full.first;
         const TwoBodyChannel &ch_2b_ab =
             Z.modelspace->GetTwoBodyChannel(i_ch_2b_ab);
 
@@ -129,24 +116,21 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         const int jj_min_beta = std::max(ch_2b_ij.J * 2 - jj_max_alpha, 0);
         const int jj_max_beta = std::min(ch_2b_ij.J * 2 + jj_max_alpha, jj1max);
 
-        const internal::TwoBodyBasis basis_ab =
-            internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ab, Z);
-        const internal::TwoBodyBasis basis_ab_e3max =
-            internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ab, Z,
-                                                                e3max);
-        const internal::OneBodyBasis basis_alpha =
-            internal::OneBodyBasis::FromQuantumNumbers(
-                Z, jj_min_alpha, jj_max_alpha, parity_alpha, tz2_alpha);
+        const internal::TwoBodyBasis &basis_ab =
+            basis_abalpha_full.second.BasisPQ();
+        const internal::TwoBodyBasis &basis_ab_e3max =
+            basis_abalpha_full.second.BasisPQE3Max();
+        const internal::OneBodyBasis &basis_alpha =
+            basis_abalpha_full.second.BasisR();
+        const internal::ThreeBodyBasis &basis_abalpha =
+            basis_abalpha_full.second.BasisPQR();
+
+        // Only basis not externally prestored
         const internal::OneBodyBasis basis_beta =
             internal::OneBodyBasis::FromQuantumNumbers(
                 Z, jj_min_beta, jj_max_beta, parity_beta, tz2_beta);
-        const internal::ThreeBodyBasis basis_abalpha =
-            internal::ThreeBodyBasis::From2BAnd1BBasis(
-                i_ch_3b, i_ch_2b_ab, Z, basis_ab_e3max, basis_alpha, e3max);
 
-        if ((basis_ab_e3max.BasisSize() == 0) ||
-            (basis_alpha.BasisSize() == 0) || (basis_beta.BasisSize() == 0) ||
-            (basis_abalpha.BasisSize() == 0)) {
+        if (basis_beta.BasisSize() == 0) {
           continue;
         }
 
@@ -834,6 +818,51 @@ double Comm232Core(const double *slice_sixj, const double *slice_occs,
   }
 
   return val;
+}
+
+std::unordered_map<std::size_t, CollectedBases>
+PrestoreBases(std::size_t i_ch_3b, int jj1max, const Operator &Z, int e3max) {
+  std::unordered_map<std::size_t, CollectedBases> bases;
+
+  const ThreeBodyChannel &ch_3b = Z.modelspace->GetThreeBodyChannel(i_ch_3b);
+  const std::vector<std::size_t> chans_2b =
+      internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
+
+  for (const std::size_t &i_ch_2b_ij : chans_2b) {
+    const TwoBodyChannel &ch_2b_ij =
+        Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
+
+    internal::TwoBodyBasis basis_ij =
+        internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ij, Z);
+    internal::TwoBodyBasis basis_ij_e3max =
+        internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ij, Z,
+                                                            e3max);
+
+    // 3rd contracted index c constrained by being in state | (ij) J_ij c >
+    const int tz2_c = ch_3b.twoTz - 2 * ch_2b_ij.Tz;
+    const int parity_c = (ch_3b.parity + ch_2b_ij.parity) % 2;
+    const int jj_min_c = std::abs(ch_3b.twoJ - ch_2b_ij.J * 2);
+    const int jj_max_c = std::min(ch_3b.twoJ + ch_2b_ij.J * 2, jj1max);
+
+    internal::OneBodyBasis basis_c = internal::OneBodyBasis::FromQuantumNumbers(
+        Z, jj_min_c, jj_max_c, parity_c, tz2_c);
+
+    internal::ThreeBodyBasis basis_ijc =
+        internal::ThreeBodyBasis::From2BAnd1BBasis(
+            i_ch_3b, i_ch_2b_ij, Z, basis_ij_e3max, basis_c, e3max);
+
+    if ((basis_ij.BasisSize() == 0) || (basis_ij_e3max.BasisSize() == 0) ||
+        (basis_c.BasisSize() == 0) || (basis_ijc.BasisSize() == 0)) {
+      continue;
+    }
+
+    bases.emplace(std::make_pair(
+        i_ch_2b_ij,
+        CollectedBases(std::move(basis_ij), std::move(basis_ij_e3max),
+                       std::move(basis_c), std::move(basis_ijc))));
+  }
+
+  return bases;
 }
 
 // Previous methods

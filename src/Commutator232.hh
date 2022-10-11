@@ -21,6 +21,7 @@
 #define COMMUTATOR232_H_
 
 #include <cstdlib>
+#include <unordered_map>
 #include <vector>
 
 #include "ModelSpace.hh"
@@ -256,6 +257,35 @@ double Comm232Core(
   const double* slice_mat_2b,
   const double* slice_mat_3b,
   std::size_t slice_size
+);
+
+class CollectedBases {
+  public:
+
+  // Only via move
+  CollectedBases(TwoBodyBasis&& basis_2b, TwoBodyBasis&& basis_2b_e3max, OneBodyBasis&& basis_1b, ThreeBodyBasis&& basis_3b) 
+  : basis_2b_(std::move(basis_2b)),
+  basis_2b_e3max_(std::move(basis_2b_e3max)),
+  basis_1b_(std::move(basis_1b)),
+  basis_3b_(std::move(basis_3b)) {}
+
+  const TwoBodyBasis& BasisPQ() const { return basis_2b_; }
+  const TwoBodyBasis& BasisPQE3Max() const { return basis_2b_e3max_; }
+  const OneBodyBasis& BasisR() const { return basis_1b_; }
+  const ThreeBodyBasis& BasisPQR() const { return basis_3b_; }
+
+  private:
+  TwoBodyBasis basis_2b_;
+  TwoBodyBasis basis_2b_e3max_;
+  OneBodyBasis basis_1b_;
+  ThreeBodyBasis basis_3b_;
+};
+
+std::unordered_map<std::size_t, CollectedBases> PrestoreBases(
+  std::size_t i_ch_3b,
+  int jj1max,
+  const Operator& Z,
+  int e3max
 );
 
 // Previous methods
