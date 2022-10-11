@@ -73,6 +73,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
   const int jj1max = internal::ExtractJJ1Max(Z);
 
   std::size_t num_chans = 0;
+  std::size_t num_bytes_3b_basis = 0;
 
   for (std::size_t i_ch_3b = 0;
        i_ch_3b < Y.modelspace->GetNumberThreeBodyChannels(); i_ch_3b += 1) {
@@ -81,6 +82,9 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
 
     const auto bases_store = internal::PrestoreBases(i_ch_3b, jj1max, Z, e3max);
+    for (const auto& basis : bases_store) {
+      num_bytes_3b_basis += basis.second.BasisPQR().NumBytes();
+    }
 
     for (const auto &basis_ijc_full : bases_store) {
       const std::size_t i_ch_2b_ij = basis_ijc_full.first;
@@ -192,6 +196,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
   }
 
   Print("NUM_CHANS", num_chans);
+  Print("NUM_BYTES_3B_BASIS", num_bytes_3b_basis);
 }
 
 void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
@@ -566,6 +571,25 @@ ThreeBodyBasis ThreeBodyBasis::From2BAnd1BBasis(
   }
 
   return ThreeBodyBasis(i_ch_3b, i_ch_2b, Z, pqr_states, wrap_factor);
+}
+
+std::size_t ThreeBodyBasis::NumBytes() const {
+  std::size_t size =
+      pqr_states.size() * sizeof(std::size_t) +
+      p_states.size() * sizeof(std::size_t) +
+      q_states.size() * sizeof(std::size_t) +
+      r_states.size() * sizeof(std::size_t) +
+      pqr_indices.size() * sizeof(std::size_t) +
+      pqr_validities.size() * sizeof(int) +
+      pqr_me_indices.size() * sizeof(std::vector<std::size_t>) +
+      pqr_me_recoupling_factors.size() * sizeof(std::vector<double>);
+  for (const auto &indices : pqr_me_indices) {
+    size += indices.size() * sizeof(std::size_t);
+  }
+  for (const auto &recouplings : pqr_me_recoupling_factors) {
+    size += recouplings.size() * sizeof(double);
+  }
+  return size;
 }
 
 std::vector<double> Generate3BMatrix(const Operator &Z, std::size_t i_ch_3b,

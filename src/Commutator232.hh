@@ -178,6 +178,8 @@ public:
     return pqr_me_recoupling_factors[i_pqr];
   }
 
+  std::size_t NumBytes() const; 
+
 private:
   std::size_t wrap_factor;
   std::vector<std::size_t> pqr_states;
@@ -188,10 +190,9 @@ private:
       Get3BPQRIndices(pqr_states, wrap_factor);
   std::vector<int> pqr_validities = Get3BPQRValidities(pqr_states, wrap_factor);
   std::vector<std::vector<std::size_t>> pqr_me_indices =
-      std::vector<std::vector<std::size_t>>(wrap_factor * wrap_factor *
-                                            wrap_factor);
+      std::vector<std::vector<std::size_t>>(pqr_states.size());
   std::vector<std::vector<double>> pqr_me_recoupling_factors =
-      std::vector<std::vector<double>>(wrap_factor * wrap_factor * wrap_factor);
+      std::vector<std::vector<double>>(pqr_states.size());
 };
 
 // Methods for tensors
