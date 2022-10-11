@@ -3384,6 +3384,10 @@ void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z ) {
   comm232::comm232ss_expand_impl(X, Y, Z);
 }
 
+void comm232ss_expand_new( const Operator& X, const Operator& Y, Operator& Z ) {
+  comm232::comm232ss_expand_impl_new(X, Y, Z);
+}
+
 //// Begin modifications to comm232ss by Matthias.
 namespace {
 static inline size_t Hash_comm232_key2(const std::array<size_t, 5> &kljJJ) {
