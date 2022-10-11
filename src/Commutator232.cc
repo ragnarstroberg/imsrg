@@ -194,7 +194,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         internal::EvaluateComm232Diagram1(
             comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
+            X_mat_3b, Y_mat_2b, occs, six_js_ij, Z_mat);
         internal::EvaluateComm232Diagram2(
             comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
@@ -221,7 +221,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         internal::EvaluateComm232Diagram1(
             comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
+            Y_mat_3b, X_mat_2b, occs, six_js_ij, Z_mat);
         internal::EvaluateComm232Diagram2(
             comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
@@ -912,7 +912,9 @@ void EvaluateComm232Diagram1(
     const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
     const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
     const std::vector<double> &mat_2b, const std::vector<double> &occs,
-    const std::vector<double> &six_js_ij, Operator &Z) {
+    const std::vector<double> &six_js_ij,
+    std::vector<double>& Z_mat
+    ) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
   const auto dim_ij = basis_ij.BasisSize();
@@ -930,6 +932,7 @@ void EvaluateComm232Diagram1(
   for (std::size_t i_kl = 0; i_kl < dim_kl_e3; i_kl += 1) {
     const auto k = k_vals[i_kl];
     const auto l = l_vals[i_kl];
+    std::size_t i_kl_full = basis_ij.GetLocalIndexForPQ(k, l);
     for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
       const auto i = i_vals[i_ij];
       const auto j = j_vals[i_ij];
@@ -948,8 +951,7 @@ void EvaluateComm232Diagram1(
 
       const double me =
           Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
-      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
-                                              l, factor * me);
+      Z_mat[i_ij * dim_ij + i_kl_full] += factor * me;
     }
   }
 }

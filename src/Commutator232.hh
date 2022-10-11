@@ -263,7 +263,7 @@ void EvaluateComm232Diagram1(
   const std::vector<double>& mat_2b,
   const std::vector<double>& occs,
   const std::vector<double>& six_js_ij,
-  Operator& Z
+  std::vector<double>& Z_mat
 );
 
 void EvaluateComm232Diagram2(
