@@ -545,7 +545,26 @@ ThreeBodyBasis ThreeBodyBasis::From2BAnd1BBasis(
     const TwoBodyBasis &basis_pq, const OneBodyBasis &basis_r, int e3max) {
   const std::size_t wrap_factor = ExtractWrapFactor(Z);
 
+  std::size_t num_states = 0;
+  for (const std::size_t &pq : basis_pq.GetPQVals()) {
+    const std::size_t p = pq / wrap_factor;
+    const std::size_t q = pq % wrap_factor;
+    const Orbit &op = Z.modelspace->GetOrbit(p);
+    const Orbit &oq = Z.modelspace->GetOrbit(q);
+    const int ep = op.n * 2 + op.l;
+    const int eq = oq.n * 2 + oq.l;
+    for (const std::size_t &r : basis_r.GetPVals()) {
+      const Orbit &oR = Z.modelspace->GetOrbit(r);
+      const int er = oR.n * 2 + oR.l;
+
+      if (ep + eq + er <= e3max) {
+        num_states += 1;
+      }
+    }
+  }
+
   std::vector<std::size_t> pqr_states;
+  pqr_states.reserve(num_states);
   for (const std::size_t &pq : basis_pq.GetPQVals()) {
     const std::size_t p = pq / wrap_factor;
     const std::size_t q = pq % wrap_factor;
