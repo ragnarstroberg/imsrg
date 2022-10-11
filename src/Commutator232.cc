@@ -38,20 +38,20 @@ struct ChannelPair {
   std::size_t i_ch_3b = 0;
   std::size_t i_ch_2b = 0;
 
-  bool operator==(const ChannelPair& other) const {
+  bool operator==(const ChannelPair &other) const {
     return (i_ch_3b == other.i_ch_3b) && (i_ch_2b == other.i_ch_2b);
   }
 };
 
 namespace std {
-  template <>
-  struct hash<ChannelPair> {
-    std::size_t operator()(const ChannelPair& x) const {
-      return ((hash<std::size_t>()(x.i_ch_3b)
-               ^ (hash<std::size_t>()(x.i_ch_2b) << 1)) >> 1);
-    }
-  };
-}
+template <> struct hash<ChannelPair> {
+  std::size_t operator()(const ChannelPair &x) const {
+    return ((hash<std::size_t>()(x.i_ch_3b) ^
+             (hash<std::size_t>()(x.i_ch_2b) << 1)) >>
+            1);
+  }
+};
+} // namespace std
 
 namespace comm232 {
 
@@ -75,20 +75,40 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
 
   for (std::size_t i_ch_3b = 0;
        i_ch_3b < Y.modelspace->GetNumberThreeBodyChannels(); i_ch_3b += 1) {
-    // if (i_ch_3b != 0) {
-    //   break;
-    // }
+    const ThreeBodyChannel &ch_3b = Z.modelspace->GetThreeBodyChannel(i_ch_3b);
     const std::vector<std::size_t> chans_2b =
         internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
 
     for (const std::size_t &i_ch_2b_ij : chans_2b) {
+      const TwoBodyChannel &ch_2b_ij =
+          Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
+
+      const internal::TwoBodyBasis basis_ij =
+          internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ij, Z);
+      const internal::TwoBodyBasis basis_ij_e3max =
+          internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ij, Z,
+                                                              e3max);
+
+      // 3rd contracted index c constrained by being in state | (ij) J_ij c >
+      const int tz2_c = ch_3b.twoTz - 2 * ch_2b_ij.Tz;
+      const int parity_c = (ch_3b.parity + ch_2b_ij.parity) % 2;
+      const int jj_min_c = std::abs(ch_3b.twoJ - ch_2b_ij.J * 2);
+      const int jj_max_c = std::min(ch_3b.twoJ + ch_2b_ij.J * 2, jj1max);
+
+      const internal::OneBodyBasis basis_c =
+          internal::OneBodyBasis::FromQuantumNumbers(Z, jj_min_c, jj_max_c,
+                                                     parity_c, tz2_c);
+
+      const internal::ThreeBodyBasis basis_ijc =
+          internal::ThreeBodyBasis::From2BAnd1BBasis(
+              i_ch_3b, i_ch_2b_ij, Z, basis_ij_e3max, basis_c, e3max);
+
+      if ((basis_ij.BasisSize() == 0) || (basis_ij_e3max.BasisSize() == 0) ||
+          (basis_c.BasisSize() == 0) || (basis_ijc.BasisSize() == 0)) {
+        continue;
+      }
+
       for (const std::size_t &i_ch_2b_ab : chans_2b) {
-        // if (i_ch_2b_ij != 0) continue;
-        // if (i_ch_2b_ab != 6) continue;
-        const ThreeBodyChannel &ch_3b =
-            Z.modelspace->GetThreeBodyChannel(i_ch_3b);
-        const TwoBodyChannel &ch_2b_ij =
-            Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
         const TwoBodyChannel &ch_2b_ab =
             Z.modelspace->GetTwoBodyChannel(i_ch_2b_ab);
 
@@ -109,18 +129,6 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         const int jj_min_beta = std::max(ch_2b_ij.J * 2 - jj_max_alpha, 0);
         const int jj_max_beta = std::min(ch_2b_ij.J * 2 + jj_max_alpha, jj1max);
 
-        // 3rd contracted index c constrained by being in state | (ij) J_ij c >
-        const int tz2_c = ch_3b.twoTz - 2 * ch_2b_ij.Tz;
-        const int parity_c = (ch_3b.parity + ch_2b_ij.parity) % 2;
-        const int jj_min_c = std::abs(ch_3b.twoJ - ch_2b_ij.J * 2);
-        const int jj_max_c = std::min(ch_3b.twoJ + ch_2b_ij.J * 2, jj1max);
-
-        const internal::TwoBodyBasis basis_ij =
-            internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ij, Z);
-        const internal::TwoBodyBasis basis_ij_e3max =
-            internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ij, Z,
-                                                                e3max);
-
         const internal::TwoBodyBasis basis_ab =
             internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ab, Z);
         const internal::TwoBodyBasis basis_ab_e3max =
@@ -132,21 +140,12 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         const internal::OneBodyBasis basis_beta =
             internal::OneBodyBasis::FromQuantumNumbers(
                 Z, jj_min_beta, jj_max_beta, parity_beta, tz2_beta);
-        const internal::OneBodyBasis basis_c =
-            internal::OneBodyBasis::FromQuantumNumbers(Z, jj_min_c, jj_max_c,
-                                                       parity_c, tz2_c);
-
-        const internal::ThreeBodyBasis basis_ijc =
-            internal::ThreeBodyBasis::From2BAnd1BBasis(
-                i_ch_3b, i_ch_2b_ij, Z, basis_ij_e3max, basis_c, e3max);
         const internal::ThreeBodyBasis basis_abalpha =
             internal::ThreeBodyBasis::From2BAnd1BBasis(
                 i_ch_3b, i_ch_2b_ab, Z, basis_ab_e3max, basis_alpha, e3max);
 
-        if ((basis_ij.BasisSize() == 0) || (basis_ij_e3max.BasisSize() == 0) ||
-            (basis_ab_e3max.BasisSize() == 0) ||
+        if ((basis_ab_e3max.BasisSize() == 0) ||
             (basis_alpha.BasisSize() == 0) || (basis_beta.BasisSize() == 0) ||
-            (basis_c.BasisSize() == 0) || (basis_ijc.BasisSize() == 0) ||
             (basis_abalpha.BasisSize() == 0)) {
           continue;
         }
@@ -756,9 +755,9 @@ std::vector<double> GenerateSixJMatrix(const Operator &Z,
       const int jj_c = Z.modelspace->GetOrbit(c).j2;
 
       const double sixj =
-          Z.modelspace->GetSixJ(jj_i / 2.0, jj_j / 2.0, JJ_ij / 2.0,
-                                jj_c / 2.0, JJ_3 / 2.0, JJ_ab / 2.0);
-      
+          Z.modelspace->GetSixJ(jj_i / 2.0, jj_j / 2.0, JJ_ij / 2.0, jj_c / 2.0,
+                                JJ_3 / 2.0, JJ_ab / 2.0);
+
       local_sixjs[i_c] = sixj;
     }
 
