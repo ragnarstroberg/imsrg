@@ -771,9 +771,9 @@ void EvaluateComm232Diagram1(
     double factor, std::size_t i_ch_2b_ij, const TwoBodyBasis &basis_ab_e3max,
     const TwoBodyBasis &basis_ij_e3max, const TwoBodyBasis &basis_ij,
     const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
-    const OneBodyBasis &basis_c, const std::vector<double> mat_3b,
-    const std::vector<double> mat_2b, const std::vector<double> occs,
-    const std::vector<double> six_js_ij, Operator &Z) {
+    const OneBodyBasis &basis_c, const std::vector<double>& mat_3b,
+    const std::vector<double>& mat_2b, const std::vector<double>& occs,
+    const std::vector<double>& six_js_ij, Operator &Z) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
   const auto dim_ij = basis_ij.BasisSize();

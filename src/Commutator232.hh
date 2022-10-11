@@ -245,10 +245,10 @@ void EvaluateComm232Diagram1(
   const OneBodyBasis& basis_alpha,
   const OneBodyBasis& basis_beta,
   const OneBodyBasis& basis_c,
-  const std::vector<double> mat_3b,
-  const std::vector<double> mat_2b,
-  const std::vector<double> occs,
-  const std::vector<double> six_js_ij,
+  const std::vector<double>& mat_3b,
+  const std::vector<double>& mat_2b,
+  const std::vector<double>& occs,
+  const std::vector<double>& six_js_ij,
   Operator& Z
 );
 
