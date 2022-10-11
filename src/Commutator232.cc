@@ -128,8 +128,19 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       }
     }
 
+    std::vector<std::vector<double>> Z_mats(block_ch_2b_indices.size());
     for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
          block_index += 1) {
+      const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
+      const std::size_t dim_ij =
+          bases_store.at(i_ch_2b_ij).BasisPQ().BasisSize();
+
+      Z_mats[block_index] = std::vector<double>(dim_ij * dim_ij, 0.0);
+    }
+
+    for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
+         block_index += 1) {
+      auto& Z_mat = Z_mats[block_index];
       const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
       const auto &bases_ijc = bases_store.at(i_ch_2b_ij);
       const TwoBodyChannel &ch_2b_ij =
@@ -223,6 +234,28 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
             comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
             Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
+      }
+    }
+
+    for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
+         block_index += 1) {
+      const auto& Z_mat = Z_mats[block_index];
+      const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
+      const auto basis_ij = bases_store.at(i_ch_2b_ij).BasisPQ();
+      const std::size_t dim_ij = basis_ij.BasisSize();
+      const auto& i_k_vals = basis_ij.GetPVals();
+      const auto& j_l_vals = basis_ij.GetQVals();
+
+      for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
+        for (std::size_t i_kl= 0; i_kl< dim_ij; i_kl+= 1) {
+          const auto i = i_k_vals[i_ij];
+          const auto j = j_l_vals[i_ij];
+          const auto k = i_k_vals[i_kl];
+          const auto l = j_l_vals[i_kl];
+
+          Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, 
+          i_ch_2b_ij, i, j, k, l, Z_mat[i_ij * dim_ij + i_kl]);
+        }
       }
     }
     Print("NUM_2B_BLOCKS", num_2b_blocks);
