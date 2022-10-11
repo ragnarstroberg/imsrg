@@ -59,6 +59,7 @@ namespace comm232 {
 void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
                                Operator &Z) {
   std::cout << "In comm232ss_expand_new\n";
+  Z.modelspace->PreCalculateSixJ();
 
   int hX = 1;
   if (X.IsAntiHermitian())
