@@ -236,6 +236,20 @@ std::vector<double> GenerateSixJMatrixIJ(const Operator &Z,
                                      int JJ_ab
                                      );
 
+std::vector<double> GenerateSixJMatrixJI(const Operator &Z,
+                                     const TwoBodyBasis &basis_ij,
+                                     const TwoBodyBasis &basis_ab,
+                                     const OneBodyBasis &basis_c,
+                                     int JJ_ij,
+                                     int JJ_3,
+                                     int JJ_ab
+                                     );
+
+std::vector<double> GeneratePhases(const Operator &Z,
+                                     const TwoBodyBasis &basis_ij,
+                                     int JJ_ij
+                                     );
+
 void EvaluateComm232Diagram1(
   double factor,
   std::size_t i_ch_2b_ij,
@@ -249,6 +263,23 @@ void EvaluateComm232Diagram1(
   const std::vector<double>& mat_2b,
   const std::vector<double>& occs,
   const std::vector<double>& six_js_ij,
+  Operator& Z
+);
+
+void EvaluateComm232Diagram2(
+  double factor,
+  std::size_t i_ch_2b_ij,
+  const TwoBodyBasis& basis_ab_e3max,
+  const TwoBodyBasis& basis_ij_e3max,
+  const TwoBodyBasis& basis_ij,
+  const OneBodyBasis& basis_alpha,
+  const OneBodyBasis& basis_beta,
+  const OneBodyBasis& basis_c,
+  const std::vector<double>& mat_3b,
+  const std::vector<double>& mat_2b,
+  const std::vector<double>& occs,
+  const std::vector<double>& six_js_ji,
+  const std::vector<double>& phases,
   Operator& Z
 );
 

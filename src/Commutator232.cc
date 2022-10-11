@@ -142,9 +142,14 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         num_chans += 1;
         num_2b_blocks += 1;
 
-        std::vector<double> sixjs_ij = internal::GenerateSixJMatrixIJ(
+        std::vector<double> six_js_ij = internal::GenerateSixJMatrixIJ(
             Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
             ch_2b_ab.J * 2);
+        std::vector<double> six_js_ji = internal::GenerateSixJMatrixJI(
+            Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
+            ch_2b_ab.J * 2);
+        std::vector<double> phases =
+            internal::GeneratePhases(Z, basis_ij, ch_2b_ij.J * 2);
         std::vector<double> occs =
             internal::GenerateOccsMatrix(Z, basis_ab_e3max, basis_c);
 
@@ -160,7 +165,11 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
           internal::EvaluateComm232Diagram1(
               comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
               basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              X_mat_3b, Y_mat_2b, occs, sixjs_ij, Z);
+              X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
+          internal::EvaluateComm232Diagram2(
+              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+              X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
         }
 
         // This block evaluates [X^(2), Y^(3)].
@@ -175,7 +184,11 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
           internal::EvaluateComm232Diagram1(
               comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
               basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              Y_mat_3b, X_mat_2b, occs, sixjs_ij, Z);
+              Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
+          internal::EvaluateComm232Diagram2(
+              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+              Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
         }
       }
     }
@@ -248,12 +261,10 @@ void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
         Comm232Diagram1(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
                         Y, X_ch, hX * hY * -1.0, Z);
 
-        // Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
-        // lookup_ket,
-        //                 X, Y_ch, hX * hY * 1.0, Z);
-        // Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
-        // lookup_ket,
-        //                 Y, X_ch, hX * hY * -1.0, Z);
+        Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
+                        X, Y_ch, hX * hY * 1.0, Z);
+        Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
+                        Y, X_ch, hX * hY * -1.0, Z);
 
         // Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
         // lookup_ket,
@@ -723,10 +734,10 @@ std::vector<double> GenerateOccsMatrix(const Operator &Z,
 }
 
 std::vector<double> GenerateSixJMatrixIJ(const Operator &Z,
-                                       const TwoBodyBasis &basis_ij,
-                                       const TwoBodyBasis &basis_ab,
-                                       const OneBodyBasis &basis_c, int JJ_ij,
-                                       int JJ_3, int JJ_ab) {
+                                         const TwoBodyBasis &basis_ij,
+                                         const TwoBodyBasis &basis_ab,
+                                         const OneBodyBasis &basis_c, int JJ_ij,
+                                         int JJ_3, int JJ_ab) {
   const std::size_t dim_c = basis_c.BasisSize();
   const std::size_t dim_ab = basis_ab.BasisSize();
   const std::size_t dim_ij = basis_ij.BasisSize();
@@ -767,13 +778,79 @@ std::vector<double> GenerateSixJMatrixIJ(const Operator &Z,
   return mat;
 }
 
+std::vector<double> GenerateSixJMatrixJI(const Operator &Z,
+                                         const TwoBodyBasis &basis_ij,
+                                         const TwoBodyBasis &basis_ab,
+                                         const OneBodyBasis &basis_c, int JJ_ij,
+                                         int JJ_3, int JJ_ab) {
+  const std::size_t dim_c = basis_c.BasisSize();
+  const std::size_t dim_ab = basis_ab.BasisSize();
+  const std::size_t dim_ij = basis_ij.BasisSize();
+
+  std::vector<double> mat(dim_ij * dim_ab * dim_c, 0.0);
+
+  const auto &i_vals = basis_ij.GetPVals();
+  const auto &j_vals = basis_ij.GetQVals();
+  const auto &c_vals = basis_c.GetPVals();
+
+  for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
+    const std::size_t i = i_vals[i_ij];
+    const std::size_t j = j_vals[i_ij];
+    const int jj_i = Z.modelspace->GetOrbit(i).j2;
+    const int jj_j = Z.modelspace->GetOrbit(j).j2;
+
+    std::vector<double> local_sixjs(dim_c, 0.0);
+    for (std::size_t i_c = 0; i_c < dim_c; i_c += 1) {
+      const std::size_t c = c_vals[i_c];
+      const int jj_c = Z.modelspace->GetOrbit(c).j2;
+
+      const double sixj =
+          Z.modelspace->GetSixJ(jj_j / 2.0, jj_i / 2.0, JJ_ij / 2.0, jj_c / 2.0,
+                                JJ_3 / 2.0, JJ_ab / 2.0);
+
+      local_sixjs[i_c] = sixj;
+    }
+
+    for (std::size_t i_ab = 0; i_ab < dim_ab; i_ab += 1) {
+      for (std::size_t i_c = 0; i_c < dim_c; i_c += 1) {
+
+        const std::size_t i_ijabc = Index3B(i_ij, i_ab, i_c, dim_ab, dim_c);
+        mat[i_ijabc] = local_sixjs[i_c];
+      }
+    }
+  }
+
+  return mat;
+}
+
+std::vector<double> GeneratePhases(const Operator &Z,
+                                   const TwoBodyBasis &basis_ij, int JJ_ij) {
+
+  const std::size_t dim_ij = basis_ij.BasisSize();
+
+  std::vector<double> mat(dim_ij, 0.0);
+
+  const auto &i_vals = basis_ij.GetPVals();
+  const auto &j_vals = basis_ij.GetQVals();
+
+  for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
+    const std::size_t i = i_vals[i_ij];
+    const std::size_t j = j_vals[i_ij];
+
+    const int phase_factor = -1 * GetPhase(i, j, JJ_ij / 2, Z);
+    mat[i_ij] = phase_factor;
+  }
+
+  return mat;
+}
+
 void EvaluateComm232Diagram1(
     double factor, std::size_t i_ch_2b_ij, const TwoBodyBasis &basis_ab_e3max,
     const TwoBodyBasis &basis_ij_e3max, const TwoBodyBasis &basis_ij,
     const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
-    const OneBodyBasis &basis_c, const std::vector<double>& mat_3b,
-    const std::vector<double>& mat_2b, const std::vector<double>& occs,
-    const std::vector<double>& six_js_ij, Operator &Z) {
+    const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
+    const std::vector<double> &mat_2b, const std::vector<double> &occs,
+    const std::vector<double> &six_js_ij, Operator &Z) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
   const auto dim_ij = basis_ij.BasisSize();
@@ -811,6 +888,56 @@ void EvaluateComm232Diagram1(
           Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
       Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
                                               l, factor * me);
+    }
+  }
+}
+
+void EvaluateComm232Diagram2(
+    double factor, std::size_t i_ch_2b_ij, const TwoBodyBasis &basis_ab_e3max,
+    const TwoBodyBasis &basis_ij_e3max, const TwoBodyBasis &basis_ij,
+    const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
+    const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
+    const std::vector<double> &mat_2b, const std::vector<double> &occs,
+    const std::vector<double> &six_js_ji, const std::vector<double> &phases,
+    Operator &Z) {
+  const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
+  const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
+  const auto dim_ij = basis_ij.BasisSize();
+  const auto dim_alpha_abc = basis_alpha.BasisSize() * dim_abc;
+
+  // i == alpha
+  const auto &i_vals = basis_ij.GetPVals();
+  // j == beta
+  const auto &j_vals = basis_ij.GetQVals();
+  const auto &k_vals = basis_ij_e3max.GetPVals();
+  const auto &l_vals = basis_ij_e3max.GetQVals();
+
+  const double *occs_slice = occs.data();
+
+  for (std::size_t i_kl = 0; i_kl < dim_kl_e3; i_kl += 1) {
+    const auto k = k_vals[i_kl];
+    const auto l = l_vals[i_kl];
+    for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
+      const double phase = phases[i_ij];
+      const auto i = i_vals[i_ij];
+      const auto j = j_vals[i_ij];
+
+      if (!basis_beta.GetLocalValidityForP(i) ||
+          !basis_alpha.GetLocalValidityForP(j)) {
+        continue;
+      }
+      const auto i_i = basis_beta.GetLocalIndexForP(i);
+      const auto i_j = basis_alpha.GetLocalIndexForP(j);
+
+      const double *sixj_slice = &(six_js_ji.data()[i_ij * dim_abc]);
+      const double *mat2_slice = &(mat_2b.data()[i_i * dim_abc]);
+      const double *mat3_slice =
+          &(mat_3b.data()[i_kl * dim_alpha_abc + i_j * dim_abc]);
+
+      const double me =
+          Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
+      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
+                                              l, phase * factor * me);
     }
   }
 }
@@ -1078,6 +1205,8 @@ void Comm232Diagram2(std::size_t i_ch_2b_bra, std::size_t i_ch_2b_ket,
           const double me_X_abci =
               X.TwoBody.GetTBME(i_ch_2b_ket, i_ch_2b_ket, a, b, c, i);
           const double me_Y_klcabj = Y_mat(klc_index, abj_index);
+          // if (me_Y_klcabj != 0.0)
+          //   Print("ME_3B_SRC", me_Y_klcabj, six_j);
 
           me += occ_factor * six_j * me_X_abci * me_Y_klcabj;
         }
