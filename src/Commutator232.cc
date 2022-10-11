@@ -750,16 +750,23 @@ std::vector<double> GenerateSixJMatrix(const Operator &Z,
     const int jj_i = Z.modelspace->GetOrbit(i).j2;
     const int jj_j = Z.modelspace->GetOrbit(j).j2;
 
+    std::vector<double> local_sixjs(dim_c, 0.0);
+    for (std::size_t i_c = 0; i_c < dim_c; i_c += 1) {
+      const std::size_t c = c_vals[i_c];
+      const int jj_c = Z.modelspace->GetOrbit(c).j2;
+
+      const double sixj =
+          Z.modelspace->GetSixJ(jj_i / 2.0, jj_j / 2.0, JJ_ij / 2.0,
+                                jj_c / 2.0, JJ_3 / 2.0, JJ_ab / 2.0);
+      
+      local_sixjs[i_c] = sixj;
+    }
+
     for (std::size_t i_ab = 0; i_ab < dim_ab; i_ab += 1) {
       for (std::size_t i_c = 0; i_c < dim_c; i_c += 1) {
-        const std::size_t c = c_vals[i_c];
-        const int jj_c = Z.modelspace->GetOrbit(c).j2;
 
         const std::size_t i_ijabc = Index3B(i_ij, i_ab, i_c, dim_ab, dim_c);
-        const double sixj =
-            Z.modelspace->GetSixJ(jj_i / 2.0, jj_j / 2.0, JJ_ij / 2.0,
-                                  jj_c / 2.0, JJ_3 / 2.0, JJ_ab / 2.0);
-        mat[i_ijabc] = sixj;
+        mat[i_ijabc] = local_sixjs[i_c];
       }
     }
   }
