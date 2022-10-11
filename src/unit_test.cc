@@ -12,7 +12,7 @@
 int main(void) {
     int emax = 4;
     int emax_3body = 4;
-    int e3max = 6;
+    int e3max = 2;
     std::string ref = "He4";
 
   ModelSpace ms(emax, emax_3body, ref, ref);
