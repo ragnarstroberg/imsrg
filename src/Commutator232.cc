@@ -59,7 +59,6 @@ namespace comm232 {
 void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
                                Operator &Z) {
   std::cout << "In comm232ss_expand_new\n";
-  std::cout << "This currently does nothing, but print output.\n";
 
   int hX = 1;
   if (X.IsAntiHermitian())
@@ -85,6 +84,8 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
     for (const auto& basis : bases_store) {
       num_bytes_3b_basis += basis.second.BasisPQR().NumBytes();
     }
+
+    std::size_t num_2b_blocks = 0;
 
     for (const auto &basis_ijc_full : bases_store) {
       const std::size_t i_ch_2b_ij = basis_ijc_full.first;
@@ -138,43 +139,8 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
           continue;
         }
 
-        // Print("IJ", i_ch_2b_ij);
-        // Print("AB", i_ch_2b_ab);
-
         num_chans += 1;
-
-        // std::cout << "CH_3B(J,P,T) = " << ch_3b.twoJ / 2.0 << ","
-        //           << ch_3b.parity << "," << ch_3b.twoTz / 2.0 << "\n";
-        // std::cout << "CH_2B_IJ(J,P,T) = " << ch_2b_ij.J << ","
-        //           << ch_2b_ij.parity << "," << ch_2b_ij.Tz << "\n";
-        // std::cout << "CH_2B_AB(J,P,T) = " << ch_2b_ab.J << ","
-        //           << ch_2b_ab.parity << "," << ch_2b_ab.Tz << "\n";
-        // std::cout << "CH_1B_alpha(Jmin,Jmax,P,T) = " << jj_min_alpha / 2.0
-        //           << "," << jj_max_alpha / 2.0 << "," << parity_alpha << ","
-        //           << tz2_alpha / 2.0 << "\n";
-        // std::cout << "CH_1B_beta(Jmin,Jmax,P,T) = " << jj_min_beta / 2.0 <<
-        // ","
-        //           << jj_max_beta / 2.0 << "," << parity_beta << ","
-        //           << tz2_beta / 2.0 << "\n";
-        // std::cout << "CH_1B_C(Jmin,Jmax,P,T) = " << jj_min_c / 2.0 << ","
-        //           << jj_max_c / 2.0 << "," << parity_c << "," << tz2_c / 2.0
-        //           << "\n";
-        // Print("IJ_SIZE", basis_ij.BasisSize());
-        // Print("IJ_E3MAX_SIZE", basis_ij_e3max.BasisSize());
-        // Print("AB_E3MAX_SIZE", basis_ab_e3max.BasisSize());
-        // Print("ALPHA_SIZE", basis_alpha.BasisSize());
-        // Print("BETA_SIZE", basis_beta.BasisSize());
-        // Print("C_SIZE", basis_c.BasisSize());
-        // Print("IJC_SIZE", basis_ijc.BasisSize());
-        // Print("ABALPHA_SIZE", basis_abalpha.BasisSize());
-
-        std::size_t dim_ij = basis_ij.BasisSize();
-        std::size_t dim_ab = basis_ab.BasisSize();
-        std::size_t dim_ij_e3 = basis_ij_e3max.BasisSize();
-        std::size_t dim_ab_e3 = basis_ab_e3max.BasisSize();
-        std::size_t dim_alpha = basis_alpha.BasisSize();
-        std::size_t dim_beta = basis_beta.BasisSize();
-        std::size_t dim_c = basis_c.BasisSize();
+        num_2b_blocks += 1;
 
         std::vector<double> X_mat_3b = internal::Generate3BMatrix(
             X, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
@@ -193,6 +159,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
             occs, sixjs, Z);
       }
     }
+    Print("NUM_2B_BLOCKS",  num_2b_blocks);
   }
 
   Print("NUM_CHANS", num_chans);
