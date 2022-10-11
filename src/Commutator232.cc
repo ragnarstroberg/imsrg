@@ -129,6 +129,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
     }
 
     std::vector<std::vector<double>> Z_mats(block_ch_2b_indices.size());
+#pragma omp parallel for schedule(static)
     for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
          block_index += 1) {
       const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
@@ -138,7 +139,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       Z_mats[block_index] = std::vector<double>(dim_ij * dim_ij, 0.0);
     }
 
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(guided, 1)
     for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
          block_index += 1) {
       auto &Z_mat = Z_mats[block_index];
@@ -244,6 +245,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       const auto &i_k_vals = basis_ij.GetPVals();
       const auto &j_l_vals = basis_ij.GetQVals();
 
+#pragma omp parallel for schedule(static) collapse(2)
       for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
         for (std::size_t i_kl = 0; i_kl < dim_ij; i_kl += 1) {
           const auto i = i_k_vals[i_ij];
@@ -257,12 +259,12 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       }
     }
     num_2b_blocks += block_ch_2b_indices.size();
-    Print("NUM_2B_BLOCKS", num_2b_blocks);
+    // Print("NUM_2B_BLOCKS", num_2b_blocks);
     num_chans += num_2b_blocks;
   }
 
-  Print("NUM_CHANS", num_chans);
-  Print("NUM_BYTES_3B_BASIS", num_bytes_3b_basis);
+  // Print("NUM_CHANS", num_chans);
+  // Print("NUM_BYTES_3B_BASIS", num_bytes_3b_basis);
 }
 
 void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
