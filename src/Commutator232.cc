@@ -169,9 +169,6 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       // Only basis not externally prestored
       const internal::OneBodyBasis basis_beta = block_beta_bases[block_index];
 
-      num_chans += 1;
-      num_2b_blocks += 1;
-
       std::vector<double> six_js_ij = internal::GenerateSixJMatrixIJ(
           Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
           ch_2b_ab.J * 2);
@@ -259,7 +256,9 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         }
       }
     }
+    num_2b_blocks += block_ch_2b_indices.size();
     Print("NUM_2B_BLOCKS", num_2b_blocks);
+    num_chans += num_2b_blocks;
   }
 
   Print("NUM_CHANS", num_chans);
