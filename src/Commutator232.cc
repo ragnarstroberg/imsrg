@@ -142,7 +142,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         num_chans += 1;
         num_2b_blocks += 1;
 
-        std::vector<double> sixjs = internal::GenerateSixJMatrix(
+        std::vector<double> sixjs_ij = internal::GenerateSixJMatrixIJ(
             Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
             ch_2b_ab.J * 2);
         std::vector<double> occs =
@@ -160,7 +160,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
           internal::EvaluateComm232Diagram1(
               comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
               basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              X_mat_3b, Y_mat_2b, occs, sixjs, Z);
+              X_mat_3b, Y_mat_2b, occs, sixjs_ij, Z);
         }
 
         // This block evaluates [X^(2), Y^(3)].
@@ -175,7 +175,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
           internal::EvaluateComm232Diagram1(
               comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
               basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-              Y_mat_3b, X_mat_2b, occs, sixjs, Z);
+              Y_mat_3b, X_mat_2b, occs, sixjs_ij, Z);
         }
       }
     }
@@ -722,7 +722,7 @@ std::vector<double> GenerateOccsMatrix(const Operator &Z,
   return mat;
 }
 
-std::vector<double> GenerateSixJMatrix(const Operator &Z,
+std::vector<double> GenerateSixJMatrixIJ(const Operator &Z,
                                        const TwoBodyBasis &basis_ij,
                                        const TwoBodyBasis &basis_ab,
                                        const OneBodyBasis &basis_c, int JJ_ij,
@@ -773,7 +773,7 @@ void EvaluateComm232Diagram1(
     const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
     const OneBodyBasis &basis_c, const std::vector<double> mat_3b,
     const std::vector<double> mat_2b, const std::vector<double> occs,
-    const std::vector<double> six_js, Operator &Z) {
+    const std::vector<double> six_js_ij, Operator &Z) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
   const auto dim_ij = basis_ij.BasisSize();
@@ -802,7 +802,7 @@ void EvaluateComm232Diagram1(
       const auto i_i = basis_alpha.GetLocalIndexForP(i);
       const auto i_j = basis_beta.GetLocalIndexForP(j);
 
-      const double *sixj_slice = &(six_js.data()[i_ij * dim_abc]);
+      const double *sixj_slice = &(six_js_ij.data()[i_ij * dim_abc]);
       const double *mat2_slice = &(mat_2b.data()[i_j * dim_abc]);
       const double *mat3_slice =
           &(mat_3b.data()[i_kl * dim_alpha_abc + i_i * dim_abc]);

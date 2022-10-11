@@ -227,7 +227,7 @@ std::vector<double> GenerateOccsMatrix(const Operator &Z,
                                      const TwoBodyBasis &basis_ab,
                                      const OneBodyBasis &basis_c);
 
-std::vector<double> GenerateSixJMatrix(const Operator &Z,
+std::vector<double> GenerateSixJMatrixIJ(const Operator &Z,
                                      const TwoBodyBasis &basis_ij,
                                      const TwoBodyBasis &basis_ab,
                                      const OneBodyBasis &basis_c,
@@ -248,7 +248,7 @@ void EvaluateComm232Diagram1(
   const std::vector<double> mat_3b,
   const std::vector<double> mat_2b,
   const std::vector<double> occs,
-  const std::vector<double> six_js,
+  const std::vector<double> six_js_ij,
   Operator& Z
 );
 
