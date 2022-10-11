@@ -1081,9 +1081,13 @@ PrestoreBases(std::size_t i_ch_3b, int jj1max, const Operator &Z, int e3max) {
 
     internal::TwoBodyBasis basis_ij =
         internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ij, Z);
+    if (basis_ij.BasisSize() == 0)
+      continue;
     internal::TwoBodyBasis basis_ij_e3max =
         internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ij, Z,
                                                             e3max);
+    if (basis_ij_e3max.BasisSize() == 0)
+      continue;
 
     // 3rd contracted index c constrained by being in state | (ij) J_ij c >
     const int tz2_c = ch_3b.twoTz - 2 * ch_2b_ij.Tz;
@@ -1093,15 +1097,14 @@ PrestoreBases(std::size_t i_ch_3b, int jj1max, const Operator &Z, int e3max) {
 
     internal::OneBodyBasis basis_c = internal::OneBodyBasis::FromQuantumNumbers(
         Z, jj_min_c, jj_max_c, parity_c, tz2_c);
+    if (basis_c.BasisSize() == 0)
+      continue;
 
     internal::ThreeBodyBasis basis_ijc =
         internal::ThreeBodyBasis::From2BAnd1BBasis(
             i_ch_3b, i_ch_2b_ij, Z, basis_ij_e3max, basis_c, e3max);
-
-    if ((basis_ij.BasisSize() == 0) || (basis_ij_e3max.BasisSize() == 0) ||
-        (basis_c.BasisSize() == 0) || (basis_ijc.BasisSize() == 0)) {
+    if (basis_ijc.BasisSize() == 0)
       continue;
-    }
 
     bases.emplace(std::make_pair(
         i_ch_2b_ij,
