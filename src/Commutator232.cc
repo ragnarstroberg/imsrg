@@ -81,7 +81,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
 
     const auto bases_store = internal::PrestoreBases(i_ch_3b, jj1max, Z, e3max);
-    for (const auto& basis : bases_store) {
+    for (const auto &basis : bases_store) {
       num_bytes_3b_basis += basis.second.BasisPQR().NumBytes();
     }
 
@@ -142,24 +142,44 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         num_chans += 1;
         num_2b_blocks += 1;
 
-        std::vector<double> X_mat_3b = internal::Generate3BMatrix(
-            X, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
-            basis_ab_e3max, basis_c);
-        std::vector<double> Y_mat_2b = internal::Generate2BMatrix(
-            Y, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
         std::vector<double> sixjs = internal::GenerateSixJMatrix(
             Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
             ch_2b_ab.J * 2);
         std::vector<double> occs =
             internal::GenerateOccsMatrix(Z, basis_ab_e3max, basis_c);
 
-        internal::EvaluateComm232Diagram1(
-            -1 * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max, basis_ij_e3max,
-            basis_ij, basis_alpha, basis_beta, basis_c, X_mat_3b, Y_mat_2b,
-            occs, sixjs, Z);
+        // This block evaluates [X^(3), Y^(2)] = -1 [Y^(2), X^(3)].
+        {
+          int comm_factor = -1;
+          std::vector<double> X_mat_3b = internal::Generate3BMatrix(
+              X, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
+              basis_ab_e3max, basis_c);
+          std::vector<double> Y_mat_2b = internal::Generate2BMatrix(
+              Y, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
+
+          internal::EvaluateComm232Diagram1(
+              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+              X_mat_3b, Y_mat_2b, occs, sixjs, Z);
+        }
+
+        // This block evaluates [X^(2), Y^(3)].
+        {
+          int comm_factor = 1;
+          std::vector<double> Y_mat_3b = internal::Generate3BMatrix(
+              Y, i_ch_3b, basis_ijc, basis_abalpha, basis_ij_e3max, basis_alpha,
+              basis_ab_e3max, basis_c);
+          std::vector<double> X_mat_2b = internal::Generate2BMatrix(
+              X, i_ch_2b_ab, basis_ab_e3max, basis_beta, basis_c);
+
+          internal::EvaluateComm232Diagram1(
+              comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
+              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+              Y_mat_3b, X_mat_2b, occs, sixjs, Z);
+        }
       }
     }
-    Print("NUM_2B_BLOCKS",  num_2b_blocks);
+    Print("NUM_2B_BLOCKS", num_2b_blocks);
   }
 
   Print("NUM_CHANS", num_chans);
@@ -223,9 +243,8 @@ void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
         // TODO:
         // Prestore occupations
 
-        // Comm232Diagram1(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
-        // lookup_ket,
-        //                 X, Y_ch, hX * hY * 1.0, Z);
+        Comm232Diagram1(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
+                        X, Y_ch, hX * hY * 1.0, Z);
         Comm232Diagram1(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
                         Y, X_ch, hX * hY * -1.0, Z);
 
