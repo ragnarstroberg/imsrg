@@ -528,8 +528,8 @@ target_link_libraries(
     Operator
     HartreeFock
     Commutator
-    Generator
     IMSRGSolver
+    Generator
     imsrg_util
     AngMom
     IMSRGProfiler
