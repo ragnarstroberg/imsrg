@@ -23,7 +23,6 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
-#include <sys/_types/_size_t.h>
 #include <vector>
 
 template <typename T> void Print(std::string prefix, const T &val) {
