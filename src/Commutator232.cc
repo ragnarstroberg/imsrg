@@ -138,6 +138,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       Z_mats[block_index] = std::vector<double>(dim_ij * dim_ij, 0.0);
     }
 
+#pragma omp parallel for schedule(dynamic, 1)
     for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
          block_index += 1) {
       auto &Z_mat = Z_mats[block_index];
