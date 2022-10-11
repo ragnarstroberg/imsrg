@@ -140,7 +140,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
 
     for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
          block_index += 1) {
-      auto& Z_mat = Z_mats[block_index];
+      auto &Z_mat = Z_mats[block_index];
       const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
       const auto &bases_ijc = bases_store.at(i_ch_2b_ij);
       const TwoBodyChannel &ch_2b_ij =
@@ -198,15 +198,15 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         internal::EvaluateComm232Diagram2(
             comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
+            X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z_mat);
         internal::EvaluateComm232Diagram3(
             comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
+            X_mat_3b, Y_mat_2b, occs, six_js_ij, Z_mat);
         internal::EvaluateComm232Diagram4(
             comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
+            X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z_mat);
       }
 
       // This block evaluates [X^(2), Y^(3)].
@@ -225,36 +225,36 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         internal::EvaluateComm232Diagram2(
             comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
+            Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z_mat);
         internal::EvaluateComm232Diagram3(
             comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
+            Y_mat_3b, X_mat_2b, occs, six_js_ij, Z_mat);
         internal::EvaluateComm232Diagram4(
             comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
             basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
-            Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
+            Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z_mat);
       }
     }
 
     for (std::size_t block_index = 0; block_index < block_ch_2b_indices.size();
          block_index += 1) {
-      const auto& Z_mat = Z_mats[block_index];
+      const auto &Z_mat = Z_mats[block_index];
       const std::size_t i_ch_2b_ij = block_ch_2b_indices[block_index].first;
       const auto basis_ij = bases_store.at(i_ch_2b_ij).BasisPQ();
       const std::size_t dim_ij = basis_ij.BasisSize();
-      const auto& i_k_vals = basis_ij.GetPVals();
-      const auto& j_l_vals = basis_ij.GetQVals();
+      const auto &i_k_vals = basis_ij.GetPVals();
+      const auto &j_l_vals = basis_ij.GetQVals();
 
       for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
-        for (std::size_t i_kl= 0; i_kl< dim_ij; i_kl+= 1) {
+        for (std::size_t i_kl = 0; i_kl < dim_ij; i_kl += 1) {
           const auto i = i_k_vals[i_ij];
           const auto j = j_l_vals[i_ij];
           const auto k = i_k_vals[i_kl];
           const auto l = j_l_vals[i_kl];
 
-          Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, 
-          i_ch_2b_ij, i, j, k, l, Z_mat[i_ij * dim_ij + i_kl]);
+          Z.TwoBody.AddToTBMENonHermNonNormalized(
+              i_ch_2b_ij, i_ch_2b_ij, i, j, k, l, Z_mat[i_ij * dim_ij + i_kl]);
         }
       }
     }
@@ -912,9 +912,7 @@ void EvaluateComm232Diagram1(
     const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
     const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
     const std::vector<double> &mat_2b, const std::vector<double> &occs,
-    const std::vector<double> &six_js_ij,
-    std::vector<double>& Z_mat
-    ) {
+    const std::vector<double> &six_js_ij, std::vector<double> &Z_mat) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
   const auto dim_ij = basis_ij.BasisSize();
@@ -963,7 +961,7 @@ void EvaluateComm232Diagram2(
     const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
     const std::vector<double> &mat_2b, const std::vector<double> &occs,
     const std::vector<double> &six_js_ji, const std::vector<double> &phases,
-    Operator &Z) {
+    std::vector<double> &Z_mat) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_kl_e3 = basis_ij_e3max.BasisSize();
   const auto dim_ij = basis_ij.BasisSize();
@@ -981,6 +979,7 @@ void EvaluateComm232Diagram2(
   for (std::size_t i_kl = 0; i_kl < dim_kl_e3; i_kl += 1) {
     const auto k = k_vals[i_kl];
     const auto l = l_vals[i_kl];
+    std::size_t i_kl_full = basis_ij.GetLocalIndexForPQ(k, l);
     for (std::size_t i_ij = 0; i_ij < dim_ij; i_ij += 1) {
       const double phase = phases[i_ij];
       const auto i = i_vals[i_ij];
@@ -1000,8 +999,7 @@ void EvaluateComm232Diagram2(
 
       const double me =
           Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
-      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
-                                              l, phase * factor * me);
+      Z_mat[i_ij * dim_ij + i_kl_full] += phase * factor * me;
     }
   }
 }
@@ -1012,7 +1010,7 @@ void EvaluateComm232Diagram3(
     const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
     const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
     const std::vector<double> &mat_2b, const std::vector<double> &occs,
-    const std::vector<double> &six_js_ij, Operator &Z) {
+    const std::vector<double> &six_js_ij, std::vector<double> &Z_mat) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_ij_e3 = basis_ij_e3max.BasisSize();
   const auto dim_kl = basis_ij.BasisSize();
@@ -1030,6 +1028,7 @@ void EvaluateComm232Diagram3(
   for (std::size_t i_ij = 0; i_ij < dim_ij_e3; i_ij += 1) {
     const auto i = i_vals[i_ij];
     const auto j = j_vals[i_ij];
+    std::size_t i_ij_full = basis_ij.GetLocalIndexForPQ(i, j);
     for (std::size_t i_kl = 0; i_kl < dim_kl; i_kl += 1) {
       const auto k = k_vals[i_kl];
       const auto l = l_vals[i_kl];
@@ -1048,8 +1047,7 @@ void EvaluateComm232Diagram3(
 
       const double me =
           Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
-      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
-                                              l, factor * me);
+      Z_mat[i_ij_full * dim_kl + i_kl] += factor * me;
     }
   }
 }
@@ -1061,7 +1059,7 @@ void EvaluateComm232Diagram4(
     const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
     const std::vector<double> &mat_2b, const std::vector<double> &occs,
     const std::vector<double> &six_js_ji, const std::vector<double> &phases,
-    Operator &Z) {
+    std::vector<double> &Z_mat) {
   const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
   const auto dim_ij_e3 = basis_ij_e3max.BasisSize();
   const auto dim_kl = basis_ij.BasisSize();
@@ -1076,13 +1074,14 @@ void EvaluateComm232Diagram4(
 
   const double *occs_slice = occs.data();
 
-  for (std::size_t i_kl = 0; i_kl < dim_kl; i_kl += 1) {
-    const auto k = k_vals[i_kl];
-    const auto l = l_vals[i_kl];
-    const double phase = phases[i_kl];
-    for (std::size_t i_ij = 0; i_ij < dim_ij_e3; i_ij += 1) {
-      const auto i = i_vals[i_ij];
-      const auto j = j_vals[i_ij];
+  for (std::size_t i_ij = 0; i_ij < dim_ij_e3; i_ij += 1) {
+    const auto i = i_vals[i_ij];
+    const auto j = j_vals[i_ij];
+    std::size_t i_ij_full = basis_ij.GetLocalIndexForPQ(i, j);
+    for (std::size_t i_kl = 0; i_kl < dim_kl; i_kl += 1) {
+      const auto k = k_vals[i_kl];
+      const auto l = l_vals[i_kl];
+      const double phase = phases[i_kl];
 
       if (!basis_beta.GetLocalValidityForP(k) ||
           !basis_alpha.GetLocalValidityForP(l)) {
@@ -1098,8 +1097,7 @@ void EvaluateComm232Diagram4(
 
       const double me =
           Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
-      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
-                                              l, phase * factor * me);
+      Z_mat[i_ij_full * dim_kl + i_kl] += phase * factor * me;
     }
   }
 }

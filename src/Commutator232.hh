@@ -280,7 +280,7 @@ void EvaluateComm232Diagram2(
   const std::vector<double>& occs,
   const std::vector<double>& six_js_ji,
   const std::vector<double>& phases,
-  Operator& Z
+  std::vector<double>& Z_mat
 );
 
 void EvaluateComm232Diagram3(
@@ -296,7 +296,7 @@ void EvaluateComm232Diagram3(
   const std::vector<double>& mat_2b,
   const std::vector<double>& occs,
   const std::vector<double>& six_js_ij,
-  Operator& Z
+  std::vector<double>& Z_mat
 );
 
 void EvaluateComm232Diagram4(
@@ -313,7 +313,7 @@ void EvaluateComm232Diagram4(
   const std::vector<double>& occs,
   const std::vector<double>& six_js_ji,
   const std::vector<double>& phases,
-  Operator& Z
+  std::vector<double>& Z_mat
 );
 
 double Comm232Core(
