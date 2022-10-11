@@ -283,6 +283,22 @@ void EvaluateComm232Diagram2(
   Operator& Z
 );
 
+void EvaluateComm232Diagram3(
+  double factor,
+  std::size_t i_ch_2b_ij,
+  const TwoBodyBasis& basis_ab_e3max,
+  const TwoBodyBasis& basis_ij_e3max,
+  const TwoBodyBasis& basis_ij,
+  const OneBodyBasis& basis_alpha,
+  const OneBodyBasis& basis_beta,
+  const OneBodyBasis& basis_c,
+  const std::vector<double>& mat_3b,
+  const std::vector<double>& mat_2b,
+  const std::vector<double>& occs,
+  const std::vector<double>& six_js_ij,
+  Operator& Z
+);
+
 double Comm232Core(
   const double* slice_sixj,
   const double* slice_occs,
@@ -450,4 +466,4 @@ inline double GetSPStateOccBar(std::size_t orb_i, const Operator &Y) {
 } // namespace internal
 } // namespace comm232
 
-#endif // COMMUTATOR232_H_
+#endif  // COMMUTATOR232_H_

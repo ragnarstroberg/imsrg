@@ -170,6 +170,10 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
               comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
               basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
               X_mat_3b, Y_mat_2b, occs, six_js_ji, phases, Z);
+          internal::EvaluateComm232Diagram3(
+              comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
+              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+              X_mat_3b, Y_mat_2b, occs, six_js_ij, Z);
         }
 
         // This block evaluates [X^(2), Y^(3)].
@@ -189,6 +193,10 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
               comm_factor * hX * hY * factor, i_ch_2b_ij, basis_ab_e3max,
               basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
               Y_mat_3b, X_mat_2b, occs, six_js_ji, phases, Z);
+          internal::EvaluateComm232Diagram3(
+              comm_factor * factor * -1, i_ch_2b_ij, basis_ab_e3max,
+              basis_ij_e3max, basis_ij, basis_alpha, basis_beta, basis_c,
+              Y_mat_3b, X_mat_2b, occs, six_js_ij, Z);
         }
       }
     }
@@ -266,12 +274,10 @@ void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
         Comm232Diagram2(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
                         Y, X_ch, hX * hY * -1.0, Z);
 
-        // Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
-        // lookup_ket,
-        //                 X, Y_ch, 1.0, Z);
-        // Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
-        // lookup_ket,
-        //                 Y, X_ch, -1.0, Z);
+        Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
+                        X, Y_ch, 1.0, Z);
+        Comm232Diagram3(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra, lookup_ket,
+                        Y, X_ch, -1.0, Z);
 
         // Comm232Diagram4(i_ch_2b_bra, i_ch_2b_ket, ch_3b, lookup_bra,
         // lookup_ket,
@@ -905,9 +911,9 @@ void EvaluateComm232Diagram2(
   const auto dim_ij = basis_ij.BasisSize();
   const auto dim_alpha_abc = basis_alpha.BasisSize() * dim_abc;
 
-  // i == alpha
+  // j == alpha
   const auto &i_vals = basis_ij.GetPVals();
-  // j == beta
+  // i == beta
   const auto &j_vals = basis_ij.GetQVals();
   const auto &k_vals = basis_ij_e3max.GetPVals();
   const auto &l_vals = basis_ij_e3max.GetQVals();
@@ -938,6 +944,54 @@ void EvaluateComm232Diagram2(
           Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
       Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
                                               l, phase * factor * me);
+    }
+  }
+}
+
+void EvaluateComm232Diagram3(
+    double factor, std::size_t i_ch_2b_ij, const TwoBodyBasis &basis_ab_e3max,
+    const TwoBodyBasis &basis_ij_e3max, const TwoBodyBasis &basis_ij,
+    const OneBodyBasis &basis_alpha, const OneBodyBasis &basis_beta,
+    const OneBodyBasis &basis_c, const std::vector<double> &mat_3b,
+    const std::vector<double> &mat_2b, const std::vector<double> &occs,
+    const std::vector<double> &six_js_ij, Operator &Z) {
+  const auto dim_abc = basis_ab_e3max.BasisSize() * basis_c.BasisSize();
+  const auto dim_ij_e3 = basis_ij_e3max.BasisSize();
+  const auto dim_kl = basis_ij.BasisSize();
+  const auto dim_alpha_abc = basis_alpha.BasisSize() * dim_abc;
+
+  // k == alpha
+  const auto &k_vals = basis_ij.GetPVals();
+  // l == beta
+  const auto &l_vals = basis_ij.GetQVals();
+  const auto &i_vals = basis_ij_e3max.GetPVals();
+  const auto &j_vals = basis_ij_e3max.GetQVals();
+
+  const double *occs_slice = occs.data();
+
+  for (std::size_t i_ij = 0; i_ij < dim_ij_e3; i_ij += 1) {
+    const auto i = i_vals[i_ij];
+    const auto j = j_vals[i_ij];
+    for (std::size_t i_kl = 0; i_kl < dim_kl; i_kl += 1) {
+      const auto k = k_vals[i_kl];
+      const auto l = l_vals[i_kl];
+
+      if (!basis_alpha.GetLocalValidityForP(k) ||
+          !basis_beta.GetLocalValidityForP(l)) {
+        continue;
+      }
+      const auto i_k = basis_alpha.GetLocalIndexForP(k);
+      const auto i_l = basis_beta.GetLocalIndexForP(l);
+
+      const double *sixj_slice = &(six_js_ij.data()[i_kl * dim_abc]);
+      const double *mat2_slice = &(mat_2b.data()[i_l * dim_abc]);
+      const double *mat3_slice =
+          &(mat_3b.data()[i_ij * dim_alpha_abc + i_k * dim_abc]);
+
+      const double me =
+          Comm232Core(sixj_slice, occs_slice, mat2_slice, mat3_slice, dim_abc);
+      Z.TwoBody.AddToTBMENonHermNonNormalized(i_ch_2b_ij, i_ch_2b_ij, i, j, k,
+                                              l, factor * me);
     }
   }
 }
