@@ -119,6 +119,7 @@ namespace imsrg_util
       else if (opname == "VMinnesota")    theop =  MinnesotaPotential( modelspace );
       else if (opname == "VBareDelta")    theop =  BareDelta( modelspace );
       else if (opname == "OccRef")        theop =  NumberOpRef( modelspace );
+      else if (opname == "LdotS")         theop =  LdotS_Op( modelspace);
       else if (opnamesplit[0] =="VGaus")
       {
          double sigma = 1.0;
@@ -4115,7 +4116,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  {
    double VR = 200 ; // MeV
 ////   double VT = -178. ; // MeV
-   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+//   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+   double VT = -178. * 0.4; // scaled to make things not crazy for finite nuclei
    double VS = -91.85 ; // MeV
    double kR = 1.487 ; // in fm^-2
    double kT = 0.639 ; // in fm^-2
