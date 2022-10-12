@@ -3483,6 +3483,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
 
+  Z.modelspace->PreCalculateSixJ(); // if this has already been done, this does nothing.
+
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
  // Hash for lookup
@@ -3511,7 +3513,6 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
 
   lookups_size += GetMapSize(klj_list);
 
-  Z.modelspace->PreCalculateSixJ(); // if this has already been done, this does nothing.
   // This loop is what takes all the time.
   // Outer loop over one-body quantum numbers, which also label the three-body pph states |klj`> and |abc`>
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -3527,7 +3528,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
 
     std::vector<size_t> abc_list; // keep track of which klj states should go in the abc loop
     std::vector<double> abc_occ_list;
-    comm232_new_Determine3BStatesIn1BChannel(Y, Z, klj_list, obc_key, abc_list, abc_occ_list);
+    comm232_new_Determine3BStatesIn1BChannel(Y, Z, klj_list, obc_key, e_fermi, abc_list, abc_occ_list);
     lookups_size += GetVectorSize(abc_list);
     lookups_size += GetVectorSize(abc_occ_list);
 
@@ -3586,7 +3587,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   for ( auto j : Z.modelspace->all_orbits )
   {
     Orbit& oj = Z.modelspace->GetOrbit(j);
-    if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
+    // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
     std::array<int,3> obc = {oj.j2,oj.l%2,oj.tz2};
     if ( local_one_body_channels.find(obc) == local_one_body_channels.end() ) local_one_body_channels[obc] = {j};
     else local_one_body_channels[obc].push_back(j);
@@ -3648,15 +3649,16 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
           double de_k = std::abs(e_k - e_fermi.at(ket_kl.op->tz2));
           double de_l = std::abs(e_l - e_fermi.at(ket_kl.oq->tz2));
           if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
-          double occnat_k = ket_kl.op->occ_nat;
-          double occnat_l = ket_kl.oq->occ_nat;
+          // double occnat_k = ket_kl.op->occ_nat;
+          // double occnat_l = ket_kl.oq->occ_nat;
           for ( size_t j : iter_j.second )
           {
-            if (!Y3.IsOrbitIn3BodyEMaxTruncation(j)) continue;
+            // if (!Y3.IsOrbitIn3BodyEMaxTruncation(j)) continue;
             // if (!Z.ThreeBody.IsKetInEMaxTruncations(ket_kl.p, ket_kl.q, j)) continue;
             Orbit& oj = Z.modelspace->GetOrbit(j);
-            double occnat_j = oj.occ_nat;
-            if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+            if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
+            // double occnat_j = oj.occ_nat;
+            // if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
 
             klj_list_i.push_back( { ket_kl.p, ket_kl.q, j, (size_t)tbc_kl.J } );
 
@@ -3677,6 +3679,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     const Operator& Z,
     const std::map<std::array<int,3>,std::vector<std::array<size_t,4>>>& klj_list,
     std::array<int, 3> obc_key,
+    const std::map<int, double>& e_fermi,
     std::vector<size_t>& abc_list,
     std::vector<double>& abc_occ_list
   ) {
@@ -3692,9 +3695,15 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oa = Z.modelspace->GetOrbit(a);
       Orbit& ob = Z.modelspace->GetOrbit(b);
       Orbit& oc = Z.modelspace->GetOrbit(c);
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
+      // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
+      // if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+      // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
+      double e_a = 2*oa.n + oa.l ;
+      double e_b = 2*ob.n + ob.l ;
+      double de_a = std::abs( e_a - e_fermi.at(oa.tz2));
+      double de_b = std::abs( e_b - e_fermi.at(ob.tz2));
+      if (  (e_a + e_b )  > Z.modelspace->GetE3max() ) continue; 
+      if ( (de_a + de_b ) > Z.modelspace->GetdE3max() ) continue;
       double na = oa.occ;
       double nb = ob.occ;
       double nc = oc.occ;
@@ -3743,14 +3752,14 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& oa = Z.modelspace->GetOrbit(a);
         Orbit& ob = Z.modelspace->GetOrbit(b);
         Orbit& oc = Z.modelspace->GetOrbit(c);
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
-        double de_a = std::abs( 2*oa.n + oa.l - e_fermi.at(oa.tz2));
-        double de_b = std::abs( 2*ob.n + ob.l - e_fermi.at(ob.tz2));
-        double de_c = std::abs( 2*oc.n + oc.l - e_fermi.at(oc.tz2));
-  //      double occnat_a = oa.occ_nat;
-  //      double occnat_b = ob.occ_nat;
+        double e_a = 2*oa.n + oa.l;
+        double e_b = 2*ob.n + ob.l;
+        double e_c = 2*oc.n + oc.l;
+        double de_a = std::abs( e_a - e_fermi.at(oa.tz2));
+        double de_b = std::abs( e_b - e_fermi.at(ob.tz2));
+        double de_c = std::abs( e_c - e_fermi.at(oc.tz2));
+        double occnat_a = oa.occ_nat;
+        double occnat_b = ob.occ_nat;
         double occnat_c = oc.occ_nat;
         int j2c = oc.j2;
 
@@ -3763,18 +3772,23 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& oj = Z.modelspace->GetOrbit(j);
         Orbit& ok = Z.modelspace->GetOrbit(k);
         Orbit& ol = Z.modelspace->GetOrbit(l);
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ok)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ol)) continue;
-        double de_j = std::abs( 2*oj.n + oj.l - e_fermi.at(oj.tz2));
-        double de_k = std::abs( 2*ok.n + ok.l - e_fermi.at(ok.tz2));
-        double de_l = std::abs( 2*ol.n + ol.l - e_fermi.at(ol.tz2));
-//        double occnat_j = oj.occ_nat;
+
+        double e_j = 2*oj.n + oj.l ;
+        double e_k = 2*ok.n + ok.l ;
+        double e_l = 2*ol.n + ol.l ;
+        double de_j = std::abs( e_j - e_fermi.at(oj.tz2));
+        double de_k = std::abs( e_k - e_fermi.at(ok.tz2));
+        double de_l = std::abs( e_l - e_fermi.at(ol.tz2));
+
+        double occnat_j = oj.occ_nat;
         double occnat_k = ok.occ_nat;
         double occnat_l = ol.occ_nat;
+        if ( (e_k + e_l + e_c) > Z.modelspace->GetE3max() ) continue; 
+        if ( (e_a + e_b + e_j) > Z.modelspace->GetE3max() ) continue; 
         if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue; 
         if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( imsrg3_no_qqq and ( (ok.cvq+ol.cvq+oc.cvq)>5 or (oa.cvq+ob.cvq+oj.cvq)>5)) continue;
         if ( imsrg3_valence_2b and ( ok.cvq!=1  or ol.cvq!=1  or oj.cvq!=1) ) continue;
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
@@ -3920,9 +3934,9 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oa = Z.modelspace->GetOrbit(a);
       Orbit& ob = Z.modelspace->GetOrbit(b);
       Orbit& oc = Z.modelspace->GetOrbit(c);
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
+      // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
+      // if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+      // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
       int j2c = oc.j2;
       double jc = 0.5 * j2c;
       double occ_abc = abc_occ_list[ind_abc]; // TODO: we can probably incorporate that hat factor with the occupation factor
@@ -3964,9 +3978,9 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& ob = Z.modelspace->GetOrbit(b);
         Orbit& oc = Z.modelspace->GetOrbit(c);
         // MH: Would be great if these checks were redundant.
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
+        // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
+        // if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+        // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
         int j2c = oc.j2;
         double jc = 0.5 * j2c;
         double occ_abc = abc_occ_list[ind_abc]; // TODO: we can probably incorporate that hat factor with the occupation factor
@@ -3989,9 +4003,9 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& ok = Z.modelspace->GetOrbit(k);
         Orbit& ol = Z.modelspace->GetOrbit(l);
         // MH: Would be great if these checks were redundant.
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ok)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ol)) continue;
+        // if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
+        // if (!Y3.IsOrbitIn3BodyEMaxTruncation(ok)) continue;
+        // if (!Y3.IsOrbitIn3BodyEMaxTruncation(ol)) continue;
         double ji = 0.5 * j2i;
         double jj = 0.5 * oj.j2;
 //        double jk = 0.5 * ok.j2;
@@ -4087,8 +4101,6 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       size_t j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oi)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
       if ( imsrg3_valence_2b and  (oi.cvq!=1 or oj.cvq!=1 ) ) continue;
 
 //      auto& lobc_i = local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2});
@@ -4110,8 +4122,6 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         size_t l = ket.q;
         Orbit& ok = Z.modelspace->GetOrbit(k);
         Orbit& ol = Z.modelspace->GetOrbit(l);
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ok)) continue;
-        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ol)) continue;
         int phase_ij = X.modelspace->phase( (oi.j2+oj.j2)/2-J);
         int phase_kl = X.modelspace->phase( (ok.j2+ol.j2)/2-J);
 
@@ -4138,25 +4148,20 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         size_t ind_kli = std::distance( list_j.begin(),  std::find( list_j.begin(),list_j.end(), key_kli ) );
         size_t ind_ijl = std::distance( list_k.begin(),  std::find( list_k.begin(),list_k.end(), key_ijl ) );
         size_t ind_ijk = std::distance( list_l.begin(),  std::find( list_l.begin(),list_l.end(), key_ijk ) );
+        double Z_jkli = 0;
+        double Z_iklj = 0;
+        double Z_lijk = 0;
+        double Z_kijl = 0;
+        if ( ind_klj < list_i.size() ) Z_iklj = ZMat_i(ind_i, ind_klj);
+        if ( ind_kli < list_j.size() ) Z_jkli = ZMat_j(ind_j, ind_kli);
+        if ( ind_ijl < list_k.size() ) Z_kijl = ZMat_k(ind_k, ind_ijl);
+        if ( ind_ijk < list_l.size() ) Z_lijk = ZMat_l(ind_l, ind_ijk);
 
-        if ( ind_klj == list_i.size()   or ind_kli==list_j.size() or ind_ijl==list_k.size() or ind_ijk==list_l.size() )   continue;
-
-//        std::cout << "   made it. ijkl = " << i << " " << j << " " << k << " " << l << " J = " << J <<  "  with corresponding indices "
-//                  << ind_i << " , " << ind_klj << "  " << ind_j << " , " << ind_kli << "  "
-//                  << ind_k << " , " << ind_ijl << "  " << ind_l << " , " << ind_ijk << "   "
-//                  << ZMat_i(ind_i, ind_klj) << " " << ZMat_j(ind_j,ind_kli) << " " << ZMat_k(ind_k, ind_ijl) << " " << ZMat_l(ind_l,ind_ijk)
-//                  << " the obc keys we used are : (" << oi.j2<< " " << oi.l%2 << " " << oi.tz2 << ")"
-//                  << "  ("                           << oj.j2<< " " << oj.l%2 << " " << oj.tz2 << ")"
-//                  << "  ("                           << ok.j2<< " " << ok.l%2 << " " << ok.tz2 << ")"
-//                  << "  ("                           << ol.j2<< " " << ol.l%2 << " " << ol.tz2 << ")"
-//                  << std::endl;
-
-
-        double zijkl =            ZMat_j(ind_j, ind_kli) - phase_ij * ZMat_i(ind_i, ind_klj) 
-                - hermX*hermY * ( ZMat_l(ind_l, ind_ijk) - phase_kl * ZMat_k(ind_k, ind_ijl) ) ;
+        double zijkl = phase_ij * Z_iklj - Z_jkli + hermX*hermY*(Z_lijk - phase_kl*Z_kijl );
 
         // normalize the tbme
-        zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+        zijkl /= sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+//        zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
         Z2.AddToTBME(ch,ch,ibra,iket,zijkl);
       }//for iket
     }//for ibra
