@@ -76,6 +76,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
   const int emax_3body = Z.modelspace->GetEMax3Body();
   const int e3max = Z.modelspace->GetE3max();
   const int jj1max = internal::ExtractJJ1Max(Z);
+  const int jj1max_full = internal::ExtractJJ1MaxFull(Z);
 
   std::size_t num_chans = 0;
   std::size_t num_bytes_3b_basis = 0;
@@ -117,11 +118,11 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
         const int tz2_beta = ch_2b_ij.Tz * 2 - tz2_alpha;
         const int parity_beta = (ch_2b_ij.parity + parity_alpha) % 2;
         const int jj_min_beta = std::max(ch_2b_ij.J * 2 - jj_max_alpha, 0);
-        const int jj_max_beta = std::min(ch_2b_ij.J * 2 + jj_max_alpha, jj1max);
+        const int jj_max_beta = std::min(ch_2b_ij.J * 2 + jj_max_alpha, jj1max_full);
 
         // Only basis not externally prestored
         internal::OneBodyBasis basis_beta =
-            internal::OneBodyBasis::FromQuantumNumbers(
+            internal::OneBodyBasis::FromQuantumNumbersFull(
                 Z, jj_min_beta, jj_max_beta, parity_beta, tz2_beta);
 
         if (basis_beta.BasisSize() == 0) {
@@ -173,7 +174,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
       const internal::ThreeBodyBasis &basis_abalpha = bases_abalpha.BasisPQR();
 
       // Only basis not externally prestored
-      const internal::OneBodyBasis basis_beta = block_beta_bases[block_index];
+      const internal::OneBodyBasis& basis_beta = block_beta_bases[block_index];
 
       std::vector<double> six_js_ij = internal::GenerateSixJMatrixIJ(
           Z, basis_ij, basis_ab_e3max, basis_c, ch_2b_ij.J * 2, ch_3b.twoJ,
@@ -361,7 +362,7 @@ void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
 namespace internal {
 
 std::size_t ExtractWrapFactor(const Operator &Z) {
-  const auto &sp_indices = Z.modelspace->orbits_3body_space_;
+  const auto &sp_indices = Z.modelspace->all_orbits;
   std::size_t wrap_factor = 0;
   for (const auto &p : sp_indices) {
     wrap_factor = std::max(wrap_factor, static_cast<std::size_t>(p));
@@ -372,6 +373,15 @@ std::size_t ExtractWrapFactor(const Operator &Z) {
 int ExtractJJ1Max(const Operator &Z) {
   int jj1max = 1;
   for (const std::size_t &p : Z.modelspace->orbits_3body_space_) {
+    const Orbit op = Z.modelspace->GetOrbit(p);
+    jj1max = std::max(op.j2, jj1max);
+  }
+  return jj1max;
+}
+
+int ExtractJJ1MaxFull(const Operator &Z) {
+  int jj1max = 1;
+  for (const std::size_t &p : Z.modelspace->all_orbits) {
     const Orbit op = Z.modelspace->GetOrbit(p);
     jj1max = std::max(op.j2, jj1max);
   }
@@ -449,6 +459,32 @@ OneBodyBasis OneBodyBasis::FromQuantumNumbers(const Operator &Z, int j2min,
   return OneBodyBasis(p_states, wrap_factor);
 }
 
+OneBodyBasis OneBodyBasis::FromQuantumNumbersFull(const Operator &Z, int j2min,
+                                              int j2max, int parity, int tz2) {
+  const std::size_t wrap_factor = ExtractWrapFactor(Z);
+
+  // const std::size_t norbs = Z.modelspace->GetNumberOrbits();
+  // std::vector<std::size_t> states_1b(norbs, 0);
+  // for (std::size_t p = 0; p < norbs; p += 1) {
+  //   states_1b[p] = p;
+  // }
+
+  std::vector<std::size_t> states_1b(Z.modelspace->all_orbits.begin(),
+                                     Z.modelspace->all_orbits.end());
+  std::sort(states_1b.begin(), states_1b.end());
+
+  std::vector<std::size_t> p_states;
+  for (const auto &p : states_1b) {
+    const Orbit &op = Z.modelspace->GetOrbit(p);
+    if ((op.tz2 == tz2) && (op.l % 2 == parity) && (op.j2 <= j2max) &&
+        (op.j2 >= j2min)) {
+      p_states.push_back(p);
+    }
+  }
+
+  return OneBodyBasis(p_states, wrap_factor);
+}
+
 std::vector<std::size_t> Get2BPStates(const std::vector<std::size_t> &pq_states,
                                       std::size_t wrap_factor) {
   std::vector<std::size_t> p_states(pq_states.size(), 0);
@@ -483,8 +519,8 @@ TwoBodyBasis TwoBodyBasis::PQInTwoBodyChannel(std::size_t i_ch_2b,
   const std::size_t wrap_factor = ExtractWrapFactor(Z);
   const TwoBodyChannel &ch_2b = Z.modelspace->GetTwoBodyChannel(i_ch_2b);
 
-  std::vector<std::size_t> states_1b(Z.modelspace->orbits_3body_space_.begin(),
-                                     Z.modelspace->orbits_3body_space_.end());
+  std::vector<std::size_t> states_1b(Z.modelspace->all_orbits.begin(),
+                                     Z.modelspace->all_orbits.end());
   std::sort(states_1b.begin(), states_1b.end());
 
   std::vector<std::size_t> pq_states;

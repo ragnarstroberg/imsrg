@@ -41,6 +41,7 @@ namespace internal {
 
 std::size_t ExtractWrapFactor(const Operator &Z);
 int ExtractJJ1Max(const Operator &Z);
+int ExtractJJ1MaxFull(const Operator &Z);
 std::vector<std::size_t> Extract2BChannelsValidIn3BChannel(int jj1max,
                                                            std::size_t i_ch_3b,
                                                            const Operator &Z);
@@ -56,6 +57,8 @@ class OneBodyBasis {
 public:
   // TODO: Ctor, factory methods
   static OneBodyBasis FromQuantumNumbers(const Operator &Z, int j2min,
+                                         int j2max, int parity, int tz2);
+  static OneBodyBasis FromQuantumNumbersFull(const Operator &Z, int j2min,
                                          int j2max, int parity, int tz2);
 
   OneBodyBasis(const std::vector<std::size_t> &p_states_,
