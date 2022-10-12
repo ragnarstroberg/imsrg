@@ -124,6 +124,7 @@ namespace Commutator{
   void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_expand_new( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_expand_reduced( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
