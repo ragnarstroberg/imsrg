@@ -3380,10 +3380,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
-void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z ) {
-  comm232::comm232ss_expand_impl(X, Y, Z);
-}
-
 void comm232ss_expand_new( const Operator& X, const Operator& Y, Operator& Z ) {
   comm232::comm232ss_expand_impl_full(X, Y, Z);
 }

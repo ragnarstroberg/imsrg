@@ -35,9 +35,6 @@ void comm232ss_expand_impl_red(const Operator &X, const Operator &Y,
 void comm232ss_expand_impl_full(const Operator &X, const Operator &Y,
                                Operator &Z); // implemented and tested.
 
-void comm232ss_expand_impl(const Operator &X, const Operator &Y,
-                           Operator &Z); // implemented and tested.
-
 namespace internal {
 
 // Generally useful methods
