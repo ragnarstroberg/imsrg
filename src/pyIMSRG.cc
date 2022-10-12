@@ -99,10 +99,12 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetOcc", &ModelSpace::SetOcc, py::arg("n"),py::arg("l"),py::arg("j2"),py::arg("tz2"),py::arg("occ"))
       .def("SetOccNAT", &ModelSpace::SetOccNAT, py::arg("n"),py::arg("l"),py::arg("j2"),py::arg("tz2"),py::arg("occ_nat"))
       .def("SetEmax", &ModelSpace::SetEmax)
+      .def("SetE2max", &ModelSpace::SetE2max)
       .def("SetE3max", &ModelSpace::SetE3max)
       .def("SetdE3max", &ModelSpace::SetdE3max)
       .def("SetLmax", &ModelSpace::SetLmax)
       .def("SetEmaxUnocc", &ModelSpace::SetEmaxUnocc)
+      .def("SetEmax3Body", &ModelSpace::SetEmax3Body)
       .def("FindEFermi", &ModelSpace::FindEFermi)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
@@ -175,6 +177,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("DoNormalOrderingCore", &Operator::DoNormalOrderingCore)
       .def("UndoNormalOrdering", &Operator::UndoNormalOrdering)
       .def("SetModelSpace", &Operator::SetModelSpace)
+      .def("Truncate", &Operator::Truncate)
       .def("Norm", &Operator::Norm)
       .def("OneBodyNorm", &Operator::OneBodyNorm)
       .def("TwoBodyNorm", &Operator::TwoBodyNorm)
@@ -694,5 +697,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.attr("ALPHA_FS") = py::float_( PhysConst::ALPHA_FS);
    m.attr("F_PI") = py::float_( PhysConst::F_PI);
    m.attr("HARTREE") = py::float_( PhysConst::HARTREE);
+   m.attr("PROTON_RCH2") = py::float_( PhysConst::PROTON_RCH2);
+   m.attr("NEUTRON_RCH2") = py::float_( PhysConst::NEUTRON_RCH2);
+   m.attr("DARWIN_FOLDY") = py::float_( PhysConst::DARWIN_FOLDY);
 
 }
