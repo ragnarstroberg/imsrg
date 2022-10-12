@@ -60,7 +60,7 @@ template <> struct hash<ChannelPair> {
 
 namespace comm232 {
 
-void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
+void comm232ss_expand_impl_full(const Operator &X, const Operator &Y,
                                Operator &Z) {
   std::cout << "In comm232ss_expand_new\n";
   double tstart = omp_get_wtime();

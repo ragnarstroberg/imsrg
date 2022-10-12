@@ -29,7 +29,7 @@
 
 namespace comm232 {
 
-void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
+void comm232ss_expand_impl_full(const Operator &X, const Operator &Y,
                                Operator &Z); // implemented and tested.
 
 void comm232ss_expand_impl(const Operator &X, const Operator &Y,

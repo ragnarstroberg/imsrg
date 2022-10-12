@@ -3385,7 +3385,7 @@ void comm232ss_expand( const Operator& X, const Operator& Y, Operator& Z ) {
 }
 
 void comm232ss_expand_new( const Operator& X, const Operator& Y, Operator& Z ) {
-  comm232::comm232ss_expand_impl_new(X, Y, Z);
+  comm232::comm232ss_expand_impl_full(X, Y, Z);
 }
 
 //// Begin modifications to comm232ss by Matthias.
