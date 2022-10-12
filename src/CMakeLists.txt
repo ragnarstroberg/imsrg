@@ -306,14 +306,10 @@ add_library(
 target_link_libraries(
     Commutator232
     PUBLIC
-    armadillo
     Operator
-    TwoBodyME
-    ThreeLegME
+    ModelSpace
     PRIVATE
     OpenMP::OpenMP_CXX
-    PhysicalConstants
-    AngMom
 )
 
 add_library(

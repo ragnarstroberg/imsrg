@@ -18,13 +18,17 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 #include "Commutator232.hh"
-#include "ModelSpace.hh"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "ModelSpace.hh"
+
+#include <omp.h>
 
 template <typename T> void Print(std::string prefix, const T &val) {
   std::cout << prefix << ": " << val << "\n";
@@ -59,6 +63,7 @@ namespace comm232 {
 void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
                                Operator &Z) {
   std::cout << "In comm232ss_expand_new\n";
+  double tstart = omp_get_wtime();
   Z.modelspace->PreCalculateSixJ();
 
   int hX = 1;
@@ -265,6 +270,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
 
   // Print("NUM_CHANS", num_chans);
   // Print("NUM_BYTES_3B_BASIS", num_bytes_3b_basis);
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 void comm232ss_expand_impl(const Operator &X, const Operator &Y, Operator &Z) {
