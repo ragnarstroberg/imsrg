@@ -87,7 +87,7 @@ void comm232ss_expand_impl_new(const Operator &X, const Operator &Y,
     const std::vector<std::size_t> chans_2b =
         internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
 
-    const auto bases_store = internal::PrestoreBases(i_ch_3b, jj1max, Z, e3max);
+    const auto bases_store = internal::PrestoreBasesFull(i_ch_3b, jj1max, Z, e3max);
     for (const auto &basis : bases_store) {
       num_bytes_3b_basis += basis.second.BasisPQR().NumBytes();
     }
@@ -463,12 +463,6 @@ OneBodyBasis OneBodyBasis::FromQuantumNumbersFull(const Operator &Z, int j2min,
                                               int j2max, int parity, int tz2) {
   const std::size_t wrap_factor = ExtractWrapFactor(Z);
 
-  // const std::size_t norbs = Z.modelspace->GetNumberOrbits();
-  // std::vector<std::size_t> states_1b(norbs, 0);
-  // for (std::size_t p = 0; p < norbs; p += 1) {
-  //   states_1b[p] = p;
-  // }
-
   std::vector<std::size_t> states_1b(Z.modelspace->all_orbits.begin(),
                                      Z.modelspace->all_orbits.end());
   std::sort(states_1b.begin(), states_1b.end());
@@ -514,13 +508,40 @@ std::vector<int> Get2BPQValidities(const std::vector<std::size_t> &pq_states,
   return GetLookupValidities(pq_states, wrap_factor * wrap_factor);
 }
 
-TwoBodyBasis TwoBodyBasis::PQInTwoBodyChannel(std::size_t i_ch_2b,
+TwoBodyBasis TwoBodyBasis::PQInTwoBodyChannelFull(std::size_t i_ch_2b,
                                               const Operator &Z) {
   const std::size_t wrap_factor = ExtractWrapFactor(Z);
   const TwoBodyChannel &ch_2b = Z.modelspace->GetTwoBodyChannel(i_ch_2b);
 
   std::vector<std::size_t> states_1b(Z.modelspace->all_orbits.begin(),
                                      Z.modelspace->all_orbits.end());
+  std::sort(states_1b.begin(), states_1b.end());
+
+  std::vector<std::size_t> pq_states;
+  for (const auto &p : states_1b) {
+    const Orbit &op = Z.modelspace->GetOrbit(p);
+    for (const auto &q : states_1b) {
+      const Orbit &oq = Z.modelspace->GetOrbit(q);
+      if ((p <= q) && ((p != q) || (ch_2b.J % 2 == 0)) && // Pauli principle
+          (op.tz2 + oq.tz2 == ch_2b.Tz * 2) &&
+          ((op.l + oq.l) % 2 == ch_2b.parity) &&
+          (std::abs(op.j2 - oq.j2) <= ch_2b.J * 2) &&
+          (std::abs(op.j2 + oq.j2) >= ch_2b.J * 2)) {
+        pq_states.push_back(p * wrap_factor + q);
+      }
+    }
+  }
+
+  return TwoBodyBasis(pq_states, wrap_factor);
+}
+
+TwoBodyBasis TwoBodyBasis::PQInTwoBodyChannel(std::size_t i_ch_2b,
+                                              const Operator &Z) {
+  const std::size_t wrap_factor = ExtractWrapFactor(Z);
+  const TwoBodyChannel &ch_2b = Z.modelspace->GetTwoBodyChannel(i_ch_2b);
+
+  std::vector<std::size_t> states_1b(Z.modelspace->orbits_3body_space_.begin(),
+                                     Z.modelspace->orbits_3body_space_.end());
   std::sort(states_1b.begin(), states_1b.end());
 
   std::vector<std::size_t> pq_states;
@@ -1175,6 +1196,54 @@ PrestoreBases(std::size_t i_ch_3b, int jj1max, const Operator &Z, int e3max) {
 
     internal::TwoBodyBasis basis_ij =
         internal::TwoBodyBasis::PQInTwoBodyChannel(i_ch_2b_ij, Z);
+    if (basis_ij.BasisSize() == 0)
+      continue;
+    internal::TwoBodyBasis basis_ij_e3max =
+        internal::TwoBodyBasis::PQInTwoBodyChannelWithE3Max(i_ch_2b_ij, Z,
+                                                            e3max);
+    if (basis_ij_e3max.BasisSize() == 0)
+      continue;
+
+    // 3rd contracted index c constrained by being in state | (ij) J_ij c >
+    const int tz2_c = ch_3b.twoTz - 2 * ch_2b_ij.Tz;
+    const int parity_c = (ch_3b.parity + ch_2b_ij.parity) % 2;
+    const int jj_min_c = std::abs(ch_3b.twoJ - ch_2b_ij.J * 2);
+    const int jj_max_c = std::min(ch_3b.twoJ + ch_2b_ij.J * 2, jj1max);
+
+    internal::OneBodyBasis basis_c = internal::OneBodyBasis::FromQuantumNumbers(
+        Z, jj_min_c, jj_max_c, parity_c, tz2_c);
+    if (basis_c.BasisSize() == 0)
+      continue;
+
+    internal::ThreeBodyBasis basis_ijc =
+        internal::ThreeBodyBasis::From2BAnd1BBasis(
+            i_ch_3b, i_ch_2b_ij, Z, basis_ij_e3max, basis_c, e3max);
+    if (basis_ijc.BasisSize() == 0)
+      continue;
+
+    bases.emplace(std::make_pair(
+        i_ch_2b_ij,
+        CollectedBases(std::move(basis_ij), std::move(basis_ij_e3max),
+                       std::move(basis_c), std::move(basis_ijc))));
+  }
+
+  return bases;
+}
+
+std::unordered_map<std::size_t, CollectedBases>
+PrestoreBasesFull(std::size_t i_ch_3b, int jj1max, const Operator &Z, int e3max) {
+  std::unordered_map<std::size_t, CollectedBases> bases;
+
+  const ThreeBodyChannel &ch_3b = Z.modelspace->GetThreeBodyChannel(i_ch_3b);
+  const std::vector<std::size_t> chans_2b =
+      internal::Extract2BChannelsValidIn3BChannel(jj1max, i_ch_3b, Z);
+
+  for (const std::size_t &i_ch_2b_ij : chans_2b) {
+    const TwoBodyChannel &ch_2b_ij =
+        Z.modelspace->GetTwoBodyChannel(i_ch_2b_ij);
+
+    internal::TwoBodyBasis basis_ij =
+        internal::TwoBodyBasis::PQInTwoBodyChannelFull(i_ch_2b_ij, Z);
     if (basis_ij.BasisSize() == 0)
       continue;
     internal::TwoBodyBasis basis_ij_e3max =

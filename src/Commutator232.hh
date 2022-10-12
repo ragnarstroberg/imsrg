@@ -92,6 +92,8 @@ std::vector<int> Get2BPQValidities(const std::vector<std::size_t> &pq_states,
 class TwoBodyBasis {
 public:
   // TODO: Ctor, factory methods
+  static TwoBodyBasis PQInTwoBodyChannelFull(std::size_t i_ch_2b,
+                                         const Operator &Z);
   static TwoBodyBasis PQInTwoBodyChannel(std::size_t i_ch_2b,
                                          const Operator &Z);
   static TwoBodyBasis PQInTwoBodyChannelWithE3Max(std::size_t i_ch_2b,
@@ -350,6 +352,13 @@ class CollectedBases {
 };
 
 std::unordered_map<std::size_t, CollectedBases> PrestoreBases(
+  std::size_t i_ch_3b,
+  int jj1max,
+  const Operator& Z,
+  int e3max
+);
+
+std::unordered_map<std::size_t, CollectedBases> PrestoreBasesFull(
   std::size_t i_ch_3b,
   int jj1max,
   const Operator& Z,
