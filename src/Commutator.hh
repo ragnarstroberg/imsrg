@@ -39,6 +39,7 @@ namespace Commutator{
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
   extern bool use_imsrg3_n7;
+  extern bool use_imsrg3_mp4;
   extern bool perturbative_triples;
   extern bool bch_skip_ieq1;
   extern bool only_2b_omega;
@@ -61,6 +62,7 @@ namespace Commutator{
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);
   void SetUseIMSRG3N7(bool tf);
+  void SetUseIMSRG3_MP4(bool tf);
   void SetOnly2bOmega(bool tf);
   void SetBCHSkipiEq1(bool tf);
   void SetIMSRG3Noqqq(bool tf);
@@ -119,7 +121,10 @@ namespace Commutator{
   void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   size_t Hash_comm232_key( std::array<size_t,5>& kljJJ );
   void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
-  void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_mh_optimized( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_expand_full( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_expand_reduced( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
@@ -206,6 +211,7 @@ namespace Commutator{
     const Operator& Z,
     const std::map<std::array<int,3>,std::vector<std::array<size_t,4>>>& klj_list,
     std::array<int, 3> obc_key,
+    const std::map<int,double>& e_fermi,
     std::vector<size_t>& abc_list,
     std::vector<double>& abc_occ_list
   );

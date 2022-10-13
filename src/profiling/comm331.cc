@@ -80,6 +80,7 @@ int main(int argc, char** argv)
 
   ModelSpace ms(emax, emax_3body, ref, ref);
   ms.SetE3max(e3max);
+  ms.PreCalculateSixJ();
 
   Operator op1 = Operator(ms, 0, 0, 0, 3);
   op1.SetAntiHermitian();
@@ -93,7 +94,7 @@ int main(int argc, char** argv)
 
   for (int i = 0; i < num_comms; i+=1){
     std::cout << "Evaluating commutator " << i << std::endl;
-    Commutator::comm232ss(op1, op2, op3);
+    Commutator::comm331ss(op1, op2, op3);
     std::cout << "Evaluated commutator " << i << std::endl;
   }
 

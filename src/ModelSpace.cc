@@ -1528,7 +1528,7 @@ ThreeBodyChannel& ModelSpace::GetThreeBodyChannel(int ch) const
 size_t ModelSpace::GetThreeBodyChannelIndex(int twoJ, int parity, int twoTz )
 {
   auto iter = ThreeBodyChannelLookup.find( ThreeBodyChannelHash( twoJ, parity, twoTz));
-  if ( iter == ThreeBodyChannelLookup.end() ) return -1;
+  if ( iter == ThreeBodyChannelLookup.end() ) return -1; // THIS IS PROBABLY NOT SAFE
   return iter->second;
 //  std::cout << "IN " << __func__ << std::endl;
 //  std::cout << "  with Jpt = " << twoJ << " " << parity << " " << twoTz << std::endl;
@@ -1909,13 +1909,15 @@ void ModelSpace::PreCalculateSixJ()
      {
       if ( j2b > std::max(j2d,2*Emax+1) ) continue;
       // J1 couples a,b, and c,d;  J2 couples a,d and b,c
-      int J1_min = std::max( std::abs(j2a-j2b), std::abs(j2c-j2d) );
-      int J1_max = std::min( j2a+j2b, j2c+j2d );
-      int J2_min = std::max( std::abs(j2a-j2d), std::abs(j2b-j2c) );
-      int J2_max = std::min( j2a+j2d, j2b+j2c );
-      for (int J1=J1_min; J1<=J1_max; J1+=2)
+      // int J1_min = std::max( std::abs(j2a-j2b), std::abs(j2c-j2d) );
+      // int J1_max = std::min( j2a+j2b, j2c+j2d );
+      // int J2_min = std::max( std::abs(j2a-j2d), std::abs(j2b-j2c) );
+      // int J2_max = std::min( j2a+j2d, j2b+j2c );
+      // We extend the hash table to include symbols outside the coupling range for computational gain.
+      // We may want to revert this change at some point.
+      for (int J1=0; J1<=2*(Emax * 2 + 1); J1+=2)
       {
-       for (int J2=J2_min; J2<=J2_max; J2+=2)
+       for (int J2=0; J2<=2*(Emax*2 + 1); J2+=2)
        {
          uint64_t key = SixJHash(0.5*j2a,0.5*j2b,0.5*J1,0.5*j2c,0.5*j2d,0.5*J2);
          if ( SixJList.count(key) == 0 ) 

@@ -4,6 +4,7 @@
 #include <armadillo>
 #include <random>
 #include <string>
+#include "Commutator.hh"
 #include "imsrg_util.hh"
 #include "version.hh"
 #include "ReferenceImplementations.hh" // for commutators
@@ -998,6 +999,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y)
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_debug,  "comm232ss");
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
   return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
+  // return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_expand_new, "comm232ss");
 }
 
 /// INCREDIBLY SLOW...

@@ -72,28 +72,23 @@ int main(int argc, char** argv)
   if (parameters.help_mode) return 0;
 
   int emax = parameters.i("emax_imsrg");
-  int emax_3body = parameters.i("emax_3body_imsrg");
-  int e3max = parameters.i("e3max_imsrg");
   std::string ref = parameters.s("reference");
   // We coopt emax for number of commutators here
   int num_comms = parameters.i("emax");
 
-  ModelSpace ms(emax, emax_3body, ref, ref);
-  ms.SetE3max(e3max);
+  ModelSpace ms(emax, ref, ref);
+  ms.PreCalculateSixJ();
 
-  Operator op1 = Operator(ms, 0, 0, 0, 3);
+  Operator op1 = Operator(ms, 0, 0, 0, 2);
   op1.SetAntiHermitian();
-  op1.ThreeBody.SwitchToPN_and_discard();
-  Operator op2 = Operator(ms, 0, 0, 0, 3);
+  Operator op2 = Operator(ms, 0, 0, 0, 2);
   op2.SetHermitian();
-  op2.ThreeBody.SwitchToPN_and_discard();
-  Operator op3 = Operator(ms, 0, 0, 0, 3);
+  Operator op3 = Operator(ms, 0, 0, 0, 2);
   op3.SetHermitian();
-  op3.ThreeBody.SwitchToPN_and_discard();
 
   for (int i = 0; i < num_comms; i+=1){
     std::cout << "Evaluating commutator " << i << std::endl;
-    Commutator::comm232ss(op1, op2, op3);
+    Commutator::comm222_phss(op1, op2, op3);
     std::cout << "Evaluated commutator " << i << std::endl;
   }
 

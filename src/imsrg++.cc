@@ -101,6 +101,7 @@ int main(int argc, char** argv)
   bool relativistic_correction = parameters.s("relativistic_correction") == "true";
   bool IMSRG3 = parameters.s("IMSRG3") == "true";
   bool imsrg3_n7 = parameters.s("imsrg3_n7") == "true";
+  bool imsrg3_mp4 = parameters.s("imsrg3_mp4") == "true";
   bool imsrg3_at_end = parameters.s("imsrg3_at_end") == "true";
   bool imsrg3_no_qqq = parameters.s("imsrg3_no_qqq") == "true";
   bool write_omega = parameters.s("write_omega") == "true";
@@ -638,7 +639,7 @@ int main(int argc, char** argv)
       HNO = H3;
       std::cout << "Replacing HNO" << std::endl;
       std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
-      HNO.ThreeBody.SwitchToPN_and_discard();
+      // HNO.ThreeBody.SwitchToPN_and_discard();
     }
   }
 
@@ -891,6 +892,9 @@ int main(int argc, char** argv)
 
 
      HNO = HNO.Truncate(modelspace_imsrg);
+     if (IMSRG3) {
+       HNO.ThreeBody.SwitchToPN_and_discard();
+     }
 
 //     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
 //    hf.PrintSPEandWF();
@@ -898,6 +902,9 @@ int main(int argc, char** argv)
   else
   {
     HNO.SetModelSpace(modelspace_imsrg);
+    if (IMSRG3) {
+      HNO.ThreeBody.SwitchToPN_and_discard();
+    }
   }
 
  // After truncating, get the perturbative energies again to see how much things changed.
@@ -965,6 +972,7 @@ int main(int argc, char** argv)
   Commutator::SetUseBruecknerBCH(use_brueckner_bch);
   Commutator::SetUseIMSRG3(IMSRG3);
   Commutator::SetUseIMSRG3N7(imsrg3_n7);
+  Commutator::SetUseIMSRG3_MP4(imsrg3_mp4);
   Commutator::SetIMSRG3Noqqq(imsrg3_no_qqq);
   if (use_brueckner_bch)
   {

@@ -196,6 +196,25 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
    if (antihermitian and ch_bra==ch_ket) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
 }
 
+void TwoBodyME::AddToTBMENonHermNonNormalized(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
+{
+   TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
+   TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
+//   cout << "Tzbra = " << tbc_bra.Tz << "   Tzket = " << tbc_ket.Tz << "  rank_T = " << rank_T << endl;
+   int bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
+   int ket_ind = tbc_ket.GetLocalIndex(std::min(c,d),std::max(c,d));
+//   cout << "bra_ind = " << bra_ind << " = local index of " << min(a,b) << " " << max(a,b) << " from channel " << ch_bra << endl;
+//   cout << "ket_ind = " << ket_ind << " = local index of " << min(c,d) << " " << max(c,d) << " from channel " << ch_ket << endl;
+   double phase = 1;
+   if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
+   if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
+   if (a==b) phase *= 1.0 / PhysConst::SQRT2;
+   if (c==d) phase *= 1.0 / PhysConst::SQRT2;
+//   cout << "Getting Matrix " << ch_bra << "," << ch_ket << "(" << bra_ind << "," << ket_ind
+//        << "), dimension = " << GetMatrix(ch_bra,ch_ket).n_rows << "x" << GetMatrix(ch_bra,ch_ket).n_cols << endl;
+   GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
+}
+
 double TwoBodyME::GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const
 {
    return GetTBME(ch_bra,ch_ket,bra.p,bra.q,ket.p,ket.q);
@@ -239,6 +258,11 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbm
      else if(IsAntiHermitian() and ch_bra==ch_ket)
        GetMatrix(ch_bra,ch_ket)(iket,ibra) -= tbme;
    }
+}
+
+void TwoBodyME::AddToTBMENonHerm(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
+{
+   GetMatrix(ch_bra,ch_ket)(ibra,iket) += tbme;
 }
 
 double TwoBodyME::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const
