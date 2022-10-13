@@ -4088,14 +4088,16 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
   auto& Z2 = Z.TwoBody;
-  #pragma omp parallel for schedule(dynamic,1)
   for ( size_t ch=0; ch<nch; ch++)
   {
     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
     size_t nkets = tbc.GetNumberKets();
     size_t J = tbc.J;
+  #pragma omp parallel for schedule(static) collapse(2)
     for (size_t ibra=0; ibra<nkets; ibra++)
     {
+      for (size_t iket=0; iket<nkets; iket++)
+      {
       Ket& bra = tbc.GetKet(ibra);
       size_t i=bra.p;
       size_t j=bra.q;
@@ -4115,8 +4117,6 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       auto& ZMat_i = ZMAT_list.at({oi.j2,oi.l%2,oi.tz2});
       auto& ZMat_j = ZMAT_list.at({oj.j2,oj.l%2,oj.tz2});
 
-      for (size_t iket=ibra; iket<nkets; iket++)
-      {
         Ket& ket = tbc.GetKet(iket);
         size_t k = ket.p;
         size_t l = ket.q;
@@ -4162,7 +4162,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         // normalize the tbme
         zijkl /= sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
 //        zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
-        Z2.AddToTBME(ch,ch,ibra,iket,zijkl);
+        Z2.AddToTBMENonHerm(ch,ch,ibra,iket,zijkl);
       }//for iket
     }//for ibra
   }// for ch
