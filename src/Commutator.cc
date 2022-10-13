@@ -2889,6 +2889,14 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
+void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double tstart = omp_get_wtime();
+
+  comm232ss_srs_optimized(X, Y, Z);
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
 
 //*****************************************************************************************
 //
@@ -2921,8 +2929,9 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 // Now this is fine. The 223 commutator is taking all the time.
-
-void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
+// 
+// This optimized implementation is originally by Ragnar.
+void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
 //  auto& X2 = X.TwoBody;
