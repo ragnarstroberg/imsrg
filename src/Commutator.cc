@@ -2295,6 +2295,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
   int herm = Z.IsAntiHermitian() ? -1 : 1 ;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   int emax_3body = Z.modelspace->GetEMax3Body();
+  int e3max = Z.modelspace->GetE3max();
 
   if (X.GetParticleRank() < 3) return;
   if (Y.GetParticleRank() < 3) return;
@@ -2344,6 +2345,8 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            int eb = 2*ket_ab.oq->n + ket_ab.oq->l;
            if (ea > emax_3body) continue;
            if (eb > emax_3body) continue;
+           if (ea + eb + ei > e3max) continue;
+           if (ea + eb + ej > e3max) continue;
            int tza = ket_ab.op->tz2;
            int tzb = ket_ab.oq->tz2;
            double occnat_a = ket_ab.op->occ_nat;
@@ -2355,6 +2358,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
            {
              size_t ch_abi = Z.modelspace->GetThreeBodyChannelIndex( twoJ, (tbc_ab.parity +oi.l)%2, tbc_ab.Tz*2 + oi.tz2 );
+             // TODO: How is this legal? size_t is unsigned, i.e. strictly positive
              if (ch_abi==size_t(-1)) continue; // maybe that channel doesn't exist
              auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_abi);
              double Jfactor = (twoJ+1.0)/(oi.j2+1);
@@ -2375,6 +2379,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 if (ec > emax_3body) continue;
                 if (ed > emax_3body) continue;
                 if (ee > emax_3body) continue;
+                if (ec + ed + ee > e3max) continue;
                 double occnat_c = ket_cde.op->occ_nat;
                 double occnat_d = ket_cde.oq->occ_nat;
                 double occnat_e = ket_cde.oR->occ_nat;
