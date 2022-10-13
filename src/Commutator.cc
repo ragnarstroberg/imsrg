@@ -2294,6 +2294,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z1 = Z.OneBody;
   int herm = Z.IsAntiHermitian() ? -1 : 1 ;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+  int emax_3body = Z.modelspace->GetEMax3Body();
 
   if (X.GetParticleRank() < 3) return;
   if (Y.GetParticleRank() < 3) return;
@@ -2314,6 +2315,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
       int tid = omp_get_thread_num();
       Orbit& oi = Z.modelspace->GetOrbit(i);
       int ei = 2*oi.n + oi.l;
+      if (ei > emax_3body) continue;
       double occnat_i = oi.occ_nat;
       int tzi = oi.tz2;
       auto& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
@@ -2329,6 +2331,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& oj = Z.modelspace->GetOrbit(j);
         double occnat_j = oj.occ_nat;
         int ej = 2*oj.n + oj.l;
+        if (ej > emax_3body) continue;
         int tzj = oj.tz2;
 
         for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
@@ -2339,6 +2342,8 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            if (std::abs( ket_ab.op->occ * ket_ab.oq->occ )<1e-6 ) continue;
            int ea = 2*ket_ab.op->n + ket_ab.op->l;
            int eb = 2*ket_ab.oq->n + ket_ab.oq->l;
+           if (ea > emax_3body) continue;
+           if (eb > emax_3body) continue;
            int tza = ket_ab.op->tz2;
            int tzb = ket_ab.oq->tz2;
            double occnat_a = ket_ab.op->occ_nat;
@@ -2367,6 +2372,9 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 int ec = 2*ket_cde.op->n + ket_cde.op->l;
                 int ed = 2*ket_cde.oq->n + ket_cde.oq->l;
                 int ee = 2*ket_cde.oR->n + ket_cde.oR->l;
+                if (ec > emax_3body) continue;
+                if (ed > emax_3body) continue;
+                if (ee > emax_3body) continue;
                 double occnat_c = ket_cde.op->occ_nat;
                 double occnat_d = ket_cde.oq->occ_nat;
                 double occnat_e = ket_cde.oR->occ_nat;
