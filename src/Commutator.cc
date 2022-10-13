@@ -2821,27 +2821,27 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 // The only potentially thread-unsafe part of this loop is the access to 3b matrix elements which might require
 // recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch=0; ch<nch; ch++)
   {
     auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
     int J = tbc.J;
     int nkets = tbc.GetNumberKets();
+  #pragma omp parallel for schedule(dynamic,1) collapse(2)
     for (int ibra=0;ibra<nkets;ibra++ ) // <ij| states
     {
-      Ket& bra = tbc.GetKet(ibra);
-      int i = bra.p;
-      int j = bra.q;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(i)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(j)) continue;
-      int ei = 2*bra.op->n + bra.op->l;
-      int ej = 2*bra.oq->n + bra.oq->l;
-      double d_ei = std::abs(ei - e_fermi[bra.op->tz2]);
-      double d_ej = std::abs(ej - e_fermi[bra.oq->tz2]);
-      double occnat_i = bra.op->occ_nat;
-      double occnat_j = bra.oq->occ_nat;
-      for (int iket=ibra;iket<nkets;iket++ ) // |kl> states
+      for (int iket=0;iket<nkets;iket++ ) // |kl> states
       {
+        Ket& bra = tbc.GetKet(ibra);
+        int i = bra.p;
+        int j = bra.q;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(i)) continue;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(j)) continue;
+        int ei = 2*bra.op->n + bra.op->l;
+        int ej = 2*bra.oq->n + bra.oq->l;
+        double d_ei = std::abs(ei - e_fermi[bra.op->tz2]);
+        double d_ej = std::abs(ej - e_fermi[bra.oq->tz2]);
+        double occnat_i = bra.op->occ_nat;
+        double occnat_j = bra.oq->occ_nat;
         Ket& ket = tbc.GetKet(iket);
         int k = ket.p;
         int l = ket.q;
@@ -2909,7 +2909,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         }
         // normalize the tbme
         zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
-        Z2.AddToTBME(ch, ch, ibra, iket, zijkl );
+        Z2.AddToTBMENonHerm(ch, ch, ibra, iket, zijkl );
       }
     }
   }
