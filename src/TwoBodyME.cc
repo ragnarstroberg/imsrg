@@ -260,6 +260,11 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbm
    }
 }
 
+void TwoBodyME::AddToTBMENonHerm(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
+{
+   GetMatrix(ch_bra,ch_ket)(ibra,iket) += tbme;
+}
+
 double TwoBodyME::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
