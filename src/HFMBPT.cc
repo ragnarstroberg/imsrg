@@ -400,7 +400,8 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
   if (particle_rank>2)
   {
 //    HNO.ThreeBody = GetTransformed3B();
-    HNO.ThreeBody = GetTransformed3B( Hbare );
+//    HNO.ThreeBody = GetTransformed3B( Hbare );
+    HNO.ThreeBody = GetTransformed3B( Hbare, C_HO2NAT );
   }
 
 //  rho = rho_swap;
@@ -858,6 +859,10 @@ void HFMBPT::ReorderHFMBPTCoefficients()
     }
   }
 }
+
+
+
+
 
 
 

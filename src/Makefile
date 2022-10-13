@@ -10,9 +10,15 @@ CXX = g++
 ALL = version libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
+FLAGS    += $(WARNFLAGS)
 LIBS = -lopenblas -lgsl -lz
+LDFLAGS = -L$(PWD) 
+INCLUDE += -I./half/include
+SOFLAGS = -shared $(FLAGS)
 #LIBS = -lblas -lgsl -lz
+LD_DIR=$(HOME)/lib
 
 # I assume we're running on linux
 OS = LINUX
@@ -43,14 +49,10 @@ endif
 #WITHHALF = 1
 
 #ifeq (1,$(WITHHALF))
-  INCLUDE += -I./half/include
 #  FLAGS += -DWITHHALF=1
 #endif
 
-WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
-FLAGS    += $(WARNFLAGS)
 
-SOFLAGS = $(FLAGS)
 
 PYTHON_MAJOR_VERSION = $(shell python -c "import sys; sys.stdout.write('{}'.format(sys.version_info.major))")
 ifneq (,$(shell which python3)) # If it's there, default to python3
@@ -74,6 +76,7 @@ ifeq ($(OS),MACOS)
   FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
   LIBS += -lomp
   FLAGS += -DNO_x86  # don't load x86intrin.h header. I don't pretent to fully understand why this breaks things.
+  SOFLAGS = -dynamiclib  -install_name $(LD_DIR)/libIMSRG.so  $(FLAGS)
   PYTHONFLAGS =  $(shell $(PYTHON_CONFIG) --cflags | sed -e 's/-arch i386//')
   PYTHON_LDFLAGS += -undefined dynamic_lookup # This avoids trouble with missing symbols (see pybind11.readthedocs.io/en/stable/compiling.html )
   PYTHONFLAGS += -Wno-unused-value # suppress annoying warnings about stuff in the pybind11 library
@@ -207,7 +210,9 @@ boost_src/%.o: boost_src/%.cpp
 
 
 libIMSRG.so: $(OBJ)
-	$(CXX) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
+	$(CXX) $^ $(SOFLAGS) -o $@  $(LIBS)
+#	$(CXX) $^ -dynamiclib -install_name $(LD_DIR)/$@ -o $@ $(SOFLAGS) $(LIBS)
+#	$(CXX) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
 
 python: pyIMSRG.so
 

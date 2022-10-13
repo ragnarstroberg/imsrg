@@ -335,6 +335,8 @@ int main(int argc, char** argv)
   modelspace.SetE3max(E3max);
   modelspace.SetLmax(lmax);
 //  std::cout << __LINE__ << "  done setting E3max and lmax " << std::endl;
+  modelspace.SetdE3max(dE3max);
+  modelspace.SetOccNat3Cut(OccNat3Cut);
 
 
   if (emax_unocc>0)
@@ -543,7 +545,7 @@ int main(int argc, char** argv)
 
 
   // Add a Lawson center of mass term. If hwBetaCM is specified, use that frequency, otherwise use the basis frequency
-  if (std::abs(BetaCM)>1e-3)
+  if (std::abs(BetaCM)>1e-6)
   {
     if (hwBetaCM < 0) hwBetaCM = modelspace.GetHbarOmega();
     std::ostringstream hcm_opname;
@@ -565,6 +567,77 @@ int main(int argc, char** argv)
   {
     hf.Solve();
   }
+  if ( (basis == "NAT") or (OccNat3Cut>0) ) // we want to use natural orbitals
+  {
+    
+    // for backwards compatibility: order_NAT_by_energy overrides NAT_order
+    if (order_NAT_by_energy) NAT_order = "energy";
+    hf.UseNATOccupations( use_NAT_occupations );
+    hf.OrderNATBy( NAT_order );
+    hf.GetNaturalOrbitals();
+  }
+
+  if (basis=="HF" or basis=="NAT")
+  {
+    std::cout << basis << " Single particle energies and wave functions:" << std::endl;
+    hf.PrintSPEandWF();
+    std::cout << std::endl;
+  }
+  // If the length of spwf is zero, nothing happens
+  imsrg_util::WriteSPWaveFunctions( spwf, hf, intfile);
+
+  if ( method == "HF" ) // if all we wanted was a HF calculation, we're done.
+  {
+    Hbare.PrintTimes();
+    return 0;
+  }
+
+  /// ALL DONE SETTING UP THE SINGLE-PARTICLE BASIS.
+  /// Next, we transform our operators to this new basis. Here, we can apply some further cuts
+  /// and make the NO2B approximation, if we desire.
+
+
+  /// Define the model space we'll use for the further steps. By default, it will be the same we were already using.
+  ModelSpace modelspace_imsrg = modelspace;
+  if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg != -1) or (eMax_3body_imsrg != -1))
+  {
+    
+     if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
+     if ( e2Max_imsrg==-1 ) e2Max_imsrg = 2*eMax_imsrg;
+     if ( e3Max_imsrg==-1 ) e3Max_imsrg = std::min( E3max, 3*eMax_imsrg);
+     if ( eMax_3body_imsrg==-1) eMax_3body_imsrg = eMax_imsrg;
+
+//     ModelSpace modelspace_imsrg = modelspace;
+     std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
+     modelspace_imsrg.SetEmax( eMax_imsrg);
+     modelspace_imsrg.SetE2max( e2Max_imsrg);
+     modelspace_imsrg.SetE3max( e3Max_imsrg);
+     modelspace_imsrg.SetEmax3Body( eMax_3body_imsrg );
+     modelspace_imsrg.Init( eMax_imsrg, reference, valence_space);
+   //  if (emax_unocc>0) modelspace_imsrg.SetEmaxUnocc(emax_unocc);
+     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, reference, valence_space);
+     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,valence_space,occ_file);
+//     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, eMax_imsrg, e3Max_imsrg, reference, valence_space);
+//     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space,occ_file);
+
+
+     // If the occupations in modelspace were different from the naive filling, we want to keep those.
+     std::map<index_t,double> hole_map;
+     for ( auto& i_new : modelspace_imsrg.all_orbits )
+     {
+        Orbit& oi_new = modelspace_imsrg.GetOrbit(i_new);
+        index_t i_old = modelspace.GetOrbitIndex( oi_new.n, oi_new.l, oi_new.j2, oi_new.tz2 );
+        Orbit& oi_old = modelspace.GetOrbit(i_old);
+        hole_map[i_new] = oi_old.occ;
+     }
+     modelspace_imsrg.SetReference( hole_map );
+  }
+
+  // This new modelspace will be what we use for transforming the 3N to the HF basis.
+  // For the 2N, we'll just do the transformation and then truncate.
+  hf.SetModelspaceForOutput3N(modelspace_imsrg);
+
+
 
   // decide what to keep after normal ordering
   int hno_particle_rank = 2;
@@ -576,20 +649,20 @@ int main(int argc, char** argv)
   if (basis == "HF" and method !="HF")
   {
     HNO = hf.GetNormalOrderedH( hno_particle_rank );
-    if ((IMSRG3 or perturbative_triples) and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
+//    if ((IMSRG3 or perturbative_triples) and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
     // for backwards compatibility: order_NAT_by_energy overrides NAT_order
-    if (order_NAT_by_energy) NAT_order = "energy";
+//    if (order_NAT_by_energy) NAT_order = "energy";
 
-    hf.UseNATOccupations( use_NAT_occupations );
-    hf.OrderNATBy( NAT_order );
+//    hf.UseNATOccupations( use_NAT_occupations );
+//    hf.OrderNATBy( NAT_order );
 
 //  GetNaturalOrbitals() calls GetDensityMatrix(), which computes the 1b density matrix up to MBPT2
 //  using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
 //  Then it calls DiagonalizeRho() which diagonalizes the density matrix, yielding the natural orbital basis.
-    hf.GetNaturalOrbitals();
+//    hf.GetNaturalOrbitals();
     HNO = hf.GetNormalOrderedHNAT( hno_particle_rank );
 
 //  SRS: I'm commenting this out because this is not reasonably-expected default behavior
@@ -614,8 +687,8 @@ int main(int argc, char** argv)
 
   if (perturbative_triples)
   {
-    modelspace.SetdE3max(dE3max);
-    modelspace.SetOccNat3Cut(OccNat3Cut);
+//    modelspace.SetdE3max(dE3max);
+//    modelspace.SetOccNat3Cut(OccNat3Cut);
     std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
     std::cout << "We will compute perturbative triples corrections" << std::endl;
     std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
@@ -623,33 +696,30 @@ int main(int argc, char** argv)
 
   if (IMSRG3  )
   {
-    modelspace.SetdE3max(dE3max);
-    modelspace.SetOccNat3Cut(OccNat3Cut);
+//    modelspace.SetdE3max(dE3max);
+//    modelspace.SetOccNat3Cut(OccNat3Cut);
     std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
     std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl;
 
     if (hno_particle_rank<3 ) // if we're doing IMSRG3, we need a 3 body operator
     {
-      Operator H3(modelspace,0,0,0,3);
-      std::cout << "Constructed H3" << std::endl;
-      H3.ZeroBody = HNO.ZeroBody;
-      H3.OneBody = HNO.OneBody;
-      H3.TwoBody = HNO.TwoBody;
-      HNO = H3;
-      std::cout << "Replacing HNO" << std::endl;
-      std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
+//      Operator H3(modelspace,0,0,0,3);
+//      std::cout << "Constructed H3" << std::endl;
+//      H3.ZeroBody = HNO.ZeroBody;
+//      H3.OneBody = HNO.OneBody;
+//      H3.TwoBody = HNO.TwoBody;
+//      HNO = H3;
+//      std::cout << "Replacing HNO" << std::endl;
+//      std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
+        HNO.ThreeBody.SetMode("pn");
+        HNO.SetParticleRank(3);
       // HNO.ThreeBody.SwitchToPN_and_discard();
     }
   }
 
 
 
-//  if ( spwf.size() > 0 )
-//  {
-    // If the length of spwf is zero, nothing happens
-    imsrg_util::WriteSPWaveFunctions( spwf, hf, intfile);
-//  }
 
 
 
@@ -663,6 +733,7 @@ int main(int argc, char** argv)
     double EMP2_3B = HNO.GetMP2_3BEnergy();
     std::cout << "EMP2 = " << EMP2 << std::endl;
     std::cout << "EMP2_3B = " << EMP2_3B << std::endl;
+    std::cout << "To 2nd order, E = " << HNO.ZeroBody + EMP2 + EMP2_3B << std::endl;
     std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
     double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
     std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
@@ -671,7 +742,7 @@ int main(int argc, char** argv)
 
 
 
-  std::cout << "done with pert stuff, method = " << method << std::endl;
+  std::cout << "done with perterbative stuff, method = " << method << std::endl;
   // Calculate all the desired operators. If we're using magnus, we'll do this after the flow is over
   if ( method != "magnus" )
   {
@@ -764,24 +835,9 @@ int main(int argc, char** argv)
    }// for ops.size
 
 
-
-
   }// if method != "magnus"
 
 
-  if (basis=="HF" or basis=="NAT")
-  {
-    std::cout << basis << " Single particle energies and wave functions:" << std::endl;
-    hf.PrintSPEandWF();
-    std::cout << std::endl;
-  }
-
-//  if ( method == "HF" or method == "MP3")
-  if ( method == "HF" )
-  {
-    HNO.PrintTimes();
-    return 0;
-  }
 
 
   if (method == "FCI")
@@ -856,54 +912,79 @@ int main(int argc, char** argv)
   // We may want to use a smaller model space for the IMSRG evolution than we used for the HF step.
   // This is most effective when using natural orbitals or when including 3-body operators.
 //  ModelSpace modelspace_imsrg = ( reference=="default" ? ModelSpace(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space) : ModelSpace(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,reference,valence_space) );
-  ModelSpace modelspace_imsrg = modelspace;
+//  ModelSpace modelspace_imsrg = modelspace;
   if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg != -1) or (eMax_3body_imsrg != -1))
   {
     
-     if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
-     if ( e2Max_imsrg==-1 ) e2Max_imsrg = 2*eMax_imsrg;
-     if ( e3Max_imsrg==-1 ) e3Max_imsrg = std::min( E3max, 3*eMax_imsrg);
-     if ( eMax_3body_imsrg==-1) eMax_3body_imsrg = eMax_imsrg;
+//     if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
+//     if ( e2Max_imsrg==-1 ) e2Max_imsrg = 2*eMax_imsrg;
+//     if ( e3Max_imsrg==-1 ) e3Max_imsrg = std::min( E3max, 3*eMax_imsrg);
+//     if ( eMax_3body_imsrg==-1) eMax_3body_imsrg = eMax_imsrg;
+//
+////     ModelSpace modelspace_imsrg = modelspace;
+//     std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
+//     modelspace_imsrg.SetEmax( eMax_imsrg);
+//     modelspace_imsrg.SetE2max( e2Max_imsrg);
+//     modelspace_imsrg.SetE3max( e3Max_imsrg);
+//     modelspace_imsrg.SetEmax3Body( eMax_3body_imsrg );
+//     modelspace_imsrg.Init( eMax_imsrg, reference, valence_space);
+//   //  if (emax_unocc>0) modelspace_imsrg.SetEmaxUnocc(emax_unocc);
+//     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, reference, valence_space);
+//     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,valence_space,occ_file);
+////     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, eMax_imsrg, e3Max_imsrg, reference, valence_space);
+////     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space,occ_file);
+//
+//
+//     // If the occupations in modelspace were different from the naive filling, we want to keep those.
+//     std::map<index_t,double> hole_map;
+//     for ( auto& i_new : modelspace_imsrg.all_orbits )
+//     {
+//        Orbit& oi_new = modelspace_imsrg.GetOrbit(i_new);
+//        index_t i_old = modelspace.GetOrbitIndex( oi_new.n, oi_new.l, oi_new.j2, oi_new.tz2 );
+//        Orbit& oi_old = modelspace.GetOrbit(i_old);
+//        hole_map[i_new] = oi_old.occ;
+//     }
+//     modelspace_imsrg.SetReference( hole_map );
 
-//     ModelSpace modelspace_imsrg = modelspace;
-     std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
-     modelspace_imsrg.SetEmax( eMax_imsrg);
-     modelspace_imsrg.SetE2max( e2Max_imsrg);
-     modelspace_imsrg.SetE3max( e3Max_imsrg);
-     modelspace_imsrg.SetEmax3Body( eMax_3body_imsrg );
-     modelspace_imsrg.Init( eMax_imsrg, reference, valence_space);
-   //  if (emax_unocc>0) modelspace_imsrg.SetEmaxUnocc(emax_unocc);
-     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, reference, valence_space);
-     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,valence_space,occ_file);
-//     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, eMax_imsrg, e3Max_imsrg, reference, valence_space);
-//     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space,occ_file);
-
-
-     // If the occupations in modelspace were different from the naive filling, we want to keep those.
-     std::map<index_t,double> hole_map;
-     for ( auto& i_new : modelspace_imsrg.all_orbits )
+     /// If HNO has a 3N piece, we already did the truncation while transforming to the HF basis
+     /// so we don't want to do that again. Kludgey solution, make a temporary 2N operator, truncate and copy.
+     if (HNO.GetParticleRank() < 3)
      {
-        Orbit& oi_new = modelspace_imsrg.GetOrbit(i_new);
-        index_t i_old = modelspace.GetOrbitIndex( oi_new.n, oi_new.l, oi_new.j2, oi_new.tz2 );
-        Orbit& oi_old = modelspace.GetOrbit(i_old);
-        hole_map[i_new] = oi_old.occ;
+       HNO = HNO.Truncate(modelspace_imsrg);
+       if (IMSRG3) // we'll want a 3N structure for IMSRG3
+       {
+           // Always do IMSRG(3) in pn mode. SetMode also calls Allocate.
+           HNO.ThreeBody.SetMode("pn");
+           HNO.SetParticleRank(3);
+       }
      }
-     modelspace_imsrg.SetReference( hole_map );
-
-
-     HNO = HNO.Truncate(modelspace_imsrg);
-     if (IMSRG3) {
-       HNO.ThreeBody.SwitchToPN_and_discard();
+     else
+     {
+       Operator Htmp2b = Operator(modelspace, 0,0,0,2);
+       Htmp2b.OneBody = HNO.OneBody;
+       Htmp2b.TwoBody = HNO.TwoBody;
+       Htmp2b = Htmp2b.Truncate(modelspace_imsrg);
+       HNO.OneBody = Htmp2b.OneBody;
+       HNO.TwoBody = Htmp2b.TwoBody;
      }
+
+//     HNO = HNO.Truncate(modelspace_imsrg);
+//     if (IMSRG3) {
+//       HNO.ThreeBody.SwitchToPN_and_discard();
+//     }
 
 //     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
 //    hf.PrintSPEandWF();
   }
   else
   {
+    std::cout << "Im here " << __LINE__ << " particle rank is " << HNO.GetParticleRank() << " IMSRG3 is " << IMSRG3 << std::endl;
     HNO.SetModelSpace(modelspace_imsrg);
-    if (IMSRG3) {
-      HNO.ThreeBody.SwitchToPN_and_discard();
+    if (HNO.GetParticleRank()<3 and IMSRG3) {
+        HNO.ThreeBody.SetMode("pn");
+        HNO.SetParticleRank(3);
+    std::cout << "Im here " << __LINE__ << " particle rank is " << HNO.GetParticleRank() << "  pn mode? " << HNO.ThreeBody.Is_PN_Mode() << std::endl;
+//      HNO.ThreeBody.SwitchToPN_and_discard();
     }
   }
 
@@ -915,6 +996,7 @@ int main(int argc, char** argv)
     double EMP2_3B = HNO.GetMP2_3BEnergy();
     std::cout << "EMP2 = " << EMP2 << std::endl;
     std::cout << "EMP2_3B = " << EMP2_3B << std::endl;
+    std::cout << "To 2nd order, E = " << HNO.ZeroBody + EMP2 + EMP2_3B << std::endl;
     std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
     double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
     std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
@@ -927,10 +1009,10 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  std::cout << " " << __FILE__ << " line " << __LINE__ << "noperators = " << HNO.profiler.counter["N_Operators"] << std::endl;
+
+//// Now we're ready do to the IMSRG calculation.
 
   IMSRGSolver imsrgsolver(HNO);
-  std::cout << " " << __FILE__ << " line " << __LINE__ << "noperators = " << HNO.profiler.counter["N_Operators"] << std::endl;
 //  imsrgsolver.SetHin(HNO); // necessary?
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetMethod(method);
@@ -950,24 +1032,6 @@ int main(int argc, char** argv)
   imsrgsolver.SetODETolerance(ode_tolerance);
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
-
-//  if (method == "NSmagnus") // "No split" magnus
-//  {
-//    omega_norm_max=50000;
-//    method = "magnus";
-//  }
-//  if (method.find("brueckner") != std::string::npos)
-//  {
-//    if (method=="brueckner2") brueckner_restart=true;
-//    if (method=="brueckner1step")
-//    {
-//       nsteps = 1;
-//       core_generator = valence_generator;
-//    }
-//    use_brueckner_bch = true;
-//    omega_norm_max=500;
-//    method = "magnus";
-//  }
 
   Commutator::SetUseBruecknerBCH(use_brueckner_bch);
   Commutator::SetUseIMSRG3(IMSRG3);

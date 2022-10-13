@@ -42,6 +42,7 @@ class HartreeFock
  public:
    Operator& Hbare;         ///< Input bare Hamiltonian
    ModelSpace * modelspace; ///< Model Space of the Hamiltonian
+   ModelSpace * ms_for_output_3N; ///< Model Space for the transformed 3N matrix elements (we may want a smaller space for this).
    arma::mat C;             ///< transformation coefficients, 1st index is ho basis, 2nd = HF basis
    arma::mat rho;           ///< density matrix rho_ij
    arma::mat KE;            ///< kinetic energy
@@ -113,7 +114,8 @@ class HartreeFock
    static void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
 //   ThreeBodyMEpn GetTransformed3B(  );
 //   ThreeBodyMEpn GetTransformed3B( Operator& OpIn );
-   ThreeBodyME GetTransformed3B( Operator& OpIn );
+//   ThreeBodyME GetTransformed3B( Operator& OpIn );
+   ThreeBodyME GetTransformed3B( Operator& OpIn, arma::mat& C3b );
 //   ThreeBodyMEpn GetValence3B( int emax, int E3max );
 //   ThreeBodyMEpn GetValence3B( Operator& OpIn, int emax, int E3max );
    ThreeBodyME GetValence3B( Operator& OpIn, int emax, int E3max );
@@ -121,6 +123,7 @@ class HartreeFock
    double GetTransformed3bme( Operator& OpIn, int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 //   double GetHF3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 //   double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
+   void SetModelspaceForOutput3N( ModelSpace& ms );
 
 /*
    void GetSecondOrderRho();

@@ -2921,7 +2921,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
 
-  comm232ss_expand_full(X, Y, Z);
+//  comm232ss_expand_full(X, Y, Z);
+  comm232ss_srs_optimized(X, Y, Z);
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -3334,16 +3335,36 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
   // now we need to unpack all that mess and store it in Z
   // It looks like nothing dangerous happens inside the loop, so we don't need to check for first_pass
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  // TODO This should be modified for isospin-changing operators like beta decay.
-  #pragma omp parallel for schedule(dynamic,1)
-  for ( size_t ch=0; ch<nch; ch++)
+  // Roll ch and ibra into a single loop for better load balancing
+  std::vector< std::array<size_t,3> > bra_ket_channels;
+  for ( auto& it : Z.TwoBody.MatEl )
   {
-    TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-    size_t nkets = tbc.GetNumberKets();
-    size_t J = tbc.J;
-    for (size_t ibra=0; ibra<nkets; ibra++)
-    {
-      Ket& bra = tbc.GetKet(ibra);
+     size_t chbra = it.first[0];
+     size_t chket = it.first[1];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel( chbra);
+     size_t nbras = tbc_bra.GetNumberKets();
+     for (size_t ibra=0;ibra<nbras; ibra++)
+     {
+       bra_ket_channels.push_back( { chbra,chket,ibra } ); // (ch_bra, ch_ket,ibra)
+     }
+  }
+  size_t nbra_ket_channels = bra_ket_channels.size();
+  // TODO This should be modified for isospin-changing operators like beta decay.
+//  for ( size_t ch=0; ch<nch; ch++)
+  #pragma omp parallel for schedule(dynamic,1)
+  for ( size_t ich=0; ich<nbra_ket_channels; ich++)
+  {
+    size_t chbra = bra_ket_channels[ich][0];
+    size_t chket = bra_ket_channels[ich][1];
+    size_t ibra = bra_ket_channels[ich][2];
+    TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(chbra);
+    TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(chket);
+//    size_t nkets = tbc.GetNumberKets();
+    size_t nkets = tbc_ket.GetNumberKets();
+    size_t J = tbc_bra.J;
+//    for (size_t ibra=0; ibra<nkets; ibra++)
+//    {
+      Ket& bra = tbc_bra.GetKet(ibra);
       size_t i=bra.p;
       size_t j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
@@ -3362,9 +3383,11 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
       auto& ZMat_i = ZMAT_list.at({oi.j2,oi.l%2,oi.tz2});
       auto& ZMat_j = ZMAT_list.at({oj.j2,oj.l%2,oj.tz2});
 
-      for (size_t iket=ibra; iket<nkets; iket++)
+      size_t iket_min = 0;
+      if (chbra == chket) iket_min=ibra;
+      for (size_t iket=iket_min; iket<nkets; iket++)
       {
-        Ket& ket = tbc.GetKet(iket);
+        Ket& ket = tbc_ket.GetKet(iket);
         size_t k = ket.p;
         size_t l = ket.q;
         Orbit& ok = Z.modelspace->GetOrbit(k);
@@ -3409,9 +3432,9 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
         // normalize the tbme
         zijkl /= sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
 //        zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
-        Z2.AddToTBME(ch,ch,ibra,iket,zijkl);
+        Z2.AddToTBME(chbra,chket,ibra,iket,zijkl);
       }//for iket
-    }//for ibra
+//    }//for ibra
   }// for ch
 //  if (Z.modelspace->scalar3b_transform_first_pass)   Z.profiler.timer["comm232_first_pass"] += omp_get_wtime() - tstart;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;

@@ -17,7 +17,7 @@
 //using namespace std;
 
 HartreeFock::HartreeFock(Operator& hbare)
-  : Hbare(hbare), modelspace(hbare.GetModelSpace()),
+  : Hbare(hbare), modelspace(hbare.GetModelSpace()), ms_for_output_3N(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
     tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true),discard_NO2B_from_3N(false)
 {
@@ -1019,7 +1019,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 
    if ( OpHF.GetParticleRank() >= 3 )
    {
-       OpHF.ThreeBody = GetTransformed3B( OpHO );
+       OpHF.ThreeBody = GetTransformed3B( OpHO, C );
    }
 
    return OpHF;
@@ -1153,7 +1153,8 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
 
    if (particle_rank>2)
    {
-     HNO.ThreeBody = GetTransformed3B( Hbare );
+//     HNO.ThreeBody = GetTransformed3B( Hbare );
+     HNO.ThreeBody = GetTransformed3B( Hbare, C );
    }
 
 
@@ -1319,15 +1320,17 @@ double HartreeFock::GetAverageHFPotential( double r, double rprime)
 /// step, so we don't need this. However, if we want to use the residual
 /// 3-body in any post-HF steps, we need to transform it to the HF basis.
 //**************************************************************************
-ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
+//ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
+ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn, arma::mat& C_3b )
 {
   double t_start = omp_get_wtime();
 
-  ThreeBodyME hf3bme(modelspace, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
+//  ThreeBodyME hf3bme(modelspace, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
+  ThreeBodyME hf3bme(ms_for_output_3N, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
   hf3bme.SwitchToPN_and_discard();
 //  std::cout << __func__ << "  Norm of input 3bme in oscillator basis = " << OpIn.ThreeBodyNorm() << std::endl;
 
-  std::map<int,double> e_fermi = modelspace->GetEFermi();
+  std::map<int,double> e_fermi = ms_for_output_3N->GetEFermi();
 
   std::vector<size_t> chbra_list,chket_list;
   for ( auto& itmat : hf3bme.Get_ch_start() )
@@ -1341,27 +1344,31 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
   {
     size_t ch_bra = chbra_list[ich];
     size_t ch_ket = chket_list[ich];
-    ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
-    ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
-    int twoJ = Tbc_bra.twoJ;
-    size_t nbras = Tbc_bra.GetNumberKets();
-    size_t nkets = Tbc_ket.GetNumberKets();
+    ThreeBodyChannel& Tbc_bra_HO = modelspace->GetThreeBodyChannel(ch_bra);
+    ThreeBodyChannel& Tbc_ket_HO = modelspace->GetThreeBodyChannel(ch_ket);
+    ThreeBodyChannel& Tbc_bra_HF = ms_for_output_3N->GetThreeBodyChannel(ch_bra);
+    ThreeBodyChannel& Tbc_ket_HF = ms_for_output_3N->GetThreeBodyChannel(ch_ket);
+    int twoJ = Tbc_bra_HO.twoJ;
+    size_t nbras_HO = Tbc_bra_HO.GetNumberKets();
+    size_t nkets_HO = Tbc_ket_HO.GetNumberKets();
+    size_t nbras_HF = Tbc_bra_HF.GetNumberKets();
+    size_t nkets_HF = Tbc_ket_HF.GetNumberKets();
     std::vector<size_t> bras_kept;
     std::vector<size_t> kets_kept;
     std::map<size_t,size_t> kept_lookup_bra;
     std::map<size_t,size_t> kept_lookup_ket;
 
 
-    for ( size_t ibra=0; ibra<nbras; ibra++)
+    for ( size_t ibra=0; ibra<nbras_HF; ibra++)
     {
-      Ket3& bra = Tbc_bra.GetKet(ibra);
+      Ket3& bra = Tbc_bra_HF.GetKet(ibra);
       int ei = 2*bra.op->n + bra.op->l;
       int ej = 2*bra.oq->n + bra.op->l;
       int ek = 2*bra.oR->n + bra.op->l;
       int tz2i = bra.op->tz2;
       int tz2j = bra.oq->tz2;
       int tz2k = bra.oR->tz2;
-      if (  ( std::abs(ei - e_fermi[tz2i]) + std::abs(ej-e_fermi[tz2j]) + std::abs(ek-e_fermi[tz2k])) > modelspace->GetdE3max() ) continue;
+      if (  ( std::abs(ei - e_fermi[tz2i]) + std::abs(ej-e_fermi[tz2j]) + std::abs(ek-e_fermi[tz2k])) > ms_for_output_3N->GetdE3max() ) continue;
       bras_kept.push_back( ibra );
       kept_lookup_bra[ibra] = bras_kept.size()-1;
     }
@@ -1374,16 +1381,16 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
     }
     else
     {
-      for ( size_t iket=0; iket<nkets; iket++)
+      for ( size_t iket=0; iket<nkets_HF; iket++)
       {
-        Ket3& ket = Tbc_ket.GetKet(iket);
+        Ket3& ket = Tbc_ket_HF.GetKet(iket);
         int ei = 2*ket.op->n + ket.op->l;
         int ej = 2*ket.oq->n + ket.op->l;
         int ek = 2*ket.oR->n + ket.op->l;
         int tz2i = ket.op->tz2;
         int tz2j = ket.oq->tz2;
         int tz2k = ket.oR->tz2;
-        if (  ( std::abs(ei - e_fermi[tz2i]) + std::abs(ej-e_fermi[tz2j]) + std::abs(ek-e_fermi[tz2k])) > modelspace->GetdE3max() ) continue;
+        if (  ( std::abs(ei - e_fermi[tz2i]) + std::abs(ej-e_fermi[tz2j]) + std::abs(ek-e_fermi[tz2k])) > ms_for_output_3N->GetdE3max() ) continue;
         kets_kept.push_back( iket );
         kept_lookup_ket[iket] = kets_kept.size()-1;
       }
@@ -1392,27 +1399,35 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
 
 
 
-   arma::mat Dbra(nbras_kept, nbras_kept, arma::fill::zeros );
-   arma::mat Dket(nkets_kept, nkets_kept, arma::fill::zeros );
+   arma::mat Dbra(nbras_kept, nbras_HO, arma::fill::zeros );
+   arma::mat Dket(nkets_HO, nkets_kept, arma::fill::zeros );
+//   arma::mat Dbra(nbras_kept, nbras_kept, arma::fill::zeros );
+//   arma::mat Dket(nkets_kept, nkets_kept, arma::fill::zeros );
 // Potentially worth exploring if any improvement is made by using sparse matrices
 //   arma::sp_mat Dbra(nbras_kept, nbras_kept );
 //   arma::sp_mat Dket(nkets_kept, nkets_kept );
 
-   arma::mat Vho( nbras_kept, nkets_kept, arma::fill::zeros );
+//   arma::mat Vho( nbras_kept, nkets_kept, arma::fill::zeros );
+   arma::mat Vho( nbras_HO, nkets_HO, arma::fill::zeros );
 
 
     for ( size_t indxHF=0; indxHF<nbras_kept; indxHF++ )
     {
        size_t ibra_HF = bras_kept[indxHF];
-       Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
-       size_t iHF = bra_HF.p;
-       size_t jHF = bra_HF.q;
-       size_t kHF = bra_HF.r;
+       Ket3& bra_HF = Tbc_bra_HF.GetKet(ibra_HF);
+       // Get the index of the HF orbit in the original modelspace
+       size_t iHF = modelspace->GetOrbitIndex( bra_HF.op->n, bra_HF.op->l, bra_HF.op->j2, bra_HF.op->tz2 );
+       size_t jHF = modelspace->GetOrbitIndex( bra_HF.oq->n, bra_HF.oq->l, bra_HF.oq->j2, bra_HF.oq->tz2 );
+       size_t kHF = modelspace->GetOrbitIndex( bra_HF.oR->n, bra_HF.oR->l, bra_HF.oR->j2, bra_HF.oR->tz2 );
+//       size_t iHF = bra_HF.p;
+//       size_t jHF = bra_HF.q;
+//       size_t kHF = bra_HF.r;
        int JijHF = bra_HF.Jpq;
-       for ( size_t indxHO=0; indxHO<nbras_kept; indxHO++ )
+       for ( size_t indxHO=0; indxHO<nbras_HO; indxHO++ )
        {
-         size_t ibra_HO = bras_kept[indxHO];
-         Ket3& bra_HO = Tbc_bra.GetKet(ibra_HO);
+//         size_t ibra_HO = bras_kept[indxHO];
+//         Ket3& bra_HO = Tbc_bra.GetKet(ibra_HO);
+         Ket3& bra_HO = Tbc_bra_HO.GetKet(indxHO);
          size_t iHO = bra_HO.p;
          size_t jHO = bra_HO.q;
          size_t kHO = bra_HO.r;
@@ -1429,7 +1444,7 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
          {
            size_t iiHO,jjHO,kkHO;
            OpIn.ThreeBody.Permute(perm3b, iHO,jHO,kHO, iiHO,jjHO,kkHO);
-           double overlap = C(iiHO,iHF) * C(jjHO,jHF) * C(kkHO,kHF);
+           double overlap = C_3b(iiHO,iHF) * C_3b(jjHO,jHF) * C_3b(kkHO,kHF);
            if ( std::abs( overlap) > 1e-8 )
            {
              double phase = OpIn.ThreeBody.PermutationPhase(perm3b); // the fermionic sign from the permutation
@@ -1448,10 +1463,12 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
     }
     else
     {
-      for ( size_t indxHO=0; indxHO<nkets_kept; indxHO++ )
+//      for ( size_t indxHO=0; indxHO<nkets_kept; indxHO++ )
+      for ( size_t indxHO=0; indxHO<nkets_HO; indxHO++ )
       {
-        size_t iket_HO = kets_kept[indxHO];
-        Ket3& ket_HO = Tbc_ket.GetKet(iket_HO);
+//        size_t iket_HO = kets_kept[indxHO];
+//        Ket3& ket_HO = Tbc_ket.GetKet(iket_HO);
+        Ket3& ket_HO = Tbc_ket_HO.GetKet(indxHO);
         size_t iHO = ket_HO.p;
         size_t jHO = ket_HO.q;
         size_t kHO = ket_HO.r;
@@ -1467,10 +1484,14 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
         for ( size_t indxHF=0; indxHF<nkets_kept; indxHF++ )
         {
            size_t iket_HF = kets_kept[indxHF];
-           Ket3& ket_HF = Tbc_ket.GetKet(iket_HF);
-           size_t iHF = ket_HF.p;
-           size_t jHF = ket_HF.q;
-           size_t kHF = ket_HF.r;
+           Ket3& ket_HF = Tbc_ket_HF.GetKet(iket_HF);
+
+           size_t iHF = modelspace->GetOrbitIndex( ket_HF.op->n, ket_HF.op->l, ket_HF.op->j2, ket_HF.op->tz2 );
+           size_t jHF = modelspace->GetOrbitIndex( ket_HF.oq->n, ket_HF.oq->l, ket_HF.oq->j2, ket_HF.oq->tz2 );
+           size_t kHF = modelspace->GetOrbitIndex( ket_HF.oR->n, ket_HF.oR->l, ket_HF.oR->j2, ket_HF.oR->tz2 );
+//           size_t iHF = ket_HF.p;
+//           size_t jHF = ket_HF.q;
+//           size_t kHF = ket_HF.r;
            int JijHF = ket_HF.Jpq;
 
            double dket = 0;
@@ -1496,19 +1517,23 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
 
 
 
-    for ( size_t indx_bra=0; indx_bra<nbras_kept; indx_bra++ )
+//    for ( size_t indx_bra=0; indx_bra<nbras_kept; indx_bra++ )
+    for ( size_t indx_bra=0; indx_bra<nbras_HO; indx_bra++ )
     {
-      size_t ibra_HO = bras_kept[indx_bra];
-      Ket3& bra_HO = Tbc_bra.GetKet(ibra_HO);
+//      size_t ibra_HO = bras_kept[indx_bra];
+//      Ket3& bra_HO = Tbc_bra.GetKet(ibra_HO);
+      Ket3& bra_HO = Tbc_bra_HO.GetKet(indx_bra);
       size_t iHO = bra_HO.p;
       size_t jHO = bra_HO.q;
       size_t kHO = bra_HO.r;
       int JijHO = bra_HO.Jpq;
 
-      for ( size_t indx_ket=0; indx_ket<nkets_kept; indx_ket++ )
+//      for ( size_t indx_ket=0; indx_ket<nkets_kept; indx_ket++ )
+      for ( size_t indx_ket=0; indx_ket<nkets_HO; indx_ket++ )
       {
-        size_t iket_HO = kets_kept[indx_ket];
-        Ket3& ket_HO = Tbc_ket.GetKet(iket_HO);
+//        size_t iket_HO = kets_kept[indx_ket];
+//        Ket3& ket_HO = Tbc_ket.GetKet(iket_HO);
+        Ket3& ket_HO = Tbc_ket_HO.GetKet(indx_ket);
         size_t lHO = ket_HO.p;
         size_t mHO = ket_HO.q;
         size_t nHO = ket_HO.r;
@@ -1591,6 +1616,15 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return hf3bme;
 
+}
+
+/// Set a different modelspace for the output 3N upon transforming to the HF basis.
+/// This might be useful if we do the HF step with a large 3N space, and then want
+/// to do IMSRG(3) in a smaller 3N space. This way we can avoid transforming 3N matrix elements
+/// that we then immediately discard.
+void HartreeFock::SetModelspaceForOutput3N( ModelSpace& ms )
+{
+   ms_for_output_3N = &ms;
 }
 
 
