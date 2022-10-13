@@ -2300,30 +2300,37 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t norb = Z.modelspace->GetNumberOrbits();
-  #pragma omp parallel for schedule(dynamic,1)
+  int num_threads = omp_get_max_threads();
+  std::vector<arma::mat> Z_mats;
+  Z_mats.reserve(num_threads);
+  for (int i = 0; i < num_threads; i += 1) {
+    Z_mats.push_back(arma::zeros(norb, norb));
+  }
+  #pragma omp parallel for schedule(dynamic,1) collapse(2)
   for (size_t i=0; i<norb; i++)
   {
-    Orbit& oi = Z.modelspace->GetOrbit(i);
-    int ei = 2*oi.n + oi.l;
-    double occnat_i = oi.occ_nat;
-    int tzi = oi.tz2;
-    for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
+    for (size_t ch_ab=0; ch_ab<nch2; ch_ab++)
     {
-      if (j>i) continue;
-      double zij=0;
-      Orbit& oj = Z.modelspace->GetOrbit(j);
-      double occnat_j = oj.occ_nat;
-      int ej = 2*oj.n + oj.l;
-      int tzj = oj.tz2;
-
-      for (size_t ch_ab=0; ch_ab<nch2; ch_ab++)
-      {
-        auto& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
-        int Jab = tbc_ab.J;
-        size_t nkets_ab = tbc_ab.GetNumberKets();
-        int twoJ_min = std::abs(2*Jab - oi.j2);
-        int twoJ_max = 2*Jab+oi.j2;
+      int tid = omp_get_thread_num();
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      int ei = 2*oi.n + oi.l;
+      double occnat_i = oi.occ_nat;
+      int tzi = oi.tz2;
+      auto& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
+      int Jab = tbc_ab.J;
+      size_t nkets_ab = tbc_ab.GetNumberKets();
+      int twoJ_min = std::abs(2*Jab - oi.j2);
+      int twoJ_max = 2*Jab+oi.j2;
         
+      for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
+      {
+        if (j>i) continue;
+        double zij=0;
+        Orbit& oj = Z.modelspace->GetOrbit(j);
+        double occnat_j = oj.occ_nat;
+        int ej = 2*oj.n + oj.l;
+        int tzj = oj.tz2;
+
         for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
         {
            Ket& ket_ab = tbc_ab.GetKet(iket_ab);
@@ -2382,12 +2389,20 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
              }// for iket_cde
            }// for twoJ
         }// for iket_ab
-      }// for ch_ab
 
-      Z1(i,j) += zij;
-      if ( i!=j ) Z1(j,i) += herm * zij;
-    }// for j
+        Z_mats[tid](i,j) += zij;
+        if ( i!=j ) Z_mats[tid](j,i) += herm * zij;
+      }// for j
+    }// for ch_ab
   }// for i
+
+  for (int tid = 0; tid < num_threads; tid += 1) {
+    for (std::size_t i = 0; i < norb; i += 1) {
+      for (std::size_t j = 0; j < norb; j += 1) {
+        Z1(i, j) += Z_mats[tid](i, j);
+      }
+    }
+  }
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
