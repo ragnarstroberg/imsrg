@@ -3389,10 +3389,30 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
-void comm232ss_expand_new( const Operator& X, const Operator& Y, Operator& Z ) {
+// This is the comm232ss implementation by Matthias.
+// "Expand" refers to the fact that the 3BMEs are expanded into a full set
+// channel by channel to optimize the contraction.
+//
+// In the 232 commutator, if emax != emax_3body (the truncation for the 3B operator)
+// one of the external indices is in the emax model space
+// instead of the emax_3body model space. This implementation accounts for that properly
+// rather than simply truncating all indices to the emax_3body level.
+// This comes at a substantial computational cost, especially for large emax.
+void comm232ss_expand_full( const Operator& X, const Operator& Y, Operator& Z ) {
   comm232::comm232ss_expand_impl_full(X, Y, Z);
 }
 
+
+// This is the comm232ss implementation by Matthias.
+// "Expand" refers to the fact that the 3BMEs are expanded into a full set
+// channel by channel to optimize the contraction.
+//
+// In the 232 commutator, if emax != emax_3body (the truncation for the 3B operator)
+// one of the external indices is in the emax model space
+// instead of the emax_3body model space. This implementation truncates
+// all indices to the emax_3body level, effectively performing a truncation
+// on the commutator level rather than on the matrix element level.
+// This implementation is fairly cheap and pretty efficient on big nodes with many threads.
 void comm232ss_expand_reduced( const Operator& X, const Operator& Y, Operator& Z ) {
   comm232::comm232ss_expand_impl_red(X, Y, Z);
 }
@@ -3475,8 +3495,10 @@ size_t GetSetSizeFlat(const std::unordered_set<K>& m) {
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 // Now this is fine. The 223 commutator is taking all the time.
-void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
-//void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
+//
+// This is a variant of comm232ss_srs_optimized that was broken up by Matthias
+// and tweaked to get improved performance when using many threads in large model spaces.
+void comm232ss_mh_optimized( const Operator& X, const Operator& Y, Operator& Z )
 {
   size_t lookups_size = 0;
   double tstart = omp_get_wtime();
