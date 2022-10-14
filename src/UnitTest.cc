@@ -1859,7 +1859,7 @@ bool UnitTest::Mscheme_Test_comm330ss( const Operator& X, const Operator& Y )
 
 /// M-Scheme Formula:
 //
-// Z_ij = 1/4 sum_abcde (nanb n`c n`dn`e) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
+// Z_ij = 1/12 sum_abcde (nanb n`c n`dn`e) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
 //
 // this is very slow...
 bool UnitTest::Mscheme_Test_comm331ss( const Operator& X, const Operator& Y )
@@ -1923,7 +1923,8 @@ bool UnitTest::Mscheme_Test_comm331ss( const Operator& X, const Operator& Y )
                 if ( (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+oe.tz2)) continue;
                 double ne = oe.occ;
                 if ( (1-ne)<1e-6 ) continue;
-                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne);
+// Mistake found by Matthias Heinz Oct 14 2022                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne);
+                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne) + (1-na)*(1-nb)*nc*nd*ne;
                 if (std::abs(occfactor)<1e-7) continue;
 //                std::cout << "abcde " << a << " " << b << " " << c << " " << d << " " << e << " " << e << std::endl;
 

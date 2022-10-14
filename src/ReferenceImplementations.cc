@@ -596,9 +596,12 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 Orbit& oe = Z.modelspace->GetOrbit(e);
                 if ( (oa.l+ob.l+oi.l + oc.l+od.l+oe.l + Z.parity)%2 >0) continue;
                 if ( std::abs(oa.tz2+ob.tz2+oi.tz2 - oc.tz2-od.tz2-oe.tz2) != Z.GetTRank()) continue;
-                if ( std::abs( oa.occ * ob.occ *(1-oc.occ)*(1-od.occ)*(1-oe.occ) )<1e-8 ) continue;
+//                if ( std::abs( oa.occ * ob.occ *(1-oc.occ)*(1-od.occ)*(1-oe.occ) )<1e-8 ) continue;
 
-                double cde_symmetry_factor = 1;
+                double cde_symmetry_factor = 1; // why this???
+                double occupation_factor =  oa.occ * ob.occ *(1-oc.occ)*(1-od.occ)*(1-oe.occ) // fixed mistake found by Matthias Heinz Oct 2022
+                                          + (1-oa.occ)*(1-ob.occ) * oc.occ * od.occ * oe.occ ;
+                if ( std::abs( occupation_factor )<1e-8 ) continue;
 
 
                 for (int J1=J1min; J1<=J1max; J1++)
@@ -616,7 +619,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                       double yabicde = Y3.GetME_pn( J1, J2, twoJ, a,b,i,c,d,e);
                       double xcdeabj = X3.GetME_pn( J2, J1, twoJ, c,d,e,a,b,j);
                       double ycdeabj = Y3.GetME_pn( J2, J1, twoJ, c,d,e,a,b,j);
-                      zij += 1./12 * cde_symmetry_factor * oa.occ * ob.occ *(1-oc.occ)*(1-od.occ)*(1-oe.occ) * (twoJ+1.)/(oi.j2+1) * ( xabicde * ycdeabj - yabicde * xcdeabj );
+                      zij += 1./12 * cde_symmetry_factor * occupation_factor * (twoJ+1.)/(oi.j2+1) * ( xabicde * ycdeabj - yabicde * xcdeabj );
                     }               
                   }//Jj
                 }//J1

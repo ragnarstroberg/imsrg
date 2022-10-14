@@ -2340,7 +2340,10 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            Ket& ket_ab = tbc_ab.GetKet(iket_ab);
            size_t a = ket_ab.p;
            size_t b = ket_ab.q;
-           if (std::abs( ket_ab.op->occ * ket_ab.oq->occ )<1e-6 ) continue;
+//           if (std::abs( ket_ab.op->occ * ket_ab.oq->occ )<1e-6 ) continue;
+           double na = ket_ab.op->occ;
+           double nb = ket_ab.oq->occ;
+           if ( (std::abs(na*nb) + std::abs( (1-na)*(1-nb) ) ) < 1e-8) continue;
            int ea = 2*ket_ab.op->n + ket_ab.op->l;
            int eb = 2*ket_ab.oq->n + ket_ab.oq->l;
            if (ea > emax_3body) continue;
@@ -2368,8 +2371,12 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
              for (size_t iket_cde=0; iket_cde<nkets3; iket_cde++)
              {
                 Ket3& ket_cde = Tbc.GetKet(iket_cde);
-                double occfactor = (ket_ab.op->occ * ket_ab.oq->occ) * (1-ket_cde.op->occ)*(1-ket_cde.oq->occ)*(1-ket_cde.oR->occ);
-                if (std::abs(occfactor)<1e-6) continue;
+                double nc = ket_cde.op->occ;
+                double nd = ket_cde.oq->occ;
+                double ne = ket_cde.oR->occ;
+//                double occfactor = (ket_ab.op->occ * ket_ab.oq->occ) * (1-ket_cde.op->occ)*(1-ket_cde.oq->occ)*(1-ket_cde.oR->occ);
+                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne) + (1-na)*(1-nb)*nc*nd*ne; // fixes mistake found by Matthias Heinz Oct 2022
+                if (std::abs(occfactor)<1e-8) continue;
                 size_t c = ket_cde.p;
                 size_t d = ket_cde.q;
                 size_t e = ket_cde.r;
@@ -6112,7 +6119,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 // TODO Identify when it helps to parallelize in the outer loop, and when it's better to give the threads to the matmult step.
 // Memory-wise, it's better to let the threads do mat mult
 // On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
-// On the CRC machines with up to 24 threads, linking agains MKL, parallelizing at the channel level is better by a factor 10.
+// On the CRC machines with up to 24 threads, linking against MKL, parallelizing at the channel level is better by a factor 10.
+//  -SRS
 //  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
