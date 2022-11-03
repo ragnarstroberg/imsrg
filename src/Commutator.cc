@@ -1050,10 +1050,16 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
 // TODO: MODIFY THIS TO ACCOMMODATE J=0, T!=0 operators
 void comm122ss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
+   if ( not  (X.GetParity()==0 and Y.GetParity()==0 and Z.GetParity()==0 and X.GetTRank()==0 and Y.GetTRank()==0 and Z.GetTRank()==0) )
+   {
+      comm122ss_slower( X, Y, Z);
+      return;
+   }
    double t_start = omp_get_wtime();
    auto& X1 = X.OneBody;
    auto& Y1 = Y.OneBody;
    int hZ = Z.IsHermitian() ? 1 : -1;
+
 
    int n_nonzero = Z.modelspace->SortedTwoBodyChannels.size();
    #pragma omp parallel for schedule(dynamic,1)
@@ -1143,6 +1149,108 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
 }
 
 
+
+// A more straightforward implementation, which can handle parity and isospin changing operators
+// It's not dramatically slower, but slow enough that we should only use it when we need it.
+void comm122ss_slower( const Operator& X, const Operator& Y, Operator& Z ) 
+{
+   double t_start = omp_get_wtime();
+   auto& X1 = X.OneBody;
+   auto& Y1 = Y.OneBody;
+   auto& X2 = X.TwoBody;
+   auto& Y2 = Y.TwoBody;
+   auto& Z2 = Z.TwoBody;
+
+   std::vector<size_t> ch_bra_list,ch_ket_list;
+   for ( auto& iter : Z.TwoBody.MatEl )
+   {
+      ch_bra_list.push_back( iter.first[0] );
+      ch_ket_list.push_back( iter.first[1] );
+   }
+   int nch = ch_bra_list.size();
+   
+//   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ich=0; ich<nch; ich++)
+   {
+     size_t ch_bra = ch_bra_list[ich];
+     size_t ch_ket = ch_ket_list[ich];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+     int J = tbc_bra.J;
+     int nbras = tbc_bra.GetNumberKets();
+     int nkets = tbc_ket.GetNumberKets();
+     for (int ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       size_t i = bra.p;
+       size_t j = bra.q;
+       Orbit& oi = *(bra.op);
+       Orbit& oj = *(bra.oq);
+
+       int ketmin = 0;
+       if (ch_bra==ch_ket) ketmin=ibra;
+       for (int iket=ketmin; iket<nkets; iket++)
+       {
+         Ket& ket = tbc_ket.GetKet(iket);
+         size_t k = ket.p;
+         size_t l = ket.q;
+
+         Orbit& ok = *(ket.op);
+         Orbit& ol = *(ket.oq);
+
+         double zijkl = 0;
+         // X1 Y2
+         for ( size_t a : X.OneBodyChannels.at( { oi.l, oi.j2, oi.tz2 } ) )
+         {
+            zijkl += X1(i,a) * Y2.GetTBME_J(J,J, a,j,k,l);
+         }
+         for ( size_t a : X.OneBodyChannels.at( { oj.l, oj.j2, oj.tz2 } ) )
+         {
+            zijkl += X1(j,a) * Y2.GetTBME_J(J,J, i,a,k,l);
+         }
+         // X2 Y1
+         for ( size_t a : Y.OneBodyChannels.at( { ok.l, ok.j2, ok.tz2 } ) )
+         {
+            zijkl +=  X2.GetTBME_J(J,J, i,j,a,l) * Y1(a,k);
+         }
+         for ( size_t a : Y.OneBodyChannels.at( { ol.l, ol.j2, ol.tz2 } ) )
+         {
+            zijkl +=  X2.GetTBME_J(J,J, i,j,k,a) * Y1(a,l);
+         }
+
+         // Y1 X2
+         for ( size_t a : Y.OneBodyChannels.at( { oi.l, oi.j2, oi.tz2 } ) )
+         {
+            zijkl -= Y1(i,a) * X2.GetTBME_J(J,J, a,j,k,l);
+         }
+         for ( size_t a : Y.OneBodyChannels.at( { oj.l, oj.j2, oj.tz2 } ) )
+         {
+            zijkl -= Y1(j,a) * X2.GetTBME_J(J,J, i,a,k,l);
+         }
+         // Y2 X1
+         for ( size_t a : X.OneBodyChannels.at( { ok.l, ok.j2, ok.tz2 } ) )
+         {
+            zijkl -=  Y2.GetTBME_J(J,J, i,j,a,l) * X1(a,k);
+         }
+         for ( size_t a : X.OneBodyChannels.at( { ol.l, ol.j2, ol.tz2 } ) )
+         {
+            zijkl -=  Y2.GetTBME_J(J,J, i,j,k,a) * X1(a,l);
+         }
+
+
+         // Need to normalize here, because AddToTBME expects a normalized TBME.
+         if (i==j) zijkl /= PhysConst::SQRT2;
+         if (k==l) zijkl /= PhysConst::SQRT2;
+
+         Z2.AddToTBME(ch_bra,ch_ket, ibra,iket, zijkl);
+
+       }//iket
+     }//ibra
+   }//ch
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+
+}
 
 
 
@@ -1900,7 +2008,12 @@ std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orie
 ///
 void comm222_phss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
-
+   if ( not  (X.GetParity()==0 and Y.GetParity()==0 and Z.GetParity()==0 and X.GetTRank()==0 and Y.GetTRank()==0 and Z.GetTRank()==0) )
+   {
+      comm222_phss_slower( X, Y, Z);
+//      comm222_phst( X, Y, Z);
+      return;
+   }
    int hy = Y.IsHermitian() ? 1 : -1;
    // Create Pandya-transformed hp and ph matrix elements
    double t_start = omp_get_wtime();
@@ -2000,6 +2113,178 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
    X.profiler.timer[__func__] += omp_get_wtime() - t_start_full;
 
 }
+
+
+
+
+
+
+// A much slower, but more straighforward implementation which can handle parity and isospin changing operators.
+void comm222_phss_slower( const Operator& X, const Operator& Y, Operator& Z)
+{
+   double t_start = omp_get_wtime();
+   auto& X2 = X.TwoBody;
+   auto& Y2 = Y.TwoBody;
+   auto& Z2 = Z.TwoBody;
+
+
+   std::vector<size_t> ch_bra_list,ch_ket_list;
+   for ( auto& iter : Z.TwoBody.MatEl )
+   {
+      ch_bra_list.push_back( iter.first[0] );
+      ch_ket_list.push_back( iter.first[1] );
+   }
+   int nch = ch_bra_list.size();
+   
+//   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ich=0; ich<nch; ich++)
+   {
+     size_t ch_bra = ch_bra_list[ich];
+     size_t ch_ket = ch_ket_list[ich];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+
+//   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+//   #pragma omp parallel for schedule(dynamic,1)
+//   for (int ch=0; ch<nch; ch++)
+//   {
+//     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+     int J = tbc_bra.J;
+     int nbras = tbc_bra.GetNumberKets();
+     int nkets = tbc_ket.GetNumberKets();
+//     for (int ibra=0; ibra<nkets; ibra++)
+     for (int ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       size_t i = bra.p;
+       size_t j = bra.q;
+       Orbit& oi = Z.modelspace->GetOrbit(i);
+       Orbit& oj = Z.modelspace->GetOrbit(j);
+
+       int ketmin = 0;
+       if ( ch_bra==ch_ket) ketmin = ibra;
+       for (int iket=ketmin; iket<nkets; iket++)
+       {
+         Ket& ket = tbc_ket.GetKet(iket);
+         size_t k = ket.p;
+         size_t l = ket.q;
+         Orbit& ok = Z.modelspace->GetOrbit(k);
+         Orbit& ol = Z.modelspace->GetOrbit(l);
+
+         double zijkl = 0;
+//         int Jpmin = std::max( std::abs(oi.j2-ol.j2) , std::abs(oj.j2-ok.j2) )/2;
+//         int Jpmax = std::min( oi.j2+ol.j2 , oj.j2+ok.j2 )/2;
+         int Jpmin = std::min(  std::max( std::abs(oi.j2-ol.j2) , std::abs(oj.j2-ok.j2)   ),
+                                std::max( std::abs(oj.j2-ol.j2) , std::abs(oi.j2-ok.j2)   ) )/2;
+         int Jpmax = std::max(  std::min( oi.j2+ol.j2 , oj.j2+ok.j2 ),
+                                std::min( oj.j2+ol.j2 , oi.j2+ok.j2 )  )/2;
+
+         for (int Jp=Jpmin; Jp<=Jpmax; Jp++ )
+         {
+
+           double zbar_ilkj = 0;
+           double zbar_jlki = 0;
+           double sixj_ijkl = AngMom::SixJ( oi.j2*0.5, oj.j2*0.5, J,  ok.j2*0.5, ol.j2*0.5, Jp);
+           double sixj_jikl = AngMom::SixJ( oj.j2*0.5, oi.j2*0.5, J,  ok.j2*0.5, ol.j2*0.5, Jp);
+
+           for (size_t a : Z.modelspace->all_orbits)
+           {
+             Orbit& oa = Z.modelspace->GetOrbit(a);
+             for (size_t b : Z.modelspace->all_orbits)
+             {
+                Orbit& ob = Z.modelspace->GetOrbit(b);
+
+                // "Direct" term
+                double xbar_ilab=0;
+                double ybar_ilab=0;
+
+                int Jppmin = std::max( std::abs(oi.j2-ob.j2) , std::abs(oa.j2-ol.j2) )/2;
+                int Jppmax = std::min( oi.j2+ob.j2 , oa.j2+ol.j2 )/2;
+                for (int Jpp=Jppmin; Jpp<=Jppmax; Jpp++)
+                {
+                  double sixj_ilab = AngMom::SixJ( oi.j2*0.5, ol.j2*0.5, Jp,  oa.j2*0.5, ob.j2*0.5, Jpp);
+                  double xibal = X2.GetTBME_J(Jpp, i,b,a,l);
+                  double yibal = Y2.GetTBME_J(Jpp, i,b,a,l);
+                  xbar_ilab -= (2*Jpp+1) * sixj_ilab * xibal;
+                  ybar_ilab -= (2*Jpp+1) * sixj_ilab * yibal;
+                }
+
+
+                double xbar_abkj=0;
+                double ybar_abkj=0;
+                Jppmin = std::max( std::abs(oa.j2-oj.j2) , std::abs(ok.j2-ob.j2) )/2;
+                Jppmax = std::min( oa.j2+oj.j2 , ok.j2+ob.j2 )/2;
+                for (int Jpp=Jppmin; Jpp<=Jppmax; Jpp++)
+                {
+                  double sixj_abkj = AngMom::SixJ( oa.j2*0.5, ob.j2*0.5, Jp,  ok.j2*0.5, oj.j2*0.5, Jpp);
+                  double xajkb = X2.GetTBME_J(Jpp, a,j,k,b);
+                  double yajkb = Y2.GetTBME_J(Jpp, a,j,k,b);
+                  xbar_abkj -= (2*Jpp+1) * sixj_abkj * xajkb;
+                  ybar_abkj -= (2*Jpp+1) * sixj_abkj * yajkb;
+                }
+
+
+
+                zbar_ilkj += (oa.occ - ob.occ) * (xbar_ilab * ybar_abkj - ybar_ilab * xbar_abkj);
+
+
+                // "Exchange" term obtained by exchanging i<->j.
+                double xbar_jlab=0;
+                double ybar_jlab=0;
+                Jppmin = std::max( std::abs(oj.j2-ob.j2) , std::abs(oa.j2-ol.j2) )/2;
+                Jppmax = std::min( oj.j2+ob.j2 , oa.j2+ol.j2 )/2;
+                for (int Jpp=Jppmin; Jpp<=Jppmax; Jpp++)
+                {
+                  double sixj_jlab = AngMom::SixJ( oj.j2*0.5, ol.j2*0.5, Jp,  oa.j2*0.5, ob.j2*0.5, Jpp);
+                  double xjbal = X2.GetTBME_J(Jpp, j,b,a,l);
+                  double yjbal = Y2.GetTBME_J(Jpp, j,b,a,l);
+                  xbar_jlab -= (2*Jpp+1) * sixj_jlab * xjbal;
+                  ybar_jlab -= (2*Jpp+1) * sixj_jlab * yjbal;
+                }
+
+
+                double xbar_abki=0;
+                double ybar_abki=0;
+                Jppmin = std::max( std::abs(oa.j2-oi.j2) , std::abs(ok.j2-ob.j2) )/2;
+                Jppmax = std::min( oa.j2+oi.j2 , ok.j2+ob.j2 )/2;
+                for (int Jpp=Jppmin; Jpp<=Jppmax; Jpp++)
+                {
+                  double sixj_abki = AngMom::SixJ( oa.j2*0.5, ob.j2*0.5, Jp,  ok.j2*0.5, oi.j2*0.5, Jpp);
+                  double xaikb = X2.GetTBME_J(Jpp, a,i,k,b);
+                  double yaikb = Y2.GetTBME_J(Jpp, a,i,k,b);
+                  xbar_abki -= (2*Jpp+1) * sixj_abki * xaikb;
+                  ybar_abki -= (2*Jpp+1) * sixj_abki * yaikb;
+                }
+
+
+                zbar_jlki += (oa.occ - ob.occ) * (xbar_jlab * ybar_abki - ybar_jlab * xbar_abki);
+
+
+
+             }//b
+           }//a
+           int phase_ij = AngMom::phase( (oi.j2 + oj.j2 - 2*J)/2 );
+           zijkl += (2*Jp+1) * sixj_ijkl * zbar_ilkj;  // Direct
+           zijkl -= (2*Jp+1) * sixj_jikl * zbar_jlki * phase_ij;   //Exchange, with phase
+
+
+         }// Jp
+
+
+         // Need to normalize here, because AddToTBME expects a normalized TBME.
+         if (i==j) zijkl /= PhysConst::SQRT2;
+         if (k==l) zijkl /= PhysConst::SQRT2;
+
+         Z2.AddToTBME(ch_bra,ch_ket, ibra,iket, zijkl);
+
+       }// iket
+     }// ibra
+   }// ch
+
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}//comm222_phss
+
 
 
 
@@ -11544,6 +11829,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
    int Lambda = Z.GetJRank();
+   int hZ = Z.IsHermitian() ? +1 : -1;
    Z.modelspace->PreCalculateSixJ();
    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
@@ -11560,7 +11846,9 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
           Orbit &oj = Z.modelspace->GetOrbit(j);
           double jj = 0.5*oj.j2;
           if (j<i) continue; // only calculate upper triangle
-          double& Zij = Z.OneBody(i,j);
+//          double& Zij = Z.OneBody(i,j);
+          double zij = 0;
+          int phase_ij = AngMom::phase( (oi.j2-oj.j2)/2 );
           for (auto a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
@@ -11581,7 +11869,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                     {
                       if ( ! ( J2>=std::abs(ja-jj) and J2<=ja+jj )) continue;
                       double prefactor = nanb*phasefactor * sqrt((2*J1+1)*(2*J2+1)) * Z.modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
-                      Zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) - X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j ));
+                      zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) - X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j ));
                     }
                   }
              }
@@ -11596,26 +11884,33 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                 double nanb = oa.occ * (1-ob.occ);
                 int J1min = std::max(std::abs(ji-jb),std::abs(jj-ja));
                 int J1max = std::min(ji+jb,jj+ja);
-                double zij = 0;
+                double Xbar_ijab = 0;
                 for (int J1=J1min; J1<=J1max; ++J1)
                 {
-                  zij -= Z.modelspace->phase(ji+jb+J1) * (2*J1+1) * Z.modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j);
+//                  Xtmp -= Z.modelspace->phase(ji+jb+J1) * (2*J1+1) * Z.modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j);
+                  Xbar_ijab -= (2*J1+1) * Z.modelspace->GetSixJ(ji,jj,Lambda,ja,jb,J1) * X.TwoBody.GetTBME_J(J1,J1,i,b,a,j);
                 }
 
+                zij -= nanb * Y.OneBody(a,b) * Xbar_ijab;
+//                Xtmp = 0;
+                double Xbar_ijba = 0;
                 J1min = std::max(std::abs(ji-ja),std::abs(jj-jb));
                 J1max = std::min(ji+ja,jj+jb);
                 for (int J1=J1min; J1<=J1max; ++J1)
                 {
-                  zij += Z.modelspace->phase(ji+jb+J1) * (2*J1+1) * Z.modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) ;
+//                  Xtmp += Z.modelspace->phase(ji+jb+J1) * (2*J1+1) * Z.modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) ;
+                  Xbar_ijba -= (2*J1+1) * Z.modelspace->GetSixJ(ji,jj,Lambda,jb,ja,J1) * X.TwoBody.GetTBME_J(J1,J1,i,a,b,j) ;
                 }
 
-                Zij += nanb * Y.OneBody(a,b) * zij;
+                zij += nanb * Y.OneBody(b,a) * Xbar_ijba;
              }
 
              
-          }
-      }
-   }
+          }// for a
+          Z.OneBody(i,j) += zij;
+          if (i!=j) Z.OneBody(j,i) += hZ * phase_ij * zij; // we're dealing with reduced matrix elements, which get a phase under hermitian conjugation
+      }// for j
+   }// for i
    
    X.profiler.timer["comm121st"] += omp_get_wtime() - tstart;
 }
@@ -11801,6 +12096,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 
    double tstart = omp_get_wtime();
    int Lambda = Z.GetJRank();
+   int hZ = Z.IsHermitian() ? +1 : -1;
 
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
@@ -11887,6 +12183,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
          if (j<i) continue;
          Orbit &oj = Z.modelspace->GetOrbit(j);
          double jj = oj.j2/2.0;
+         int phase_ij = AngMom::phase( (oi.j2-oj.j2)/2 );
          double cijJ = 0;
          // Sum c over holes and include the nbar_a * nbar_b terms
            for (auto& c : Z.modelspace->holes)
@@ -11929,6 +12226,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
            }
 //         #pragma omp critical
          Z.OneBody(i,j) += cijJ ;
+         if ( i!=j) Z.OneBody(j,i) += hZ * phase_ij * cijJ;
       } // for j
     } // for i
     X.profiler.timer["comm222_pp_hh_221st"] += omp_get_wtime() - tstart;
@@ -12486,6 +12784,7 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    int hY = Y.IsHermitian() ? 1 : -1;
 
    double t_start = omp_get_wtime();
+   Z.modelspace->PreCalculateSixJ(); // if we already did it, this does nothing.
    // We reuse Xt_bar multiple times, so it makes sense to calculate them once and store them in a deque.
    std::deque<arma::mat> Xt_bar_ph = InitializePandya( Z, Z.nChannels, "transpose"); // We re-use the scalar part multiple times, so there's a significant speed gain for saving it
    std::map<std::array<index_t,2>,arma::mat> Y_bar_ph;
