@@ -576,28 +576,37 @@ double TwoBodyME::Get_iso_TBME_from_pn(int j, int T, int tz, int a, int b, int c
 /// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \frac{\sum_{J}(2J+1) V_{ijkl}^J}{(2j_i+1)(2j_j+1)} \f]
 double TwoBodyME::GetTBMEmonopole(int a, int b, int c, int d) const
 {
-   double mon = 0;
-   Orbit &oa = modelspace->GetOrbit(a);
-   Orbit &ob = modelspace->GetOrbit(b);
-   Orbit &oc = modelspace->GetOrbit(c);
-   Orbit &od = modelspace->GetOrbit(d);
-   int Tzab = (oa.tz2 + ob.tz2)/2;
-   int parityab = (oa.l + ob.l)%2;
-   int Tzcd = (oc.tz2 + od.tz2)/2;
-   int paritycd = (oc.l + od.l)%2;
+  double norm = 1;
+   if (a==b) norm *= PhysConst::SQRT2;
+   if (c==d) norm *= PhysConst::SQRT2;
+   return norm * GetTBMEmonopole_norm(a,b,c,d);
 
-   if (Tzab != Tzcd or parityab != paritycd) return 0;
 
-   int jmin = std::abs(oa.j2 - ob.j2)/2;
-   int jmax = (oa.j2 + ob.j2)/2;
-   
-   for (int J=jmin;J<=jmax;++J)
-   {
 
-      mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
-   }
-   mon /= (oa.j2 +1)*(ob.j2+1);
-   return mon;
+//   double mon = 0;
+//   Orbit &oa = modelspace->GetOrbit(a);
+//   Orbit &ob = modelspace->GetOrbit(b);
+//   Orbit &oc = modelspace->GetOrbit(c);
+//   Orbit &od = modelspace->GetOrbit(d);
+//   int Tzab = (oa.tz2 + ob.tz2)/2;
+//   int parityab = (oa.l + ob.l)%2;
+//   int Tzcd = (oc.tz2 + od.tz2)/2;
+//   int paritycd = (oc.l + od.l)%2;
+//
+////   if (Tzab != Tzcd or parityab != paritycd) return 0;
+//
+//   int jmin = std::abs(oa.j2 - ob.j2)/2;
+//   int jmax = (oa.j2 + ob.j2)/2;
+//   
+//   for (int J=jmin;J<=jmax;++J)
+//   {
+//      size_t chab = modelspace->GetTwoBodyChannelIndex(J,parityab,Tzab);
+//      size_t chcd = modelspace->GetTwoBodyChannelIndex(J,paritycd,Tzcd);
+//      mon += (2*J+1) * GetTBME(chab,chcd,a,b,c,d);
+////      mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
+//   }
+//   mon /= (oa.j2 +1)*(ob.j2+1);
+//   return mon;
 }
 */
 
@@ -648,15 +657,19 @@ double TwoBodyME::GetTBMEmonopole_norm(int a, int b, int c, int d) const
    int Tzcd = (oc.tz2 + od.tz2)/2;
    int paritycd = (oc.l + od.l)%2;
 
-   if (Tzab != Tzcd or parityab != paritycd) return 0;
+//   if (Tzab != Tzcd or parityab != paritycd) return 0;
+   if (  (parityab + paritycd + parity)%2 !=0 ) return 0;
+   if ( std::abs( Tzab - Tzcd) > rank_T ) return 0;
 
    int jmin = std::abs(oa.j2 - ob.j2)/2;
    int jmax = (oa.j2 + ob.j2)/2;
    
    for (int J=jmin;J<=jmax;++J)
    {
-
-      mon += (2*J+1) * GetTBME_norm(J,parityab,Tzab,a,b,c,d);
+      size_t chab = modelspace->GetTwoBodyChannelIndex(J,parityab,Tzab);
+      size_t chcd = modelspace->GetTwoBodyChannelIndex(J,paritycd,Tzcd);
+      mon += (2*J+1) * GetTBME_norm(chab,chcd,a,b,c,d);
+//      mon += (2*J+1) * GetTBME_norm(J,parityab,Tzab,a,b,c,d);
    }
    mon /= (oa.j2 +1)*(ob.j2+1);
    return mon;

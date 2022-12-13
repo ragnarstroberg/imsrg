@@ -552,15 +552,15 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("Discard2bFrom3b", &Commutator::Discard2bFrom3b);
 
 
-//   py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
-//      ReferenceImplementations.def("comm110ss", &ReferenceImplementations::comm110ss);
-//      ReferenceImplementations.def("comm220ss", &ReferenceImplementations::comm220ss);
-//      ReferenceImplementations.def("comm111ss", &ReferenceImplementations::comm111ss);
-//      ReferenceImplementations.def("comm121ss", &ReferenceImplementations::comm121ss);
-//      ReferenceImplementations.def("comm221ss", &ReferenceImplementations::comm221ss);
-//      ReferenceImplementations.def("comm122ss", &ReferenceImplementations::comm122ss);
-//      ReferenceImplementations.def("comm222_pp_hh_221ss", &ReferenceImplementations::comm222_pp_hh_221ss);
-//      ReferenceImplementations.def("comm222_phss", &ReferenceImplementations::comm222_phss);
+   py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
+      ReferenceImplementations.def("comm110ss", &ReferenceImplementations::comm110ss);
+      ReferenceImplementations.def("comm220ss", &ReferenceImplementations::comm220ss);
+      ReferenceImplementations.def("comm111ss", &ReferenceImplementations::comm111ss);
+      ReferenceImplementations.def("comm121ss", &ReferenceImplementations::comm121ss);
+      ReferenceImplementations.def("comm221ss", &ReferenceImplementations::comm221ss);
+      ReferenceImplementations.def("comm122ss", &ReferenceImplementations::comm122ss);
+      ReferenceImplementations.def("comm222_pp_hh_221ss", &ReferenceImplementations::comm222_pp_hh_221ss);
+      ReferenceImplementations.def("comm222_phss", &ReferenceImplementations::comm222_phss);
 
 
    py::class_<RPA>(m,"RPA")

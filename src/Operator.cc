@@ -930,9 +930,9 @@ void Operator::MakeReduced()
     Orbit& oa = modelspace->GetOrbit(a);
     for (size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
     {
-      if (b<a) continue;
+//      if (b<a) continue;
       OneBody(a,b) *= sqrt(oa.j2+1);
-      OneBody(b,a) = OneBody(a,b);
+//      OneBody(b,a) *= sqrt(oa.j2+1);
     }
   }
   for ( auto& itmat : TwoBody.MatEl )
@@ -954,9 +954,9 @@ void Operator::MakeNotReduced()
     Orbit& oa = modelspace->GetOrbit(a);
     for ( size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
     {
-      if (b<a) continue;
+//      if (b<a) continue;
       OneBody(a,b) /= sqrt(oa.j2+1);
-      OneBody(b,a) = OneBody(a,b);
+//      OneBody(b,a) = OneBody(a,b);
     }
   }
   for ( auto& itmat : TwoBody.MatEl )

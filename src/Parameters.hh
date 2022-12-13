@@ -240,16 +240,23 @@ std::vector<std::string> Parameters::v(std::string key)
 
 std::string Parameters::DefaultFlowFile()
 {
-  char strbuf[200];
-  sprintf(strbuf, "output/BCH_%s_%s_%s_hw%.0f_e%d_A%d.dat",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
-  return std::string(strbuf);
+  std::ostringstream oss;
+  oss << "output/BCH_" << string_par["method"] << "_" << string_par["reference"] << "_" << string_par["valence_space"] << "_hw" << std::setprecision(0) << double_par["hw"] << "_e" << int_par["emax"] << "_A" << int_par["A"];
+  return oss.str();
+  
+//  char strbuf[200];
+//  sprintf(strbuf, "output/BCH_%s_%s_%s_hw%.0f_e%d_A%d.dat",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
+//  return std::string(strbuf);
 }
 
 std::string Parameters::DefaultIntFile()
 {
-  char strbuf[200];
-  sprintf(strbuf, "output/%s_%s_%s_hw%.0f_e%d_A%d",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
-  return std::string(strbuf);
+  std::ostringstream oss;
+  oss << "output/" << string_par["method"] << "_" << string_par["reference"] << "_" << string_par["valence_space"] << "_hw" << std::setprecision(0) << double_par["hw"] << "_e" << int_par["emax"] << "_A" << int_par["A"];
+  return oss.str();
+//  char strbuf[200];
+//  sprintf(strbuf, "output/%s_%s_%s_hw%.0f_e%d_A%d",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
+//  return std::string(strbuf);
 }
 
 void Parameters::PrintOptions()
