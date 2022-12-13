@@ -339,10 +339,10 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
    // TODO: I don't like that this gets done here. It should be in the individual commutator expressions themselves
    // As it currently is, it invites a mistake of updating the wrong triangle of the matrix.
-   if ( Z.IsHermitian() )
-      Z.Symmetrize();
-   else if (Z.IsAntiHermitian() )
-      Z.AntiSymmetrize();
+//   if ( Z.IsHermitian() )
+//      Z.Symmetrize();
+//   else if (Z.IsAntiHermitian() )
+//      Z.AntiSymmetrize();
 
 
      if ( discard_2b_from_3b  or discard_1b_from_3b or discard_0b_from_3b )
@@ -867,6 +867,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
    double t_start = omp_get_wtime();
    index_t norbits = Z.modelspace->all_orbits.size();
    int hZ = Z.IsHermitian() ? 1 : -1;
+
   
    #pragma omp parallel for 
    for (index_t indexi=0;indexi<norbits;++indexi)
@@ -884,6 +885,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
           for (auto& a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
+
 //             for (index_t b=0; b<norbits; ++b)
 //             for (auto b : Z.modelspace->all_orbits)
              if (Y.particle_rank>1)
@@ -891,19 +893,53 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 //               for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
                for (auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2 ))
                {
+
                   Orbit &ob = Z.modelspace->GetOrbit(b);
                   double nanb = oa.occ * (1-ob.occ);
                   if (std::abs(nanb)<ModelSpace::OCC_CUT) continue;
+
+//                  if ( not ( i==0 and j==4 and a==0 and b==10) ) continue;
+//                  std::cout << std::endl << "ijab " << i << " " << j << " " << a << " " << b << std::endl;
+//                  std::cout << "------------------------" << std::endl;
+                  double ybiaj =  Y.TwoBody.GetTBMEmonopole(b,i,a,j);
+                  double yaibj =0;//  Y.TwoBody.GetTBMEmonopole(a,i,b,j);
+//                  std::cout << "------------------------" << std::endl;
 //                  Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
 //                  Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
-                  zij += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                  zij -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
-                }
+//                  zij += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+//                  zij -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+                  zij += (ob.j2+1) * nanb *  X.OneBody(a,b) * ybiaj ;
+                  zij -= (oa.j2+1) * nanb *  X.OneBody(b,a) * yaibj ;
+//                  std::cout << "     " << ob.j2+1 << " " << nanb << "  " << X.OneBody(a,b) << "  " << ybiaj 
+//                            << " -   " << oa.j2+1 << " " << nanb << "  " << X.OneBody(b,a) << "  " << yaibj << std::endl;
+//                  double ymon1 = ybiaj;
+//                  std::cout << "||| 2j+1 * ymon = " << (ob.j2+1) << " * " << ybiaj << " = " << (ob.j2+1) * ybiaj << std::endl;
+//                  std::cout << std::endl << "   zij  -> " << zij << std::endl << std::endl;
+
+//                  Orbit& oj = Z.modelspace->GetOrbit(j);
+//                  int Jmin = std::max( std::abs( ob.j2-oi.j2)/2 ,  std::abs( oa.j2-oj.j2)/2);
+//                  int Jmax = std::min( ob.j2+oi.j2, oa.j2+oj.j2)/2;
+//                  double ymon=0;
+//                  for ( int J=Jmin; J<=Jmax; J++)
+//                  {
+//                     double ja = oa.j2 * 0.5; double jb = ob.j2 * 0.5; double ji=0.5*oi.j2; double jj = oj.j2 * 0.5;
+//                    double Lambda = 0;
+//                    int phasefactor = Z.modelspace->phase(jj+ja+J+Lambda);
+//                  double prefactor = nanb*phasefactor * sqrt((2*J+1)*(2*J+1)) * Z.modelspace->GetSixJ(J,J,Lambda,jj,ji,ja);
+//                  ymon += prefactor * Y.TwoBody.GetTBME_J(J,b,i,a,j);
+////                  std::cout << "    cf   J = " << J << "  " <<  prefactor << " * " << X.OneBody(a,b) << " * " <<  Y.TwoBody.GetTBME_J(J,b,i,a,j) << std::endl;
+////                  std::cout << "    cf   J = " << J << " sixj= " << Z.modelspace->GetSixJ(J,J,Lambda,jj,ji,ja) << "  " << X.OneBody(a,b) << " * [ " << prefactor << " * " <<  Y.TwoBody.GetTBME_J(J,b,i,a,j) << " = "
+////                            << prefactor * Y.TwoBody.GetTBME_J(J,b,i,a,j) << " ] " << std::endl;
+//                  }
+////                  std::cout << "                   ymon = " << ymon << std::endl << std::endl;
+//
+//                }
              }
 //             for (index_t b=0; b<norbits; ++b)
 //             for (auto b : Z.modelspace->all_orbits)
              if (X.particle_rank>1)
              {
+                continue;
                 for (auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
 //                for (auto b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2 ))
                 {
@@ -11560,7 +11596,8 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
           Orbit &oj = Z.modelspace->GetOrbit(j);
           double jj = 0.5*oj.j2;
           if (j<i) continue; // only calculate upper triangle
-          double& Zij = Z.OneBody(i,j);
+         // double& Zij = Z.OneBody(i,j);
+          double Zij = 0;
           for (auto a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
@@ -11569,6 +11606,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
              for (auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2) ) 
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
+                  if ( not ( i==0 and j==4 and a==0 and b==10) ) continue;
                 double nanb = oa.occ * (1-ob.occ);
                   int J1min = std::abs(ji-ja);
                   int J1max = ji + ja;
@@ -11582,13 +11620,19 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                       if ( ! ( J2>=std::abs(ja-jj) and J2<=ja+jj )) continue;
                       double prefactor = nanb*phasefactor * sqrt((2*J1+1)*(2*J2+1)) * Z.modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
                       Zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) - X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j ));
+
+                      std::cout << "     " << ob.j2+1 << " " << nanb << " ... " << prefactor << " "  << X.OneBody(a,b) << "  " << Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j)
+                               << " -   " << oa.j2+1 << " " << nanb << " ... " << prefactor << " "  << X.OneBody(a,b) << "  " << Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j) << std::endl;
                     }
                   }
+                  std::cout << "ijab " << i << " " << j << " " << a << " " << b << "  -> " << Zij << std::endl;
+
              }
              // Now, X is scalar two-body and Y is tensor one-body
 //             for (auto& b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
              for (auto& b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2) ) 
              {
+//                continue;
 
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double jb = 0.5*ob.j2;
@@ -11610,14 +11654,17 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                 }
 
                 Zij += nanb * Y.OneBody(a,b) * zij;
+
              }
 
              
-          }
-      }
+          }// for a
+      Z.OneBody(i,j) += Zij;
+      if (i!=j) Z.OneBody(j,i) += Zij;
+      }// for j
    }
    
-   X.profiler.timer["comm121st"] += omp_get_wtime() - tstart;
+   X.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -11805,6 +11852,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
    TwoBodyME Mff = Y.TwoBody;
+   int hZ = Z.IsHermitian() ? 1 : -1;
 
    std::vector<int> vch_bra;
    std::vector<int> vch_ket;
@@ -11929,6 +11977,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
            }
 //         #pragma omp critical
          Z.OneBody(i,j) += cijJ ;
+         if (i!=j) Z.OneBody(j,i) += cijJ * hZ * AngMom::phase((oi.j2-oj.j2)/2);
       } // for j
     } // for i
     X.profiler.timer["comm222_pp_hh_221st"] += omp_get_wtime() - tstart;
