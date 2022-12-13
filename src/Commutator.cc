@@ -215,7 +215,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        {
         //important for suppressing off-diagonal H3
 
-        // std::cout << " comm133 " << std::endl;
+         std::cout << " comm133 " << std::endl;
         
         comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
        }
@@ -226,14 +226,14 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm330ss"] )
        {
         // This gets the perturbative energy from the induced 3 body
-        // std::cout << " comm330 " << std::endl;
+         std::cout << " comm330 " << std::endl;
         comm330ss(X, Y, Z); // scales as n^6
        }
 
        if ( comm_term_on["comm223ss"])
        {
         // This one is essential. If it's not here, then there are no induced 3 body terms
-        // std::cout << " comm223 " << std::endl;
+         std::cout << " comm223 " << std::endl;
         comm223ss(X, Y, Z); // scales as n^7
 //       comm223ss_debug(X, Y, Z); // scales as n^7
        }
@@ -241,7 +241,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm232ss"])
        {
         //one of the two most important IMSRG(3) terms
-//        std::cout << " comm232 " << std::endl;
+        std::cout << " comm232 " << std::endl;
          comm232ss(X, Y, Z);   // this is the slowest n^7 term
         //comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
@@ -251,7 +251,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
           if ( comm_term_on["comm331ss"])
           {
             //Maybe not so important, but I think relatively cheap
-            // std::cout << " comm331 " << std::endl;
+             std::cout << " comm331 " << std::endl;
             comm331ss(X, Y, Z); // scales as n^7
           }
 
@@ -259,14 +259,14 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
           if ( comm_term_on["comm231ss"])
           {
             // Demonstrated that this can have some effect
-            // std::cout << " comm231 " << std::endl;
+             std::cout << " comm231 " << std::endl;
             comm231ss(X, Y, Z);  // scales as n^6
           }
 
           if ( comm_term_on["comm132ss"])
           {
             //no demonstrated effect yet, but it's cheap
-            // std::cout << " comm132 " << std::endl;
+             std::cout << " comm132 " << std::endl;
             comm132ss(X, Y, Z); // scales as n^6
           }
        }
@@ -6463,6 +6463,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
 
+// TODO: Right now we loop over a single channel. Need to upgrade this to sum over bra, ket, and interior channels.
 // TODO Identify when it helps to parallelize in the outer loop, and when it's better to give the threads to the matmult step.
 // Memory-wise, it's better to let the threads do mat mult
 // On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
