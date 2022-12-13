@@ -116,8 +116,10 @@ Operator Commutator( const Operator& X, const Operator& Y)
 //  int trank = std::max(X.rank_T,Y.rank_T);
 //  int parity = (X.parity+Y.parity)%2;
 //  int particlerank = std::max(X.particle_rank,Y.particle_rank);
-  int xrank = X.rank_J + X.rank_T + X.parity;
-  int yrank = Y.rank_J + Y.rank_T + Y.parity;
+//  int xrank = X.rank_J + X.rank_T + X.parity;
+//  int yrank = Y.rank_J + Y.rank_T + Y.parity;
+  int xrank = X.rank_J ;
+  int yrank = Y.rank_J ;
   int xlegs = X.GetNumberLegs();
   int ylegs = Y.GetNumberLegs();
 
@@ -239,7 +241,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm232ss"])
        {
         //one of the two most important IMSRG(3) terms
-        std::cout << " comm232 " << std::endl;
+//        std::cout << " comm232 " << std::endl;
          comm232ss(X, Y, Z);   // this is the slowest n^7 term
         //comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
@@ -1298,14 +1300,21 @@ void comm222_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
-
+/// Construct the intermediate matrices \f$ \mathcal{M}^J_{pp}\f$ and \f$ \mathal{M}^{J}_{hh} \f$
+/// for use in Commutator::comm222_pp_hh_221ss().
+///  \f$ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2} (X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J}\mathcal{P}_{pp} X^{J} ) \f$
+/// where \f$ \mathcal{P}_{pp} \f$ is a projector onto particle-particle states.
 void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator& Z, TwoBodyME& Mpp, TwoBodyME& Mhh)
 {
 
    double t_start = omp_get_wtime();
 
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+
    std::vector<size_t> ch_bra_list,ch_ket_list;
    auto ch_iter = Z.TwoBody.MatEl;
+   // TODO: We'll need to be more careful about this special case.
    if ( Z.GetParticleRank() < 2 and Y.GetParticleRank()>1 ) ch_iter = Y.TwoBody.MatEl;
 //   for ( auto& iter : Z.TwoBody.MatEl )
    for ( auto& iter : ch_iter )
@@ -1324,32 +1333,82 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
       TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
 
-      auto& X2_bra = X.TwoBody.GetMatrix(ch_bra,ch_bra);
-      auto& X2_ket = X.TwoBody.GetMatrix(ch_ket,ch_ket);
-      auto& Y2 = Y.TwoBody.GetMatrix(ch_bra,ch_ket);
+      // Figure out what the intermediate channel should be
+      int ch_ab_XY = ch_bra; // For Hamiltonian-type X,Y,Z  ij, ab, kl all belong to the same channel.
+      int ch_ab_YX = ch_ket; // For Hamiltonian-type X,Y,Z  ij, ab, kl all belong to the same channel.
+      if ( (X.GetTRank() !=0)  or (X.GetParity() !=0) ) // if X changes parity or Tz, take more care.
+      {
+         int parity_ab_XY = ( tbc_bra.parity + X.GetParity() )%2;
+         int parity_ab_YX = ( tbc_ket.parity + X.GetParity() )%2;
+         // If both X and Y are isospin-changing operators, then there could be multiple intermediate channels.
+         // I'm not sure why that would come up, so for now let's just throw an error if that's the case.
+         int Tz_ab_XY = tbc_bra.Tz; //
+         int Tz_ab_YX = tbc_ket.Tz; //
+         if ( X.GetTRank() !=0 )
+         {
+            Tz_ab_XY = tbc_ket.Tz;
+            Tz_ab_YX = tbc_bra.Tz;
+            if (Y.GetTRank() != 0)
+            {
+               std::cout << "=======  Uh Oh. Taking the commutator of two isospin-changing operators."
+                         << " That's not yet implemented. How did I get here?  LINE " << __LINE__ << std::endl;
+               std::exit(EXIT_FAILURE);
+            }
+         }
+         int ch_ab_XY = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J , parity_ab_XY, Tz_ab_XY );
+         int ch_ab_YX = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J , parity_ab_YX, Tz_ab_YX );
+      }
+
+      TwoBodyChannel& tbc_ab_XY = Z.modelspace->GetTwoBodyChannel(ch_ab_XY);
+      TwoBodyChannel& tbc_ab_YX = Z.modelspace->GetTwoBodyChannel(ch_ab_YX);
+
+      // If X or Y change parity or isospin, then we need to worry about the fact that we only store
+      // ch_bra <= ch_ket. If we need the other ordering we get it by Hermiticity. 
+      int flipphase_Xijab = 1;
+      int flipphase_Xabkl = 1;
+      int flipphase_Yijab = 1;
+      int flipphase_Yabkl = 1;
+      if ( ch_bra > ch_ab_XY ) flipphase_Xijab = hX;
+      if ( ch_ab_YX > ch_ket ) flipphase_Xabkl = hX;
+      if ( ch_bra > ch_ab_YX ) flipphase_Yijab = hY;
+      if ( ch_ab_XY > ch_ket ) flipphase_Yabkl = hY;
+
+
+      auto& X_ijab = (ch_bra<=ch_ab_XY) ?  X.TwoBody.GetMatrix(ch_bra,ch_ab_XY) :
+                                           X.TwoBody.GetMatrix(ch_ab_XY, ch_bra).t() * hX ;
+      auto& X_abkl = (ch_ab_YX<=ch_ket) ?  X.TwoBody.GetMatrix(ch_ab_YX,ch_ket) :
+                                           X.TwoBody.GetMatrix(ch_ket, ch_ab_YX).t() * hX;
+      auto& Y_ijab = (ch_bra<=ch_ab_YX) ?  Y.TwoBody.GetMatrix(ch_bra,ch_ab_YX) :
+                                           Y.TwoBody.GetMatrix(ch_ab_YX, ch_bra).t() * hY;
+      auto& Y_abkl = (ch_ab_XY<=ch_ket) ?  Y.TwoBody.GetMatrix(ch_ab_XY,ch_ket) :
+                                           Y.TwoBody.GetMatrix(ch_ket, ch_ab_XY).t() * hY;
 
       auto& Matrixpp = Mpp.GetMatrix(ch_bra,ch_ket);
       auto& Matrixhh = Mhh.GetMatrix(ch_bra,ch_ket);
 
-      auto& bras_pp = tbc_bra.GetKetIndex_pp();
-      auto& bras_hh = tbc_bra.GetKetIndex_hh();
-      auto& bras_ph = tbc_bra.GetKetIndex_ph();
-      auto& kets_pp = tbc_ket.GetKetIndex_pp();
-      auto& kets_hh = tbc_ket.GetKetIndex_hh();
-      auto& kets_ph = tbc_ket.GetKetIndex_ph();
-      auto& nanb_bra = tbc_bra.Ket_occ_hh;
-      auto& nanb_ket = tbc_ket.Ket_occ_hh;
-      auto& nbarnbar_hh_bra = tbc_bra.Ket_unocc_hh;
-      auto& nbarnbar_ph_bra = tbc_bra.Ket_unocc_ph;
-      auto& nbarnbar_hh_ket = tbc_ket.Ket_unocc_hh;
-      auto& nbarnbar_ph_ket = tbc_ket.Ket_unocc_ph;
+
+      auto& bras_pp = tbc_ab_XY.GetKetIndex_pp();
+      auto& bras_hh = tbc_ab_XY.GetKetIndex_hh();
+      auto& bras_ph = tbc_ab_XY.GetKetIndex_ph();
+      auto& kets_pp = tbc_ab_YX.GetKetIndex_pp();
+      auto& kets_hh = tbc_ab_YX.GetKetIndex_hh();
+      auto& kets_ph = tbc_ab_YX.GetKetIndex_ph();
+      auto& nanb_bra = tbc_ab_XY.Ket_occ_hh;
+      auto& nanb_ket = tbc_ab_YX.Ket_occ_hh;
+      auto& nbarnbar_hh_bra = tbc_ab_XY.Ket_unocc_hh;
+      auto& nbarnbar_ph_bra = tbc_ab_XY.Ket_unocc_ph;
+      auto& nbarnbar_hh_ket = tbc_ab_YX.Ket_unocc_hh;
+      auto& nbarnbar_ph_ket = tbc_ab_YX.Ket_unocc_ph;
       
-      Matrixpp =  X2_bra.cols(bras_pp) * Y2.rows(bras_pp);
-      Matrixhh =  X2_bra.cols(bras_hh) * arma::diagmat(nanb_bra) *  Y2.rows(bras_hh) ;
-      if (kets_hh.size()>0)
-        Matrixpp +=  X2_bra.cols(bras_hh) * arma::diagmat(nbarnbar_hh_bra) *  Y2.rows(bras_hh); 
-      if (kets_ph.size()>0)
-        Matrixpp += X2_bra.cols(bras_ph) * arma::diagmat(nbarnbar_ph_bra) *  Y2.rows(bras_ph) ;
+      // explicitly checking sizes because for size=0, we get DGEMM errors
+      if (bras_pp.size()>0)
+         Matrixpp +=  X_ijab.cols(bras_pp) * Y_abkl.rows(bras_pp);
+      if (bras_hh.size()>0)
+         Matrixhh +=  X_ijab.cols(bras_hh) * arma::diagmat(nanb_bra)        *  Y_abkl.rows(bras_hh) ;
+      if (bras_hh.size()>0)
+         Matrixpp +=  X_ijab.cols(bras_hh) * arma::diagmat(nbarnbar_hh_bra) *  Y_abkl.rows(bras_hh); 
+      if (bras_ph.size()>0)
+         Matrixpp += X_ijab.cols(bras_ph)  * arma::diagmat(nbarnbar_ph_bra) *  Y_abkl.rows(bras_ph) ;
 
 
       if (Z.IsHermitian() and ch_bra==ch_ket)
@@ -1364,11 +1423,14 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
         }
         else
         {
-          Matrixpp -=  Y2.cols(kets_pp) * X2_ket.rows(kets_pp);
-          Matrixhh -=  Y2.cols(kets_hh) * arma::diagmat(nanb_ket) *  X2_ket.rows(kets_hh) ;
-          Matrixpp -=  Y2.cols(kets_hh) * arma::diagmat(nbarnbar_hh_ket) *  X2_ket.rows(kets_hh) ;
-          if (kets_ph.size()>0)
-            Matrixpp -=  Y2.cols(kets_ph) * arma::diagmat(nbarnbar_ph_ket) *  X2_ket.rows(kets_ph) ;
+          if ( kets_pp.size()>0 )
+              Matrixpp -=  Y_ijab.cols(kets_pp) * X_abkl.rows(kets_pp);
+          if ( kets_hh.size()>0 )
+              Matrixhh -=  Y_ijab.cols(kets_hh) * arma::diagmat(nanb_ket)        *  X_abkl.rows(kets_hh) ;
+          if ( kets_hh.size()>0 )
+              Matrixpp -=  Y_ijab.cols(kets_hh) * arma::diagmat(nbarnbar_hh_ket) *  X_abkl.rows(kets_hh) ;
+          if ( kets_ph.size()>0 )
+             Matrixpp -=  Y_ijab.cols(kets_ph)  * arma::diagmat(nbarnbar_ph_ket) *  X_abkl.rows(kets_ph) ;
         }
 
    } //for ch
