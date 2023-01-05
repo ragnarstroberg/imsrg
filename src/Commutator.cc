@@ -2822,6 +2822,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
       double d_ej = std::abs( ej - e_fermi[oj.tz2] );
       double occnat_j = oj.occ_nat;
       double zij=0;
+      // TODO: This only works if X and Y are channel diagonal
       for (int ch=0; ch<nch; ch++)
       {
         auto tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -3165,6 +3166,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y1 = Y.OneBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
+
+  int hZ = Z.IsHermitian() ? +1 : -1 ;
 //  int x_particle_rank = X.GetParticleRank();
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
@@ -3175,17 +3178,24 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 // The only potentially thread-unsafe part of this loop is the access to 3b matrix elements which might require
 // recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  for (size_t ch=0; ch<nch; ch++)
+//  for (size_t ch=0; ch<nch; ch++)
+//  {
+  for (auto& it_ch : Z.TwoBody.MatEl )
   {
-    auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-    int J = tbc.J;
-    int nkets = tbc.GetNumberKets();
+    size_t ch_bra = it_ch.first[0];
+    size_t ch_ket = it_ch.first[1];
+    auto& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+    auto& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+    int J = tbc_bra.J;
+    int nbras = tbc_bra.GetNumberKets();
+    int nkets = tbc_ket.GetNumberKets();
   #pragma omp parallel for schedule(dynamic,1) collapse(2)
-    for (int ibra=0;ibra<nkets;ibra++ ) // <ij| states
+    for (int ibra=0;ibra<nbras;ibra++ ) // <ij| states
     {
       for (int iket=0;iket<nkets;iket++ ) // |kl> states
       {
-        Ket& bra = tbc.GetKet(ibra);
+        if ( (ch_bra==ch_ket) and iket>ibra) continue; // Use Hermiticity to avoid doing twice the work
+        Ket& bra = tbc_bra.GetKet(ibra);
         int i = bra.p;
         int j = bra.q;
         if (!Y3.IsOrbitIn3BodyEMaxTruncation(i)) continue;
@@ -3196,7 +3206,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         double d_ej = std::abs(ej - e_fermi[bra.oq->tz2]);
         double occnat_i = bra.op->occ_nat;
         double occnat_j = bra.oq->occ_nat;
-        Ket& ket = tbc.GetKet(iket);
+        Ket& ket = tbc_ket.GetKet(iket);
         int k = ket.p;
         int l = ket.q;
         if (!Y3.IsOrbitIn3BodyEMaxTruncation(k)) continue;
@@ -3263,7 +3273,12 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         }
         // normalize the tbme
         zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
-        Z2.AddToTBMENonHerm(ch, ch, ibra, iket, zijkl );
+//        Z2.AddToTBMENonHerm(ch, ch, ibra, iket, zijkl );
+        Z2.AddToTBMENonHerm(ch_bra, ch_ket, ibra, iket, zijkl );
+        if ( (ch_bra==ch_ket) and ibra!=iket)
+        {
+          Z2.AddToTBMENonHerm( ch_ket, ch_bra, iket, ibra, zijkl*hZ );
+        }
       }
     }
   }
@@ -3703,7 +3718,6 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
      }
   }
   size_t nbra_ket_channels = bra_ket_channels.size();
-  // TODO This should be modified for isospin-changing operators like beta decay.
 //  for ( size_t ch=0; ch<nch; ch++)
   #pragma omp parallel for schedule(dynamic,1)
   for ( size_t ich=0; ich<nbra_ket_channels; ich++)
