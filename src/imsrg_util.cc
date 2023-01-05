@@ -416,7 +416,7 @@ namespace imsrg_util
 
  /// Gives \f$ rho_{n,l}(r)\f$ , the norm squared of the harmonic oscillator radial wave function evaluated at r.
  /// This is normalized so that integrating \f$ rho(r) r^2 dr \f$ gives 1.
- /// This means that it is related to the acutal density by a factor of $\f 4\pi \f$.
+ /// This means that it is related to the acutal density by a factor of \f$ 4\pi \f$.
  /// This is equivalent to squaring the return value of HO_Radial_psi().
  double HO_density(int n, int l, double hw, double r)
  {

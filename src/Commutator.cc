@@ -6426,6 +6426,447 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //
 //  Checked with UnitTest and passed
 //
+
+void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double tstart = omp_get_wtime();
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+  auto& X1 = X.OneBody;
+  auto& Y1 = Y.OneBody;
+
+  int hermX = X.IsHermitian() ? 1 : -1;
+  int hermY = Y.IsHermitian() ? 1 : -1;
+
+  bool x_channel_diag = ( X.GetTRank()==0 and X.GetParity()==0);
+  bool y_channel_diag = ( Y.GetTRank()==0 and Y.GetParity()==0);
+  bool z_channel_diag = ( Z.GetTRank()==0 and Z.GetParity()==0);
+
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+
+
+
+  Z.modelspace->PreCalculateSixJ(); // If this has already been done, this does nothing.
+  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+
+
+  std::vector< std::array<size_t,4> > bra_ket_channels;
+  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+  {
+       // By default, assume X is channell diagonal, so the internal channel matches the outer channel for X.
+       size_t ch_internal_xy = it.first.ch_bra;
+       size_t ch_internal_yx = it.first.ch_ket;
+       if ( not x_channel_diag  ) // if X is not channel-diagonal, check if Y is.
+       {
+         if ( y_channel_diag )
+         {
+           size_t ch_internal_xy = it.first.ch_ket;
+           size_t ch_internal_yx = it.first.ch_bra;
+         }
+         else
+         {
+           std::cout << " Uh Oh. " <<__func__ << "  called with both X and Y not channel diagonal. This is not yet implemented." << std::endl;
+           return;
+         }
+       }
+       bra_ket_channels.push_back( { it.first.ch_bra, it.first.ch_ket, ch_internal_xy, ch_internal_yx } ); // (ch_bra, ch_ket,ibra)
+  }
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+
+
+ 
+
+// TODO Identify when it helps to parallelize in the outer loop, and when it's better to give the threads to the matmult step.
+// Memory-wise, it's better to let the threads do mat mult
+// On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
+// On the CRC machines with up to 24 threads, linking against MKL, parallelizing at the channel level is better by a factor 10.
+//  -SRS
+//  #pragma omp parallel for schedule(dynamic,1) 
+//  for (size_t ch3=0; ch3<nch3; ch3++)
+  for (size_t ich_bra_ket=0; ich_bra_ket<n_bra_ket_ch; ich_bra_ket++)
+  {
+    double t_internal = omp_get_wtime();
+
+    size_t ch_bra = bra_ket_channels[ich_bra_ket][0];
+    size_t ch_ket = bra_ket_channels[ich_bra_ket][1];
+    size_t ch_internal_xy = bra_ket_channels[ich_bra_ket][2];
+    size_t ch_internal_yx = bra_ket_channels[ich_bra_ket][3];
+
+
+    auto Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch_bra);
+    auto Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch_ket);
+    auto Tbc_xy  = Z.modelspace->GetThreeBodyChannel(ch_internal_xy);
+    auto Tbc_yx  = Z.modelspace->GetThreeBodyChannel(ch_internal_yx);
+
+    int twoJ = Tbc_bra.twoJ;
+
+    int nbras = Tbc_bra.GetNumberKets();
+    int nkets = Tbc_ket.GetNumberKets();
+    int nxy   = Tbc_xy.GetNumberKets();
+    int nyx   = Tbc_yx.GetNumberKets();
+
+
+    std::vector<size_t> bras_kept;
+    std::vector<size_t> kets_kept;
+    std::vector<size_t> xy_kept;
+    std::vector<size_t> yx_kept;
+
+    std::map<size_t,size_t> ket_kept_lookup;
+    std::map<size_t,size_t> bra_kept_lookup;
+    std::map<size_t,size_t> xy_kept_lookup;
+    std::map<size_t,size_t> yx_kept_lookup;
+
+    /// Use a lambda to define a function object for a repeated snippet of code.
+    /// Something similar is used in other commutator expressions and eventually this should
+    /// probably me moved to something like ThreeBodyStorage::IsKetValid().
+    auto keep = [&](ThreeBodyChannel& Tbc, size_t iket)
+    {
+       Ket3& ket = Tbc.GetKet(iket);
+      double d_ei = std::abs(2*ket.op->n + ket.op->l - e_fermi.at(ket.op->tz2));
+      double d_ej = std::abs(2*ket.oq->n + ket.oq->l - e_fermi.at(ket.oq->tz2));
+      double d_ek = std::abs(2*ket.oR->n + ket.oR->l - e_fermi.at(ket.oR->tz2));
+      double occnat_i = ket.op->occ_nat;
+      double occnat_j = ket.oq->occ_nat;
+      double occnat_k = ket.oR->occ_nat;
+      if (  (d_ei+d_ej+d_ek ) > Z.modelspace->GetdE3max() ) return false;
+      if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) return false;
+      return true;
+    };
+
+
+    for (size_t iket=0; iket<nbras; iket++)
+    {
+      if ( not keep(Tbc_bra, iket) ) continue;
+      bras_kept.push_back( iket );
+      bra_kept_lookup[iket] = bras_kept.size()-1;
+    }
+    for (size_t iket=0; iket<nkets; iket++)
+    {
+      if ( not keep(Tbc_ket, iket) ) continue;
+      kets_kept.push_back( iket );
+      ket_kept_lookup[iket] = kets_kept.size()-1;
+    }
+    for (size_t iket=0; iket<nxy; iket++)
+    {
+      if ( not keep(Tbc_xy, iket) ) continue;
+      xy_kept.push_back( iket );
+      xy_kept_lookup[iket] = xy_kept.size()-1;
+    }
+    for (size_t iket=0; iket<nyx; iket++)
+    {
+      if ( not keep(Tbc_yx, iket) ) continue;
+      yx_kept.push_back( iket );
+      yx_kept_lookup[iket] = yx_kept.size()-1;
+    }
+
+    size_t nbras_kept = bras_kept.size();
+    size_t nkets_kept = kets_kept.size();
+    size_t nxy_kept   = xy_kept.size();
+    size_t nyx_kept   = yx_kept.size();
+
+   Z.profiler.timer["_" + std::string(__func__) + "_check_kept"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+
+    arma::mat X1MAT_bra( nbras_kept, nxy_kept,   arma::fill::zeros);
+    arma::mat X1MAT_ket( nyx_kept,   nkets_kept, arma::fill::zeros);
+    arma::mat Y1MAT_bra( nbras_kept, nyx_kept,   arma::fill::zeros);
+    arma::mat Y1MAT_ket( nxy_kept,   nkets_kept, arma::fill::zeros);
+    arma::mat X3MAT_bra( nbras_kept, nxy_kept,   arma::fill::zeros);
+    arma::mat X3MAT_ket( nyx_kept,   nkets_kept, arma::fill::zeros);
+    arma::mat Y3MAT_bra( nbras_kept, nyx_kept,   arma::fill::zeros);
+    arma::mat Y3MAT_ket( nxy_kept,   nkets_kept, arma::fill::zeros);
+    arma::mat Z3MAT    ( nbras_kept, nkets_kept, arma::fill::zeros);
+
+   Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+
+    // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
+    // index for the 3-body state we keep in this commutator
+
+
+    #pragma omp parallel for schedule(guided) collapse(2)
+    for (std::size_t local_ket_index = 0; local_ket_index < kets_kept.size(); local_ket_index += 1)
+    {
+      for ( size_t local_yx_index=0; local_yx_index < yx_kept.size(); local_yx_index++ )
+      {
+        std::size_t iket = kets_kept[local_ket_index];
+        size_t iyx = yx_kept[local_yx_index];
+        X3MAT_ket( local_yx_index, local_ket_index) = X3.GetME_pn_ch(ch_internal_yx, ch_ket, iyx, iket);
+        if (x_channel_diag and y_channel_diag)
+           Y3MAT_ket( local_yx_index,local_ket_index)  = Y3.GetME_pn_ch(ch_internal_yx, ch_ket, iyx, iket);
+      }
+    }
+
+
+    // if we're not channel diagonal, we need to deal with various cases explicitly.
+    if ( not ( x_channel_diag and y_channel_diag) )
+    {
+       #pragma omp parallel for schedule(guided) collapse(2)
+       for (std::size_t local_ket_index = 0; local_ket_index < kets_kept.size(); local_ket_index += 1)
+       {
+         for ( size_t local_xy_index=0; local_xy_index < xy_kept.size(); local_xy_index++ )
+         {
+           std::size_t iket = kets_kept[local_ket_index];
+           size_t ixy = xy_kept[local_xy_index];
+           Y3MAT_ket( local_xy_index,local_ket_index)  = Y3.GetME_pn_ch(ch_internal_xy, ch_ket, ixy, iket);
+         }
+       }
+   
+       #pragma omp parallel for schedule(guided) collapse(2)
+       for (std::size_t local_bra_index = 0; local_bra_index < bras_kept.size(); local_bra_index += 1)
+       {
+         for ( size_t local_xy_index=0; local_xy_index < xy_kept.size(); local_xy_index++ )
+         {
+           std::size_t ibra = bras_kept[local_bra_index];
+           size_t ixy = xy_kept[local_xy_index];
+           X3MAT_bra( local_bra_index, local_xy_index) = X3.GetME_pn_ch(ch_bra, ch_internal_xy, ibra, ixy);
+         }
+       }
+   
+       #pragma omp parallel for schedule(guided) collapse(2)
+       for (std::size_t local_bra_index = 0; local_bra_index < bras_kept.size(); local_bra_index += 1)
+       {
+         for ( size_t local_yx_index=0; local_yx_index < yx_kept.size(); local_yx_index++ )
+         {
+           std::size_t ibra = bras_kept[local_bra_index];
+           size_t iyx = yx_kept[local_yx_index];
+           Y3MAT_bra( local_bra_index,local_yx_index)  = Y3.GetME_pn_ch(ch_bra, ch_internal_yx, ibra, iyx);
+         }
+       }
+    }
+
+   Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+
+
+
+//    arma::mat X1MAT_bra( nbras_kept, nxy_kept,   arma::fill::zeros);
+//    arma::mat X1MAT_ket( nyx_kept,   nkets_kept, arma::fill::zeros);
+//    arma::mat Y1MAT_bra( nbras_kept, nyx_kept,   arma::fill::zeros);
+//    arma::mat Y1MAT_ket( nxy_kept,   nkets_kept, arma::fill::zeros);
+
+    auto check_ijk = [&] (int I, int J, int K, int Jij){
+         if (!Z3.IsKetValid(Jij, twoJ, I, J, K)) return false; // this checks triangle conditions and emax cuts.
+         Orbit& oI = Z.modelspace->GetOrbit(I);
+         Orbit& oJ = Z.modelspace->GetOrbit(J);
+         Orbit& oK = Z.modelspace->GetOrbit(K);
+
+         // Check that this passes various cuts on 3-body states
+         double d_eI = std::abs(2*oI.n + oI.l - e_fermi.at(oI.tz2));
+         double d_eJ = std::abs(2*oJ.n + oJ.l - e_fermi.at(oJ.tz2));
+         double d_eK = std::abs(2*oK.n + oK.l - e_fermi.at(oK.tz2));
+         if ( (d_eI + d_eJ + d_eK ) > Z.modelspace->GetdE3max() ) return false;
+         double nnbar_I = oI.occ_nat * (1 - oI.occ_nat);
+         double nnbar_J = oJ.occ_nat * (1 - oJ.occ_nat);
+         double nnbar_K = oK.occ_nat * (1 - oK.occ_nat);
+         if ( (nnbar_I * nnbar_J * nnbar_K ) < Z.modelspace->GetOccNat3Cut() ) return false;
+         return true;
+    };
+
+
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t local_index_bra=0; local_index_bra<nbras_kept; local_index_bra++)
+    {
+      size_t ibra = bras_kept[local_index_bra];
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+      int Jij = bra.Jpq;
+
+     // Below, we do the same thing for 3 different permutations: ajk  iak  ija
+     // where a is summed over all states in the same one-body channel as the orbit it replaces.
+     // So 
+      std::vector<size_t> ijk = {bra.p, bra.q, bra.r};
+      for (size_t iperm=0; iperm<3; iperm++)
+      {
+
+       std::vector<size_t> IJK = ijk ;
+       Orbit& oreplace = Z.modelspace->GetOrbit( IJK[iperm] );
+       for (auto a : X.GetOneBodyChannel(oreplace.l,oreplace.j2,oreplace.tz2) )
+       {
+         IJK[iperm] = a;  // so now IJK is {a,j,k}  or {i,a,k} or {i,j,a}, depending on the permutation.
+         size_t I = IJK[0];
+         size_t J = IJK[1];
+         size_t K = IJK[2];
+         if (not  check_ijk( I, J, K,Jij) ) continue;
+
+
+         /// If IJK is not in the ordering that we use to store the matrix elements, we need to do some recoupling.
+         std::vector<size_t> ket_list;
+         std::vector<double> recouple_list;
+         Z3.GetKetIndex_withRecoupling( Jij, twoJ, I, J, K,  ket_list,  recouple_list );
+
+         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+         {
+           auto iter_find = xy_kept_lookup.find( ket_list[ilist] );
+           if (iter_find == xy_kept_lookup.end() ) continue;
+           size_t local_index_xy = iter_find->second;
+           double recouple = recouple_list[ilist];
+           X1MAT_bra(local_index_bra,local_index_xy) += X1(ijk[iperm],a) * recouple;
+           if ( x_channel_diag and y_channel_diag)
+              Y1MAT_bra(local_index_bra,local_index_xy) += Y1(ijk[iperm],a) * recouple;
+         }
+       }//a
+
+       if ( not ( x_channel_diag and y_channel_diag) )
+       {
+       for (auto a : Y.GetOneBodyChannel(oreplace.l,oreplace.j2,oreplace.tz2) )
+       {
+         IJK[iperm] = a;  // so now IJK is {a,j,k}  or {i,a,k} or {i,j,a}, depending on the permutation.
+         size_t I = IJK[0];
+         size_t J = IJK[1];
+         size_t K = IJK[2];
+         if (not  check_ijk( I, J, K,Jij) ) continue;
+
+
+         /// If IJK is not in the ordering that we use to store the matrix elements, we need to do some recoupling.
+         std::vector<size_t> ket_list;
+         std::vector<double> recouple_list;
+         Z3.GetKetIndex_withRecoupling( Jij, twoJ, I, J, K,  ket_list,  recouple_list );
+
+         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+         {
+           auto iter_find = yx_kept_lookup.find( ket_list[ilist] );
+           if (iter_find == yx_kept_lookup.end() ) continue;
+           size_t local_index_yx = iter_find->second;
+           double recouple = recouple_list[ilist];
+           Y1MAT_bra(local_index_bra,local_index_yx) += Y1(ijk[iperm],a) * recouple;
+         }
+       }//a
+       }
+
+      }//iperm
+    }// for ibra
+
+
+    // now do the same thing for X1MAT_ket and Y1MAT_ket
+    if ( not ( x_channel_diag and y_channel_diag) )
+    {
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t local_index_ket=0; local_index_ket<nkets_kept; local_index_ket++)
+    {
+      size_t iket = kets_kept[local_index_ket];
+      Ket3& ket = Tbc_ket.GetKet(iket);
+      int Jij = ket.Jpq;
+
+     // Below, we do the same thing for 3 different permutations: ajk  iak  ija
+     // where a is summed over all states in the same one-body channel as the orbit it replaces.
+     // So 
+      std::vector<size_t> ijk = {ket.p, ket.q, ket.r};
+      for (size_t iperm=0; iperm<3; iperm++)
+      {
+
+       std::vector<size_t> IJK = ijk ;
+       Orbit& oreplace = Z.modelspace->GetOrbit( IJK[iperm] );
+       for (auto a : Y.GetOneBodyChannel(oreplace.l,oreplace.j2,oreplace.tz2) )
+       {
+         IJK[iperm] = a;  // so now IJK is {a,j,k}  or {i,a,k} or {i,j,a}, depending on the permutation.
+         size_t I = IJK[0];
+         size_t J = IJK[1];
+         size_t K = IJK[2];
+         if (not  check_ijk( I, J, K,Jij) ) continue;
+
+
+         /// If IJK is not in the ordering that we use to store the matrix elements, we need to do some recoupling.
+         std::vector<size_t> ket_list;
+         std::vector<double> recouple_list;
+         Z3.GetKetIndex_withRecoupling( Jij, twoJ, I, J, K,  ket_list,  recouple_list );
+
+         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+         {
+           auto iter_find = xy_kept_lookup.find( ket_list[ilist] );
+           if (iter_find == xy_kept_lookup.end() ) continue;
+           size_t local_index_xy = iter_find->second;
+           double recouple = recouple_list[ilist];
+           Y1MAT_ket(local_index_xy,local_index_ket) += Y1(a,ijk[iperm]) * recouple;
+         }
+       }//a
+       for (auto a : X.GetOneBodyChannel(oreplace.l,oreplace.j2,oreplace.tz2) )
+       {
+         IJK[iperm] = a;  // so now IJK is {a,j,k}  or {i,a,k} or {i,j,a}, depending on the permutation.
+         size_t I = IJK[0];
+         size_t J = IJK[1];
+         size_t K = IJK[2];
+         if (not  check_ijk( I, J, K,Jij) ) continue;
+
+
+         /// If IJK is not in the ordering that we use to store the matrix elements, we need to do some recoupling.
+         std::vector<size_t> ket_list;
+         std::vector<double> recouple_list;
+         Z3.GetKetIndex_withRecoupling( Jij, twoJ, I, J, K,  ket_list,  recouple_list );
+
+         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+         {
+           auto iter_find = yx_kept_lookup.find( ket_list[ilist] );
+           if (iter_find == yx_kept_lookup.end() ) continue;
+           size_t local_index_yx = iter_find->second;
+           double recouple = recouple_list[ilist];
+           X1MAT_ket(local_index_yx ,local_index_ket) += X1(a,ijk[iperm]) * recouple;
+         }
+       }//a
+
+      }//iperm
+    }// for iket
+    }// if channel diag
+
+
+
+   Z.profiler.timer["_" + std::string(__func__) + "_fill_1Bmatrices"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+
+
+    // Do the matrix multiplication
+//    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT;
+    Z3MAT =  X1MAT_bra*Y3MAT_ket ;
+    Z3MAT -= Y1MAT_bra*X3MAT_ket;
+
+
+    if (z_channel_diag)
+    {
+       Z3MAT -=  hermX*hermY * Z3MAT.t();
+    }
+    else
+    {
+      Z3MAT -= Y3MAT_bra*X1MAT_ket ;
+      Z3MAT += X3MAT_bra*Y1MAT_ket;
+    }
+
+
+   Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
+
+    // unpack the result
+    #pragma omp parallel for schedule(dynamic, 1000) collapse(2)
+    for (std::size_t local_bra_index = 0; local_bra_index < bras_kept.size(); local_bra_index += 1) {
+      for (std::size_t local_ket_index = 0; local_ket_index < kets_kept.size(); local_ket_index += 1) {
+        std::size_t ibra = bras_kept[local_bra_index];
+        std::size_t iket = kets_kept[local_ket_index];
+        if ( (ch_bra==ch_ket) and  (iket < ibra) ) continue;
+        Z3.AddToME_pn_ch(ch_bra,ch_ket, ibra, iket,  Z3MAT(local_bra_index, local_ket_index) );
+      }
+    }
+
+   Z.profiler.timer["_" + std::string(__func__) + "_unpack"] += omp_get_wtime() - t_internal;
+
+ 
+  }// for ch3
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+
+
+
+
+
+/*
+// best version so far
+
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
 //  std::cout << "BEGIN " << __func__ << std::endl;
@@ -6585,6 +7026,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
    Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
    t_internal = omp_get_wtime();
 
+
+
 //    std::cout << "    begin matmult " << std::endl;
 
     // Do the matrix multiplication
@@ -6616,6 +7059,13 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
+
+*/
+
+
+
+
+
 
 
 // the old slow way
