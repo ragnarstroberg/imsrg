@@ -2802,6 +2802,179 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t norb = Z.modelspace->GetNumberOrbits();
+  std::vector< std::array<size_t,2> > ij_pairs;
+  for (size_t i=0; i<norb; i++)
+  {
+    Orbit& oi = Z.modelspace->GetOrbit(i);
+    if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(oi)) continue;
+    for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
+    {
+      if (j>i) continue;
+      if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(j)) continue;
+      ij_pairs.push_back( {i,j});
+    }
+  }
+  size_t nij = ij_pairs.size();
+//  std::cout << __func__ <<  "   nij = " << nij << std::endl;
+
+   // Parallelizing does not seem to help this at all. I don't understand why.
+//  int nch = Z.modelspace->GetNumberTwoBodyChannels();
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) // if (not Z.modelspace->scalar3b_transform_first_pass)
+  for ( size_t index_ij=0; index_ij<nij; index_ij++)
+  {
+    double t_local = omp_get_wtime();
+//    std::ostringstream oss;
+//    oss << __func__ << "_" << omp_get_thread_num();
+//  for (size_t i=0; i<norb; i++)
+//  {
+    size_t i = ij_pairs[index_ij][0];
+    size_t j = ij_pairs[index_ij][1];
+    Orbit& oi = Z.modelspace->GetOrbit(i);
+//    if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(oi)) continue;
+    int ei = 2*oi.n + oi.l;
+    double d_ei = std::abs( ei - e_fermi[oi.tz2]);
+    double occnat_i = oi.occ_nat;
+//    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//    for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
+//    {
+//      if (j>i) continue;
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+//      if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
+      int ej = 2*oj.n + oj.l;
+      double d_ej = std::abs( ej - e_fermi[oj.tz2] );
+      double occnat_j = oj.occ_nat;
+      double zij=0;
+
+
+      // We do the same thing for X2 Y3 and Y2 X3, so instead of duplicating code,
+      // put it inside a loop where xy_iter=0 handles X2 Y3 and xy_iter handles Y2 X3
+      for (int xy_iter=0; xy_iter<=1; xy_iter++)
+      {
+        auto& OP2 = xy_iter==0 ? X : Y;
+        auto& OP3 = xy_iter==0 ? Y : X;
+        int itersign = xy_iter==0 ? +1 : -1 ;
+
+        // Do the loop over 2b channel blocks 
+        for (auto& it_ch : OP2.TwoBody.MatEl )
+        {
+           size_t ch_bra = it_ch.first[0];
+           size_t ch_ket = it_ch.first[1];
+           TwoBodyChannel& tbc_bra = OP2.modelspace->GetTwoBodyChannel(ch_bra);
+           TwoBodyChannel& tbc_ket = OP2.modelspace->GetTwoBodyChannel(ch_ket);
+           int J = tbc_bra.J;
+           size_t nbras = tbc_bra.GetNumberKets();
+           size_t nkets = tbc_ket.GetNumberKets();
+
+//           #pragma omp parallel for 
+           for ( size_t ibra=0; ibra<nbras; ibra++)
+           {
+              Ket& bra = tbc_bra.GetKet(ibra);
+              int a = bra.p;
+              int b = bra.q;
+              if (!OP3.ThreeBody.IsOrbitIn3BodyEMaxTruncation(a)) continue;
+              if (!OP3.ThreeBody.IsOrbitIn3BodyEMaxTruncation(b)) continue;
+              double na = bra.op->occ;
+              double nb = bra.oq->occ;
+              int ea = 2*bra.op->n + bra.op->l;
+              int eb = 2*bra.oq->n + bra.oq->l;
+              double occnat_a = bra.op->occ_nat;
+              double occnat_b = bra.oq->occ_nat;
+              double d_ea = std::abs( ea - e_fermi[bra.op->tz2]);
+              double d_eb = std::abs( eb - e_fermi[bra.oq->tz2]);
+              double occnat_abi = occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i);
+              double occnat_abj = occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j);
+              bool abi_ok = (occnat_abi > Z.modelspace->GetOccNat3Cut() ) and ((ea+eb+ei) <= Z.modelspace->E3max) and ( (d_ea + d_eb + d_ei) <= Z.modelspace->dE3max);
+              bool abj_ok = (occnat_abj > Z.modelspace->GetOccNat3Cut() ) and ((ea+eb+ej) <= Z.modelspace->E3max) and ( (d_ea + d_eb + d_ej) <= Z.modelspace->dE3max);
+              if ( not (abi_ok or abj_ok)) continue;
+
+              //check stuff
+
+              for ( size_t iket=0; iket<nkets; iket++)
+              {
+                 if ( (ch_bra==ch_ket) and (iket>ibra)) continue;
+                 Ket& ket = tbc_ket.GetKet(iket);
+                 int c = ket.p;
+                 int d = ket.q;
+                 if (!OP3.ThreeBody.IsOrbitIn3BodyEMaxTruncation(c)) continue;
+                 if (!OP3.ThreeBody.IsOrbitIn3BodyEMaxTruncation(d)) continue;
+                 double nc = ket.op->occ;
+                 double nd = ket.oq->occ;
+                 int ec = 2*ket.op->n + ket.op->l;
+                 int ed = 2*ket.oq->n + ket.oq->l;
+                 double d_ec = std::abs( ec - e_fermi[ket.op->tz2]);
+                 double d_ed = std::abs( ec - e_fermi[ket.oq->tz2]);
+                 double occnat_c = bra.op->occ_nat;
+                 double occnat_d = bra.oq->occ_nat;
+
+                 double occnat_cdj = occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ;
+                 double occnat_cdi = occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ;
+
+              bool cdi_ok = (occnat_cdi > Z.modelspace->GetOccNat3Cut() ) and ((ec+ed+ei) <= Z.modelspace->E3max) and ( (d_ec + d_ed + d_ei) <= Z.modelspace->dE3max);
+              bool cdj_ok = (occnat_cdj > Z.modelspace->GetOccNat3Cut() ) and ((ec+ed+ej) <= Z.modelspace->E3max) and ( (d_ec + d_ed + d_ej) <= Z.modelspace->dE3max);
+
+                 double prefactor =  na*nb*(1-nc)*(1-nd) - (1-na)*(1-nb)*nc*nd;
+                 if ( std::abs(prefactor)<1e-8) continue;
+                 double Xabcd = OP2.TwoBody.GetTBME(ch_bra,ch_ket,bra,ket);
+                 double Xcdab = OP2.TwoBody.GetTBME(ch_ket,ch_bra,ket,bra);
+
+                 if (a==b) prefactor /= 2;
+                 if (c==d) prefactor /= 2;
+                 int twoJ_min = std::abs( 2*J - oi.j2);
+                 int twoJ_max = 2*J + oi.j2;
+                 for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+                 {
+                   double yabicdj = 0;
+                   double ycdiabj = 0;
+                   if ( cdi_ok and abj_ok   )
+                   {
+                     ycdiabj = OP3.ThreeBody.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
+                   }
+                   if ( abi_ok and cdj_ok   )
+                   {
+                     yabicdj = OP3.ThreeBody.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
+                   }
+                   zij += prefactor * itersign * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab) );
+                 }// for twoJ
+                    
+//                 Z.profiler.counter[ oss.str() ] +=1;
+              }// for iket
+           }// for ibra
+
+        }// for it_ch, X 2b channel blocks
+
+      }// for xy_iter 
+
+
+
+      Z1(i,j) += zij / (oi.j2+1.0);
+      if (i!=j)
+      {
+         Z1(j,i) += zij / (oi.j2+1.0);
+      }
+   // }// for j
+//    Z.profiler.timer[ oss.str() ] += omp_get_wtime() - t_local;
+//    std::cout << omp_get_thread_num() << "   " << i << " " << j << std::endl;
+  }// for i
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+
+
+
+/*
+void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double tstart = omp_get_wtime();
+  auto& X2 = X.TwoBody;
+  auto& X3 = X.ThreeBody;
+  auto& Y2 = Y.TwoBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z1 = Z.OneBody;
+  int x_particle_rank = X.GetParticleRank();
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+  size_t norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   #pragma omp parallel for schedule(dynamic,1) // if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -2919,8 +3092,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-
-
+*/
 
 
 
