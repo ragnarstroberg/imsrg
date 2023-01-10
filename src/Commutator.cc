@@ -235,6 +235,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
         // This one is essential. If it's not here, then there are no induced 3 body terms
          std::cout << " comm223 " << std::endl;
         comm223ss(X, Y, Z); // scales as n^7
+        std::cout << " done 223" << std::endl;
 //       comm223ss_debug(X, Y, Z); // scales as n^7
        }
 
@@ -3786,8 +3787,10 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
       {
         size_t i = obc_orbits[ind_i]; // i is the orbit index as per ModelSpace
 
+        std::cout << __func__ << " line " << __LINE__ << "   ciab " << c << " " << i << " " << a << " " << b << std::endl;
         X2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc*  X.TwoBody.GetTBME_J(Jab,c,i,a,b);
         Y2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc*  Y.TwoBody.GetTBME_J(Jab,c,i,a,b);
+        std::cout << __func__ << " line " << __LINE__ << std::endl;
       }// for ind_i
 
 
@@ -3839,7 +3842,9 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
            size_t hash_klc = Hash_comm232_key( klcJJ );
            size_t pointer_abj = recoupling_cache_lookup.at(hash_abj);
            size_t pointer_klc = recoupling_cache_lookup.at(hash_klc);
-           size_t ch_check = recoupling_cache[pointer_abj];
+//           size_t ch_check = recoupling_cache[pointer_abj];
+           size_t ch_abj = recoupling_cache[pointer_abj];
+           size_t ch_klc = recoupling_cache[pointer_klc];
            size_t listsize_abj = recoupling_cache[pointer_abj+1];
            size_t listsize_klc = recoupling_cache[pointer_klc+1];
            
@@ -3854,9 +3859,10 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
                size_t iket_klc = (size_t) recoupling_cache[pointer_klc+2+ilist_klc];
                double recouple_ket =      recoupling_cache[pointer_klc+2+listsize_klc+ilist_klc];
 
+        std::cout << __func__ << " line " << __LINE__ << std::endl;
 //               xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
-               if (x_has_3 ) xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
-               if (y_has_3 ) yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
+               if (x_has_3 ) xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_abj,ch_klc, ibra_abj, iket_klc );
+               if (y_has_3 ) yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_abj,ch_klc, ibra_abj, iket_klc );
              }
            }
 
@@ -3868,6 +3874,7 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
     }// for ind_abc
 
 
+        std::cout << __func__ << " line " << __LINE__ << std::endl;
     // now we do the mat mult
     ZMAT_list[obc_key] =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
 
@@ -3972,6 +3979,7 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
         // normalize the tbme
         zijkl /= sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
 //        zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+        std::cout << __func__ << " line " << __LINE__ << std::endl;
         Z2.AddToTBME(chbra,chket,ibra,iket,zijkl);
       }//for iket
 //    }//for ibra
@@ -7989,6 +7997,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     int twoJ = Tbc_bra.twoJ; // Scalar commutator so J is the same in bra and ket channel
     double Jtot = 0.5 * twoJ;
 
+    if (nbras3==0 or nkets3==0) continue; // nothing to be done here...
+
     /// set up permutation stuff here so we can reuse it
     std::vector<std::array<size_t,3>> ijk;
     std::vector<int> J1p_min;
@@ -8022,7 +8032,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 //      for (size_t iket=ibra; iket<nkets3; iket++)
-      size_t iket_max = nkets3;
+      size_t iket_max = nkets3-1;
       if (ch3bra == ch3ket) iket_max = ibra;
       for (size_t iket=0; iket<=iket_max; iket++)
       {
@@ -8082,16 +8092,22 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
             double rec_ijk = Z3.RecouplingCoefficient( index_perms[perm_ijk], ji,jj,jk, J1p, J1, twoJ) ;
             rec_ijk *= Z3.PermutationPhase( index_perms[perm_ijk] ); // do we get a fermionic minus sign?
             if ( I1==I2) rec_ijk *= PhysConst::SQRT2;
-            int ch1 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l+o2.l)%2, (o1.tz2+o2.tz2)/2 );
+//            int ch1 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l+o2.l)%2, (o1.tz2+o2.tz2)/2 );
+            int ch12 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l+o2.l)%2, (o1.tz2+o2.tz2)/2 );
 
-            TwoBodyChannel& tbc1 = Z.modelspace->GetTwoBodyChannel(ch1);
-            size_t nkets_1 = tbc1.GetNumberKets();
-            size_t ind_12 = tbc1.GetLocalIndex(std::min(I1,I2),std::max(I1,I2));
-            if (ind_12>nkets_1) continue;
+//            TwoBodyChannel& tbc1 = Z.modelspace->GetTwoBodyChannel(ch1);
+            TwoBodyChannel& tbc12 = Z.modelspace->GetTwoBodyChannel(ch12);
+//            size_t nkets_1 = tbc1.GetNumberKets();
+            size_t nkets_12 = tbc12.GetNumberKets();
+//            size_t ind_12 = tbc1.GetLocalIndex(std::min(I1,I2),std::max(I1,I2));
+            size_t ind_12 = tbc12.GetLocalIndex(std::min(I1,I2),std::max(I1,I2));
+//            if (ind_12>nkets_1) continue;
+            if (ind_12>nkets_12) continue;
             double phase_12 = I1>I2 ?  -Z.modelspace->phase((o1.j2+o2.j2-2*J1p)/2)  : 1;
 
-            const auto XMAT1 = X.TwoBody.GetMatrix(ch1,ch1).row(ind_12);
-            const auto YMAT1 = Y.TwoBody.GetMatrix(ch1,ch1).row(ind_12);
+
+//            const auto XMAT1 = X.TwoBody.GetMatrix(ch1,ch1).row(ind_12);
+//            const auto YMAT1 = Y.TwoBody.GetMatrix(ch1,ch1).row(ind_12);
 
             for ( int perm_lmn=0; perm_lmn<3; perm_lmn++ )
             {
@@ -8102,12 +8118,29 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
               Orbit& o6 = Z.modelspace->GetOrbit( I6 );
               double j6 = 0.5*o6.j2;
 
-              int parity_a = (o1.l+o2.l+o6.l)%2; // Need to fix this if we want to treat parity changing operators.
+              for ( int parity_a : {0,1} )
+              {
+//              int parity_a = (o1.l+o2.l+o6.l)%2; // Need to fix this if we want to treat parity changing operators.  ... Fixed it? SRS Jan 10.
+//              if (  (o1.l+o2.l+o6.l+parity_a) != X.GetParity() and (o4.l+o6.l+o3.l+parity_a) != X.GetParity() ) continue;
+//              if (  (o1.l+o2.l+o6.l+parity_a) != Y.GetParity() and (o4.l+o6.l+o3.l+parity_a) != Y.GetParity() ) continue;
               for ( int tz2a : {-1,1} )
               {
-                int dTz = o1.tz2 + o2.tz2 - o6.tz2 -tz2a;
-                if (  std::abs(dTz) != X.GetTRank() and std::abs( dTz) != Y.GetTRank() ) continue;
+                int dTz126a = o1.tz2 + o2.tz2 - o6.tz2 -tz2a;
+                int dTz3a45 = o3.tz2 + tz2a - o4.tz2 -o5.tz2;
 
+                bool X_126a_good = ((o1.l+o2.l+o6.l+parity_a) == X.GetParity() ) and (std::abs(dTz126a) == X.GetTRank() );
+                bool Y_126a_good = ((o1.l+o2.l+o6.l+parity_a) == Y.GetParity() ) and (std::abs(dTz126a) == Y.GetTRank() );
+                bool X_3a45_good = ((o4.l+o5.l+o3.l+parity_a) == X.GetParity() ) and (std::abs(dTz3a45) == X.GetTRank() );
+                bool Y_3a45_good = ((o4.l+o5.l+o3.l+parity_a) == Y.GetParity() ) and (std::abs(dTz3a45) == Y.GetTRank() );
+
+                if ( not ( (X_126a_good and Y_3a45_good) or ( Y_126a_good and X_3a45_good) ) ) continue;
+//                if (  std::abs(dTz126a) != X.GetTRank() and std::abs( dTz3a45) != X.GetTRank() ) continue;
+//                if (  std::abs(dTz126a) != Y.GetTRank() and std::abs( dTz3a45) != Y.GetTRank() ) continue;
+
+
+                int ch6a = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o6.l+parity_a)%2, (o6.tz2+tz2a)/2 );
+                TwoBodyChannel& tbc6a = Z.modelspace->GetTwoBodyChannel(ch6a);
+                size_t nkets_6a = tbc6a.GetNumberKets();
 
                 int j2pmin = J2;
                 int j2pmax = J2;
@@ -8124,15 +8157,24 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                  rec_lmn *= Z3.PermutationPhase( index_perms[perm_lmn] ); // do we get a fermionic minus sign?
                  if ( I4==I5) rec_lmn *= PhysConst::SQRT2;
 
-                 int ch2 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
-                 TwoBodyChannel& tbc2 = Z.modelspace->GetTwoBodyChannel(ch2);
-                 size_t nkets_2 = tbc2.GetNumberKets();
-                 size_t ind_45 = tbc2.GetLocalIndex(std::min(I4,I5),std::max(I4,I5));
-                 if (ind_45>nkets_2) continue;
+//                 int ch2 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
+                 int ch45 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
+                 int ch3a = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o3.l+parity_a)%2, (o3.tz2+tz2a)/2 );
+
+//                 TwoBodyChannel& tbc2 = Z.modelspace->GetTwoBodyChannel(ch2);
+                 TwoBodyChannel& tbc45 = Z.modelspace->GetTwoBodyChannel(ch45);
+                 TwoBodyChannel& tbc3a = Z.modelspace->GetTwoBodyChannel(ch3a);
+//                 size_t nkets_2 = tbc2.GetNumberKets();
+                 size_t nkets_45 = tbc45.GetNumberKets();
+                 size_t nkets_3a = tbc3a.GetNumberKets();
+//                 size_t ind_45 = tbc2.GetLocalIndex(std::min(I4,I5),std::max(I4,I5));
+                 size_t ind_45 = tbc45.GetLocalIndex(std::min(I4,I5),std::max(I4,I5));
+//                 if (ind_45>nkets_2) continue;
+                 if (ind_45>nkets_45) continue;
                  double phase_45 = I4>I5 ?  -Z.modelspace->phase((o4.j2+o5.j2-2*J2p)/2)  : 1;
 
-                 const auto XMAT2 = X.TwoBody.GetMatrix(ch2,ch2).col(ind_45);
-                 const auto YMAT2 = Y.TwoBody.GetMatrix(ch2,ch2).col(ind_45);
+//                 const auto XMAT2 = X.TwoBody.GetMatrix(ch2,ch2).col(ind_45);
+//                 const auto YMAT2 = Y.TwoBody.GetMatrix(ch2,ch2).col(ind_45);
 
                  double hat_factor = sqrt( (2*J1p+1)*(2*J2p+1) );
 
@@ -8153,16 +8195,20 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                    else
                    {
                     sixj = j2a<twoJ  ?  Z.modelspace->GetSixJ(j6,ja,J1p, j3, 0.5*twoJ, J2p)
-                                           :  Z.modelspace->GetSixJ(j6,0.5*twoJ,J2p, j3, ja, J1p) ;
+                                     :  Z.modelspace->GetSixJ(j6,0.5*twoJ,J2p, j3, ja, J1p) ;
                    }
 
                    double prefactor = rec_ijk * rec_lmn * sixj * hat_factor * phase_12 * phase_45;
-                   for ( size_t a : Z.GetOneBodyChannel(la,j2a,tz2a)  )
+                   for ( size_t a : Z.modelspace->OneBodyChannels.at({la,j2a,tz2a})  )
                    {
-                      size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));
-                      if (ind_6a>nkets_1) continue;
-                      size_t ind_3a = tbc2.GetLocalIndex(std::min(I3,a),std::max(I3,a));
-                      if (ind_3a>nkets_2) continue;
+//                      size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));
+                      size_t ind_6a = tbc6a.GetLocalIndex(std::min(I6,a),std::max(I6,a));
+//                      if (ind_6a>nkets_1) continue;
+                      if (ind_6a>nkets_6a) continue;
+//                      size_t ind_3a = tbc2.GetLocalIndex(std::min(I3,a),std::max(I3,a));
+                      size_t ind_3a = tbc3a.GetLocalIndex(std::min(I3,a),std::max(I3,a));
+//                      if (ind_3a>nkets_2) continue;
+                      if (ind_3a>nkets_3a) continue;
 
 
                       double phase_6a = I6>a ?  -Z.modelspace->phase((o6.j2+j2a-2*J1p)/2)  : 1;
@@ -8171,20 +8217,25 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                       double phase_3a = I3>a ?  -Z.modelspace->phase((o3.j2+j2a-2*J2p)/2)  : 1;
                       if (I3==a) phase_3a *= PhysConst::SQRT2;
 
+                      double x_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a)(ind_12,ind_6a) : 0;
+                      double y_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a)(ind_12,ind_6a) : 0;
+                      double x_3a45 = X_3a45_good ?  X.TwoBody.GetMatrix(ch3a,ch45)(ind_3a,ind_45) : 0;
+                      double y_3a45 = Y_3a45_good ?  Y.TwoBody.GetMatrix(ch3a,ch45)(ind_3a,ind_45) : 0;
 
-                     double x_126a =  phase_6a * XMAT1( ind_6a);
-                     double y_126a =  phase_6a * YMAT1( ind_6a);
-                     double x_3a45 =  phase_3a * XMAT2( ind_3a);
-                     double y_3a45 =  phase_3a * YMAT2( ind_3a);
+//                     double x_126a =  phase_6a * XMAT1( ind_6a);
+//                     double y_126a =  phase_6a * YMAT1( ind_6a);
+//                     double x_3a45 =  phase_3a * XMAT2( ind_3a);
+//                     double y_3a45 =  phase_3a * YMAT2( ind_3a);
 
   
-                     zijklmn += prefactor * (x_126a * y_3a45 - y_126a * x_3a45);
+                     zijklmn += prefactor * phase_6a * phase_3a * (x_126a * y_3a45 - y_126a * x_3a45);
 
   
                   }// for a
                 }// for j2a
                }// for J2p
               }// for tz2a
+              }// for parity_a
             }// for perm_lmn
           }// for J1p
         }// for perm_ijk
