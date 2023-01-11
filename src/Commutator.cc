@@ -3570,8 +3570,12 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
 
       int Jkl_min = std::abs(j2i-j2j)/2;
       int Jkl_max = (j2i+j2j)/2;
-      int Tzkl = (tz2i + tz2j)/2;
-      int paritykl = (parityi+parityj)%2;
+//      int Tzkl = (tz2i + tz2j)/2;
+//      int paritykl = (parityi+parityj)%2;
+      int paritykl = (parityi+parityj + Z.GetParity())%2;
+      for ( int Tzkl=-1; Tzkl<=1; Tzkl++)
+      {
+      if ( std::abs( (tz2i+tz2j)/2 -Tzkl) != Z.GetTRank() ) continue;
       for ( int Jkl = Jkl_min; Jkl<=Jkl_max; Jkl++)
       {
 
@@ -3607,6 +3611,7 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
           }// for j
         }// for iket_kl
       }// for Jkl
+      }
     }// for iter_j in local one body channels
 
     size_t dim_i   = obc_orbits.size(); // how many sp states are in this jpt channel
@@ -3787,10 +3792,8 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
       {
         size_t i = obc_orbits[ind_i]; // i is the orbit index as per ModelSpace
 
-        std::cout << __func__ << " line " << __LINE__ << "   ciab " << c << " " << i << " " << a << " " << b << std::endl;
         X2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc*  X.TwoBody.GetTBME_J(Jab,c,i,a,b);
         Y2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc*  Y.TwoBody.GetTBME_J(Jab,c,i,a,b);
-        std::cout << __func__ << " line " << __LINE__ << std::endl;
       }// for ind_i
 
 
@@ -3825,6 +3828,12 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
         if ( imsrg3_no_qqq and ( (ok.cvq+ol.cvq+oc.cvq)>5 or (oa.cvq+ob.cvq+oj.cvq)>5)) continue;
         if ( imsrg3_valence_2b and  (ok.cvq!=1 or ol.cvq!=1 or oj.cvq!=1) ) continue;
         
+
+        int dTz = oa.tz2+ob.tz2+oj.tz2 - ok.tz2-ol.tz2-oc.tz2;
+        int dparity = ( oa.l+ob.l+oj.l+ok.l+ol.l+oc.l )%2;
+        bool x3_good = x_has_3 and ( std::abs(dTz)==X.GetTRank() ) and ( dparity == X.GetParity() );
+        bool y3_good = y_has_3 and ( std::abs(dTz)==Y.GetTRank() ) and ( dparity == Y.GetParity() );
+
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
 
@@ -3859,10 +3868,9 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
                size_t iket_klc = (size_t) recoupling_cache[pointer_klc+2+ilist_klc];
                double recouple_ket =      recoupling_cache[pointer_klc+2+listsize_klc+ilist_klc];
 
-        std::cout << __func__ << " line " << __LINE__ << std::endl;
 //               xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
-               if (x_has_3 ) xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_abj,ch_klc, ibra_abj, iket_klc );
-               if (y_has_3 ) yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_abj,ch_klc, ibra_abj, iket_klc );
+               if (x3_good ) xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_abj,ch_klc, ibra_abj, iket_klc );
+               if (y3_good ) yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_abj,ch_klc, ibra_abj, iket_klc );
              }
            }
 
@@ -3874,7 +3882,6 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
     }// for ind_abc
 
 
-        std::cout << __func__ << " line " << __LINE__ << std::endl;
     // now we do the mat mult
     ZMAT_list[obc_key] =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
 
@@ -3979,7 +3986,6 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
         // normalize the tbme
         zijkl /= sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
 //        zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
-        std::cout << __func__ << " line " << __LINE__ << std::endl;
         Z2.AddToTBME(chbra,chket,ibra,iket,zijkl);
       }//for iket
 //    }//for ibra
@@ -8125,13 +8131,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //              if (  (o1.l+o2.l+o6.l+parity_a) != Y.GetParity() and (o4.l+o6.l+o3.l+parity_a) != Y.GetParity() ) continue;
               for ( int tz2a : {-1,1} )
               {
-                int dTz126a = o1.tz2 + o2.tz2 - o6.tz2 -tz2a;
-                int dTz3a45 = o3.tz2 + tz2a - o4.tz2 -o5.tz2;
+                int dTz126a = (o1.tz2 + o2.tz2 - o6.tz2 -tz2a)/2;
+                int dTz3a45 = (o3.tz2 + tz2a - o4.tz2 -o5.tz2)/2;
 
-                bool X_126a_good = ((o1.l+o2.l+o6.l+parity_a) == X.GetParity() ) and (std::abs(dTz126a) == X.GetTRank() );
-                bool Y_126a_good = ((o1.l+o2.l+o6.l+parity_a) == Y.GetParity() ) and (std::abs(dTz126a) == Y.GetTRank() );
-                bool X_3a45_good = ((o4.l+o5.l+o3.l+parity_a) == X.GetParity() ) and (std::abs(dTz3a45) == X.GetTRank() );
-                bool Y_3a45_good = ((o4.l+o5.l+o3.l+parity_a) == Y.GetParity() ) and (std::abs(dTz3a45) == Y.GetTRank() );
+                bool X_126a_good = ((o1.l+o2.l+o6.l+parity_a)%2 == X.GetParity() ) and (std::abs(dTz126a) == X.GetTRank() );
+                bool Y_126a_good = ((o1.l+o2.l+o6.l+parity_a)%2 == Y.GetParity() ) and (std::abs(dTz126a) == Y.GetTRank() );
+                bool X_3a45_good = ((o4.l+o5.l+o3.l+parity_a)%2 == X.GetParity() ) and (std::abs(dTz3a45) == X.GetTRank() );
+                bool Y_3a45_good = ((o4.l+o5.l+o3.l+parity_a)%2 == Y.GetParity() ) and (std::abs(dTz3a45) == Y.GetTRank() );
 
                 if ( not ( (X_126a_good and Y_3a45_good) or ( Y_126a_good and X_3a45_good) ) ) continue;
 //                if (  std::abs(dTz126a) != X.GetTRank() and std::abs( dTz3a45) != X.GetTRank() ) continue;
