@@ -2648,6 +2648,9 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
   if (X.GetParticleRank() < 3) return;
   if (Y.GetParticleRank() < 3) return;
 
+  bool x_channel_diag = X.GetParity()==0 and X.GetTRank()==0;
+  bool y_channel_diag = Y.GetParity()==0 and Y.GetTRank()==0;
+
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t norb = Z.modelspace->GetNumberOrbits();
   int num_threads = omp_get_max_threads();
@@ -2706,55 +2709,98 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ej-e_fermi[tzj])) > Z.modelspace->GetdE3max() ) continue;
            if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j)) < Z.modelspace->GetOccNat3Cut() ) continue;
 
+           int parity_abi = ( tbc_ab.parity + oi.l)%2;
+           int twoTz_abi = tbc_ab.Tz*2 + oi.tz2;
+           int parity_abj = ( tbc_ab.parity + oj.l)%2;
+           int twoTz_abj = tbc_ab.Tz*2 + oj.tz2;
+
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
            {
-             size_t ch_abi = Z.modelspace->GetThreeBodyChannelIndex( twoJ, (tbc_ab.parity +oi.l)%2, tbc_ab.Tz*2 + oi.tz2 );
-             // TODO: How is this legal? size_t is unsigned, i.e. strictly positive
-             if (ch_abi==size_t(-1)) continue; // maybe that channel doesn't exist
-             auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_abi);
+//             size_t ch_abi = Z.modelspace->GetThreeBodyChannelIndex( twoJ, (tbc_ab.parity +oi.l)%2, tbc_ab.Tz*2 + oi.tz2 );
+//             // TODO: How is this legal? size_t is unsigned, i.e. strictly positive
+//             if (ch_abi==size_t(-1)) continue; // maybe that channel doesn't exist
+//             auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_abi);
              double Jfactor = (twoJ+1.0)/(oi.j2+1);
              double ab_symmetry_factor = (a==b) ?  1.0 : 2.0;
-             size_t nkets3 = Tbc.GetNumberKets();
 
-             for (size_t iket_cde=0; iket_cde<nkets3; iket_cde++)
+             for (int parity_cde : {0,1} )
              {
-                Ket3& ket_cde = Tbc.GetKet(iket_cde);
-                double nc = ket_cde.op->occ;
-                double nd = ket_cde.oq->occ;
-                double ne = ket_cde.oR->occ;
-//                double occfactor = (ket_ab.op->occ * ket_ab.oq->occ) * (1-ket_cde.op->occ)*(1-ket_cde.oq->occ)*(1-ket_cde.oR->occ);
-                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne) + (1-na)*(1-nb)*nc*nd*ne; // fixes mistake found by Matthias Heinz Oct 2022
-                if (std::abs(occfactor)<1e-8) continue;
-                size_t c = ket_cde.p;
-                size_t d = ket_cde.q;
-                size_t e = ket_cde.r;
-                int ec = 2*ket_cde.op->n + ket_cde.op->l;
-                int ed = 2*ket_cde.oq->n + ket_cde.oq->l;
-                int ee = 2*ket_cde.oR->n + ket_cde.oR->l;
-                if (ec > emax_3body) continue;
-                if (ed > emax_3body) continue;
-                if (ee > emax_3body) continue;
-                if (ec + ed + ee > e3max) continue;
-                double occnat_c = ket_cde.op->occ_nat;
-                double occnat_d = ket_cde.oq->occ_nat;
-                double occnat_e = ket_cde.oR->occ_nat;
-                int tzc = ket_cde.op->tz2;
-                int tzd = ket_cde.oq->tz2;
-                int tze = ket_cde.oR->tz2;
-                if ( (std::abs( ec-e_fermi[tzc]) + std::abs(ed-e_fermi[tzd]) + std::abs(ee-e_fermi[tze])) > Z.modelspace->GetdE3max() ) continue;
-                if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_e*(1-occnat_e)) < Z.modelspace->GetOccNat3Cut() ) continue;
-                double cde_symmetry_factor = 6;
-                if (c==d and d==e) cde_symmetry_factor = 1;
-                else if (c==d or d==e) cde_symmetry_factor = 3;
-                int Jcd = ket_cde.Jpq;
- 
-               // If needed we should use GetME_pn_TwoOps here.
-                auto xy_abicde = X3.GetME_pn_TwoOps(Jab, Jcd, twoJ, a,b,i,c,d,e, X3,Y3) ;
-                auto xy_cdeabj = X3.GetME_pn_TwoOps(Jcd, Jab, twoJ, c,d,e,a,b,j, X3,Y3) ;
-                zij += 1./12 *  ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
-                             * ( xy_abicde[0] * xy_cdeabj[1] - xy_abicde[1] * xy_cdeabj[0] );
+               for (int twoTz_cde : {-3,-1,1,3} )
+               {
+                  bool x_abi_good = (parity_abi + parity_cde)%2==X.GetParity() and std::abs(twoTz_abi-twoTz_cde)/2 == X.GetTRank();
+                  bool y_abi_good = (parity_abi + parity_cde)%2==Y.GetParity() and std::abs(twoTz_abi-twoTz_cde)/2 == Y.GetTRank();
+                  bool x_abj_good = (parity_abj + parity_cde)%2==X.GetParity() and std::abs(twoTz_abj-twoTz_cde)/2 == X.GetTRank();
+                  bool y_abj_good = (parity_abj + parity_cde)%2==Y.GetParity() and std::abs(twoTz_abj-twoTz_cde)/2 == Y.GetTRank();
+                  if ( not  (  (x_abi_good and y_abj_good) or (x_abj_good and y_abi_good) ) ) continue;
+                  size_t ch_cde = Z.modelspace->GetThreeBodyChannelIndex( twoJ, parity_cde, twoTz_cde);
+                  if (ch_cde==size_t(-1)) continue; // maybe that channel doesn't exist
+                  auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_cde);
+                  size_t nkets3 = Tbc.GetNumberKets();
 
-             }// for iket_cde
+                  for (size_t iket_cde=0; iket_cde<nkets3; iket_cde++)
+                  {
+                     Ket3& ket_cde = Tbc.GetKet(iket_cde);
+                     double nc = ket_cde.op->occ;
+                     double nd = ket_cde.oq->occ;
+                     double ne = ket_cde.oR->occ;
+//                     double occfactor = (ket_ab.op->occ * ket_ab.oq->occ) * (1-ket_cde.op->occ)*(1-ket_cde.oq->occ)*(1-ket_cde.oR->occ);
+                     double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne) + (1-na)*(1-nb)*nc*nd*ne; // fixes mistake found by Matthias Heinz Oct 2022
+                     if (std::abs(occfactor)<1e-8) continue;
+                     size_t c = ket_cde.p;
+                     size_t d = ket_cde.q;
+                     size_t e = ket_cde.r;
+                     int ec = 2*ket_cde.op->n + ket_cde.op->l;
+                     int ed = 2*ket_cde.oq->n + ket_cde.oq->l;
+                     int ee = 2*ket_cde.oR->n + ket_cde.oR->l;
+                     if (ec > emax_3body) continue;
+                     if (ed > emax_3body) continue;
+                     if (ee > emax_3body) continue;
+                     if (ec + ed + ee > e3max) continue;
+                     double occnat_c = ket_cde.op->occ_nat;
+                     double occnat_d = ket_cde.oq->occ_nat;
+                     double occnat_e = ket_cde.oR->occ_nat;
+                     int tzc = ket_cde.op->tz2;
+                     int tzd = ket_cde.oq->tz2;
+                     int tze = ket_cde.oR->tz2;
+                     if ( (std::abs( ec-e_fermi[tzc]) + std::abs(ed-e_fermi[tzd]) + std::abs(ee-e_fermi[tze])) > Z.modelspace->GetdE3max() ) continue;
+                     if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_e*(1-occnat_e)) < Z.modelspace->GetOccNat3Cut() ) continue;
+                     double cde_symmetry_factor = 6;
+                     if (c==d and d==e) cde_symmetry_factor = 1;
+                     else if (c==d or d==e) cde_symmetry_factor = 3;
+                     int Jcd = ket_cde.Jpq;
+ 
+                    double x_abicde=0,y_abicde=0,x_cdeabj=0,y_cdeabj=0;
+                    // If needed we should use GetME_pn_TwoOps here.
+                     if ( x_channel_diag and y_channel_diag )
+                     {
+                        auto xy_abicde = X3.GetME_pn_TwoOps(Jab, Jcd, twoJ, a,b,i,c,d,e, X3,Y3) ;
+                        auto xy_cdeabj = X3.GetME_pn_TwoOps(Jcd, Jab, twoJ, c,d,e,a,b,j, X3,Y3) ;
+                        x_abicde = xy_abicde[0];
+                        y_abicde = xy_abicde[1];
+                        x_cdeabj = xy_cdeabj[0];
+                        y_cdeabj = xy_cdeabj[1];
+                     }
+                     else
+                     {
+                       if (x_abi_good and y_abj_good)
+                       {
+                          x_abicde = X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e );
+                          y_cdeabj = Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j );
+                       }
+                       if (y_abi_good and x_abj_good)
+                       {
+                          y_abicde = Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e );
+                          x_cdeabj = X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j );
+                       }
+                     }
+//                     zij += 1./12 *  ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
+//                                  * ( xy_abicde[0] * xy_cdeabj[1] - xy_abicde[1] * xy_cdeabj[0] );
+                     zij += 1./12 *  ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
+                                  * ( x_abicde * y_cdeabj - y_abicde * x_cdeabj );
+
+                  }// for iket_cde
+               }// for twoTz_cde
+             }// for parity_cde
            }// for twoJ
         }// for iket_ab
 
