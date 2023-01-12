@@ -3387,6 +3387,10 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z2 = Z.TwoBody;
 
   int hZ = Z.IsHermitian() ? +1 : -1 ;
+
+  bool x_channel_diag = X.GetParity()==0 and X.GetTRank()==0;
+  bool y_channel_diag = Y.GetParity()==0 and Y.GetTRank()==0;
+
 //  int x_particle_rank = X.GetParticleRank();
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
@@ -3455,40 +3459,53 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
            int twoJ_max = oa.j2 + 2*J;
           // this is less efficient than doing the loop twice, but less code
           // and easily lets us treat the case of Y having nonzero Tz or odd parity
-          std::set<size_t> blist;
-//          std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
-//          for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
-          for ( auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2)) blist.insert(b);
-//          for ( auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
-          for ( auto b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2)) blist.insert(b);
-//          for ( auto b : Z.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // TODO: We can make this a<=b or a>=b, I think. Just need to mind some factors of 2
-          for ( auto b : blist ) 
+          for ( int b_loop=0; b_loop<=1; b_loop++)
           {
-            Orbit& ob = Z.modelspace->GetOrbit(b);
-            if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+             if ( x_channel_diag and y_channel_diag and b_loop>0) continue;
+             std::set<size_t> blist;
+//             std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
+//             for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
+             if (b_loop==0)  for ( auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2)) blist.insert(b);
+//             for ( auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
+             if (b_loop==1)  for ( auto b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2)) blist.insert(b);
+//             for ( auto b : Z.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // TODO: We can make this a<=b or a>=b, I think. Just need to mind some factors of 2
+             for ( auto b : blist ) 
+             {
+               Orbit& ob = Z.modelspace->GetOrbit(b);
+               if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
 
-            int eb = 2*ob.n + ob.l;
-            double d_eb = std::abs( eb - e_fermi[ob.tz2]);
-            double occnat_b = ob.occ_nat;
-            if ( (ei+ej+eb)>Z.modelspace->E3max) continue;
-            if ( (d_ei+d_ej+d_eb)>Z.modelspace->dE3max) continue;
-            if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_b*(1-occnat_b) ) < Z.modelspace->GetOccNat3Cut() ) continue;
-            double occfactor = oa.occ - ob.occ;
-            if (std::abs(occfactor)<1e-6) continue;
-            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
-            {
-//              double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
-//
-                auto xandy = Y3.GetME_pn_TwoOps(J,J, twoJ,i,j,b,k,l,a,X3,Y3);
-//              double xijbkla = x_particle_rank > 2 ? X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) : 0;
-//              double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
-                double xijbkla = xandy[0];              
-                double yijbkla = xandy[1];              
+               int eb = 2*ob.n + ob.l;
+               double d_eb = std::abs( eb - e_fermi[ob.tz2]);
+               double occnat_b = ob.occ_nat;
+               if ( (ei+ej+eb)>Z.modelspace->E3max) continue;
+               if ( (d_ei+d_ej+d_eb)>Z.modelspace->dE3max) continue;
+               if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_b*(1-occnat_b) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+               double occfactor = oa.occ - ob.occ;
+               if (std::abs(occfactor)<1e-6) continue;
+               for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+               {
+//                 double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
 
-              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * yijbkla -  Y1(a,b) * xijbkla );
+                   double xijbkla=0, yijbkla=0;
 
-            }
-          }
+                   if ( x_channel_diag and y_channel_diag)
+                   {
+                      auto xandy = Y3.GetME_pn_TwoOps(J,J, twoJ,i,j,b,k,l,a,X3,Y3);
+                      xijbkla = xandy[0];              
+                      yijbkla = xandy[1];              
+                   }
+                   else
+                   {
+                      if (b_loop==0) yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+                      if (b_loop==1) xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+                   }
+//                 double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+
+                 zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * yijbkla -  Y1(a,b) * xijbkla );
+
+               }
+             }
+          }// for b_loop
         }
         // normalize the tbme
         zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
