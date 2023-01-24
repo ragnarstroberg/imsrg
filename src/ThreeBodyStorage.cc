@@ -88,7 +88,7 @@ ThreeBodyStorage::Permutation ThreeBodyStorage::SortOrbits(int a_in, int b_in, i
 /// Coefficients for recoupling three body matrix elements.
 /// Note that this does not include the -1 factor for an odd
 /// permutation of fermionic operators. That is given by ThreeBodyStorage::PermutationPhase. 
-/// Here, we just only with the angular momentum / isospin recoupling factors
+/// Here, we just treat the angular momentum / isospin recoupling factors
 //*******************************************************************
 double ThreeBodyStorage::RecouplingCoefficient(ThreeBodyStorage::Permutation recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int twoJ) const
 {

@@ -83,7 +83,7 @@ class ThreeBodyStorage
 
   bool is_allocated=false;
 
-  std::unordered_map<ThreeBodyStorageChannel,size_t, ThreeBodyStorageChannelHash> ch_start;
+  std::unordered_map<ThreeBodyStorageChannel,size_t, ThreeBodyStorageChannelHash> ch_start; // map {ch_bra,ch_ket} => index in the array storage array
   std::vector<size_t> ch_dim;
 
 

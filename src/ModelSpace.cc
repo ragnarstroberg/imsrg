@@ -1528,7 +1528,7 @@ ThreeBodyChannel& ModelSpace::GetThreeBodyChannel(int ch) const
 size_t ModelSpace::GetThreeBodyChannelIndex(int twoJ, int parity, int twoTz )
 {
   auto iter = ThreeBodyChannelLookup.find( ThreeBodyChannelHash( twoJ, parity, twoTz));
-  if ( iter == ThreeBodyChannelLookup.end() ) return -1; // THIS IS PROBABLY NOT SAFE
+  if ( iter == ThreeBodyChannelLookup.end() ) return -1; // THIS IS PROBABLY NOT SAFE. (Actually, this is guaranteed by the standard to give the max unsigned int.)
   return iter->second;
 //  std::cout << "IN " << __func__ << std::endl;
 //  std::cout << "  with Jpt = " << twoJ << " " << parity << " " << twoTz << std::endl;

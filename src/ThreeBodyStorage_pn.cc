@@ -140,12 +140,16 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab, int Jde, int 
   if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
   //TODO: Should we also throw an exception if twoJ is even?
 
+//  std::cout << __func__ << "   asked for Jab Jde twoJ   abcdef " << Jab << " " << Jde << " " << twoJ << " " << a << " " << b << " " << c << " " << d << " "<< e << " "<< f << std::endl;
+
+
   double me_out = 0;
   for ( size_t I=0; I<index_bra.size(); I++)
   {
     for (size_t J=0; J<index_ket.size(); J++)
     {
       me_out += recouple_bra[I] * recouple_ket[J] * GetME_pn_ch( ch_bra, ch_ket, index_bra[I], index_ket[J] );
+//      std::cout << "         I J " << I << " " << J << "  " << recouple_bra[I] << " " << recouple_ket[J] << "   " << GetME_pn_ch(ch_bra, ch_ket, index_bra[I], index_ket[J] ) << std::endl;
     }
   }
 

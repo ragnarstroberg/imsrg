@@ -235,7 +235,6 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
         // This one is essential. If it's not here, then there are no induced 3 body terms
          std::cout << " comm223 " << std::endl;
         comm223ss(X, Y, Z); // scales as n^7
-        std::cout << " done 223" << std::endl;
 //       comm223ss_debug(X, Y, Z); // scales as n^7
        }
 

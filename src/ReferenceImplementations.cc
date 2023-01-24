@@ -848,6 +848,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
          for ( size_t a : Z.modelspace->all_orbits)
          {
            Orbit& oa = Z.modelspace->GetOrbit(a);
+//           if (a != 0) continue; // TODO: REMOVE THIS!!!!
            for ( size_t b : Z.modelspace->all_orbits)
            {
               Orbit& ob = Z.modelspace->GetOrbit(b);
@@ -861,7 +862,13 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
                 double xijbkla = X3.GetME_pn( J1,J1,twoJ, i,j,b,k,l,a);
                 double yijbkla = Y3.GetME_pn( J1,J1,twoJ, i,j,b,k,l,a);
                 zijkl +=  (oa.occ - ob.occ) * (twoJ+1.)/(2*J1+1) * ( X1(a,b) * yijbkla - Y1(a,b)*xijbkla);
+
+//                if (i==0 and j==10 and k==10 and l==10)
+//                {
+//                    std::cout << "a b " << a << " " << b << "  yab = " << yab << " " << "xijbkla = " << xijbkla << " J1 twoJ = " << J1 << " " << twoJ << "   z = " <<zijkl << std::endl;
+//                }
               }//twoJ
+
            }//b
          }//a
          zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
