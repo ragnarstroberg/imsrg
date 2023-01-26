@@ -353,6 +353,10 @@ void ThreeBodyME::SetMode(std::string mode)
   {
     threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_mono<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
   }
+  else
+  {
+    std::cout << " WARNING: I don't know 3N mode " << mode << " .  Continuing with what we had before which is " << threebody_storage->GetStorageMode() << std::endl;
+  }
   threebody_storage->Allocate();
 //  storage_mode = pn;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;

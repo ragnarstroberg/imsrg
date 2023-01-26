@@ -15,12 +15,12 @@ namespace py = pybind11;
 
 //  Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
 //  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
-  TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
+//  TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
 //  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
 //  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
 
-  size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
+//  size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
 //  void ArmaMatPrint( arma::mat& self){ self.print();};
 //  void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
@@ -52,7 +52,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<TwoBodyChannel>(m,"TwoBodyChannel")
       .def(py::init<>())
       .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
-      .def("GetLocalIndex",&TBCGetLocalIndex)
+//      .def("GetLocalIndex",&TBCGetLocalIndex)
+      .def("GetLocalIndex",[](TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex(p,q);})
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
       .def("GetKet",[](TwoBodyChannel& self, int i){return self.GetKet(i);} )
       .def_readwrite("J", &TwoBodyChannel::J)
@@ -63,7 +64,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<ThreeBodyChannel>(m,"ThreeBodyChannel")
       .def(py::init<>())
       .def("GetNumber3bKets",&ThreeBodyChannel::GetNumber3bKets)
-      .def("GetLocalIndex",&TBCGetLocalIndex)
+      .def("GetLocalIndex",&ThreeBodyChannel::GetLocalIndex, py::arg("p"),py::arg("q"),py::arg("r"),py::arg("Jpq"))
       .def("GetKet",[](ThreeBodyChannel& self, int i){return self.GetKet(i);} )
       .def_readwrite("twoJ", &ThreeBodyChannel::twoJ)
       .def_readwrite("parity", &ThreeBodyChannel::parity)
@@ -120,6 +121,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
       .def("GetTwoBodyChannel", [](ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);})
       .def("GetThreeBodyChannel", &ModelSpace::GetThreeBodyChannel)
+      .def("GetThreeBodyChannelIndex", &ModelSpace::GetThreeBodyChannelIndex, py::arg("twoJ"),py::arg("parity"),py::arg("twoTz"))
       .def("Index2String", &ModelSpace::Index2String)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
 //      .def("SetReference", &MS_SetRef)
@@ -206,6 +208,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Size", &Operator::Size)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
+      .def("GetOneBodyChannel", &Operator::GetOneBodyChannel, py::arg("l"), py::arg("j2"), py::arg("tz2") )
 //      .def("SetOneBodyME", &OpSetOneBodyME)
       .def("SetOneBodyME", [](Operator& self,int i, int j, double v){self.OneBody(i,j)=v;})
       .def("GetMP2_Energy", &Operator::GetMP2_Energy)
@@ -295,6 +298,7 @@ PYBIND11_MODULE(pyIMSRG, m)
                    ,py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"),py::arg("e"),py::arg("f")  )
 //      .def("SetME_pn", &ThreeBodyME::SetME_pn)
       .def("GetME_pn", &ThreeBodyME::GetME_pn)
+      .def("SetME_pn_ch", &ThreeBodyME::SetME_pn_ch) // Hopefully not a bad idea to expose this...
       .def("GetME_pn_no2b", &ThreeBodyME::GetME_pn_no2b)
       .def("RecouplingCoefficient",&ThreeBodyME::RecouplingCoefficient)
       .def("TransformToPN",&ThreeBodyME::TransformToPN)
@@ -602,7 +606,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Test_comm222_phss", &UnitTest::Test_comm222_phss)
       .def("Test_comm222_pp_hh_221ss", &UnitTest::Test_comm222_pp_hh_221ss)
       ///
-      .def("Test_comm330ss", &UnitTest::Test_comm111ss)
+      .def("Test_comm330ss", &UnitTest::Test_comm330ss)
       .def("Test_comm331ss", &UnitTest::Test_comm331ss)
       .def("Test_comm231ss", &UnitTest::Test_comm231ss)
       .def("Test_comm132ss", &UnitTest::Test_comm132ss)
@@ -615,8 +619,32 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Test_comm233_phss", &UnitTest::Test_comm233_phss)
       .def("Test_comm333_ppp_hhhss", &UnitTest::Test_comm333_ppp_hhhss)
       .def("Test_comm333_pph_hhpss", &UnitTest::Test_comm333_pph_hhpss)
-      .def("Test_comm111ss", &UnitTest::Test_comm111ss)
+
+      .def("Mscheme_Test_comm110ss", &UnitTest::Mscheme_Test_comm110ss)
+      .def("Mscheme_Test_comm220ss", &UnitTest::Mscheme_Test_comm220ss)
+      .def("Mscheme_Test_comm111ss", &UnitTest::Mscheme_Test_comm111ss)
+      .def("Mscheme_Test_comm121ss", &UnitTest::Mscheme_Test_comm121ss)
+      .def("Mscheme_Test_comm221ss", &UnitTest::Mscheme_Test_comm221ss)
+      .def("Mscheme_Test_comm122ss", &UnitTest::Mscheme_Test_comm122ss)
+      .def("Mscheme_Test_comm222_pp_hhss", &UnitTest::Mscheme_Test_comm222_pp_hhss)
+      .def("Mscheme_Test_comm222_phss", &UnitTest::Mscheme_Test_comm222_phss)
+//      .def("Mscheme_Test_comm222_pp_hh_221ss", &UnitTest::Mscheme_Test_comm222_pp_hh_221ss)
+      ///
+      .def("Mscheme_Test_comm330ss", &UnitTest::Mscheme_Test_comm330ss)
+      .def("Mscheme_Test_comm331ss", &UnitTest::Mscheme_Test_comm331ss)
+      .def("Mscheme_Test_comm231ss", &UnitTest::Mscheme_Test_comm231ss)
+      .def("Mscheme_Test_comm132ss", &UnitTest::Mscheme_Test_comm132ss)
+      .def("Mscheme_Test_comm232ss", &UnitTest::Mscheme_Test_comm232ss)
+      .def("Mscheme_Test_comm223ss", &UnitTest::Mscheme_Test_comm223ss)
+      .def("Mscheme_Test_comm133ss", &UnitTest::Mscheme_Test_comm133ss)
+      .def("Mscheme_Test_comm332_ppph_hhhpss", &UnitTest::Mscheme_Test_comm332_ppph_hhhpss)
+      .def("Mscheme_Test_comm332_pphhss", &UnitTest::Mscheme_Test_comm332_pphhss)
+      .def("Mscheme_Test_comm233_pp_hhss", &UnitTest::Mscheme_Test_comm233_pp_hhss)
+      .def("Mscheme_Test_comm233_phss", &UnitTest::Mscheme_Test_comm233_phss)
+      .def("Mscheme_Test_comm333_ppp_hhhss", &UnitTest::Mscheme_Test_comm333_ppp_hhhss)
+      .def("Mscheme_Test_comm333_pph_hhpss", &UnitTest::Mscheme_Test_comm333_pph_hhpss)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
+      .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) // Op, a,ma, b,mb...
    ;
 
 
