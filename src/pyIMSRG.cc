@@ -520,6 +520,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
       Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
+      Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
