@@ -37,6 +37,11 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
     for ( auto j : Rando.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       symmetry_allowed(i,j) = 1;
+      if (jrank>0) // if jrank>0, we're storing reduced matrix elements, and we get a phase from Wigner-Eckart.
+      {
+        Orbit& oj = modelspace.GetOrbit(j);
+        symmetry_allowed(i,j) *= AngMom::phase( (oi.j2-oj.j2)/2);
+      }
     }
   }
   Rando.OneBody.randn() ;
