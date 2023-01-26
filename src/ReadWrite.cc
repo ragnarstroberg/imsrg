@@ -651,6 +651,16 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
 /// Decide if the file is gzipped or ascii, create a stream, then call ReadBareTBME_Darmstadt_from_stream().
 void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, int emax, int E2max, int lmax)
 {
+
+  // Check if the file exists. If not, die loudly.
+  if ( not std::ifstream(filename).good() )
+  {
+    std::cout << std::endl << "========================================" << std::endl;
+    std::cout <<  __func__ << "  No such file : " << filename;
+    std::cout << std::endl << "========================================" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
   File2N = filename;
   Aref = Hbare.GetModelSpace()->GetAref();
   Zref = Hbare.GetModelSpace()->GetZref();
@@ -709,6 +719,16 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
 {
 
   double start_time = omp_get_wtime();
+
+  // check if the file exists. if not, die loudly.
+  if ( not std::ifstream(filename).good() )
+  {
+    std::cout << std::endl << "========================================" << std::endl;
+    std::cout <<  __func__ << "  No such file : " << filename;
+    std::cout << std::endl << "========================================" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
   std::string extension = filename.substr( filename.find_last_of("."));
 //  File3N = filename;
   Aref = Hbare.GetModelSpace()->GetAref();

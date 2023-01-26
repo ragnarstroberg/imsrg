@@ -496,7 +496,7 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
 //   Only call SetMode and SetParticleRank if ThreeBody is not already allocated.
 //   Otherwise, we are erasing the 3N inherited from OpIn.
 //   if (use_imsrg3  )
-   if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
+   if (use_imsrg3 and not ( OpOut.GetParticleRank()>=3 and OpOut.ThreeBody.IsAllocated() and OpOut.ThreeBody.Is_PN_Mode() ) )// IMSRG(3) commutators work in PN mode only so far.
    {
      std::cout << __func__ << "  Allocating Three Body with pn mode" << std::endl;
      OpOut.ThreeBody.SetMode("pn");
@@ -902,7 +902,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 //                  std::cout << std::endl << "ijab " << i << " " << j << " " << a << " " << b << std::endl;
 //                  std::cout << "------------------------" << std::endl;
                   double ybiaj =  Y.TwoBody.GetTBMEmonopole(b,i,a,j);
-                  double yaibj =0;//  Y.TwoBody.GetTBMEmonopole(a,i,b,j);
+                  double yaibj =  Y.TwoBody.GetTBMEmonopole(a,i,b,j);
 //                  std::cout << "------------------------" << std::endl;
 //                  Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
 //                  Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
@@ -933,13 +933,13 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 //                  }
 ////                  std::cout << "                   ymon = " << ymon << std::endl << std::endl;
 //
-//                }
+                }
              }
 //             for (index_t b=0; b<norbits; ++b)
 //             for (auto b : Z.modelspace->all_orbits)
              if (X.particle_rank>1)
              {
-                continue;
+//                continue;
                 for (auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
 //                for (auto b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2 ))
                 {
@@ -11942,27 +11942,15 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                   Xbar_ijba -= (2*J1+1) * Z.modelspace->GetSixJ(ji,jj,Lambda,jb,ja,J1) * X.TwoBody.GetTBME_J(J1,J1,i,a,b,j) ;
                 }
 
-<<<<<<< HEAD
-                Zij += nanb * Y.OneBody(a,b) * zij;
-
-=======
                 zij += nanb * Y.OneBody(b,a) * Xbar_ijba;
->>>>>>> f5db34f0a0035957b5cd04270e9acfb21cb86e15
              }
 
              
           }// for a
-<<<<<<< HEAD
-      Z.OneBody(i,j) += Zij;
-      if (i!=j) Z.OneBody(j,i) += Zij;
-      }// for j
-   }
-=======
           Z.OneBody(i,j) += zij;
           if (i!=j) Z.OneBody(j,i) += hZ * phase_ij * zij; // we're dealing with reduced matrix elements, which get a phase under hermitian conjugation
       }// for j
    }// for i
->>>>>>> f5db34f0a0035957b5cd04270e9acfb21cb86e15
    
    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -12153,7 +12141,6 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
    TwoBodyME Mff = Y.TwoBody;
-   int hZ = Z.IsHermitian() ? 1 : -1;
 
    std::vector<int> vch_bra;
    std::vector<int> vch_ket;
@@ -12279,11 +12266,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
            }
 //         #pragma omp critical
          Z.OneBody(i,j) += cijJ ;
-<<<<<<< HEAD
-         if (i!=j) Z.OneBody(j,i) += cijJ * hZ * AngMom::phase((oi.j2-oj.j2)/2);
-=======
          if ( i!=j) Z.OneBody(j,i) += hZ * phase_ij * cijJ;
->>>>>>> f5db34f0a0035957b5cd04270e9acfb21cb86e15
       } // for j
     } // for i
     X.profiler.timer["comm222_pp_hh_221st"] += omp_get_wtime() - tstart;
