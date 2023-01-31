@@ -1391,8 +1391,8 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
                std::exit(EXIT_FAILURE);
             }
          }
-         int ch_ab_XY = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J , parity_ab_XY, Tz_ab_XY );
-         int ch_ab_YX = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J , parity_ab_YX, Tz_ab_YX );
+          ch_ab_XY = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J , parity_ab_XY, Tz_ab_XY );
+          ch_ab_YX = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J , parity_ab_YX, Tz_ab_YX );
       }
 
       TwoBodyChannel& tbc_ab_XY = Z.modelspace->GetTwoBodyChannel(ch_ab_XY);
