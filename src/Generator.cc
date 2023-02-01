@@ -111,11 +111,14 @@ double Generator::Get1bDenominator(int i, int j)
 }
 
 
-double Generator::Get2bDenominator(int ch, int ibra, int iket) 
+//double Generator::Get2bDenominator(int ch, int ibra, int iket) 
+double Generator::Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket) 
 {
-   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-   Ket & bra = tbc.GetKet(ibra);
-   Ket & ket = tbc.GetKet(iket);
+//   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+   TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+   TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+   Ket & bra = tbc_bra.GetKet(ibra);
+   Ket & ket = tbc_ket.GetKet(iket);
    int i = bra.p;
    int j = bra.q;
    int k = ket.p;
@@ -206,16 +209,27 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
    }
 
    // Two body piece -- eliminate pp'hh' bits
-   for (int ch=0;ch<Eta->nChannels;++ch)
+//   for (int ch=0;ch<Eta->nChannels;++ch)
+//   {
+   for ( auto& iter : Eta->TwoBody.MatEl )
    {
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
-      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
-      for ( auto& iket : tbc.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      size_t ch_bra = iter.first[0];
+      size_t ch_ket = iter.first[1];
+//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+//      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& ETA2 =  iter.second;
+//      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
+      arma::mat& H2 = H->TwoBody.GetMatrix(ch_bra,ch_ket);
+//      for ( auto& iket : tbc.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
-         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+//         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
-            double denominator = Get2bDenominator(ch,ibra,iket);
+//            double denominator = Get2bDenominator(ch,ibra,iket);
+            double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
 //            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
 //            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
