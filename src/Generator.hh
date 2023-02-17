@@ -98,7 +98,9 @@ class Generator
 //  void ConstructGenerator_Rspace();
   void SetOnly2bEta(bool tf){only_2b_eta = tf;};
   double Get1bDenominator(int i, int j);
-  double Get2bDenominator(int ch, int ibra, int iket);
+//  double Get2bDenominator(int ch, int ibra, int iket);
+  double Get2bDenominator(int ch, int ibra, int iket) { return Get2bDenominator(ch,ch,ibra,iket);};
+  double Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket);
   double Get2bDenominator_Jdep(int ch, int ibra, int iket);
   double Get3bDenominator(int i, int j, int k, int l, int m, int n);
 
