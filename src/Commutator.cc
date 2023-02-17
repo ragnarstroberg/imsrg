@@ -170,8 +170,10 @@ Operator Commutator( const Operator& X, const Operator& Y)
 Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
    double t_css = omp_get_wtime();
-   int z_Jrank = std::max( X.GetJRank(),Y.GetJRank());
-   int z_Trank = std::max( X.GetTRank(),Y.GetTRank());
+//   int z_Jrank = std::max( X.GetJRank(),Y.GetJRank());
+//   int z_Trank = std::max( X.GetTRank(),Y.GetTRank());
+   int z_Jrank = X.GetJRank()+Y.GetJRank(); // I sure hope this is zero.
+   int z_Trank = X.GetTRank()+Y.GetTRank();
    int z_parity = (X.GetParity()+Y.GetParity())%2;
    int z_particlerank = std::max(X.GetParticleRank(),Y.GetParticleRank());
    if ( use_imsrg3 )  z_particlerank = std::max(z_particlerank, 3);
@@ -3642,10 +3644,12 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
     else external_local_one_body_channels[obc].push_back(j);
   }
 
-  
+  // TODO: This orgainization needs to be rethought to better accommodate isospin changing operators.
+  //
   // next, figure out which three-body states |klj`> and |abc`> exist, make a list, and give them an
   // index for where they'll sit in the matrix
   // For an isospin-changing operator, there can be multiple possible channels for the three-body state
+  // and the isospin projection can be +- 3/2, which is not possible for a single-particle state
   std::map<std::array<int,3>,std::vector<std::array<size_t,4>>> klj_list; //  maps {j,parity,tz} => {kljJ}
 //  std::map<std::array<int,3>,arma::mat> ZMAT_list; //  maps {j,parity,tz} => matrix <i|Z|klj`>
   std::map<std::array<int,4>,arma::mat> ZMAT_list; //  maps {j,parity,tz,t2zklj} => matrix <i|Z|klj`>
@@ -3657,7 +3661,7 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
   
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
   {
-    auto& obc_key = obc_keys[ikey];
+    auto& obc_key = obc_keys[ikey]; // obc_key is {j2, parity, tz2} for a single orbit
     std::vector<size_t>& obc_orbits = external_local_one_body_channels[obc_key];
     int j2i     = obc_key[0];
     int parityi = obc_key[1];
@@ -3776,6 +3780,7 @@ void comm232ss_srs_optimized( const Operator& X, const Operator& Y, Operator& Z 
     auto& klj_list_i = klj_list[obc_key_i]; // list of 3-body pph states |klj`> with quantum numbers JPTz such that <i|Z|klj`> is nonzero
 
     // identify the possible quantum numbers for the abc channel.
+    // they are determined by the pph channels connected to i by X and Y, i.e. <i|X|abc> and <i|Y|abc>
 
     for (int parity_klj : {0,1} )
     {
@@ -8442,6 +8447,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 bool Y_126a_good = ((o1.l+o2.l+o6.l+parity_a)%2 == Y.GetParity() ) and (std::abs(dTz126a) == Y.GetTRank() );
                 bool X_3a45_good = ((o4.l+o5.l+o3.l+parity_a)%2 == X.GetParity() ) and (std::abs(dTz3a45) == X.GetTRank() );
                 bool Y_3a45_good = ((o4.l+o5.l+o3.l+parity_a)%2 == Y.GetParity() ) and (std::abs(dTz3a45) == Y.GetTRank() );
+//                std::cout << "     123456 " << I1 << " " << I2 << " " << I3 << " " << I4 << " " << I5 << " " << I6 << "    parity_a, tz2a = " << parity_a << " " << tz2a << "   XY good ? " << X_126a_good << " " << Y_126a_good << " " << X_3a45_good << " " << Y_3a45_good << "  parities: " << X.GetParity() << " " << Y.GetParity() << std::endl;
 
                 if ( not ( (X_126a_good and Y_3a45_good) or ( Y_126a_good and X_3a45_good) ) ) continue;
 //                if (  std::abs(dTz126a) != X.GetTRank() and std::abs( dTz3a45) != X.GetTRank() ) continue;
@@ -8512,25 +8518,46 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                    for ( size_t a : Z.modelspace->OneBodyChannels.at({la,j2a,tz2a})  )
                    {
 //                      size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));
-                      size_t ind_6a = tbc6a.GetLocalIndex(std::min(I6,a),std::max(I6,a));
-//                      if (ind_6a>nkets_1) continue;
-                      if (ind_6a>nkets_6a) continue;
-//                      size_t ind_3a = tbc2.GetLocalIndex(std::min(I3,a),std::max(I3,a));
-                      size_t ind_3a = tbc3a.GetLocalIndex(std::min(I3,a),std::max(I3,a));
-//                      if (ind_3a>nkets_2) continue;
-                      if (ind_3a>nkets_3a) continue;
+//                      size_t ind_6a = tbc6a.GetLocalIndex(std::min(I6,a),std::max(I6,a));
+////                      if (ind_6a>nkets_1) continue;
+//                      if (ind_6a>nkets_6a) continue;
+////                      size_t ind_3a = tbc2.GetLocalIndex(std::min(I3,a),std::max(I3,a));
+//                      size_t ind_3a = tbc3a.GetLocalIndex(std::min(I3,a),std::max(I3,a));
+////                      if (ind_3a>nkets_2) continue;
+//                      if (ind_3a>nkets_3a) continue;
+//
+//
+//                      double phase_6a = I6>a ?  -Z.modelspace->phase((o6.j2+j2a-2*J1p)/2)  : 1;
+//                      if (I6==a) phase_6a *= PhysConst::SQRT2;
+//
+//                      double phase_3a = I3>a ?  -Z.modelspace->phase((o3.j2+j2a-2*J2p)/2)  : 1;
+//                      if (I3==a) phase_3a *= PhysConst::SQRT2;
+//                      std::cout << "    looking up things with good = " << X_126a_good << " " << Y_126a_good << " " << X_3a45_good << " " << Y_3a45_good << std::endl;
+//                      std::cout << "    channel12 " << ch12 << " ->JpT " << tbc12.J << " " << tbc12.parity << " " << tbc12.Tz
+//                                << "    channel6a " << ch6a << " ->JpT " << tbc6a.J << " " << tbc6a.parity << " " << tbc6a.Tz
+//                                << "    channel3a " << ch3a << " ->JpT " << tbc3a.J << " " << tbc3a.parity << " " << tbc3a.Tz
+//                                << "    channel45 " << ch45 << " ->JpT " << tbc45.J << " " << tbc45.parity << " " << tbc45.Tz
+//                                << std::endl;
+//
+//                      double x_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a)(ind_12,ind_6a) : 0;
+//                      std::cout << "  ok " << std::endl;
+//                      double y_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a)(ind_12,ind_6a) : 0;
+//                      std::cout << "  ok " << std::endl;
+//                      double x_3a45 = X_3a45_good ?  X.TwoBody.GetMatrix(ch3a,ch45)(ind_3a,ind_45) : 0;
+//                      std::cout << "  ok " << std::endl;
+//                      double y_3a45 = Y_3a45_good ?  Y.TwoBody.GetMatrix(ch3a,ch45)(ind_3a,ind_45) : 0;
+//                      std::cout << "  ok " << std::endl;
 
-
-                      double phase_6a = I6>a ?  -Z.modelspace->phase((o6.j2+j2a-2*J1p)/2)  : 1;
+                      // This should be the straighforward but maybe less efficient way to do it.
+                      double phase_6a=phase_12;
+                      double phase_3a=phase_45;
+                      if (I3==a) phase_3a *= PhysConst::SQRT2;
                       if (I6==a) phase_6a *= PhysConst::SQRT2;
 
-                      double phase_3a = I3>a ?  -Z.modelspace->phase((o3.j2+j2a-2*J2p)/2)  : 1;
-                      if (I3==a) phase_3a *= PhysConst::SQRT2;
-
-                      double x_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a)(ind_12,ind_6a) : 0;
-                      double y_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a)(ind_12,ind_6a) : 0;
-                      double x_3a45 = X_3a45_good ?  X.TwoBody.GetMatrix(ch3a,ch45)(ind_3a,ind_45) : 0;
-                      double y_3a45 = Y_3a45_good ?  Y.TwoBody.GetMatrix(ch3a,ch45)(ind_3a,ind_45) : 0;
+                      double x_126a = X_126a_good ? X.TwoBody.GetTBME_norm(ch12,ch6a,I1,I2,I6,a) : 0;              
+                      double y_126a = Y_126a_good ? Y.TwoBody.GetTBME_norm(ch12,ch6a,I1,I2,I6,a) : 0;              
+                      double x_3a45 = X_3a45_good ? X.TwoBody.GetTBME_norm(ch3a,ch45,I3,a,I4,I5) : 0;                     
+                      double y_3a45 = Y_3a45_good ? Y.TwoBody.GetTBME_norm(ch3a,ch45,I3,a,I4,I5) : 0;                     
 
 //                     double x_126a =  phase_6a * XMAT1( ind_6a);
 //                     double y_126a =  phase_6a * YMAT1( ind_6a);
