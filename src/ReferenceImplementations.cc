@@ -955,10 +955,17 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
               if ( std::abs(occfactor) < 1e-6 ) continue;
               if (a==b) occfactor *=0.5;  // we sum a<=b, and drop the 1/2, but we still need the 1/2 for a==b
 
+              bool xicab_good =  ((oi.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(oi.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) ;
+              bool yicab_good =  ((oi.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(oi.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ;
+              bool xjcab_good =  ((oj.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(oj.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) ;
+              bool yjcab_good =  ((oj.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(oj.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ;
+              bool xabck_good =  ((ok.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(ok.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) ;
+              bool yabck_good =  ((ok.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(ok.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ;
+              bool xabcl_good =  ((ol.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(ol.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) ;
+              bool yabcl_good =  ((ol.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(ol.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ;
+
               // Xicab term
-              if (  (  ( ((oi.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(oi.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) )
-                   or  ( ((oi.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(oi.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ) )
-                  and (std::abs(oi.j2-oc.j2)<=2*Jab)  and (oi.j2+oc.j2>=2*Jab) )
+              if ( (xicab_good or yicab_good) and (std::abs(oi.j2-oc.j2)<=2*Jab)  and (oi.j2+oc.j2>=2*Jab) )
               {
 
                 int twoJ_min = std::max( std::abs(oc.j2-2*J), std::abs( oj.j2-2*Jab ) );
@@ -972,17 +979,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                   double Jtot = 0.5 * twoJ;
                   double sixj = Z.modelspace->GetSixJ(jj,ji,J, jc,Jtot,Jab);
                   double hatfactor = (twoJ+1) * sqrt( (2*Jab+1.)/(2*J+1) );
-                  double xabjklc = X3.GetME_pn(Jab,J,twoJ,a,b,j,k,l,c);
-                  double yabjklc = Y3.GetME_pn(Jab,J,twoJ,a,b,j,k,l,c);
+                  double xabjklc = yicab_good ? X3.GetME_pn(Jab,J,twoJ,a,b,j,k,l,c) : 0;
+                  double yabjklc = xicab_good ? Y3.GetME_pn(Jab,J,twoJ,a,b,j,k,l,c) : 0;
                   zijkl += occfactor * hatfactor * phasefactor * sixj * ( xciab * yabjklc  - yciab * xabjklc);
                 }
               }
 
 
               // Xjcab term
-              if (  (  ( ((oj.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(oj.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) )
-                   or  ( ((oj.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(oj.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ) )
-                  and (std::abs(oj.j2-oc.j2)<=2*Jab)  and (oj.j2+oc.j2>=2*Jab) )
+              if ( (xjcab_good or yjcab_good)   and (std::abs(oj.j2-oc.j2)<=2*Jab)  and (oj.j2+oc.j2>=2*Jab) )
               {
                 int twoJ_min = std::max( std::abs(oc.j2-2*J), std::abs( oi.j2-2*Jab ) );
                 int twoJ_max = std::min( oc.j2+2*J,  oi.j2+2*Jab );
@@ -994,17 +999,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                   double Jtot = 0.5 * twoJ;
                   double sixj = Z.modelspace->GetSixJ(ji,jj,J, jc,Jtot,Jab);
                   double hatfactor = (twoJ+1) * sqrt( (2*Jab+1.)/(2*J+1) );
-                  double xabiklc = X3.GetME_pn(Jab,J,twoJ,a,b,i,k,l,c);
-                  double yabiklc = Y3.GetME_pn(Jab,J,twoJ,a,b,i,k,l,c);
+                  double xabiklc = yjcab_good ? X3.GetME_pn(Jab,J,twoJ,a,b,i,k,l,c) : 0;
+                  double yabiklc = xjcab_good ? Y3.GetME_pn(Jab,J,twoJ,a,b,i,k,l,c) : 0;
                   zijkl -= occfactor * hatfactor * phasefactor * sixj * ( xcjab * yabiklc - ycjab * xabiklc);
                 }
               }
  
 
-              // Xabkc term
-              if (  (  ( ((ok.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(ok.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) )
-                   or  ( ((ok.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(ok.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ) )
-                  and (std::abs(ok.j2-oc.j2)<=2*Jab)  and (ok.j2+oc.j2>=2*Jab) )
+              // Xabck term
+              if ( (xabck_good or yabck_good)  and (std::abs(ok.j2-oc.j2)<=2*Jab)  and (ok.j2+oc.j2>=2*Jab) )
               {
                 int twoJ_min = std::max( std::abs(oc.j2-2*J), std::abs( ol.j2-2*Jab ) );
                 int twoJ_max = std::min( oc.j2+2*J,  ol.j2+2*Jab );
@@ -1016,17 +1019,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                   double Jtot = 0.5 * twoJ;
                   double sixj = Z.modelspace->GetSixJ(jl,jk,J, jc,Jtot,Jab);
                   double hatfactor = (twoJ+1) * sqrt( (2*Jab+1.)/(2*J+1) );
-                  double xijcabl = X3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,l);
-                  double yijcabl = Y3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,l);
+                  double xijcabl = yabck_good ? X3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,l) : 0;
+                  double yijcabl = xabck_good ? Y3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,l) : 0;
                   zijkl -= occfactor * hatfactor * phasefactor * sixj * ( yijcabl*xabck - xijcabl*yabck ); 
                 }
               }
 
 
-              // Xablc term
-              if (  (  ( ((ol.l+oc.l+tbc_ab.parity)%2==X.parity) and (std::abs(ol.tz2+oc.tz2-2*tbc_ab.Tz)==2*X.rank_T ) )
-                   or  ( ((ol.l+oc.l+tbc_ab.parity)%2==Y.parity) and (std::abs(ol.tz2+oc.tz2-2*tbc_ab.Tz)==2*Y.rank_T ) ) )
-                  and (std::abs(ol.j2-oc.j2)<=2*Jab)  and (ol.j2+oc.j2>=2*Jab) )
+              // Xabcl term
+              if ( (xabcl_good or yabcl_good)    and (std::abs(ol.j2-oc.j2)<=2*Jab)  and (ol.j2+oc.j2>=2*Jab) )
               {
                 int twoJ_min = std::max( std::abs(oc.j2-2*J), std::abs( ok.j2-2*Jab ) );
                 int twoJ_max = std::min( oc.j2+2*J,  ok.j2+2*Jab );
@@ -1038,8 +1039,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                   double Jtot = 0.5 * twoJ;
                   double sixj = Z.modelspace->GetSixJ(jk,jl,J, jc, Jtot,Jab);
                   double hatfactor = (twoJ+1) * sqrt( (2*Jab+1.)/(2*J+1) );
-                  double xijcabk = X3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,k);
-                  double yijcabk = Y3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,k);
+                  double xijcabk = yabcl_good ? X3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,k) : 0;
+                  double yijcabk = xabcl_good ? Y3.GetME_pn(J,Jab,twoJ,i,j,c,a,b,k) : 0;
                   zijkl += occfactor * hatfactor * phasefactor * sixj * ( yijcabk*xabcl - xijcabk*yabcl );
                 }
               }
