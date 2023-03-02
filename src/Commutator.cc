@@ -47,6 +47,16 @@ double threebody_threshold = 0;
 double imsrg3_dE6max = 1e20;
 
 std::map<std::string,bool> comm_term_on = {
+     {"comm110ss"           , true},
+     {"comm220ss"           , true},
+     {"comm111ss"           , true},
+     {"comm121ss"           , true},
+     {"comm221ss"           , true},
+     {"comm122ss"           , true},
+     {"comm222_pp_hhss"     , true},
+     {"comm222_phss"        , true},
+     {"comm222_pp_hh_221ss" , true},
+///////
      {"comm330ss"           , true},
      {"comm331ss"           , true},
      {"comm231ss"           , true},
@@ -193,20 +203,26 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    // Here is where we start calling the IMSRG(2) commutator expressions.
    if ( not Z.IsAntiHermitian() )
    {
-      comm110ss(X, Y, Z);
-      if (X.particle_rank>1 and Y.particle_rank>1)
+      if ( comm_term_on["comm110ss"] )
+         comm110ss(X, Y, Z);
+      if (X.particle_rank>1 and Y.particle_rank>1 and comm_term_on["comm220ss"])
         comm220ss(X, Y, Z) ;
    }
 
-   comm111ss(X, Y, Z);
-   comm121ss(X, Y, Z);
-   comm122ss(X, Y, Z); 
+   if (comm_term_on["comm111ss"] )
+      comm111ss(X, Y, Z);
+   if (comm_term_on["comm121ss"] )
+      comm121ss(X, Y, Z);
+   if (comm_term_on["comm221ss"] )
+      comm122ss(X, Y, Z); 
 
 
    if (X.particle_rank>1 and Y.particle_rank>1)
    {
-     comm222_pp_hh_221ss(X, Y, Z);
-     comm222_phss(X, Y, Z);
+     if (comm_term_on["comm222_pp_hh_221ss"] )
+       comm222_pp_hh_221ss(X, Y, Z);
+     if (comm_term_on["comm222_phss"] )
+       comm222_phss(X, Y, Z);
    }
 
 
@@ -937,6 +953,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 //                  }
 ////                  std::cout << "                   ymon = " << ymon << std::endl << std::endl;
 //
+
                 }
              }
 //             for (index_t b=0; b<norbits; ++b)
@@ -955,7 +972,9 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 //                  Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
                   zij -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
                   zij += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+
                 }
+
              }
           }
           Z.OneBody(i,j) += zij;
@@ -1849,11 +1868,20 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
               X.TwoBody.GetTBME_J_norm_twoOps(Y.TwoBody,  J_std, J_std,c,b,a,d, xcbad,yadcb) ;
               Xbar -= (2*J_std+1) * sixj * xcbad  ;
               Ybar -= (2*J_std+1) * sixj * yadcb  * hY;
+
+//             if (ch_cc==3)
+//             {
+//                std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << " " << iket_cc
+//                          << " - " << 2*J_std+1 << " * " << sixj << " * " << yadcb << " * " << hY << " Ybar = " << Ybar
+//                          << "   the sixj is { " << jjai << " " << jjbi << " " << J_cc << " " << jjci << " " << jjdi << " " << J_std << " } "  << std::endl;
+//             }
            }
            X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar * normfactor * na_nb_factor;
            Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar * normfactor;
 //           X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar  * na_nb_factor;
 //           Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar ;
+
+
 
         }// for iket_cc
       }// for ab_case
@@ -1970,6 +1998,11 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
 //               double me1 = Zbar.at(ch_cc)(indx_il,indx_kj);
                double me1 = Zbar[ch_cc](indx_il,indx_kj); // do we need to use at() or is it safe to just use []?
                commij -= (2*Jprime+1) * sixj * me1;
+//               if ( ch==1) 
+//               {
+//                 std::cout << "   " << __func__ << " " << __LINE__ << " ilkj " << i << " " << l << " " << k << " " << j << "   Jprime " << Jprime
+//                           << "   me " << me1 << "   sixj =" << sixj << "   commij = " << commij << "  depends on ch_cc= " << ch_cc<< std::endl;
+//               }
             }
 
             if (k==l)
@@ -2002,6 +2035,11 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
 //                 double me1 = Zbar.at(ch_cc)(indx_ik, indx_lj) ;
                  double me1 = Zbar[ch_cc](indx_ik, indx_lj) ;
                  commji -= (2*Jprime+1) *  sixj * me1;
+//               if ( ch==1) 
+//               {
+//                 std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << k << " " << l << " " << j << "   Jprime " << Jprime
+//                           << "   me " << me1 << "   sixj =" << sixj << "   commji = " << commji << "  depends on ch_cc= " << ch_cc << std::endl;
+//               }
 
               }
             }
@@ -2010,7 +2048,10 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
 //            Z.TwoBody.GetMatrix(ch,ch)(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
             double zijkl = -(commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
 
-
+//            if ( ch==1)
+//            {
+//               std::cout << __func__ << " " << __LINE__ << "   commij, ji " << commij << " " << commji << "   zijjkl = " << zijkl << std::endl;
+//            }
 
 
             ZMat(ibra,iket) += zijkl;
@@ -2177,6 +2218,9 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
       arma::mat Y_bar_ph_flip = arma::join_vert ( Y_bar_ph.tail_rows(nph_kets)%PhaseMatY ,  Y_bar_ph.head_rows(nph_kets)%PhaseMatY ) ;
       Zbar_ch =  Xt_bar_ph * arma::join_horiz( Y_bar_ph ,  Y_bar_ph_flip );
 
+//         if ( ch==2 or ch==3 or ch==8 or ch==9 )
+
+
 
       // If Z is hermitian, then XY is anti-hermitian, and so XY - YX = XY + (XY)^T
       if ( Z.IsHermitian() )
@@ -2193,6 +2237,13 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
       // up a factor hZ * phase(i+j+k+l). The hZ cancels the hXhY we have for the "head" part of the matrix
       // so we end up adding in either case.
       Zbar_ch.tail_cols(nKets_cc) += Zbar_ch.tail_cols(nKets_cc).t()%PhaseMatZ;
+
+//         if (  ch==3  )
+//         {
+//            std::cout << __func__ <<  "  ch_cc = " << ch << std::endl << "Mleft " << std::endl << Xt_bar_ph << std::endl << "Mright" << std::endl << arma::join_horiz( Y_bar_ph ,  Y_bar_ph_flip )
+//                      << std::endl << "Zbar " << std::endl <<  Zbar_ch << std::endl;
+//            std::cout << "   and also Xtbar_ph = " << std::endl << Xt_bar_ph << std::endl << "   and  Y_bar_ph = " << std::endl << Y_bar_ph << std::endl;
+//         }
 
    }
 
@@ -13348,7 +13399,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
              for (auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2) ) 
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
-                  if ( not ( i==0 and j==4 and a==0 and b==10) ) continue;
+//                  if ( not ( i==0 and j==4 and a==0 and b==10) ) continue;
                 double nanb = oa.occ * (1-ob.occ);
                   int J1min = std::abs(ji-ja);
                   int J1max = ji + ja;
@@ -13362,9 +13413,10 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                       if ( ! ( J2>=std::abs(ja-jj) and J2<=ja+jj )) continue;
                       double prefactor = nanb*phasefactor * sqrt((2*J1+1)*(2*J2+1)) * Z.modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
                       zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) - X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j ));
+
+
                     }
                   }
-//                  std::cout << "ijab " << i << " " << j << " " << a << " " << b << "  -> " << Zij << std::endl;
 
              }
              // Now, X is scalar two-body and Y is tensor one-body
@@ -13398,6 +13450,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                 }
 
                 zij += nanb * Y.OneBody(b,a) * Xbar_ijba;
+
              }
 
              
@@ -13956,8 +14009,15 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
              double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
              double tbme = Z.TwoBody.GetTBME_J(J1,J2,a,d,c,b);
              sm -= hatfactor * Z.modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
+         if (ch_bra_cc==3)
+         {
+            std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << " " << iket_cc
+                      << " - " << hatfactor * Z.modelspace->phase(jb+jd+Jket_cc+J2) << " * " << ninej << " * " <<tbme  << "  sm = " << sm
+                      << "  ninej is " << ja << " " << jd << " " << J1 << " " << jb << " " << jc << " " << J2 << " " << Jbra_cc << " " << Jket_cc << " " << Lambda << "    which reduces to a sixj " << ja << " " << jb << " " << Jbra_cc << " " << jc << " " << jd << " " << J1 << std::endl;
+         }
            }
          }
+
          MatCC_ph(ibra,iket_cc) = sm;
 
          // Exchange (a <-> b) to account for the (n_a - n_b) term
@@ -13996,6 +14056,10 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
                sm -= hatfactor * Z.modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
              }
            }
+         if (ch_bra_cc==3)
+         {
+            std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << "+ " << nph_bras << " "  << iket_cc << " sm = " << sm << std::endl;
+         }
            MatCC_ph(ibra+nph_bras,iket_cc) = sm;
          }
       }
@@ -14114,6 +14178,11 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 /*
 */
                   commij += hatfactor * Z.modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
+                   if ( ch_bra==1) 
+                   {
+                     std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << l << " " << k << " " << j << "   J3J4 " << J3 << " " << J4 
+                               << "   me " << tbme << "   ninej =" << ninej << "   commij = " << commij << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
+                   }
               }
             }
 
@@ -14187,6 +14256,11 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 */  
   
                       commji += hatfactor * Z.modelspace->phase(ji+jl+J2+J4) * ninej * tbme ;
+                   if ( ch_bra==1) 
+                   {
+                     std::cout << "   " << __func__ << " " << __LINE__ << " jlki " << j << " " << l << " " << k << " " << i << "   J3J4 " << J3 << " " << J4 
+                               << "   me " << tbme << "   ninej =" << ninej << "   commji = " << commji << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
+                   }
                 }
               }
             }
@@ -14194,6 +14268,10 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             Zijkl(ibra,iket) +=  (commij - Z.modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) Zijkl(iket,ibra) = hZ * Zijkl(ibra,iket);
+            if ( ch_bra==1)
+            {
+               std::cout << __func__ << " " << __LINE__ << "   commij, ji " << commij << " " << commji << "   zijjkl = " << Zijkl(ibra,iket) << std::endl;
+            }
          }
       }
    }
@@ -14464,14 +14542,17 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
          arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
          arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
    
+            std::cout << __func__ << " " << __LINE__ << std::endl;
          DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
          if (ch_bra_cc==ch_ket_cc)
          {
+            std::cout << __func__ << " " << __LINE__ << std::endl;
    //         YJ2J1 = YJ1J2;
              // Dont do nothing..
          }
          else
          {
+            std::cout << __func__ << " " << __LINE__ << std::endl;
             DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
          }
       }
@@ -14558,6 +14639,13 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    
    
          Z_bar.at({ch_bra_cc,ch_ket_cc}) = Mleft * Mright;
+//         if ( ch_bra_cc==2 or ch_bra_cc==3 or ch_bra_cc==8 or ch_bra_cc==9 )
+         if (  ch_bra_cc==3  )
+         {
+            std::cout << __func__ << "  ch_cc = " << ch_bra_cc << std::endl << "Mleft " << std::endl << Mleft << std::endl << "Mright" << std::endl << Mright
+                      << std::endl << "Zbar " << std::endl <<  Z_bar.at({ch_bra_cc,ch_ket_cc})<< std::endl;
+            std::cout << "   and also XJ1 = " << std::endl << XJ1 << std::endl << "   and  YJ1J2 = " << std::endl<< YJ1J2 << std::endl;
+         }
    
       }
       X.profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
