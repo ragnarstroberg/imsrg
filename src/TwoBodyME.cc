@@ -146,7 +146,8 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int 
    if (c>d) phase *= ket.Phase(tbc_ket.J);
    if (ch_bra > ch_ket)
    {
-     return phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind);
+     return hermitian ?   phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind)
+                      : - phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind);
    }
    return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
 }

@@ -4117,6 +4117,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    double VR = 200 ; // MeV
 ////   double VT = -178. ; // MeV
 //   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+//   double VT = -178. * 0.8; // scaled to make things not crazy for finite nuclei
    double VT = -178. * 0.4; // scaled to make things not crazy for finite nuclei
    double VS = -91.85 ; // MeV
    double kR = 1.487 ; // in fm^-2

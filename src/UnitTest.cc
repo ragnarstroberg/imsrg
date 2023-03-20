@@ -758,6 +758,8 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 {
   double matel = 0;
   int Jop = Op.GetJRank();
+  int Tzop = Op.GetTRank();
+  int Pop = Op.GetParity();
   Orbit& oa = Op.modelspace->GetOrbit(a);
   Orbit& ob = Op.modelspace->GetOrbit(b);
   Orbit& oc = Op.modelspace->GetOrbit(c);
@@ -770,6 +772,10 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
   if (d==e and md==me) return 0;
   if (d==f and md==mf) return 0;
   if (e==f and me==mf) return 0;
+
+  if( (oa.l+ob.l+oc.l+od.l+oe.l+of.l + Pop)%2 !=0 ) return 0;
+  if( std::abs(oa.tz2+ob.tz2+oc.tz2-od.tz2-oe.tz2-of.tz2) != 2*Tzop ) return 0;
+  
 
 //  if (a==b and a==c and oa.j2<2) return 0;
 //  if (d==e and d==f and od.j2<2) return 0;
@@ -904,6 +910,7 @@ bool UnitTest::Test_against_ref_impl(const Operator& X, const Operator& Y, commu
   std::string passfail = passed ? "PASS " : "FAIL";
   std::cout << "   " << output_tag <<   "  sum_ref, sum_opt = " << normRef << " " << normOpt
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+
   return passed;
 }
 
@@ -1018,6 +1025,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y)
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_debug,  "comm232ss");
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
   return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
+//  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_srs_optimized_old,  "comm232ss");
   // return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_expand_new, "comm232ss");
 }
 
@@ -1817,10 +1825,13 @@ bool UnitTest::Mscheme_Test_comm330ss( const Operator& X, const Operator& Y )
         if ( std::abs((1.-nd)*(1.-ne)*(1.-nf))<1e-9 ) continue;
 
         // check parity and isospin projection
-        if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 ) continue;
-        if ( (oa.tz2+ob.tz2+oc.tz2) !=(od.tz2+oe.tz2+of.tz2) ) continue;
+//        if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 ) continue;
+//        if ( (oa.tz2+ob.tz2+oc.tz2) !=(od.tz2+oe.tz2+of.tz2) ) continue;
+        if ( ((oa.l+ob.l+oc.l+od.l+oe.l+of.l + X.GetParity())%2 !=0) or ((oa.l+ob.l+oc.l+od.l+oe.l+of.l + Y.GetParity())%2 !=0) ) continue;
+        if ( (std::abs(oa.tz2+ob.tz2+oc.tz2 -od.tz2-oe.tz2-of.tz2) != 2*X.GetTRank() ) or (std::abs(oa.tz2+ob.tz2+oc.tz2 -od.tz2-oe.tz2-of.tz2) != 2*Y.GetTRank() ) ) continue;
          double dz=0;
 
+                std::cout << " abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 
          for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
          {
@@ -1841,6 +1852,7 @@ bool UnitTest::Mscheme_Test_comm330ss( const Operator& X, const Operator& Y )
                 if ( std::abs(mf)>of.j2 ) continue;
                 if ((d==f) and (md==mf)) continue;
                 if ((e==f) and (me==mf)) continue;
+
 
 
                 double Xabcdef = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, e,me, f,mf );
@@ -1907,6 +1919,7 @@ bool UnitTest::Mscheme_Test_comm331ss( const Operator& X, const Operator& Y )
     {
 //      Orbit& oj = X.modelspace->GetOrbit(j);
       if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
       int mj = mi;
       double Zm_ij = 0;
       size_t norb = X.modelspace->GetNumberOrbits();
@@ -1935,8 +1948,15 @@ bool UnitTest::Mscheme_Test_comm331ss( const Operator& X, const Operator& Y )
               for ( auto e : X.modelspace->all_orbits )
               {
                 Orbit& oe = X.modelspace->GetOrbit(e);
-                if ( (oa.l+ob.l+oi.l + oc.l+od.l+oe.l)%2 > 0) continue;
-                if ( (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+oe.tz2)) continue;
+//                if ( (oa.l+ob.l+oi.l + oc.l+od.l+oe.l)%2 > 0) continue;
+//                if ( (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+oe.tz2)) continue;
+
+
+                if ( ((oa.l+ob.l+oi.l+oc.l+od.l+oe.l + X.GetParity())%2 !=0) and ((oa.l+ob.l+oi.l+oc.l+od.l+oe.l + Y.GetParity())%2 !=0) ) continue;
+                if ( (std::abs(oa.tz2+ob.tz2+oi.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*X.GetTRank() ) and (std::abs(oa.tz2+ob.tz2+oi.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*Y.GetTRank() ) ) continue;
+                if ( ((oa.l+ob.l+oj.l+oc.l+od.l+oe.l + X.GetParity())%2 !=0) and ((oa.l+ob.l+oj.l+oc.l+od.l+oe.l + Y.GetParity())%2 !=0) ) continue;
+                if ( (std::abs(oa.tz2+ob.tz2+oj.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*X.GetTRank() ) and (std::abs(oa.tz2+ob.tz2+oj.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*Y.GetTRank() ) ) continue;
+   
                 double ne = oe.occ;
 //                if ( (1-ne)<1e-6 ) continue;
 // Mistake found by Matthias Heinz Oct 14 2022                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne);
@@ -2005,8 +2025,8 @@ bool UnitTest::Mscheme_Test_comm231ss( const Operator& X, const Operator& Y )
   Operator Z_J( Y );
   Z_J.Erase();
 
-  //Commutator::comm231ss( X, Y, Z_J);
-  ReferenceImplementations::comm231ss( X, Y, Z_J);
+  Commutator::comm231ss( X, Y, Z_J);
+  //ReferenceImplementations::comm231ss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -2018,6 +2038,10 @@ bool UnitTest::Mscheme_Test_comm231ss( const Operator& X, const Operator& Y )
   double summed_error =  0;
   double sum_m = 0;
   double sum_J = 0;
+  int parityX = X.GetParity();
+  int parityY = Y.GetParity();
+  int TzX = X.GetTRank();
+  int TzY = Y.GetTRank();
 
   for ( auto i : X.modelspace->all_orbits )
   {
@@ -2052,8 +2076,10 @@ bool UnitTest::Mscheme_Test_comm231ss( const Operator& X, const Operator& Y )
               Orbit& od = X.modelspace->GetOrbit(d);
               double nd = od.occ;
               if ((1-nd)<1e-6) continue;
-              if ( (oa.l+ob.l+oc.l+od.l)%2 > 0 ) continue;
-              if ( (oa.tz2+ob.tz2) !=(oc.tz2+od.tz2) ) continue;
+//              if ( (oa.l+ob.l+oc.l+od.l)%2 > 0 ) continue;
+//              if ( (oa.tz2+ob.tz2) !=(oc.tz2+od.tz2) ) continue;
+              if ( ((oa.l+ob.l+oc.l+od.l+parityX)%2 > 0) and ( (oa.l+ob.l+oc.l+od.l+parityY)%2 > 0 ) ) continue;
+              if ( (std::abs(oa.tz2+ob.tz2-oc.tz2-od.tz2) != 2*TzX ) and  (std::abs(oa.tz2+ob.tz2-oc.tz2-od.tz2) != 2*TzY )) continue;
               for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
               {
                for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
@@ -2130,8 +2156,8 @@ bool UnitTest::Mscheme_Test_comm132ss( const Operator& X, const Operator& Y )
   Z_J.Erase();
 
 
-//  Commutator::comm132ss( X, Y, Z_J);
-  ReferenceImplementations::comm132ss( X, Y, Z_J);
+  Commutator::comm132ss( X, Y, Z_J);
+//  ReferenceImplementations::comm132ss( X, Y, Z_J);
 
 //  if ( Z_J.IsHermitian() )
 //     Z_J.Symmetrize();
@@ -2140,6 +2166,13 @@ bool UnitTest::Mscheme_Test_comm132ss( const Operator& X, const Operator& Y )
 
   std::cout << "X one body : " << std::endl << X.OneBody << std::endl;
   std::cout << "Y one body : " << std::endl << Y.OneBody << std::endl;
+
+  int parityX = X.GetParity();
+  int parityY = Y.GetParity();
+  int parityZ = (parityX+parityY)%2;
+  int TzX = X.GetTRank();
+  int TzY = Y.GetTRank();
+  int TzZ = TzX+TzY;
 
 
   double summed_error = 0;
@@ -2162,8 +2195,10 @@ bool UnitTest::Mscheme_Test_comm132ss( const Operator& X, const Operator& Y )
         {
           if (l<k) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
-          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
-          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+//          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+          if ( (oi.l+oj.l+ok.l+ol.l+parityZ)%2>0) continue;
+          if ( std::abs(oi.tz2+oj.tz2 -ok.tz2-ol.tz2) != TzZ*2 ) continue;
 
           for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
           {
@@ -2248,6 +2283,7 @@ bool UnitTest::Mscheme_Test_comm232ss( const Operator& X, const Operator& Y )
 
 
   Commutator::comm232ss( X, Y, Z_J);
+//  ReferenceImplementations::comm232ss( X, Y, Z_J);
 //  Z_J.Erase();
 //  Commutator::comm232ss_debug( X, Y, Z_J);
 //  Commutator::comm232ss_slow( X, Y, Z_J);
@@ -2280,8 +2316,10 @@ bool UnitTest::Mscheme_Test_comm232ss( const Operator& X, const Operator& Y )
         {
           if (l<k or (k==i and l<j)) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
-          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue; // check parity
-          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue; // check isospin projection
+//          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue; // check parity
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue; // check isospin projection
+ //         if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue; // check parity
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue; // check isospin projection
 
 
           int m_max = std::min( oi.j2+oj.j2, ok.j2+ol.j2);
@@ -2746,20 +2784,36 @@ bool UnitTest::Mscheme_Test_comm332_pphhss( const Operator& X, const Operator& Y
 bool UnitTest::Mscheme_Test_comm223ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
-  Operator Z_J( Y );
+
+  int parityX = X.GetParity();
+  int parityY = Y.GetParity();
+  int parityZ = (parityX+parityY)%2;
+  int TzX = X.GetTRank();
+  int TzY = Y.GetTRank();
+  int TzZ = TzX+TzY;
+  int JrankZ = X.GetJRank() + Y.GetJRank();
+
+  Operator Z_J( *(X.modelspace), JrankZ, TzZ, parityZ, 3);
+//  Operator Z_J( Y );
   Z_J.SetHermitian();
-  Z_J.Erase();
+//  Z_J.Erase();
+  Z_J.ThreeBody.SetMode("pn");
   Z_J.ThreeBody.Allocate();
 
 
+  std::cout << "Calling J-scheme commutator" << std::endl;
   Commutator::comm223ss( X, Y, Z_J);
+//  ReferenceImplementations::comm223ss( X, Y, Z_J);
+
 //  Commutator::comm223ss_new( X, Y, Z_J);
 //  if (X.modelspace->GetEmax() > 1) return true;
 
-  if ( Z_J.IsHermitian() )
-     Z_J.Symmetrize();
-  else if (Z_J.IsAntiHermitian() )
-     Z_J.AntiSymmetrize();
+//  if ( Z_J.IsHermitian() )
+//     Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian() )
+//     Z_J.AntiSymmetrize();
+//  std::cout << "  done." << std::endl;
+
 
   double summed_error = 0;
   double sum_m = 0;
@@ -2792,8 +2846,10 @@ bool UnitTest::Mscheme_Test_comm223ss( const Operator& X, const Operator& Y )
             {
               if (n>m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
-              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
-              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+//              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+//              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l+parityZ)%2 !=0 ) continue;
+              if ( std::abs(oi.tz2+oj.tz2+ok.tz2 -ol.tz2-om.tz2-on.tz2) != 2*TzZ ) continue;
 
               // loop over projections
               for (int m_i=-oi.j2; m_i<=oi.j2; m_i+=2)
@@ -2941,6 +2997,14 @@ bool UnitTest::Mscheme_Test_comm133ss( const Operator& X, const Operator& Y )
      Z_J.AntiSymmetrize();
 */
 
+  int parityX = X.GetParity();
+  int parityY = Y.GetParity();
+  int parityZ = (parityX+parityY)%2;
+  int TzX = X.GetTRank();
+  int TzY = Y.GetTRank();
+  int TzZ = TzX+TzY;
+
+
   double summed_error = 0;
   double sum_m = 0;
   double sum_J = 0;
@@ -2972,8 +3036,10 @@ bool UnitTest::Mscheme_Test_comm133ss( const Operator& X, const Operator& Y )
             {
               if (n<m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
-              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
-              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+//              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+//              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l + parityZ)%2 !=0 ) continue;
+              if ( std::abs(oi.tz2+oj.tz2+ok.tz2  -ol.tz2-om.tz2-on.tz2) != TzZ ) continue;
 
 //              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
 
@@ -3036,37 +3102,43 @@ bool UnitTest::Mscheme_Test_comm133ss( const Operator& X, const Operator& Y )
 
 //                         double xijalmn = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, a, m_a, l, m_l, m, m_m, n,m_n );
 
-                         if ( m_a==m_k and oa.j2==ok.j2 and oa.l==ok.l and oa.tz2==ok.tz2)
+//                         if ( m_a==m_k and oa.j2==ok.j2 and oa.l==ok.l and oa.tz2==ok.tz2)
+                         if ( m_a==m_k and (std::abs(xka)>1e-8 or std::abs(yka)>1e-8) )
                          {
                          xijalmn += GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, a, m_a, l, m_l, m, m_m, n,m_n );
                          yijalmn += GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, a, m_a, l, m_l, m, m_m, n,m_n );
                          }
 
-                         if ( m_a==m_j and oa.j2==oj.j2 and oa.l==oj.l and oa.tz2==oj.tz2)
+//                         if ( m_a==m_j and oa.j2==oj.j2 and oa.l==oj.l and oa.tz2==oj.tz2)
+                         if ( m_a==m_j and (std::abs(xja)>1e-8 or std::abs(yja)>1e-8) )
                          {
                          xiaklmn += GetMschemeMatrixElement_3b( X, i,m_i, a,m_a, k, m_k, l, m_l, m, m_m, n,m_n );
                          yiaklmn += GetMschemeMatrixElement_3b( Y, i,m_i, a,m_a, k, m_k, l, m_l, m, m_m, n,m_n );
                          }
 
-                         if ( m_a==m_i and oa.j2==oi.j2 and oa.l==oi.l and oa.tz2==oi.tz2)
+//                         if ( m_a==m_i and oa.j2==oi.j2 and oa.l==oi.l and oa.tz2==oi.tz2)
+                         if ( m_a==m_i and (std::abs(xia)>1e-8 or std::abs(yia)>1e-8) )
                          {
                          xajklmn += GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k, m_k, l, m_l, m, m_m, n,m_n );
                          yajklmn += GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k, m_k, l, m_l, m, m_m, n,m_n );
                          }
 
-                         if ( m_a==m_l and oa.j2==ol.j2 and oa.l==ol.l and oa.tz2==ol.tz2)
+//                         if ( m_a==m_l and oa.j2==ol.j2 and oa.l==ol.l and oa.tz2==ol.tz2)
+                         if ( m_a==m_l and (std::abs(xal)>1e-8 or std::abs(yal)>1e-8) )
                          {
                          xijkamn += GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k, m_k, a, m_a, m, m_m, n,m_n );
                          yijkamn += GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k, m_k, a, m_a, m, m_m, n,m_n );
                          }
 
-                         if ( m_a==m_m and oa.j2==om.j2 and oa.l==om.l and oa.tz2==om.tz2)
+//                         if ( m_a==m_m and oa.j2==om.j2 and oa.l==om.l and oa.tz2==om.tz2)
+                         if ( m_a==m_m and (std::abs(xam)>1e-8 or std::abs(yam)>1e-8) )
                          {
                          xijklan += GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k, m_k, l, m_l, a, m_a, n,m_n );
                          yijklan += GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k, m_k, l, m_l, a, m_a, n,m_n );
                          }
 
-                         if ( m_a==m_n and oa.j2==on.j2 and oa.l==on.l and oa.tz2==on.tz2)
+//                         if ( m_a==m_n and oa.j2==on.j2 and oa.l==on.l and oa.tz2==on.tz2)
+                         if ( m_a==m_n and (std::abs(xan)>1e-8 or std::abs(yan)>1e-8) )
                          {
                          xijklma += GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k, m_k, l, m_l, m, m_m, a,m_a );
                          yijklma += GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k, m_k, l, m_l, m, m_m, a,m_a );
