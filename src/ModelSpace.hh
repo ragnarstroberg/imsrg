@@ -483,7 +483,8 @@ class ModelSpace
    int GetLmax2(){return Lmax2;};
    int GetLmax(){return Lmax;};
    int GetLmax3(){return Lmax3;};
-   void SetEmax(int e){Emax=e;};
+//   void SetEmax(int e){Emax=e;};
+   void SetEmax(int e);
    void SetE2max(int e){E2max=e;};
    void SetE3max(int e);
    void SetEmax3Body(int emax_3body) { emax_3body_ = emax_3body; }

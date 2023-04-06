@@ -41,6 +41,7 @@ bool imsrg3_valence_2b = false;
 bool discard_0b_from_3b = false;
 bool discard_1b_from_3b = false;
 bool discard_2b_from_3b = false;
+bool imsrg3_verbose = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 double threebody_threshold = 0;
@@ -71,6 +72,8 @@ std::map<std::string,bool> comm_term_on = {
      {"comm333_ppp_hhhss"   , true},
      {"comm333_pph_hhpss"   , true}
 };
+
+void SetIMSRG3Verbose(bool tf) {imsrg3_verbose=tf;};
 
 
 void TurnOffTerm( std::string term ) { comm_term_on[term] = false; }
@@ -233,7 +236,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        {
         //important for suppressing off-diagonal H3
 
-         std::cout << " comm133 " << std::endl;
+         if (imsrg3_verbose) std::cout << " comm133 " << std::endl;
         
         comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
        }
@@ -244,14 +247,14 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm330ss"] )
        {
         // This gets the perturbative energy from the induced 3 body
-         std::cout << " comm330 " << std::endl;
+         if (imsrg3_verbose) std::cout << " comm330 " << std::endl;
         comm330ss(X, Y, Z); // scales as n^6
        }
 
        if ( comm_term_on["comm223ss"])
        {
         // This one is essential. If it's not here, then there are no induced 3 body terms
-         std::cout << " comm223 " << std::endl;
+        if (imsrg3_verbose)  std::cout << " comm223 " << std::endl;
         comm223ss(X, Y, Z); // scales as n^7
 //       comm223ss_debug(X, Y, Z); // scales as n^7
        }
@@ -259,7 +262,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm232ss"])
        {
         //one of the two most important IMSRG(3) terms
-        std::cout << " comm232 " << std::endl;
+        if (imsrg3_verbose) std::cout << " comm232 " << std::endl;
          comm232ss(X, Y, Z);   // this is the slowest n^7 term
         //comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
@@ -269,7 +272,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
           if ( comm_term_on["comm331ss"])
           {
             //Maybe not so important, but I think relatively cheap
-             std::cout << " comm331 " << std::endl;
+            if (imsrg3_verbose)  std::cout << " comm331 " << std::endl;
             comm331ss(X, Y, Z); // scales as n^7
           }
 
@@ -277,14 +280,14 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
           if ( comm_term_on["comm231ss"])
           {
             // Demonstrated that this can have some effect
-             std::cout << " comm231 " << std::endl;
+            if (imsrg3_verbose)  std::cout << " comm231 " << std::endl;
             comm231ss(X, Y, Z);  // scales as n^6
           }
 
           if ( comm_term_on["comm132ss"])
           {
             //no demonstrated effect yet, but it's cheap
-             std::cout << " comm132 " << std::endl;
+            if (imsrg3_verbose)  std::cout << " comm132 " << std::endl;
             comm132ss(X, Y, Z); // scales as n^6
           }
        }
@@ -303,7 +306,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm233_pp_hhss"])
        {
         // Not too bad, though naively n^8
-        std::cout << " comm233_pp_hh " << std::endl;
+        if (imsrg3_verbose) std::cout << " comm233_pp_hh " << std::endl;
         comm233_pp_hhss(X, Y, Z);
 //       comm233_pp_hhss_debug(X, Y, Z);
        }
@@ -312,7 +315,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        {
         // This one is super slow too. It involves 9js
         // mat mult makes everything better!
-        // std::cout << " comm233_ph " << std::endl;
+        if (imsrg3_verbose)  std::cout << " comm233_ph " << std::endl;
         comm233_phss(X, Y, Z);
 //       comm233_phss_debug(X, Y, Z);
        }
@@ -320,14 +323,14 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm332_ppph_hhhpss"])
        {
         //not too bad, though naively n^8
-        // std::cout << " comm332_ppph_hhhp " << std::endl;
+         if (imsrg3_verbose) std::cout << " comm332_ppph_hhhp " << std::endl;
         comm332_ppph_hhhpss(X, Y, Z);
        }
 
        if ( comm_term_on["comm332_pphhss"])
        {
         //naively n^8, but reasonably fast when implemented as a mat mult
-        // std::cout << " comm332_pphh " << std::endl;
+         if (imsrg3_verbose) std::cout << " comm332_pphh " << std::endl;
         comm332_pphhss(X, Y, Z);
 //       comm332_pphhss_debug(X, Y, Z);
        }
@@ -335,7 +338,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm333_ppp_hhhss"])
        {
         //naively n^9 but pretty fast as a mat mult
-        // std::cout << " comm333_ppp_hhhss " << std::endl;
+        if (imsrg3_verbose)  std::cout << " comm333_ppp_hhhss " << std::endl;
         comm333_ppp_hhhss(X, Y, Z);
        }
 
@@ -343,7 +346,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        {
         //This one works, but it's incredibly slow.  naively n^9.
        //Much improvement by going to mat mult
-        // std::cout << " comm333_pph_hhpss " << std::endl;
+        if (imsrg3_verbose) std::cout << " comm333_pph_hhpss " << std::endl;
         comm333_pph_hhpss(X, Y, Z);
 //       comm333_pph_hhpss_debug(X, Y, Z);
        }
@@ -557,6 +560,7 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
         }
         
         OpNested = Commutator(Omega,OpNested); // the ith nested commutator
+//        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
 
         factorial_denom /= i;
 
@@ -1791,6 +1795,7 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
    X2_CC_ph.zeros( nKets_cc, 2*nph_kets );
    Y2_CC_ph.zeros( 2*nph_kets, nKets_cc);
 
+
    // TODO: For a set of one-body channels a,b the J coupling stuff should all be the same, so
    //       there is probably some gain to be had by looping over radial quantum numbers na,nb
    //       and nc,nd  inside the Jph loop.
@@ -1878,6 +1883,7 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
            }
            X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar * normfactor * na_nb_factor;
            Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar * normfactor;
+
 //           X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar  * na_nb_factor;
 //           Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar ;
 
@@ -8750,6 +8756,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   size_t n_bra_ket_ch = bra_ket_channels.size();
 
 
+
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
   double Emp2 = 0;
@@ -8952,11 +8959,14 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                  int j2a_min = std::max( std::abs(o6.j2-2*J1p),  std::abs(o3.j2-2*J2p));
                  int j2a_max = std::min( o6.j2+2*J1p,  o3.j2+2*J2p);
 
-                 for (int j2a=j2a_min;j2a<=j2a_max; j2a+=2)
+                 for ( auto& it_obc : Z.modelspace->OneBodyChannels )
                  {
-                   double ja = 0.5 * j2a;
-                   int la = (j2a-1)/2 + ((j2a-1)/2+parity_a)%2;
-                   if (la > Z.modelspace->GetEmax()) continue;
+                   int la = it_obc.first[0];
+                   int j2a = it_obc.first[1];
+                   if ( (j2a < j2a_min)   or (j2a > j2a_max ) ) continue;
+                   if ( la%2 != parity_a ) continue;
+                   if ( it_obc.first[2] != tz2a ) continue;
+                   double ja = 0.5* j2a;
 
                    double sixj;
                    if (twoJ <= 2*Z.modelspace->GetEmax()+1 )
@@ -8968,10 +8978,55 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                     sixj = j2a<twoJ  ?  Z.modelspace->GetSixJ(j6,ja,J1p, j3, 0.5*twoJ, J2p)
                                      :  Z.modelspace->GetSixJ(j6,0.5*twoJ,J2p, j3, ja, J1p) ;
                    }
-
                    double prefactor = rec_ijk * rec_lmn * sixj * hat_factor * phase_12 * phase_45;
+                   
+                   for ( size_t a : it_obc.second )
+                   {
+                 
+
+/// This is the way we had it previously.
+/*
+  std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+
+                 for (int j2a=j2a_min;j2a<=j2a_max; j2a+=2)
+                 {
+                   double ja = 0.5 * j2a;
+                   int la = (j2a-1)/2 + ((j2a-1)/2+parity_a)%2;
+                   if (la > Z.modelspace->GetEmax()) continue;
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+
+                   double sixj;
+                   if (twoJ <= 2*Z.modelspace->GetEmax()+1 )
+                   {
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+                    sixj = Z.modelspace->GetCachedSixJ( o3.j2, twoJ, J1p,  o6.j2, j2a, J2p );
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+                   }
+                   else
+                   {
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+                    sixj = j2a<twoJ  ?  Z.modelspace->GetSixJ(j6,ja,J1p, j3, 0.5*twoJ, J2p)
+                                     :  Z.modelspace->GetSixJ(j6,0.5*twoJ,J2p, j3, ja, J1p) ;
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+                   }
+
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+                   double prefactor = rec_ijk * rec_lmn * sixj * hat_factor * phase_12 * phase_45;
+                    std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+                   std::cout << "One Body Channels are :" << std::endl;
+                   for (auto& it : Z.modelspace->OneBodyChannels )
+                   {
+                       std::cout << it.first[0] << " " << it.first[1] << " " << it.first[2] << " => ";
+                       for (auto& x : it.second )   std::cout << x << " " ;
+                       std::cout << std::endl;
+                   }
+                   std::cout << " ==== and we're looking for  " << la << " " << j2a << " " << tz2a << std::endl;
                    for ( size_t a : Z.modelspace->OneBodyChannels.at({la,j2a,tz2a})  )
                    {
+  std::cout << " " <<__func__ << "  line " << __LINE__ << std::endl;
+*/
+
+
 //                      size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));
 //                      size_t ind_6a = tbc6a.GetLocalIndex(std::min(I6,a),std::max(I6,a));
 ////                      if (ind_6a>nkets_1) continue;
@@ -9024,7 +9079,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
   
                   }// for a
-                }// for j2a
+//                }// for j2a
+                }// for it_obc
                }// for J2p
               }// for tz2a
               }// for parity_a
@@ -10566,6 +10622,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
   bool x3_allocated = X3.IsAllocated();
   bool y3_allocated = Y3.IsAllocated();
 //  std::cout << "Begin the ch3 loop " << std::endl;
+
+  Z.modelspace->PreCalculateSixJ();
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();

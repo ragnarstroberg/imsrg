@@ -136,6 +136,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
       .def("SetScalarFirstPass",&ModelSpace::SetScalarFirstPass)
       .def("SetScalar3bFirstPass",&ModelSpace::SetScalar3bFirstPass)
+      .def("ClearVectors",&ModelSpace::ClearVectors)
       .def_readwrite("holes",&ModelSpace::holes)
       .def_readwrite("particles",&ModelSpace::particles)
       .def_readwrite("core", &ModelSpace::core)
@@ -399,6 +400,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PrintEHF",&HartreeFock::PrintEHF)
       .def("FillLowestOrbits",&HartreeFock::FillLowestOrbits)
       .def("DiscardNO2Bfrom3N", &HartreeFock::DiscardNO2Bfrom3N)
+      .def("FreezeOccupations", &HartreeFock::FreezeOccupations)
+      .def("UnFreezeOccupations", &HartreeFock::UnFreezeOccupations)
       .def_static("Vmon3Hash",&HartreeFock::Vmon3Hash)
  // Modifying arguments which were passed by reference causes trouble in python, so instead we bind a lambda function and return a tuple
       .def_static("Vmon3UnHash", [](uint64_t key) { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f);}  )
@@ -521,6 +524,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
+      Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);

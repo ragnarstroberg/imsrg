@@ -248,6 +248,14 @@ void IMSRGSolver::Solve_magnus_euler()
       {
         break;
       }
+      if ( norm_eta > 1e12 or std::abs(Elast)>1e9 ) // This is obviously going nowhere...
+      {
+        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        std::cout << "!!!!!!!!!!!  Norm of eta is " << norm_eta << " E0 = " << Elast <<  "  things are clearly broken. Giving up." << std::endl;
+        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        FlowingOps[0] *= 1.0/0.0;
+        break;
+      }
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
