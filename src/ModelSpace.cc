@@ -48,7 +48,7 @@ std::map< std::string, std::vector<std::string> > ModelSpace::ValenceSpaces  {
 ModelSpace::ModelSpace()
 :  Emax(0), E2max(0), E3max(0), Lmax(9999), Lmax2(9999), Lmax3(9999), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), emax_3body_(0), dE3max(999), occnat3cut(-1.0), norbits(0), norbits_3body_(0),
   hbar_omega(20), target_mass(16), sixj_has_been_precalculated(false), ninej_has_been_precalculated(false), moshinsky_has_been_precalculated(false),
-  scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
+  scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false),nTwoBodyChannels(0),nThreeBodyChannels(0)
 {
 //   SetUpOrbits();
 //  std::cout << "In default constructor" << std::endl;
@@ -139,7 +139,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // orbit std::string representation is e.g. p0f7
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
-:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999), occnat3cut(-1.0), norbits(0), norbits_3body_(0), hbar_omega(20), target_mass(16),
+:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999), occnat3cut(-1.0), norbits(0), norbits_3body_(0), hbar_omega(20), target_mass(16), nTwoBodyChannels(0), nThreeBodyChannels(0),
     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),    moshinsky_has_been_precalculated(false),
       scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false),
       six_j_cache_2b_(2 * emax + 1)
@@ -150,7 +150,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), norbits_3body_(0), hbar_omega(20), target_mass(16),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), norbits_3body_(0), hbar_omega(20), target_mass(16), nTwoBodyChannels(0), nThreeBodyChannels(0),
      sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),  moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
      six_j_cache_2b_(2 * emax + 1)
 {
@@ -165,7 +165,7 @@ ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 
 ModelSpace::ModelSpace(int emax, int emax_3body, std::string reference, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax_3body),
-     dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
+     dE3max(999),  occnat3cut(-1.0), hbar_omega(20), nTwoBodyChannels(0), nThreeBodyChannels(0),
      sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
      six_j_cache_2b_(2 * emax + 1)
 {
@@ -380,6 +380,12 @@ void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<st
 
 //  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    ClearVectors();
+   OneBodyJmax=0;
+   TwoBodyJmax=0;
+   ThreeBodyJmax=0;
+   nTwoBodyChannels=0;
+
+
 //   Emax = emax;
 //   std::cout << "core list: ";
 //   for (auto& c : core_list) std::cout << c << " ";
@@ -1169,6 +1175,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
       ThreeBodyJmax = OneBodyJmax*3-1; // It doesn't seem like this is actually used anywhere.
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
       if (single_species) nTwoBodyChannels = 2*(TwoBodyJmax+1);
+      std::cout << "  " << __FILE__ << "  line " << __LINE__ << "   single species? " << single_species << "   j2 = " << j2 << "  nTwoBodyChannels = " << nTwoBodyChannels << std::endl;
    }
 
    for ( auto orbitlist : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits,&orbits_3body_space_}  ) orbitlist->erase(ind); // 
@@ -1585,6 +1592,17 @@ std::array<size_t,2> ModelSpace::CountThreeBodyStatesInsideCut()
 
 }
 
+void ModelSpace::SetEmax(int e)
+{
+   int old_emax = Emax;
+   Emax = e;
+   if ( e > old_emax )
+   {
+      std::cout << __FILE__ << " line " << __LINE__ <<  " Changing emax from " << old_emax << " to " << Emax << "  and updating six_j_cache_2b_ ... " << std::endl;
+      six_j_cache_2b_ = SixJCache_112112(2 * Emax + 1);
+   }
+
+}
 
 void ModelSpace::SetEmaxUnocc(int e)
 {
@@ -1677,6 +1695,10 @@ void ModelSpace::ClearVectors()
    SortedTwoBodyChannels.clear();
    SortedTwoBodyChannels_CC.clear();
    PandyaLookup.clear();
+   nTwoBodyChannels=0;
+   nThreeBodyChannels=0;
+   OneBodyJmax=0;
+   TwoBodyJmax=0;
 }
 
 

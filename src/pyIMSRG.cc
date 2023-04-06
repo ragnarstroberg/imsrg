@@ -136,6 +136,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
       .def("SetScalarFirstPass",&ModelSpace::SetScalarFirstPass)
       .def("SetScalar3bFirstPass",&ModelSpace::SetScalar3bFirstPass)
+      .def("ClearVectors",&ModelSpace::ClearVectors)
       .def_readwrite("holes",&ModelSpace::holes)
       .def_readwrite("particles",&ModelSpace::particles)
       .def_readwrite("core", &ModelSpace::core)
@@ -523,6 +524,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
+      Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
