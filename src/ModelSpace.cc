@@ -984,16 +984,18 @@ void ModelSpace::SetReference(std::map<index_t,double> new_reference)
   {
     Orbit& oh = GetOrbit(iterh.first);
     hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = iterh.second;
+    clist.insert( {oh.n, oh.l, oh.j2, oh.tz2} ); // put the hole in the core
   }
-  for ( auto c : core )
-  {
-    Orbit& oc = GetOrbit(c);
-    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
-  }
+//  for ( auto c : core )
+//  {
+//    Orbit& oc = GetOrbit(c);
+//    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
+//  }
   for ( auto v : valence )
   {
     Orbit& ov = GetOrbit(v);
     vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
+    clist.erase( {ov.n, ov.l, ov.j2, ov.tz2} ); // If it's valence, it's not core.
   }
   ClearVectors();
   Init( hlist,clist,vlist);
