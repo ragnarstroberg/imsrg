@@ -556,6 +556,7 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
         {
           auto chi_last = goosetank_chi.OneBody;
           goosetank_chi = GooseTankUpdate( Omega, OpNested);
+//          std::cout << "goose_tank chi = " << goosetank_chi.OneBody(0,0) << " , " << goosetank_chi.OneBody(1,1)<< std::endl;
           OpNested.OneBody += chi_last;  // add the chi from the previous step to OpNested.
         }
         

@@ -805,6 +805,11 @@ int main(int argc, char** argv)
 //  for (auto& op : ops)
    for (size_t i=0;i<ops.size();++i)
    {
+     if (ops[i].GetJRank()==0 and (ops[i].GetTRank()!=0 or ops[i].GetParity()!=0) )
+     {
+         std::cout << "Before doing HF transformation, making op " << i << " " << opnames[i] << " not reduced. " << std::endl;
+         ops[i].MakeNotReduced();
+     }
 //     std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
       // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
      if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
@@ -1419,6 +1424,11 @@ int main(int argc, char** argv)
       }
 //      Operator op = imsrg_util::OperatorFromString( modelspace, opname );
 
+      if ( op.GetJRank()==0 and ( op.GetTRank()!=0 or op.GetParity()!=0 ) )
+      {
+         std::cout << "Before doing HF, making " << opname << "  not reduced" << std::endl;
+         op.MakeNotReduced();
+      }
 
       // Added by Antoine Belley
       if (write_HO_ops)
@@ -1518,6 +1528,11 @@ int main(int argc, char** argv)
        std::cout << "writing tensor files " << std::endl;
       if (valence_file_format == "tokyo")
       {
+        if (op.GetJRank()==0 and (op.GetTRank()!=0 or op.GetParity()!=0) )
+        {
+           op.MakeReduced();
+        }
+
         rw.WriteTensorTokyo(intfile+opname+"_2b.snt",op);
       }
       else

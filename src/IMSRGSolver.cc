@@ -505,6 +505,10 @@ void IMSRGSolver::Solve_flow_RK4()
    WriteFlowStatus(flowfile);
    WriteFlowStatus(std::cout);
 
+   Operator goosetank_chi( *modelspace, 0,0,0,1);// for use if we do IMSRG2* to mock up the goose tanks
+   Operator goosetank_dchi( *modelspace, 0,0,0,1);// for use if we do IMSRG2* to mock up the goose tanks
+   
+
    for (istep=1;s<smax;++istep)
    {
 
@@ -527,7 +531,10 @@ void IMSRGSolver::Solve_flow_RK4()
 //      Operator& Hs = FlowingOps[0];   // this is not used explicitly
       for ( int i=0;i<nops; i++ )
       {
-        K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;
+        if (i==0)
+           K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] + goosetank_chi ) ;
+        else
+           K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;
         Ktmp[i] = FlowingOps[i] + 0.5*ds*K1[i];
       }
 //      Operator K1 = Commutator::Commutator( Eta, Hs );
@@ -538,7 +545,10 @@ void IMSRGSolver::Solve_flow_RK4()
       for (int i=0; i<nops; i++ )
       {
 //        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
-        K2[i] = Commutator::Commutator( Eta, Ktmp[i]);
+        if (i==0)
+            K2[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi );
+        else
+            K2[i] = Commutator::Commutator( Eta, Ktmp[i]);
         Ktmp[i] = FlowingOps[i] + 0.5*ds*K2[i];
       }
 //      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
@@ -549,7 +559,10 @@ void IMSRGSolver::Solve_flow_RK4()
       for (int i=0; i<nops; i++ )
       {
 //        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
-        K3[i] = Commutator::Commutator( Eta, Ktmp[i]);
+        if (i==0)
+           K3[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi);
+        else
+           K3[i] = Commutator::Commutator( Eta, Ktmp[i]);
         Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
       }
 //      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
@@ -560,7 +573,10 @@ void IMSRGSolver::Solve_flow_RK4()
       for (int i=0; i<nops; i++ )
       {
 //        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
-        K4[i] = Commutator::Commutator( Eta, Ktmp[i]);
+        if (i==0)
+           K4[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi);
+        else
+           K4[i] = Commutator::Commutator( Eta, Ktmp[i]);
 //        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
         FlowingOps[i] += ds/6.0 * ( K1[i] + 2*K2[i] + 2*K3[i] + K4[i] );
       }
@@ -571,6 +587,23 @@ void IMSRGSolver::Solve_flow_RK4()
       if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
       {
         generator.SetDenominatorCutoff(1e-6);
+      }
+
+      if ( Commutator::use_goose_tank_correction )
+      {
+         goosetank_dchi.EraseOneBody();
+         Commutator::comm221ss( Eta, FlowingOps[0], goosetank_dchi );  // update chi.
+         for (auto i : modelspace->all_orbits )  // enforce n_in_j + nbar_i nbar_j
+         {
+           Orbit &oi = modelspace->GetOrbit(i);
+           for ( auto j : modelspace->all_orbits )
+           {
+            Orbit &oj = modelspace->GetOrbit(j);
+            goosetank_dchi.OneBody(i,j) *=  oi.occ*oj.occ + (1.0-oi.occ)*(1.0-oj.occ) ;
+           }
+         }
+         goosetank_chi += goosetank_dchi * ds;
+//        std::cout << " " << __FILE__ << "  line " << __LINE__ << s << "  " << goosetank_chi.OneBody(1,1) << std::endl;;
       }
 
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
