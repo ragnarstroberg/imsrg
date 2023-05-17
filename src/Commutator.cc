@@ -14068,12 +14068,6 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
              double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
              double tbme = Z.TwoBody.GetTBME_J(J1,J2,a,d,c,b);
              sm -= hatfactor * Z.modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
-         if (ch_bra_cc==3)
-         {
-            std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << " " << iket_cc
-                      << " - " << hatfactor * Z.modelspace->phase(jb+jd+Jket_cc+J2) << " * " << ninej << " * " <<tbme  << "  sm = " << sm
-                      << "  ninej is " << ja << " " << jd << " " << J1 << " " << jb << " " << jc << " " << J2 << " " << Jbra_cc << " " << Jket_cc << " " << Lambda << "    which reduces to a sixj " << ja << " " << jb << " " << Jbra_cc << " " << jc << " " << jd << " " << J1 << std::endl;
-         }
            }
          }
 
@@ -14115,10 +14109,6 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
                sm -= hatfactor * Z.modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
              }
            }
-         if (ch_bra_cc==3)
-         {
-            std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << "+ " << nph_bras << " "  << iket_cc << " sm = " << sm << std::endl;
-         }
            MatCC_ph(ibra+nph_bras,iket_cc) = sm;
          }
       }
@@ -14237,11 +14227,11 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 /*
 */
                   commij += hatfactor * Z.modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
-                   if ( ch_bra==1) 
-                   {
-                     std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << l << " " << k << " " << j << "   J3J4 " << J3 << " " << J4 
-                               << "   me " << tbme << "   ninej =" << ninej << "   commij = " << commij << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
-                   }
+                  // if ( ch_bra==1) 
+                  // {
+                  //   std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << l << " " << k << " " << j << "   J3J4 " << J3 << " " << J4 
+                  //             << "   me " << tbme << "   ninej =" << ninej << "   commij = " << commij << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
+                  // }
               }
             }
 
@@ -14315,11 +14305,6 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 */  
   
                       commji += hatfactor * Z.modelspace->phase(ji+jl+J2+J4) * ninej * tbme ;
-                   if ( ch_bra==1) 
-                   {
-                     std::cout << "   " << __func__ << " " << __LINE__ << " jlki " << j << " " << l << " " << k << " " << i << "   J3J4 " << J3 << " " << J4 
-                               << "   me " << tbme << "   ninej =" << ninej << "   commji = " << commji << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
-                   }
                 }
               }
             }
@@ -14327,10 +14312,6 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             Zijkl(ibra,iket) +=  (commij - Z.modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) Zijkl(iket,ibra) = hZ * Zijkl(ibra,iket);
-            if ( ch_bra==1)
-            {
-               std::cout << __func__ << " " << __LINE__ << "   commij, ji " << commij << " " << commji << "   zijjkl = " << Zijkl(ibra,iket) << std::endl;
-            }
          }
       }
    }

@@ -1177,7 +1177,6 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
       ThreeBodyJmax = OneBodyJmax*3-1; // It doesn't seem like this is actually used anywhere.
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
       if (single_species) nTwoBodyChannels = 2*(TwoBodyJmax+1);
-      std::cout << "  " << __FILE__ << "  line " << __LINE__ << "   single species? " << single_species << "   j2 = " << j2 << "  nTwoBodyChannels = " << nTwoBodyChannels << std::endl;
    }
 
    for ( auto orbitlist : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits,&orbits_3body_space_}  ) orbitlist->erase(ind); // 
