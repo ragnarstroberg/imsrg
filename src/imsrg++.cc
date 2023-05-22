@@ -805,9 +805,10 @@ int main(int argc, char** argv)
 //  for (auto& op : ops)
    for (size_t i=0;i<ops.size();++i)
    {
-     if ( ops[i].GetJRank()==0 and(  ops[i].GetTRank()!=0 or ops[i].GetParity()!=0 ) )
+     if (ops[i].GetJRank()==0 and (ops[i].GetTRank()!=0 or ops[i].GetParity()!=0) )
      {
-       ops[i].MakeNotReduced(); // We can treat these as scalars, even though imsrg_util makes them reduced.
+         std::cout << "Before doing HF transformation, making op " << i << " " << opnames[i] << " not reduced. " << std::endl;
+         ops[i].MakeNotReduced();
      }
 //     std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
       // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
@@ -1527,10 +1528,11 @@ int main(int argc, char** argv)
        std::cout << "writing tensor files " << std::endl;
       if (valence_file_format == "tokyo")
       {
-        if ( op.GetJRank()==0)
+        if (op.GetJRank()==0 and (op.GetTRank()!=0 or op.GetParity()!=0) )
         {
-          op.MakeReduced(); // This is sneaky and might not be expected behavior, but I'm just testing this now.
+           op.MakeReduced();
         }
+
         rw.WriteTensorTokyo(intfile+opname+"_2b.snt",op);
       }
       else

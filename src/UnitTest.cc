@@ -959,6 +959,11 @@ bool UnitTest::Test_comm222_pp_hh_221ss( const Operator& X, const Operator& Y)
 {
   return Test_against_ref_impl(X,Y,  Commutator::comm222_pp_hh_221ss,  ReferenceImplementations::comm222_pp_hh_221ss,  "comm222_pp_hh_221ss");
 }
+/// scalar-tensor commutators
+bool UnitTest::Test_comm222_phst( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm222_phst,  ReferenceImplementations::comm222_phst,  "comm222_phst");
+}
 
 /// IMSRG(3) commutators
 bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y) 
@@ -1164,8 +1169,15 @@ bool UnitTest::Mscheme_Test_comm111ss( const Operator& X, const Operator& Y )
   Operator Z_J( Y );
   Z_J.Erase();
 
+  Operator Xcpy(X);
+  Operator Ycpy(Y);
+  Ycpy.MakeReduced();
+  Commutator::comm111st( Xcpy, Ycpy, Z_J);
+  Z_J.MakeNotReduced();
 
-  Commutator::comm111ss( X, Y, Z_J);
+
+//  Commutator::comm111ss( X, Y, Z_J);
+//  Commutator::comm111st( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -1238,13 +1250,24 @@ bool UnitTest::Mscheme_Test_comm121ss( const Operator& X, const Operator& Y)
   Operator Z_J( Y );
   Z_J.Erase();
 
+  Operator Xcpy(X);
+  Operator Ycpy(Y);
+  Ycpy.MakeReduced();
+  Commutator::comm121st( Xcpy, Ycpy, Z_J);
+  Z_J.MakeNotReduced();
 
-  Commutator::comm121ss( X, Y, Z_J);
+//  Operator Zsc (Y );
+//  Zsc.Erase();
+//  Commutator::comm121ss( X, Y, Zsc);
 
-  if ( Z_J.IsHermitian() )
-     Z_J.Symmetrize();
-  else if (Z_J.IsAntiHermitian() )
-     Z_J.AntiSymmetrize();
+
+//  Commutator::comm121ss( X, Y, Z_J);
+//  Commutator::comm121st( X, Y, Z_J);
+
+//  if ( Z_J.IsHermitian() )
+//     Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian() )
+//     Z_J.AntiSymmetrize();
 
   double summed_error = 0;
   double sum_m = 0;
@@ -1326,9 +1349,15 @@ bool UnitTest::Mscheme_Test_comm221ss( const Operator& X, const Operator& Y )
   Operator Z_J( Y );
   Z_J.Erase();
 
-
+  Operator Xcpy(X);
+  Operator Ycpy(Y);
+  Ycpy.MakeReduced();
+  Commutator::comm222_pp_hh_221st( Xcpy, Ycpy, Z_J);
+  Z_J.MakeNotReduced();
 //  Commutator::comm222_pp_hh_221ss( X, Y, Z_J ) ; 
-  Commutator::comm221ss( X, Y, Z_J);
+//  Commutator::comm221ss( X, Y, Z_J);
+//  Commutator::comm222_pp_hh_221st( X, Y, Z_J);
+  Z_J.EraseTwoBody();
 //  ReferenceImplementations::comm221ss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
@@ -1424,8 +1453,13 @@ bool UnitTest::Mscheme_Test_comm122ss( const Operator& X, const Operator& Y )
   Operator Z_J( Y );
   Z_J.Erase();
 
-
-  Commutator::comm122ss( X, Y, Z_J);
+  Operator Xcpy(X);
+  Operator Ycpy(Y);
+  Ycpy.MakeReduced();
+  Commutator::comm122st( Xcpy, Ycpy, Z_J);
+  Z_J.MakeNotReduced();
+//  Commutator::comm122ss( X, Y, Z_J);
+//  Commutator::comm122st( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -1537,7 +1571,15 @@ bool UnitTest::Mscheme_Test_comm222_pp_hhss( const Operator& X, const Operator& 
   Z_J.Erase();
 
 
-  Commutator::comm222_pp_hhss( X, Y, Z_J);
+//  Commutator::comm222_pp_hhss( X, Y, Z_J);
+
+  Operator Xcpy(X);
+  Operator Ycpy(Y);
+  Ycpy.MakeReduced();
+  Commutator::comm222_pp_hh_221st( Xcpy, Ycpy, Z_J);
+  Z_J.MakeNotReduced();
+//  Commutator::comm222_pp_hh_221st( X, Y, Z_J);
+  Z_J.EraseOneBody();
 //  Commutator::comm222_pp_hh_221ss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
@@ -1644,13 +1686,48 @@ bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
   Operator Z_J( Y );
   Z_J.Erase();
 
+   std::cout << std::endl;
 //  Commutator::comm222_phss( X, Y, Z_J);
-  ReferenceImplementations::comm222_phss( X, Y, Z_J);
+//  ReferenceImplementations::comm222_phss( X, Y, Z_J);
+  Operator Ycpy(Y);
+  Ycpy.MakeReduced();
 
-  if ( Z_J.IsHermitian() )
-     Z_J.Symmetrize();
-  else if (Z_J.IsAntiHermitian() )
-     Z_J.AntiSymmetrize();
+//   std::cout << "Ycpy is the reduced version of Y. Accessing Y(J=1, 1,4,0,5). I get" << std::endl
+//             << "  Y:    " << Y.TwoBody.GetTBME_J(1,1, 1,4,0,5) << std::endl
+//             << "  Ycpy: " << Ycpy.TwoBody.GetTBME_J(1,1, 1,4,0,5) << std::endl;
+
+  Commutator::comm222_phst( X, Ycpy, Z_J);
+//  ReferenceImplementations::comm222_phst( X, Ycpy, Z_J);
+  Z_J.MakeNotReduced();
+   std::cout << std::endl;
+  std::cout << "st went ok." << std::endl;
+
+  Operator Zsc(Y);
+  Zsc.Erase();
+
+  Commutator::comm222_phss( X, Y, Zsc);
+//  ReferenceImplementations::comm222_phss( X, Y, Zsc);
+   std::cout << std::endl;
+
+  for (size_t ch=0; ch<5; ch++)
+  {
+     TwoBodyChannel& tbc = Y.modelspace->GetTwoBodyChannel(ch);
+     std::cout << " ch " << ch << "  JpT " << tbc.J << " " << tbc.parity << " " << tbc.Tz << std::endl;
+  }
+// (1,1) is ok.
+//  std::cout << "tensor ph  " << std::endl << Z_J.TwoBody.GetMatrix(1,1) << std::endl;
+//  std::cout << "scalar ph  " << std::endl << Zsc.TwoBody.GetMatrix(1,1) << std::endl;
+  std::cout << "Heres channel 4" << std::endl;
+//  std::cout << "tensor ph  " << std::endl << Z_J.TwoBody.GetMatrix(4,4) << std::endl;
+//  std::cout << "scalar ph  " << std::endl << Zsc.TwoBody.GetMatrix(4,4) << std::endl;
+
+//  return false;
+//  Commutator::comm222_phss( X, Y, Z_J);
+
+//  if ( Z_J.IsHermitian() )
+//     Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian() )
+//     Z_J.AntiSymmetrize();
 
   double summed_error = 0;
   double sum_m = 0;

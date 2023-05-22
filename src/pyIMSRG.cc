@@ -428,12 +428,13 @@ PYBIND11_MODULE(pyIMSRG, m)
 
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
-   Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
+//   Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
 
    py::class_<IMSRGSolver>(m,"IMSRGSolver")
       .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
-      .def("Transform",Transform_ref)
+//      .def("Transform",Transform_ref)
+      .def("Transform", [](IMSRGSolver& self, Operator& op){ return self.Transform(op) ; } )
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetMethod",&IMSRGSolver::SetMethod)
