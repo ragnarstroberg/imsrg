@@ -499,20 +499,11 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z)
                   double yajkb = Y2.GetTBME_J(Jpp, a,j,k,b);
                   xbar_abkj -= (2*Jpp+1) * sixj_abkj * xajkb;
                   ybar_abkj -= (2*Jpp+1) * sixj_abkj * yajkb;
-                    if ( ch_bra==1)
-                    {
-                       std::cout << " =======" << 2*Jpp+1 << " * " << sixj_abkj << " " << yajkb << "   I got yajkb from Y2.GetTBME_J("<<Jpp << " " << a << " " << j << " " << k << " " << b << ")" << std::endl;
-                    }
                 }
 
 
 
                 zbar_ilkj += (oa.occ - ob.occ) * (xbar_ilab * ybar_abkj - ybar_ilab * xbar_abkj);
-
-                if ( ch_bra==1)
-                {
-                   std::cout << "a b " << a << " " << b << " " << (oa.occ - ob.occ) << " *  ( " <<  xbar_ilab << " * " <<  ybar_abkj << " - " << ybar_ilab << " * " << xbar_abkj << " ) -> zbar_ilkj = " << zbar_ilkj << std::endl;
-                }
 
 
 
@@ -547,11 +538,6 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z)
 
                 zbar_jlki += (oa.occ - ob.occ) * (xbar_jlab * ybar_abki - ybar_jlab * xbar_abki);
 
-                if ( ch_bra==1)
-                {
-                   std::cout << "     a b " << a << " " << b << " " << (oa.occ - ob.occ) << " *  ( " <<  xbar_jlab << " * " <<  ybar_abki << " - " << ybar_jlab << " * " << xbar_abki << " ) -> zbar_jlki = " << zbar_jlki << std::endl;
-                }
-
 
              }//b
            }//a
@@ -561,12 +547,6 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z)
            int phase_ij = AngMom::phase( (oi.j2 + oj.j2 - 2*J)/2 );
            zijkl += (2*Jp+1) * sixj_ijkl * zbar_ilkj;  // Direct
            zijkl -= (2*Jp+1) * sixj_jikl * zbar_jlki * phase_ij;   //Exchange, with phase
-
-           if ( ch_bra==1)
-           {
-           std::cout << __func__ << " " << __LINE__ << "  Jp " << Jp << "  direct: " << (2*Jp+1) <<" * " << sixj_ijkl << " * " << zbar_ilkj << " (<- zbar_ilkj d_zijkl ->) " << (2*Jp+1) * sixj_ijkl * zbar_ilkj << std::endl;
-           std::cout << __func__ << " " << __LINE__ << "        exchange: " << (2*Jp+1) <<" * " << sixj_jikl << " * " << zbar_jlki << " -> " << (2*Jp+1) * sixj_jikl * zbar_jlki << "   zijkl = " << zijkl << std::endl;
-           }
 
          }// Jp
 

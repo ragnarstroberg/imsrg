@@ -13433,7 +13433,8 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
    int hZ = Z.IsHermitian() ? +1 : -1;
    Z.modelspace->PreCalculateSixJ();
    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
+   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()*2+Z.GetParity()) )
    for (int indexi=0;indexi<norbits;++indexi)
 //   for (int i=0;i<norbits;++i)
    {
@@ -13545,13 +13546,16 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
 
     std::vector< int > bra_channels;
     std::vector< int > ket_channels;
+
     for ( auto& itmat : Z.TwoBody.MatEl )
     {
       bra_channels.push_back( itmat.first[0] );
       ket_channels.push_back( itmat.first[1] );
     }
     int nmat = bra_channels.size();
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
+//    std::cout << " first pass? " << Z.modelspace->tensor_transform_first_pass.at(Z.rank_J) << std::endl;
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
+   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
     for (int ii=0; ii<nmat; ++ii)
     {
      int ch_bra = bra_channels[ii];
@@ -13645,6 +13649,7 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
                double ja = Z.modelspace->GetOrbit(a).j2*0.5;
                c1 -=   Z.modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
             }
+
             if (i==j)
             {
               c2 = -c1;
@@ -13776,7 +13781,8 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(),Z.modelspace->all_orbits.end());
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
+   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
    for (int indexi=0;indexi<norbits;++indexi)
 //   for (int i=0;i<norbits;++i)
    {
@@ -13882,7 +13888,8 @@ void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_
       }
    }
 
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Lambda))
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Lambda))
+   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
    for (index_t ich=0;ich<nch;++ich)
    {
       index_t ch_bra_cc = Z.modelspace->SortedTwoBodyChannels_CC[ich];
@@ -14068,12 +14075,6 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
              double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
              double tbme = Z.TwoBody.GetTBME_J(J1,J2,a,d,c,b);
              sm -= hatfactor * Z.modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
-         if (ch_bra_cc==3)
-         {
-            std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << " " << iket_cc
-                      << " - " << hatfactor * Z.modelspace->phase(jb+jd+Jket_cc+J2) << " * " << ninej << " * " <<tbme  << "  sm = " << sm
-                      << "  ninej is " << ja << " " << jd << " " << J1 << " " << jb << " " << jc << " " << J2 << " " << Jbra_cc << " " << Jket_cc << " " << Lambda << "    which reduces to a sixj " << ja << " " << jb << " " << Jbra_cc << " " << jc << " " << jd << " " << J1 << std::endl;
-         }
            }
          }
 
@@ -14115,10 +14116,6 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
                sm -= hatfactor * Z.modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
              }
            }
-         if (ch_bra_cc==3)
-         {
-            std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << "+ " << nph_bras << " "  << iket_cc << " sm = " << sm << std::endl;
-         }
            MatCC_ph(ibra+nph_bras,iket_cc) = sm;
          }
       }
@@ -14140,7 +14137,8 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
    int hZ = Z.IsHermitian() ? 1 : -1;
 
     // Only go parallel if we've previously calculated the SixJs/NineJs. Otherwise, it's not thread safe.
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Lambda))
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Lambda))
+   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
    for (int i=0; i<niter; ++i)
    {
       const auto iter = iteratorlist[i];
@@ -14237,11 +14235,11 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 /*
 */
                   commij += hatfactor * Z.modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
-                   if ( ch_bra==1) 
-                   {
-                     std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << l << " " << k << " " << j << "   J3J4 " << J3 << " " << J4 
-                               << "   me " << tbme << "   ninej =" << ninej << "   commij = " << commij << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
-                   }
+                  // if ( ch_bra==1) 
+                  // {
+                  //   std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << l << " " << k << " " << j << "   J3J4 " << J3 << " " << J4 
+                  //             << "   me " << tbme << "   ninej =" << ninej << "   commij = " << commij << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
+                  // }
               }
             }
 
@@ -14315,11 +14313,6 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 */  
   
                       commji += hatfactor * Z.modelspace->phase(ji+jl+J2+J4) * ninej * tbme ;
-                   if ( ch_bra==1) 
-                   {
-                     std::cout << "   " << __func__ << " " << __LINE__ << " jlki " << j << " " << l << " " << k << " " << i << "   J3J4 " << J3 << " " << J4 
-                               << "   me " << tbme << "   ninej =" << ninej << "   commji = " << commji << "   depends on cc channels " << ch_bra_cc << " " << ch_ket_cc << std::endl;
-                   }
                 }
               }
             }
@@ -14327,10 +14320,6 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             Zijkl(ibra,iket) +=  (commij - Z.modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) Zijkl(iket,ibra) = hZ * Zijkl(ibra,iket);
-            if ( ch_bra==1)
-            {
-               std::cout << __func__ << " " << __LINE__ << "   commij, ji " << commij << " " << commji << "   zijjkl = " << Zijkl(ibra,iket) << std::endl;
-            }
          }
       }
    }
@@ -14478,7 +14467,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    {
 //      std::cout << "  in  " << __func__ << "  doing it the old way. Counter = " << counter << std::endl;
       #ifndef OPENBLAS_NOUSEOMP
-      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+//      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
       #endif
       for(int i=0;i<counter;++i)
       {
@@ -14579,7 +14569,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
       std::deque<arma::mat> YJ2J1_list(counter);
    
    //   #ifndef OPENBLAS_NOUSEOMP
-      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+//      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
    //   #endif
       for(int i=0;i<counter;++i)
       {
@@ -14623,7 +14614,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
       t_start = omp_get_wtime();
    
       #ifndef OPENBLAS_NOUSEOMP
-      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+//      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
       #endif
       for(int i=0;i<counter;++i)
       {
@@ -14719,7 +14711,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
 
    X.profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t_start;
 
-   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank() ) = false;
+//   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank() ) = false;
+   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank()*2+Z.GetParity() ) = false;
 
 }
 
