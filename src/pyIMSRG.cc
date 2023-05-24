@@ -428,12 +428,13 @@ PYBIND11_MODULE(pyIMSRG, m)
 
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
-   Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
+//   Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
 
    py::class_<IMSRGSolver>(m,"IMSRGSolver")
       .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
-      .def("Transform",Transform_ref)
+//      .def("Transform",Transform_ref)
+      .def("Transform", [](IMSRGSolver& self, Operator& op){ return self.Transform(op) ; } )
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetMethod",&IMSRGSolver::SetMethod)
@@ -610,6 +611,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Test_comm222_pp_hhss", &UnitTest::Test_comm222_pp_hhss)
       .def("Test_comm222_phss", &UnitTest::Test_comm222_phss)
       .def("Test_comm222_pp_hh_221ss", &UnitTest::Test_comm222_pp_hh_221ss)
+
+      .def("Test_comm222_phst", &UnitTest::Test_comm222_phst)
       ///
       .def("Test_comm330ss", &UnitTest::Test_comm330ss)
       .def("Test_comm331ss", &UnitTest::Test_comm331ss)
@@ -633,6 +636,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Mscheme_Test_comm122ss", &UnitTest::Mscheme_Test_comm122ss)
       .def("Mscheme_Test_comm222_pp_hhss", &UnitTest::Mscheme_Test_comm222_pp_hhss)
       .def("Mscheme_Test_comm222_phss", &UnitTest::Mscheme_Test_comm222_phss)
+//
 //      .def("Mscheme_Test_comm222_pp_hh_221ss", &UnitTest::Mscheme_Test_comm222_pp_hh_221ss)
       ///
       .def("Mscheme_Test_comm330ss", &UnitTest::Mscheme_Test_comm330ss)
@@ -650,6 +654,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Mscheme_Test_comm333_pph_hhpss", &UnitTest::Mscheme_Test_comm333_pph_hhpss)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
       .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) // Op, a,ma, b,mb...
+
    ;
 
 

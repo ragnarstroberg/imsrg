@@ -1,5 +1,7 @@
 CXX = g++
 #CXX = clang++
+#CXXSTD = c++11
+CXXSTD = c++17
 
 # Compiler flags:
 #  -DNO_ODE compiles without boost/ode package used for flow equation solver
@@ -11,7 +13,8 @@ ALL = version libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
+#FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
+FLAGS     = -O3 -march=native -std=$(CXXSTD) -fopenmp -fPIC
 FLAGS    += $(WARNFLAGS)
 LIBS = -lopenblas -lgsl -lz
 LDFLAGS = -L$(PWD) 
@@ -43,7 +46,8 @@ endif
 #FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 ifeq ($(DEBUG),on)
- FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
+# FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
+ FLAGS     = -march=native -std=$(CXXSTD) -fopenmp -fPIC -g
 endif
 
 #WITHHALF = 1
@@ -73,7 +77,8 @@ THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname
 
 
 ifeq ($(OS),MACOS)
-  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
+#  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
+  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=$(CXXSTD) -fPIC
   LIBS += -lomp
   FLAGS += -DNO_x86  # don't load x86intrin.h header. I don't pretent to fully understand why this breaks things.
   SOFLAGS = -dynamiclib  -install_name $(LD_DIR)/libIMSRG.so  $(FLAGS)

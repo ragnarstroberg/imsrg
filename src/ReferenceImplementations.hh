@@ -56,6 +56,9 @@ namespace ReferenceImplementations
   void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;          
 
 
+  // scalar-tensor commutators
+  void comm222_phst( const Operator& X, const Operator& Y, Operator& Z) ;
+
 
 }// namespace ReferenceImplementations
 
