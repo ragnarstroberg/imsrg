@@ -308,8 +308,15 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
     }
 
     std::cout << "from occ file: " << std::endl;
-    hole_list[{n,l,j2,tz}] = occ;
     std::cout << n << " " << l << " " << j2 << " " << tz  << "    " << occ << std::endl;
+    if ( std::abs( occ ) < 1e-8 )
+    {
+        std::cout << "  since occ = " << occ << " < 1e-8, I'm not adding that to the hole list. If you really want an unoccupied hole, maybe think about what you're doing a bit more." << std::endl;
+    }
+    else
+    {
+        hole_list[{n,l,j2,tz}] = occ;
+    }
   }
 
   Init(emax,hole_list,valence); // call Init version  2 ( int, map, string )
@@ -693,28 +700,31 @@ void ModelSpace::SetReference(std::vector<index_t> new_reference)
 
 void ModelSpace::SetReference(std::set<index_t> new_reference)
 {
-  std::map<std::array<int,4>,double> hlist ;
-  std::set<std::array<int,4>> clist ;
-  std::set<std::array<int,4>> vlist ;
-  for ( auto h : new_reference )
-  {
-    Orbit& oh = GetOrbit(h);
-    hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = 1.0;
-  }
-  for ( auto c : core )
-  {
-    Orbit& oc = GetOrbit(c);
-    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
-  }
-  for ( auto v : valence )
-  {
-    Orbit& ov = GetOrbit(v);
-    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
-  }
-
-
-  ClearVectors();
-  Init( hlist,clist,vlist);
+    std::map<index_t,double> newref;
+    for (auto h : new_reference) newref[h] = 1.0;
+    SetReference(newref);
+//  std::map<std::array<int,4>,double> hlist ;
+//  std::set<std::array<int,4>> clist ;
+//  std::set<std::array<int,4>> vlist ;
+//  for ( auto h : new_reference )
+//  {
+//    Orbit& oh = GetOrbit(h);
+//    hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = 1.0;
+//  }
+//  for ( auto c : core )
+//  {
+//    Orbit& oc = GetOrbit(c);
+//    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
+//  }
+//  for ( auto v : valence )
+//  {
+//    Orbit& ov = GetOrbit(v);
+//    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
+//  }
+//
+//
+//  ClearVectors();
+//  Init( hlist,clist,vlist);
 }
 
 void ModelSpace::SetReference(std::map<index_t,double> new_reference)
@@ -736,6 +746,7 @@ void ModelSpace::SetReference(std::map<index_t,double> new_reference)
     clist.erase( {ov.n, ov.l, ov.j2, ov.tz2} ); // If it's valence, it's not core.
   }
   ClearVectors();
+
   Init( hlist,clist,vlist);
 }
 
