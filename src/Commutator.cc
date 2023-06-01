@@ -1426,14 +1426,14 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
 
       // If X or Y change parity or isospin, then we need to worry about the fact that we only store
       // ch_bra <= ch_ket. If we need the other ordering we get it by Hermiticity. 
-      int flipphase_Xijab = 1;
-      int flipphase_Xabkl = 1;
-      int flipphase_Yijab = 1;
-      int flipphase_Yabkl = 1;
-      if ( ch_bra > ch_ab_XY ) flipphase_Xijab = hX;
-      if ( ch_ab_YX > ch_ket ) flipphase_Xabkl = hX;
-      if ( ch_bra > ch_ab_YX ) flipphase_Yijab = hY;
-      if ( ch_ab_XY > ch_ket ) flipphase_Yabkl = hY;
+//      int flipphase_Xijab = 1;
+//      int flipphase_Xabkl = 1;
+//      int flipphase_Yijab = 1;
+//      int flipphase_Yabkl = 1;
+//      if ( ch_bra > ch_ab_XY ) flipphase_Xijab = hX;
+//      if ( ch_ab_YX > ch_ket ) flipphase_Xabkl = hX;
+//      if ( ch_bra > ch_ab_YX ) flipphase_Yijab = hY;
+//      if ( ch_ab_XY > ch_ket ) flipphase_Yabkl = hY;
 
 
       auto& X_ijab = (ch_bra<=ch_ab_XY) ?  X.TwoBody.GetMatrix(ch_bra,ch_ab_XY) :
@@ -13708,23 +13708,31 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 
    double tstart = omp_get_wtime();
    int Lambda = Z.GetJRank();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
    int hZ = Z.IsHermitian() ? +1 : -1;
 
-   TwoBodyME Mpp = Y.TwoBody;
-   TwoBodyME Mhh = Y.TwoBody;
-   TwoBodyME Mff = Y.TwoBody;
+   TwoBodyME Mpp = Z.TwoBody;
+   TwoBodyME Mhh = Z.TwoBody;
+// (not used)   TwoBodyME Mff = Z.TwoBody;
 
    std::vector<int> vch_bra;
    std::vector<int> vch_ket;
    std::vector<const arma::mat*> vmtx;
-   for ( auto& itmat : Y.TwoBody.MatEl )
+//   for ( auto& itmat : Y.TwoBody.MatEl )
+   for ( auto& itmat : Z.TwoBody.MatEl )
    {
      vch_bra.push_back(itmat.first[0]);
      vch_ket.push_back(itmat.first[1]);
      vmtx.push_back(&(itmat.second));
    }
+   if ( X.GetTRank()!=0 )
+   {
+      std::cout << "Uh Oh. " << __func__ << "  can't handle an isospin-changing scalar operator (not yet implemented). Dying." << std::endl;
+      std::exit(EXIT_FAILURE);
+   }
    size_t nchan = vch_bra.size();
-   #pragma omp parallel for schedule(dynamic,1)
+//   #pragma omp parallel for schedule(dynamic,1)
    for (size_t i=0;i<nchan; ++i)
    {
     int ch_bra = vch_bra[i];
@@ -13732,38 +13740,61 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 
     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+    size_t ch_XY = Z.modelspace->GetTwoBodyChannelIndex( tbc_bra.J, (tbc_bra.parity+X.parity)%2, tbc_bra.Tz );
+    TwoBodyChannel& tbc_XY = Z.modelspace->GetTwoBodyChannel(ch_XY);
+    size_t ch_YX = Z.modelspace->GetTwoBodyChannelIndex( tbc_ket.J, (tbc_ket.parity+X.parity)%2, tbc_ket.Tz );
+    TwoBodyChannel& tbc_YX = Z.modelspace->GetTwoBodyChannel(ch_YX);
 
-    auto& LHS1 = X.TwoBody.GetMatrix(ch_bra,ch_bra);
-    auto& LHS2 = X.TwoBody.GetMatrix(ch_ket,ch_ket);
+//    auto& LHS1 = X.TwoBody.GetMatrix(ch_bra,ch_bra);
+//    auto& LHS2 = X.TwoBody.GetMatrix(ch_ket,ch_ket);
 
-    auto& RHS  =  *vmtx[i];
+    // Should be Xdir * Ydir - Yexc * Xexc
+
+    auto& Xdir =  ch_bra <= ch_XY  ?  X.TwoBody.GetMatrix(ch_bra,ch_XY)
+                                   :  X.TwoBody.GetMatrix(ch_XY,ch_bra).t()*hX;
+    auto& Xexc =  ch_YX <= ch_ket  ?  X.TwoBody.GetMatrix(ch_YX,ch_ket)
+                                   :  X.TwoBody.GetMatrix(ch_ket,ch_YX).t()*hX;
+
+
+    auto& Ydir =  ch_XY <= ch_ket  ?  Y.TwoBody.GetMatrix(ch_XY,ch_ket)
+                                   :  Y.TwoBody.GetMatrix(ch_ket,ch_XY).t()*hY;
+    auto& Yexc =  ch_bra <= ch_YX  ?  Y.TwoBody.GetMatrix(ch_bra,ch_YX)
+                                   :  Y.TwoBody.GetMatrix(ch_YX,ch_bra).t()*hY;
+
+
+//    auto& RHS  =  *vmtx[i];
 
     arma::mat& Matrixpp =  Mpp.GetMatrix(ch_bra,ch_ket);
     arma::mat& Matrixhh =  Mhh.GetMatrix(ch_bra,ch_ket);
    
-    const arma::uvec& bras_pp = tbc_bra.GetKetIndex_pp();
-    const arma::uvec& bras_hh = tbc_bra.GetKetIndex_hh();
-    const arma::uvec& bras_ph = tbc_bra.GetKetIndex_ph();
-    const arma::uvec& kets_pp = tbc_ket.GetKetIndex_pp();
-    const arma::uvec& kets_hh = tbc_ket.GetKetIndex_hh();
-    const arma::uvec& kets_ph = tbc_ket.GetKetIndex_ph();
+
+    const arma::uvec& bras_pp = tbc_XY.GetKetIndex_pp();
+    const arma::uvec& bras_hh = tbc_XY.GetKetIndex_hh();
+    const arma::uvec& bras_ph = tbc_XY.GetKetIndex_ph();
+    const arma::uvec& kets_pp = tbc_YX.GetKetIndex_pp();
+    const arma::uvec& kets_hh = tbc_YX.GetKetIndex_hh();
+    const arma::uvec& kets_ph = tbc_YX.GetKetIndex_ph();
 
     // the complicated-looking construct after the % signs just multiply the matrix elements by the proper occupation numbers (nanb, etc.)
+   // TODO: Does this whole stacking thing actually improve performance, or just obfuscate the code?
+   //      -- Regardless of performance, simpler expressions run into issues with zero-dimensional index vectors. Work for another time.
 
-    arma::mat MLeft  = join_horiz( LHS1.cols(bras_hh) , -RHS.cols(kets_hh) );
-    arma::mat MRight = join_vert( RHS.rows(bras_hh)  % tbc_bra.Ket_occ_hh.cols( arma::uvec(RHS.n_cols,arma::fill::zeros ) ),
-                                 LHS2.rows(kets_hh)  % tbc_ket.Ket_occ_hh.cols( arma::uvec(LHS2.n_cols,arma::fill::zeros) ));
+    arma::mat MLeft  = join_horiz( Xdir.cols(bras_hh) , -Yexc.cols(kets_hh) );
+    arma::mat MRight = join_vert( Ydir.rows(bras_hh)  % tbc_XY.Ket_occ_hh.cols( arma::uvec(Ydir.n_cols,arma::fill::zeros ) ),
+                                  Xexc.rows(kets_hh)  % tbc_YX.Ket_occ_hh.cols( arma::uvec(Xexc.n_cols,arma::fill::zeros) ));
+//    arma::mat MRight = join_vert( RHS.rows(bras_hh)  % tbc_bra.Ket_occ_hh.cols( arma::uvec(RHS.n_cols,arma::fill::zeros ) ),
+//                                 LHS2.rows(kets_hh)  % tbc_ket.Ket_occ_hh.cols( arma::uvec(LHS2.n_cols,arma::fill::zeros) ));
 
     Matrixhh = MLeft * MRight;
 
+    MLeft  = join_horiz( Xdir.cols(join_vert(bras_pp,join_vert(bras_hh,bras_ph))), -Yexc.cols(join_vert(kets_pp,join_vert(kets_hh,kets_ph))) );
 
-    MLeft  = join_horiz( LHS1.cols(join_vert(bras_pp,join_vert(bras_hh,bras_ph))), -RHS.cols(join_vert(kets_pp,join_vert(kets_hh,kets_ph))) );
-    MRight = join_vert( join_vert(     RHS.rows(bras_pp), 
-                          join_vert( RHS.rows(bras_hh)  % tbc_bra.Ket_unocc_hh.cols( arma::uvec(RHS.n_cols,arma::fill::zeros) )  ,
-                                     RHS.rows(bras_ph)  % tbc_bra.Ket_unocc_ph.cols( arma::uvec(RHS.n_cols,arma::fill::zeros) ) )),
-                      join_vert(     LHS2.rows(kets_pp),
-                          join_vert( LHS2.rows(kets_hh) % tbc_ket.Ket_unocc_hh.cols( arma::uvec(LHS2.n_cols,arma::fill::zeros) ),
-                                     LHS2.rows(kets_ph) % tbc_ket.Ket_unocc_ph.cols( arma::uvec(LHS2.n_cols,arma::fill::zeros) )))
+    MRight = join_vert( join_vert(   Ydir.rows(bras_pp), 
+                          join_vert( Ydir.rows(bras_hh)  % tbc_XY.Ket_unocc_hh.cols( arma::uvec(Ydir.n_cols,arma::fill::zeros) )  ,
+                                     Ydir.rows(bras_ph)  % tbc_XY.Ket_unocc_ph.cols( arma::uvec(Ydir.n_cols,arma::fill::zeros) ) )),
+                        join_vert(   Xexc.rows(kets_pp),
+                          join_vert( Xexc.rows(kets_hh) % tbc_YX.Ket_unocc_hh.cols( arma::uvec(Xexc.n_cols,arma::fill::zeros) ),
+                                     Xexc.rows(kets_ph) % tbc_YX.Ket_unocc_ph.cols( arma::uvec(Xexc.n_cols,arma::fill::zeros) )))
                      );
 
     Matrixpp = MLeft * MRight;
