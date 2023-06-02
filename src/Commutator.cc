@@ -397,10 +397,15 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
 {
    X.profiler.counter["N_TensorCommutators"] += 1;
    double t_cst = omp_get_wtime();
-   Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
-   Z.EraseZeroBody();
-   Z.EraseOneBody();
-   Z.EraseTwoBody();
+   int ZJ = Y.GetJRank();
+   int Zparity = (X.GetParity() + Y.GetParity())%2;
+   int ZTrank = Y.GetTRank();
+   int Zpart = Y.GetParticleRank();
+   Operator Z(*(Y.modelspace),ZJ,Zparity,ZTrank,Zpart);
+//   Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
+//   Z.EraseZeroBody();
+//   Z.EraseOneBody();
+//   Z.EraseTwoBody();
 
    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
