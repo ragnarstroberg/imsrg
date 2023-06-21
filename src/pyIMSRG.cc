@@ -481,8 +481,8 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<Generator>(m,"Generator")
       .def(py::init<>())
-      .def("SetType", &Generator::SetType)
-      .def("Update", &Generator::Update)
+      .def("SetType", &Generator::SetType, py::arg("gen_type"))
+      .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
    ;
 
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
@@ -526,6 +526,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
       Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
+      Commutator.def("SetSingleThread",&Commutator::SetSingleThread, py::arg("tf"));
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
@@ -587,6 +588,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetY",[](RPA& self, size_t i){arma::vec vals = self.GetY(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
       .def("PrintA",[](RPA& self){ std::cout << self.A << std::endl;} )
       .def("PrintB",[](RPA& self){ std::cout << self.B << std::endl;} )
+      .def("GetEgs",&RPA::GetEgs)
    ;
 
    py::class_<UnitTest>(m,"UnitTest")

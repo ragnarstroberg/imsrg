@@ -49,6 +49,7 @@ namespace Commutator{
   extern bool discard_1b_from_3b;
   extern bool discard_2b_from_3b;
   extern bool imsrg3_verbose;// Switch to print out more info for debugging/profiling.
+  extern bool single_tread;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
   extern double threebody_threshold;
@@ -69,6 +70,7 @@ namespace Commutator{
   void SetIMSRG3Noqqq(bool tf);
   void SetIMSRG3valence2b(bool tf);
   void SetIMSRG3Verbose(bool tf) ; 
+  void SetSingleThread(bool tf) ;
 
   void TurnOffTerm( std::string term ) ;
   void TurnOnTerm( std::string term ) ;

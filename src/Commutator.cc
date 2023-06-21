@@ -42,6 +42,7 @@ bool discard_0b_from_3b = false;
 bool discard_1b_from_3b = false;
 bool discard_2b_from_3b = false;
 bool imsrg3_verbose = false;
+bool single_thread = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 double threebody_threshold = 0;
@@ -57,20 +58,33 @@ std::map<std::string,bool> comm_term_on = {
      {"comm222_pp_hhss"     , true},
      {"comm222_phss"        , true},
      {"comm222_pp_hh_221ss" , true},
-///////
-     {"comm330ss"           , true},
-     {"comm331ss"           , true},
-     {"comm231ss"           , true},
-     {"comm132ss"           , true},
-     {"comm232ss"           , true},
-     {"comm332_ppph_hhhpss" , true},
-     {"comm332_pphhss"      , true},
-     {"comm133ss"           , true}, 
-     {"comm223ss"           , true},           
-     {"comm233_pp_hhss"     , true},     
-     {"comm233_phss"        , true},
-     {"comm333_ppp_hhhss"   , true},
-     {"comm333_pph_hhpss"   , true}
+///////  by default IMSRG(3) terms are turned off.
+     {"comm330ss"           , false},
+     {"comm331ss"           , false},
+     {"comm231ss"           , false},
+     {"comm132ss"           , false},
+     {"comm232ss"           , false},
+     {"comm332_ppph_hhhpss" , false},
+     {"comm332_pphhss"      , false},
+     {"comm133ss"           , false}, 
+     {"comm223ss"           , false},           
+     {"comm233_pp_hhss"     , false},     
+     {"comm233_phss"        , false},
+     {"comm333_ppp_hhhss"   , false},
+     {"comm333_pph_hhpss"   , false}
+//     {"comm330ss"           , true},
+//     {"comm331ss"           , true},
+//     {"comm231ss"           , true},
+//     {"comm132ss"           , true},
+//     {"comm232ss"           , true},
+//     {"comm332_ppph_hhhpss" , true},
+//     {"comm332_pphhss"      , true},
+//     {"comm133ss"           , true}, 
+//     {"comm223ss"           , true},           
+//     {"comm233_pp_hhss"     , true},     
+//     {"comm233_phss"        , true},
+//     {"comm333_ppp_hhhss"   , true},
+//     {"comm333_pph_hhpss"   , true}
 };
 
 void SetIMSRG3Verbose(bool tf) {imsrg3_verbose=tf;};
@@ -120,6 +134,9 @@ void SetIMSRG3Noqqq(bool tf)
 
 void SetIMSRG3valence2b(bool tf)
 {imsrg3_valence_2b = tf;}
+
+void SetSingleThread(bool tf)
+{single_thread = tf;}
 
 //Operator Operator::Commutator( Operator& opright)
 /// Returns \f$ Z = [X,Y] \f$
@@ -198,193 +215,146 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
 
+   bool save_single_thread = single_thread;
+//   if ( Z.modelspace->scalar_transform_first_pass )   SetSingleThread(true);
+
    if ( Z.GetParticleRank() > 2 )
    {
      Z.ThreeBody.SwitchToPN_and_discard();
    }
 
    // Here is where we start calling the IMSRG(2) commutator expressions.
-   if ( not Z.IsAntiHermitian() )
-   {
-      if ( comm_term_on["comm110ss"] )
-         comm110ss(X, Y, Z);
-      if (X.particle_rank>1 and Y.particle_rank>1 and comm_term_on["comm220ss"])
-        comm220ss(X, Y, Z) ;
-   }
+   if ( comm_term_on["comm110ss"] )
+      comm110ss(X, Y, Z);
+   if ( comm_term_on["comm220ss"])
+      comm220ss(X, Y, Z) ;
 
-   if (comm_term_on["comm111ss"] )
+   if ( comm_term_on["comm111ss"] )
       comm111ss(X, Y, Z);
-   if (comm_term_on["comm121ss"] )
+   if ( comm_term_on["comm121ss"] )
       comm121ss(X, Y, Z);
-   if (comm_term_on["comm221ss"] )
+   if ( comm_term_on["comm221ss"] )
       comm122ss(X, Y, Z); 
 
-
-   if (X.particle_rank>1 and Y.particle_rank>1)
-   {
-     if (comm_term_on["comm222_pp_hh_221ss"] )
-       comm222_pp_hh_221ss(X, Y, Z);
-     if (comm_term_on["comm222_phss"] )
-       comm222_phss(X, Y, Z);
-   }
+   if ( comm_term_on["comm222_pp_hh_221ss"] )
+      comm222_pp_hh_221ss(X, Y, Z);
+   if ( comm_term_on["comm222_phss"] )
+      comm222_phss(X, Y, Z);
 
 
-   if (use_imsrg3)
-   {
-      // This one is so important we always include it
-       if ( comm_term_on["comm133ss"])
-       {
-        //important for suppressing off-diagonal H3
+  if ( use_imsrg3 and  ( (X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold))  )
+  {
+       if ( Z.modelspace->scalar3b_transform_first_pass )   SetSingleThread(true);
 
-         if (imsrg3_verbose) std::cout << " comm133 " << std::endl;
-        
-        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
-       }
-   if ((X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold)) 
-   {
-       X.profiler.counter["N_ScalarCommutators_3b"] += 1;
+       // Turn on all the IMSRG(3) commutator terms. Below, we can turn off selected ones to make it faster.
+       for ( auto term : {  "comm330ss",   "comm331ss",    "comm231ss", "comm132ss",  "comm232ss", 
+                            "comm332_ppph_hhhpss",  "comm332_pphhss",  "comm133ss",  "comm223ss",            
+                            "comm233_pp_hhss",   "comm233_phss",  "comm333_ppp_hhhss", "comm333_pph_hhpss"
+                         } )
+          comm_term_on[term] = true; 
 
-       if ( comm_term_on["comm330ss"] )
-       {
-        // This gets the perturbative energy from the induced 3 body
-         if (imsrg3_verbose) std::cout << " comm330 " << std::endl;
-        comm330ss(X, Y, Z); // scales as n^6
-       }
-
-       if ( comm_term_on["comm223ss"])
-       {
-        // This one is essential. If it's not here, then there are no induced 3 body terms
-        if (imsrg3_verbose)  std::cout << " comm223 " << std::endl;
-        comm223ss(X, Y, Z); // scales as n^7
-//       comm223ss_debug(X, Y, Z); // scales as n^7
-       }
-
-       if ( comm_term_on["comm232ss"])
-       {
-        //one of the two most important IMSRG(3) terms
-        if (imsrg3_verbose) std::cout << " comm232 " << std::endl;
-         comm232ss(X, Y, Z);   // this is the slowest n^7 term
-        //comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
-//       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
-       }
-      
-       if (not use_imsrg3_mp4) {
-          if ( comm_term_on["comm331ss"])
-          {
-            //Maybe not so important, but I think relatively cheap
-            if (imsrg3_verbose)  std::cout << " comm331 " << std::endl;
-            comm331ss(X, Y, Z); // scales as n^7
-          }
-
-
-          if ( comm_term_on["comm231ss"])
-          {
-            // Demonstrated that this can have some effect
-            if (imsrg3_verbose)  std::cout << " comm231 " << std::endl;
-            comm231ss(X, Y, Z);  // scales as n^6
-          }
-
-          if ( comm_term_on["comm132ss"])
-          {
-            //no demonstrated effect yet, but it's cheap
-            if (imsrg3_verbose)  std::cout << " comm132 " << std::endl;
-            comm132ss(X, Y, Z); // scales as n^6
-          }
-       }
-
-      // This one is so important we always include it
-      //  if ( comm_term_on["comm133ss"])
-      //  {
-      //   //important for suppressing off-diagonal H3
-      //   std::cout << " comm133 " << std::endl;
-      //   comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
-      //  }
-
-      if ( not use_imsrg3_n7 )
+      // keep only the terms that scale as n^7 or better
+      if ( use_imsrg3_n7 )
       {
+         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss",  "comm233_pp_hhss",
+                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss"})
+             comm_term_on[term] = false;
+      }
 
-       if ( comm_term_on["comm233_pp_hhss"])
-       {
+      // keep only the terms that contribute to 4th order energy
+      if ( use_imsrg3_mp4 )
+      {
+         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss", "comm233_pp_hhss",
+                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss",
+                            "comm331ss",  "comm231ss",  "comm132ss"})
+             comm_term_on[term] = false;
+      }
+
+
+
+      // This one is so important we always include it
+        //important for suppressing off-diagonal H3
+       if ( comm_term_on["comm133ss"])
+          comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+
+        // This gets the perturbative energy from the induced 3 body
+       if ( comm_term_on["comm330ss"] )
+          comm330ss(X, Y, Z); // scales as n^6
+
+        // This one is essential. If it's not here, then there are no induced 3 body terms
+       if ( comm_term_on["comm223ss"])
+          comm223ss(X, Y, Z); // scales as n^7
+
+        //one of the two most important IMSRG(3) terms
+       if ( comm_term_on["comm232ss"])
+          comm232ss(X, Y, Z);   // this is the slowest n^7 term
+      
+           //Maybe not so important, but I think relatively cheap
+       if ( comm_term_on["comm331ss"])
+          comm331ss(X, Y, Z); // scales as n^7
+
+       // Demonstrated that this can have some effect
+       if ( comm_term_on["comm231ss"])
+          comm231ss(X, Y, Z);  // scales as n^6
+
+         //no demonstrated effect yet, but it's cheap
+       if ( comm_term_on["comm132ss"])
+          comm132ss(X, Y, Z); // scales as n^6
+
         // Not too bad, though naively n^8
-        if (imsrg3_verbose) std::cout << " comm233_pp_hh " << std::endl;
-        comm233_pp_hhss(X, Y, Z);
-//       comm233_pp_hhss_debug(X, Y, Z);
-       }
+       if ( comm_term_on["comm233_pp_hhss"])
+          comm233_pp_hhss(X, Y, Z);
 
-       if ( comm_term_on["comm233_phss"])
-       {
         // This one is super slow too. It involves 9js
         // mat mult makes everything better!
-        if (imsrg3_verbose)  std::cout << " comm233_ph " << std::endl;
-        comm233_phss(X, Y, Z);
-//       comm233_phss_debug(X, Y, Z);
-       }
+       if ( comm_term_on["comm233_phss"])
+          comm233_phss(X, Y, Z);
 
-       if ( comm_term_on["comm332_ppph_hhhpss"])
-       {
         //not too bad, though naively n^8
-         if (imsrg3_verbose) std::cout << " comm332_ppph_hhhp " << std::endl;
-        comm332_ppph_hhhpss(X, Y, Z);
-       }
+       if ( comm_term_on["comm332_ppph_hhhpss"])
+          comm332_ppph_hhhpss(X, Y, Z);
 
-       if ( comm_term_on["comm332_pphhss"])
-       {
         //naively n^8, but reasonably fast when implemented as a mat mult
-         if (imsrg3_verbose) std::cout << " comm332_pphh " << std::endl;
-        comm332_pphhss(X, Y, Z);
-//       comm332_pphhss_debug(X, Y, Z);
-       }
+       if ( comm_term_on["comm332_pphhss"])
+          comm332_pphhss(X, Y, Z);
 
-       if ( comm_term_on["comm333_ppp_hhhss"])
-       {
         //naively n^9 but pretty fast as a mat mult
-        if (imsrg3_verbose)  std::cout << " comm333_ppp_hhhss " << std::endl;
-        comm333_ppp_hhhss(X, Y, Z);
-       }
+       if ( comm_term_on["comm333_ppp_hhhss"])
+          comm333_ppp_hhhss(X, Y, Z);
 
-       if ( comm_term_on["comm333_pph_hhpss"])
-       {
         //This one works, but it's incredibly slow.  naively n^9.
        //Much improvement by going to mat mult
-        if (imsrg3_verbose) std::cout << " comm333_pph_hhpss " << std::endl;
-        comm333_pph_hhpss(X, Y, Z);
-//       comm333_pph_hhpss_debug(X, Y, Z);
-       }
-
-      } // if not use_imsrg3_n7
+       if ( comm_term_on["comm333_pph_hhpss"])
+          comm333_pph_hhpss(X, Y, Z);
 
 
+       X.profiler.counter["N_ScalarCommutators_3b"] += 1;
 
-     // after going through once, we've stored all the 6js (and maybe 9js), so we can run in OMP loops from now on
-     X.modelspace->scalar3b_transform_first_pass = false;
-   } // if threshold
-   } // if use imsrg3
-
-   // TODO: I don't like that this gets done here. It should be in the individual commutator expressions themselves
-   // As it currently is, it invites a mistake of updating the wrong triangle of the matrix.
-//   if ( Z.IsHermitian() )
-//      Z.Symmetrize();
-//   else if (Z.IsAntiHermitian() )
-//      Z.AntiSymmetrize();
+      // after going through once, we've stored all the 6js (and maybe 9js), so we can run in OMP loops from now on
+      X.modelspace->scalar3b_transform_first_pass = false;
 
 
-     if ( discard_2b_from_3b  or discard_1b_from_3b or discard_0b_from_3b )
-     {
-        Operator Zcopy(Z);
-        Zcopy.EraseZeroBody();
-        Zcopy.EraseOneBody();
-        Zcopy.EraseTwoBody();
-        Zcopy = Zcopy.DoNormalOrdering(); // Now just have the NO 0,1,2b parts of the 3b piece
-        if (not discard_0b_from_3b) Zcopy.EraseZeroBody();
-        if (not discard_1b_from_3b) Zcopy.EraseOneBody();
-        if (not discard_2b_from_3b) Zcopy.EraseTwoBody();
-        Z.EraseThreeBody();
-        Zcopy.ThreeBody.SwitchToPN_and_discard();
-        Z -= Zcopy; // Remove the NOnB part of the 3b operator.
-     }
+      if ( discard_2b_from_3b  or discard_1b_from_3b or discard_0b_from_3b )
+      {
+         Operator Zcopy(Z);
+         Zcopy.EraseZeroBody();
+         Zcopy.EraseOneBody();
+         Zcopy.EraseTwoBody();
+         Zcopy = Zcopy.DoNormalOrdering(); // Now just have the NO 0,1,2b parts of the 3b piece
+         if (not discard_0b_from_3b) Zcopy.EraseZeroBody();
+         if (not discard_1b_from_3b) Zcopy.EraseOneBody();
+         if (not discard_2b_from_3b) Zcopy.EraseTwoBody();
+         Z.EraseThreeBody();
+         Zcopy.ThreeBody.SwitchToPN_and_discard();
+         Z -= Zcopy; // Remove the NOnB part of the 3b operator.
+      }
 
+     } // if imsrg3 and above threshold
 
-   X.profiler.timer["CommutatorScalarScalar"] += omp_get_wtime() - t_css;
+   Z.modelspace->scalar_transform_first_pass = false;
+   SetSingleThread(save_single_thread);
+
+   X.profiler.timer[__func__] += omp_get_wtime() - t_css;
    X.profiler.counter["N_ScalarCommutators"] += 1;
    return Z;
 
@@ -401,7 +371,7 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    int Zparity = (X.GetParity() + Y.GetParity())%2;
    int ZTrank = Y.GetTRank();
    int Zpart = Y.GetParticleRank();
-   Operator Z(*(Y.modelspace),ZJ,ZTrankm,Zparity,Zpart);
+   Operator Z(*(Y.modelspace),ZJ,ZTrank,Zparity,Zpart);
 //   Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
 //   Z.EraseZeroBody();
 //   Z.EraseOneBody();
@@ -411,24 +381,19 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
 
-//   std::cout << __FILE__ << __LINE__ << "  DONT FORGET TO FIX THIS!" << std::endl;
+   // If it's the first time we're calling this, then we go single-threaded because there will be some sixj/ninej symbols
+   // that we need to compute and store. After the first pass, they're all stored so we can go parallel.
+   bool save_single_thread = single_thread;
+   if ( Z.modelspace->tensor_transform_first_pass[ Z.GetJRank()*4+X.GetParity()+2*Y.GetParity() ] )
+      SetSingleThread(true);
 
-   double t_start = omp_get_wtime();
+
    comm111st(X, Y, Z);
-   X.profiler.timer["comm111st"] += omp_get_wtime() - t_start;
-   t_start = omp_get_wtime();
    comm121st(X, Y, Z);
-   X.profiler.timer["comm121st"] += omp_get_wtime() - t_start;
 
-   t_start = omp_get_wtime();
    comm122st(X, Y, Z);
-   X.profiler.timer["comm122st"] += omp_get_wtime() - t_start;
-   t_start = omp_get_wtime();
    comm222_pp_hh_221st(X, Y, Z);
-   X.profiler.timer["comm222_pp_hh_221st"] += omp_get_wtime() - t_start;
-   t_start = omp_get_wtime();
    comm222_phst(X, Y, Z);
-   X.profiler.timer["comm222_phst"] += omp_get_wtime() - t_start;
 
   if (use_imsrg3 and X.GetJRank()==0 and Y.GetJRank()==0 and Z.GetJRank()==0 )
   {
@@ -445,7 +410,9 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
   }
 
    // This is a better place to put this.
-   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank()*2+Z.GetParity() ) = false;
+//   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank()*2+Z.GetParity() ) = false;
+   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank()*4+X.GetParity()+2*Y.GetParity() ) = false;
+   SetSingleThread(save_single_thread);
 
    if ( Z.IsHermitian() )
       Z.Symmetrize();
@@ -830,6 +797,7 @@ void comm110ss( const Operator& X, const Operator& Y, Operator& Z)
 void comm220ss( const Operator& X, const Operator& Y, Operator& Z) 
 {
    double t_start = omp_get_wtime();
+   if ( X.GetParticleRank()<2 or Y.GetParticleRank()<2) return;
    if (X.IsHermitian() and Y.IsHermitian()) return; // I think this is the case
    if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return; // I think this is the case
    if (Z.GetJRank()>0 or Z.GetTRank()>0 or Z.GetParity()!=0) return;
@@ -1529,6 +1497,7 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
 
    double t_start = omp_get_wtime();
    int hZ = Z.IsHermitian() ? 1 : -1;
+   if (X.GetParticleRank()<2 or Y.GetParticleRank()<2) return;
 //   Operator& Z = *this;
 
 //   static TwoBodyME Mpp = Z.TwoBody;
@@ -2174,7 +2143,9 @@ std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orie
 ///
 void comm222_phss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
+   if (X.GetParticleRank()<2 or Y.GetParticleRank()<2) return;
    if ( not  (X.GetParity()==0 and Y.GetParity()==0 and Z.GetParity()==0 and X.GetTRank()==0 and Y.GetTRank()==0 and Z.GetTRank()==0) )
+
    {
       comm222_phss_slower( X, Y, Z);
 //      comm222_phst( X, Y, Z);
@@ -2283,7 +2254,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
    // is because some other commutator-specific things are done at the same time.
    AddInversePandyaTransformation(Z_bar, Z);
 
-   Z.modelspace->scalar_transform_first_pass = false;
+//   Z.modelspace->scalar_transform_first_pass = false;
    X.profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
    X.profiler.timer[__func__] += omp_get_wtime() - t_start_full;
 
@@ -7418,6 +7389,7 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
@@ -8731,6 +8703,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
@@ -10621,6 +10594,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 //  std::cout << "ENTER " <<__func__ << std::endl;
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
@@ -11189,6 +11163,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   double t_internal = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
@@ -11682,6 +11657,7 @@ void comm233_phss_debug( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -12118,6 +12094,7 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
@@ -12237,6 +12214,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
   double t_internal = omp_get_wtime();
 
   auto& X3 = X.ThreeBody;
@@ -12886,6 +12864,7 @@ void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z 
 {
 
   double tstart = omp_get_wtime();
+  if (imsrg3_verbose)  std::cout << __func__ << std::endl;
 
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -13450,7 +13429,8 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
    int hZ = Z.IsHermitian() ? +1 : -1;
    Z.modelspace->PreCalculateSixJ();
    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()*2+Z.GetParity()) )
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()*2+Z.GetParity()) )
+   #pragma omp parallel for schedule(dynamic,1) if (not single_thread )
    for (int indexi=0;indexi<norbits;++indexi)
 //   for (int i=0;i<norbits;++i)
    {
@@ -13569,7 +13549,8 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
       ket_channels.push_back( itmat.first[1] );
     }
     int nmat = bra_channels.size();
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+   #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
     for (int ii=0; ii<nmat; ++ii)
     {
      int ch_bra = bra_channels[ii];
@@ -13826,7 +13807,8 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(),Z.modelspace->all_orbits.end());
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+   #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
    for (int indexi=0;indexi<norbits;++indexi)
 //   for (int i=0;i<norbits;++i)
    {
@@ -13932,7 +13914,8 @@ void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_
       }
    }
 
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+   #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
    for (index_t ich=0;ich<nch;++ich)
    {
       index_t ch_bra_cc = Z.modelspace->SortedTwoBodyChannels_CC[ich];
@@ -14180,7 +14163,8 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
    int hZ = Z.IsHermitian() ? 1 : -1;
 
     // Only go parallel if we've previously calculated the SixJs/NineJs. Otherwise, it's not thread safe.
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+   #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
    for (int i=0; i<niter; ++i)
    {
       const auto iter = iteratorlist[i];
@@ -14509,7 +14493,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    {
 //      std::cout << "  in  " << __func__ << "  doing it the old way. Counter = " << counter << std::endl;
       #ifndef OPENBLAS_NOUSEOMP
-      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+      #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
       #endif
       for(int i=0;i<counter;++i)
       {
@@ -14610,7 +14595,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
       std::deque<arma::mat> YJ2J1_list(counter);
    
    //   #ifndef OPENBLAS_NOUSEOMP
-      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+      #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
    //   #endif
       for(int i=0;i<counter;++i)
       {
@@ -14654,7 +14640,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
       t_start = omp_get_wtime();
    
       #ifndef OPENBLAS_NOUSEOMP
-      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+//      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
+      #pragma omp parallel for schedule(dynamic,1) if (not single_thread)
       #endif
       for(int i=0;i<counter;++i)
       {
