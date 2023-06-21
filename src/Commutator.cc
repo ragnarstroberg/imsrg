@@ -401,7 +401,7 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    int Zparity = (X.GetParity() + Y.GetParity())%2;
    int ZTrank = Y.GetTRank();
    int Zpart = Y.GetParticleRank();
-   Operator Z(*(Y.modelspace),ZJ,Zparity,ZTrank,Zpart);
+   Operator Z(*(Y.modelspace),ZJ,ZTrankm,Zparity,Zpart);
 //   Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
 //   Z.EraseZeroBody();
 //   Z.EraseOneBody();
@@ -1383,11 +1383,21 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
    auto ch_iter = Z.TwoBody.MatEl;
    // TODO: We'll need to be more careful about this special case.
    if ( Z.GetParticleRank() < 2 and Y.GetParticleRank()>1 ) ch_iter = Y.TwoBody.MatEl;
-//   for ( auto& iter : Z.TwoBody.MatEl )
+
    for ( auto& iter : ch_iter )
    {
-      ch_bra_list.push_back( iter.first[0] );
-      ch_ket_list.push_back( iter.first[1] );
+      size_t ch_bra = iter.first[0];
+      size_t ch_ket = iter.first[1];
+      // Optimization sugggested by Antoine Belley.
+      // The form of Hod will make Eta zero for some channels which would not be zero by symmetry.
+      // Check if they're zero and if so skip them.
+      if ( X.GetTRank()==0 and X.GetParity()==0 and Y.GetTRank()==0 and Y.GetParity()==0)
+      {
+         if ( X.TwoBody.GetMatrix(ch_bra,ch_ket).is_zero() or Y.TwoBody.GetMatrix(ch_bra,ch_ket).is_zero() )  continue;
+      }
+
+      ch_bra_list.push_back( ch_bra );
+      ch_ket_list.push_back( ch_ket );
    }
    int nch = ch_bra_list.size();
    #ifndef OPENBLAS_NOUSEOMP
@@ -1399,6 +1409,7 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
       int ch_ket = ch_ket_list[ich];
       TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+
 
       // Figure out what the intermediate channel should be
       int ch_ab_XY = ch_bra; // For Hamiltonian-type X,Y,Z  ij, ab, kl all belong to the same channel.
@@ -2201,7 +2212,6 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 //      auto& Zbar_ch = Z_bar.at(ch);
       auto& Zbar_ch = Z_bar[ch];
-
 
       if (Y_bar_ph.size()<1 or Xt_bar_ph.size()<1)   continue;
 
