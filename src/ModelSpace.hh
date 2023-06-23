@@ -77,7 +77,7 @@ struct Ket  //  | pq >
      phase_prefactor = ((op->j2+oq->j2)/2 + 1) % 2==0 ? 1 : -1;
     };
 
-   int Phase(int J)  {  return phase_prefactor * (J%2==0 ? 1 : -1); };
+   int Phase(int J)  {  return phase_prefactor * (J%2==0 ? 1 : -1); }; // |pqJ> = Phase * |qpJ>  This includes the fermionic minus sign.
    int delta_pq() const {return dpq;};
 
 };
@@ -540,6 +540,8 @@ class ModelSpace
    uint64_t MoshinskyHash(uint64_t N,uint64_t Lam,uint64_t n,uint64_t lam,uint64_t n1,uint64_t l1,uint64_t n2,uint64_t l2,uint64_t L);
    void MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L);
 
+
+   void Print();
 
 };
 
