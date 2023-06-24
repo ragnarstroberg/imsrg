@@ -308,8 +308,15 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
     }
 
     std::cout << "from occ file: " << std::endl;
-    hole_list[{n,l,j2,tz}] = occ;
     std::cout << n << " " << l << " " << j2 << " " << tz  << "    " << occ << std::endl;
+    if ( std::abs( occ ) < 1e-8 )
+    {
+        std::cout << "  since occ = " << occ << " < 1e-8, I'm not adding that to the hole list. If you really want an unoccupied hole, maybe think about what you're doing a bit more." << std::endl;
+    }
+    else
+    {
+        hole_list[{n,l,j2,tz}] = occ;
+    }
   }
 
   Init(emax,hole_list,valence); // call Init version  2 ( int, map, string )
@@ -693,28 +700,31 @@ void ModelSpace::SetReference(std::vector<index_t> new_reference)
 
 void ModelSpace::SetReference(std::set<index_t> new_reference)
 {
-  std::map<std::array<int,4>,double> hlist ;
-  std::set<std::array<int,4>> clist ;
-  std::set<std::array<int,4>> vlist ;
-  for ( auto h : new_reference )
-  {
-    Orbit& oh = GetOrbit(h);
-    hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = 1.0;
-  }
-  for ( auto c : core )
-  {
-    Orbit& oc = GetOrbit(c);
-    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
-  }
-  for ( auto v : valence )
-  {
-    Orbit& ov = GetOrbit(v);
-    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
-  }
-
-
-  ClearVectors();
-  Init( hlist,clist,vlist);
+    std::map<index_t,double> newref;
+    for (auto h : new_reference) newref[h] = 1.0;
+    SetReference(newref);
+//  std::map<std::array<int,4>,double> hlist ;
+//  std::set<std::array<int,4>> clist ;
+//  std::set<std::array<int,4>> vlist ;
+//  for ( auto h : new_reference )
+//  {
+//    Orbit& oh = GetOrbit(h);
+//    hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = 1.0;
+//  }
+//  for ( auto c : core )
+//  {
+//    Orbit& oc = GetOrbit(c);
+//    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
+//  }
+//  for ( auto v : valence )
+//  {
+//    Orbit& ov = GetOrbit(v);
+//    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
+//  }
+//
+//
+//  ClearVectors();
+//  Init( hlist,clist,vlist);
 }
 
 void ModelSpace::SetReference(std::map<index_t,double> new_reference)
@@ -736,6 +746,7 @@ void ModelSpace::SetReference(std::map<index_t,double> new_reference)
     clist.erase( {ov.n, ov.l, ov.j2, ov.tz2} ); // If it's valence, it's not core.
   }
   ClearVectors();
+
   Init( hlist,clist,vlist);
 }
 
@@ -925,6 +936,11 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    norbits = all_orbits.size();
    norbits_3body_ = orbits_3body_space_.size();
    OneBodyChannels[{l, j2, tz2}].insert(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
+
+   Aref = GetAref();
+   Zref = GetZref();
+   Acore = GetAcore();
+   Zcore = GetZcore();
 }
 
 void ModelSpace::SetOcc(int n, int l, int j2, int tz2, double occ)
@@ -1292,6 +1308,9 @@ void ModelSpace::SetEmax(int e)
 {
    int old_emax = Emax;
    Emax = e;
+   EmaxUnocc = Emax;
+   E2max = 2*Emax;
+   Lmax = Emax;
    if ( e > old_emax )
    {
       std::cout << __FILE__ << " line " << __LINE__ <<  " Changing emax from " << old_emax << " to " << Emax << "  and updating six_j_cache_2b_ ... " << std::endl;
@@ -1955,6 +1974,37 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 
    profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
 }
+
+
+
+
+void ModelSpace::Print()
+{
+   std::cout << "Emax E2max E3max Lmax L2max L3max: " << Emax << " " << E2max << " " <<E3max << " " << Lmax << " "<< Lmax2 << " " <<Lmax3 << std::endl;
+   std::cout << "OneBodyJmax TwoBodyJmax ThreeBodyJmax EmaxUnocc: " << " " << OneBodyJmax << " " << TwoBodyJmax << " " <<ThreeBodyJmax << " " << EmaxUnocc << std::endl;
+   std::cout << "hw TargetMass TargetZ Aref Zref Acore Zcore " << hbar_omega << " " << target_mass << " " << target_Z << " " << Aref << " " << Zref << " " << Acore << " " << Zcore << std::endl;
+   
+   std::cout << "Orbits: " << std::endl;
+   for (size_t i=0; i<norbits; i++)
+   {
+      Orbit& oi = GetOrbit(i);
+      std::cout << i << " : " << oi.n << " " << oi.l << " " << oi.j2 << " " << oi.tz2 << "  , " << oi.occ << " " << oi.cvq << std::endl;
+   }
+   std::cout << "Number of two body channels " << GetNumberTwoBodyChannels() << std::endl;
+   for( size_t ch=0; ch<GetNumberTwoBodyChannels(); ch++)
+   {
+      TwoBodyChannel& tbc = GetTwoBodyChannel(ch);
+      std::cout << " " << ch << " JPT : " << tbc.J << " " << tbc.Tz << " " << tbc.parity << std::endl;
+      size_t nkets = tbc.GetNumberKets();
+      for ( size_t iket=0; iket<nkets; iket++)
+      {
+         Ket& ket = tbc.GetKet(iket);
+         std::cout << "    " << iket << " ( " << ket.p << " " << ket.q << " )  =>  " << (ket.op->tz2+ket.oq->tz2)/2 << "  " << (ket.op->l + ket.oq->l)%2 << std::endl;
+      }
+   }
+
+}
+
 
 
 
