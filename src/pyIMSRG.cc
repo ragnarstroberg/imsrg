@@ -176,6 +176,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTwoBodyDimension", &Operator::GetTwoBodyDimension)
       .def("ScaleOneBody", &Operator::ScaleOneBody)
       .def("ScaleTwoBody", &Operator::ScaleTwoBody)
+      .def("EraseOneBody", &Operator::EraseOneBody)
+      .def("EraseTwoBody", &Operator::EraseTwoBody)
       .def("DoNormalOrdering", &Operator::DoNormalOrdering)
       .def("DoNormalOrderingCore", &Operator::DoNormalOrderingCore)
       .def("UndoNormalOrdering", &Operator::UndoNormalOrdering)
@@ -483,6 +485,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::init<>())
       .def("SetType", &Generator::SetType)
       .def("Update", &Generator::Update)
+      .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
    ;
 
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
@@ -534,6 +537,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm221ss", &Commutator::comm221ss);
       Commutator.def("comm122ss", &Commutator::comm122ss);
       Commutator.def("comm222_pp_hh_221ss", &Commutator::comm222_pp_hh_221ss);
+      Commutator.def("comm222_pp_hhss", &Commutator::comm222_pp_hhss);
       Commutator.def("comm222_phss", &Commutator::comm222_phss);
       // IMSRG(3) commutators
       Commutator.def("comm330ss", &Commutator::comm330ss);
