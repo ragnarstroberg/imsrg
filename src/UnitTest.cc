@@ -360,15 +360,7 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
   }
 
 
-//  for (int a : Y.modelspace->all_orbits )
-//  {
-//    for (int b : Y.modelspace->all_orbits )
-//    {
-//      for (int c : Y.modelspace->all_orbits )
-//      {
-//      }
-//    }
-//  }
+
 
   if (all_good)
   {
@@ -383,26 +375,6 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
 
 
-//void UnitTest::Test3BodySetGet(Operator& Y)
-//{
-//  int i=2,j=0,k=0,l=2,m=0,n=0;
-//  int Jij=1;
-//  int Jlm=1;
-//  int twoJ=1;
-//
-//  double meread = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
-//  double setval = 10.0;
-//  Y.ThreeBody.SetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n,setval);
-//  double getval = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
-//
-//  std::cout << "Before setting, ME = " << meread << std::endl;
-//  std::cout << "Set to " << setval << std::endl;
-//  std::cout << "After setting, get " << getval << std::endl;
-//
-//}
-
-
-
 bool UnitTest::TestCommutators()
 {
   double t_start = omp_get_wtime();
@@ -411,10 +383,6 @@ bool UnitTest::TestCommutators()
   Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
   modelspace->PreCalculateSixJ();
 
-//  std::cout << "===========================  Test Antisymmetry X =========================" << std::endl;
-//  Test3BodyAntisymmetry(X);
-//  std::cout << "===========================  Test Antisymmetry Y =========================" << std::endl;
-//  Test3BodyAntisymmetry(Y);
 
   bool all_good = true;
 
@@ -470,6 +438,7 @@ bool UnitTest::TestCommutators()
 
 
 //void UnitTest::TestCommutators3()
+// TODO: THIS IS DEPRECATED. I SHOULD PROBABLY JUST REMOVE IT... -SRS
 void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist)
 {
   double t_start = omp_get_wtime();
@@ -489,9 +458,10 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
   Y += RandomOp(*modelspace, 0, 0, 0, 2, +1);
   Xherm += RandomOp(*modelspace, 0, 0, 0, 2, +1);
   X.ThreeBody.Erase();
-  std::cout << " " << __func__ << " line " << __LINE__ << std::endl;
+  Commutator::SetSingleThread(false);
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   Commutator::comm133ss( Xherm, X, Y);
+
 //  X.modelspace->scalar3b_transform_first_pass = false;
 //  Commutator::comm223ss( Xherm, Y, X);
   bool all_good = true;

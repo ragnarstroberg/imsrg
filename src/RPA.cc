@@ -277,6 +277,33 @@ void RPA::SolveRPA()
 }
 
 
+
+/// See Ring and Schuck 8.93
+/// This has not been benchmarked in any sense.
+double RPA::GetEgs()
+{
+  double Erpa = 0;
+
+  size_t nch = modelspace->GetNumberTwoBodyChannels();
+  for ( size_t ch=0; ch<nch; ch++)
+  {
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+     ConstructAMatrix( tbc.J, tbc.parity, tbc.Tz );
+     ConstructBMatrix( tbc.J, tbc.parity, tbc.Tz );
+     SolveRPA();
+     int nbosons = Energies.size();
+     for (int mu=0; mu<nbosons; mu++)
+     {
+//       Erpa -= Energies % arma::vecnorm( Y ) % arma::vecnorm( Y );
+       Erpa -= Energies(mu) * arma::dot( Y.col(mu).t() ,  Y.col(mu) );
+     }
+  }
+
+  return Erpa;
+
+}
+
+
 // Suhonen 11.223
 double RPA::TransitionToGroundState( Operator& OpIn, size_t mu )
 {

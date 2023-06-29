@@ -936,6 +936,11 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    norbits = all_orbits.size();
    norbits_3body_ = orbits_3body_space_.size();
    OneBodyChannels[{l, j2, tz2}].insert(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
+
+   Aref = GetAref();
+   Zref = GetZref();
+   Acore = GetAcore();
+   Zcore = GetZcore();
 }
 
 void ModelSpace::SetOcc(int n, int l, int j2, int tz2, double occ)
@@ -1303,6 +1308,9 @@ void ModelSpace::SetEmax(int e)
 {
    int old_emax = Emax;
    Emax = e;
+   EmaxUnocc = Emax;
+   E2max = 2*Emax;
+   Lmax = Emax;
    if ( e > old_emax )
    {
       std::cout << __FILE__ << " line " << __LINE__ <<  " Changing emax from " << old_emax << " to " << Emax << "  and updating six_j_cache_2b_ ... " << std::endl;
@@ -1966,6 +1974,37 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 
    profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
 }
+
+
+
+
+void ModelSpace::Print()
+{
+   std::cout << "Emax E2max E3max Lmax L2max L3max: " << Emax << " " << E2max << " " <<E3max << " " << Lmax << " "<< Lmax2 << " " <<Lmax3 << std::endl;
+   std::cout << "OneBodyJmax TwoBodyJmax ThreeBodyJmax EmaxUnocc: " << " " << OneBodyJmax << " " << TwoBodyJmax << " " <<ThreeBodyJmax << " " << EmaxUnocc << std::endl;
+   std::cout << "hw TargetMass TargetZ Aref Zref Acore Zcore " << hbar_omega << " " << target_mass << " " << target_Z << " " << Aref << " " << Zref << " " << Acore << " " << Zcore << std::endl;
+   
+   std::cout << "Orbits: " << std::endl;
+   for (size_t i=0; i<norbits; i++)
+   {
+      Orbit& oi = GetOrbit(i);
+      std::cout << i << " : " << oi.n << " " << oi.l << " " << oi.j2 << " " << oi.tz2 << "  , " << oi.occ << " " << oi.cvq << std::endl;
+   }
+   std::cout << "Number of two body channels " << GetNumberTwoBodyChannels() << std::endl;
+   for( size_t ch=0; ch<GetNumberTwoBodyChannels(); ch++)
+   {
+      TwoBodyChannel& tbc = GetTwoBodyChannel(ch);
+      std::cout << " " << ch << " JPT : " << tbc.J << " " << tbc.Tz << " " << tbc.parity << std::endl;
+      size_t nkets = tbc.GetNumberKets();
+      for ( size_t iket=0; iket<nkets; iket++)
+      {
+         Ket& ket = tbc.GetKet(iket);
+         std::cout << "    " << iket << " ( " << ket.p << " " << ket.q << " )  =>  " << (ket.op->tz2+ket.oq->tz2)/2 << "  " << (ket.op->l + ket.oq->l)%2 << std::endl;
+      }
+   }
+
+}
+
 
 
 

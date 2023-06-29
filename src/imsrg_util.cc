@@ -1573,36 +1573,40 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
              Ket& ket = tbc.GetKet(iket);
              Orbit& oc = modelspace.GetOrbit(ket.p);
              Orbit& od = modelspace.GetOrbit(ket.q);
-             if (oa.j2==oc.j2 and oa.n==oc.n and oa.l==oc.l
+             double matel2b = 0;
+             if (  oa.j2==oc.j2 and oa.n==oc.n and oa.l==oc.l
                and ob.j2==od.j2 and ob.n==od.n and ob.l==od.l )
              {
                // tz1 tz2 case
                if( oa.tz2 == oc.tz2 and ob.tz2==od.tz2)
                {
-                 TB(ibra,iket) -= 0.5;
+                 matel2b -= 0.5;
                }
                // t+ t- case
                if( oa.tz2 == od.tz2 and ob.tz2==oc.tz2)
                {
-                 TB(ibra,iket) += 1.0;
+                 matel2b += 1.0;
                }
-               // if a==b==c==d, we need to consider the exchange term
-               if (oa.j2==ob.j2 and oa.n==ob.n and oa.l==ob.l)
-               {
-                  int phase = bra.Phase(tbc.J);
+             }
+             if (  oa.j2==od.j2 and oa.n==od.n and oa.l==od.l
+               and ob.j2==oc.j2 and ob.n==oc.n and ob.l==oc.l )
+             {
+
+                  int phase = bra.Phase(tbc.J); // this phase includes the fermionic minus sign
                   // tz1 tz2 case
-                  if( oa.tz2 == oc.tz2 and ob.tz2==od.tz2)
-                  {
-                    TB(ibra,iket) += phase * 1.0;
-                  }
-                  // t+ t- case
                   if( oa.tz2 == od.tz2 and ob.tz2==oc.tz2)
                   {
-                    TB(ibra,iket) -= phase * 0.5;
+                    matel2b -= phase * 0.5;
                   }
-               }
-               TB(iket,ibra) = TB(ibra,iket); // hermitian
+                  // t+ t- case
+                  if( oa.tz2 == oc.tz2 and ob.tz2==od.tz2)
+                  {
+                    matel2b += phase * 1.0;
+                  }
              }
+
+             TB(ibra,iket) = matel2b;
+             TB(iket,ibra) = TB(ibra,iket); // hermitian
 
            }
         }

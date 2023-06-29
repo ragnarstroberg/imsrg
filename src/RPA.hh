@@ -55,6 +55,8 @@ class RPA
   void SolveTDA();
   void SolveRPA();
 
+  double GetEgs();
+
   double TransitionToGroundState( Operator& OpIn, size_t mu );
   double PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l);
 
