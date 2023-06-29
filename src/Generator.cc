@@ -980,21 +980,17 @@ void Generator::SetRegulatorLength(double r0)
 
 Operator  Generator::GetHod_SingleRef(Operator& H )
 {
-   std::cout << __func__ << "  line " << __LINE__ << std::endl;
    Operator Hod = 0.0* H;
    // One body piece -- eliminate ph bits
    for ( auto& a : H.modelspace->core)
    {
-   std::cout << __func__ << "  line " << __LINE__ << std::endl;
       for ( auto& i : VectorUnion(H.modelspace->valence,H.modelspace->qspace) )
       {
-   std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
          Hod.OneBody(i,a) = H.OneBody(i,a);
          Hod.OneBody(a,i) = H.OneBody(a,i);
       }
    }
-   std::cout << __func__ << "  line " << __LINE__ << std::endl;
 
    // Two body piece -- eliminate pp'hh' bits
 //   for (int ch=0;ch<Eta->nChannels;++ch)
@@ -1007,9 +1003,9 @@ Operator  Generator::GetHod_SingleRef(Operator& H )
       TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
 //      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
-      arma::mat& Hod2 =  iter.second;
+      arma::mat& H2 =  iter.second;
 //      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
-      arma::mat& H2 = H.TwoBody.GetMatrix(ch_bra,ch_ket);
+      arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
 //      for ( auto& iket : tbc.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
