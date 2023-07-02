@@ -28,5 +28,5 @@ keywords:
   - many body physics
 license: GPL-2.0-or-later
 commit: dc89368a97890f7316b043c5e18b34edfc4daa84
-version: '0.0'
-date-released: '2023-07-01'
+version: '0.1.0'
+date-released: '2018-09-13'
