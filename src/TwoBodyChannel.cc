@@ -100,6 +100,10 @@ const arma::uvec& TwoBodyChannel_base::GetKetIndex_qq() const { return KetIndex_
 
 
 
+// Take in a vector of indices corresponding to the global list of kets contained in ModelSpace
+// select the indices that belong to this TwoBodyChannel and replace them with their
+// corresponding local indices (relevant for making dense matrices), and cast this
+// to an armadillo uvec, suitable for indexing armadillo matrices.
 arma::uvec TwoBodyChannel_base::GetKetIndexFromList(std::vector<index_t>& vec_in)
 {
    std::vector<index_t> index_list (std::min(vec_in.size(),KetList.size()));
