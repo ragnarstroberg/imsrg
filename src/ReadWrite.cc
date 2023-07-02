@@ -18,7 +18,7 @@
 
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/copy.hpp>
+//#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
 #ifndef NO_HDF5
@@ -4963,12 +4963,13 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
   int norb = modelspace->GetNumberOrbits();
   for(int i=0; i<num; i++)
   {
+//    std::cout << "  i = " << i << "  num = " << num << std::endl;
     int iorb, n, l, j, tz;
     infile >> iorb >> n >> l >> j >> tz;
     int io = modelspace->GetOrbitIndex(n, l, j, tz);
+//    std::cout << __func__ << "  " << io << " " << iorb << " " << n << " " << l << " " << j << " " << tz << std::endl;
     if(io >= norb) continue;
     orbits_remap[iorb] = io;
-    //cout << io << " " << iorb << " " << n << " " << l << " " << j << " " << tz << endl;
   }
   skip_comments(infile);
   getline(infile, line);
@@ -5004,6 +5005,7 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
 
   skip_comments(infile);
   infile >> num;
+//  std::cout << "Now num is " << num << std::endl;
   getline(infile, line);
   skip_comments(infile);
   for(int n=0; n<num; n++)
