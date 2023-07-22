@@ -477,6 +477,7 @@ PYBIND11_MODULE(pyIMSRG, m)
 //      .def("GetScratchDir",[](IMSRGSolver& self){ return self.rw->GetScratchDir();} )
       .def("GetScratchDir",[](IMSRGSolver& self){ return self.scratchdir;} )
       .def("FlushOmegaToScratch",&IMSRGSolver::FlushOmegaToScratch)
+      .def_readwrite("generator", &IMSRGSolver::generator)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
       .def_readwrite("n_omega_written",&IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
    ;
@@ -485,6 +486,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<Generator>(m,"Generator")
       .def(py::init<>())
       .def("SetType", &Generator::SetType, py::arg("gen_type"))
+      .def("SetDenominatorPartitioning", &Generator::SetDenominatorPartitioning, py::arg("Moller_Plessett or Epstein_Nesbet") )
       .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
       .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
    ;
