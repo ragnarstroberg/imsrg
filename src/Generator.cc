@@ -500,6 +500,13 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
            Ket3& ket = Tbc.GetKet(iket);
            if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
            if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+
+           /// THIS SHOULD BE REMOVED
+//           if (  (ket.op->cvq + ket.oq->cvq + ket.oR->cvq) >=3 ) continue;  // eliminate qpp | vvv terms
+//           if (  (ket.op->cvq + ket.oq->cvq + ket.oR->cvq) <=0 ) continue;  // eliminate ppp | ccc terms
+//           if (  (ket.op->cvq + ket.oq->cvq + ket.oR->cvq) <=1 ) continue;  // eliminate ppp | ccc, ccv terms
+//           if (  (ket.op->cvq + ket.oq->cvq + ket.oR->cvq) !=100 ) continue;  // eliminate ppp | cvv terms
+
            double d_ea = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
            double d_eb = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
            double d_ec = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
@@ -969,5 +976,60 @@ void Generator::SetRegulatorLength(double r0)
 */
 
 
+
+
+Operator  Generator::GetHod_SingleRef(Operator& H )
+{
+   Operator Hod = 0.0* H;
+   // One body piece -- eliminate ph bits
+   for ( auto& a : H.modelspace->core)
+   {
+      for ( auto& i : VectorUnion(H.modelspace->valence,H.modelspace->qspace) )
+      {
+//         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Hod.OneBody(i,a) = H.OneBody(i,a);
+         Hod.OneBody(a,i) = H.OneBody(a,i);
+      }
+   }
+
+   // Two body piece -- eliminate pp'hh' bits
+//   for (int ch=0;ch<Eta->nChannels;++ch)
+//   {
+   for ( auto& iter : H.TwoBody.MatEl )
+   {
+      size_t ch_bra = iter.first[0];
+      size_t ch_ket = iter.first[1];
+//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
+//      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  iter.second;
+//      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
+      arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
+//      for ( auto& iket : tbc.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      {
+//         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
+         {
+//            double denominator = Get2bDenominator(ch,ibra,iket);
+//            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
+//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            Hod2(ibra,iket) =  H2(ibra,iket);
+            Hod2(iket,ibra) =  Hod2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+    }
+   std::cout << __func__ << "  line " << __LINE__ << std::endl;
+
+   return Hod;
+//    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
+//    {
+//       double t_start = omp_get_wtime();
+////       ConstructGenerator_Atan_3body();
+//       ConstructGenerator_SingleRef_3body( etafunc );
+//       H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
+//    }// if particle rank >3
+}
 
 

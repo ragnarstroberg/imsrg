@@ -19,28 +19,28 @@ using PhysConst::SQRT2;
 
 ///  In case we want to construct the A matrix for a single channel
 ///  and it's more convenient to specify J,parity,Tz than the channel index.
-void RPA::ConstructAMatrix(int J, int parity, int Tz)
+void RPA::ConstructAMatrix(int J, int parity, int Tz, bool Isovector=false)
 {
    size_t ich_CC = modelspace->GetTwoBodyChannelIndex( J, parity, Tz);
-   ConstructAMatrix_byIndex(ich_CC);
+   ConstructAMatrix_byIndex(ich_CC, Isovector);
 }
 
 
 ///  In case we want to construct the B matrix for a single channel
 ///  and it's more convenient to specify J,parity,Tz than the channel index.
-void RPA::ConstructBMatrix(int J, int parity, int Tz)
+void RPA::ConstructBMatrix(int J, int parity, int Tz, bool Isovector=false)
 {
    size_t ich_CC = modelspace->GetTwoBodyChannelIndex( J, parity, Tz);
-   ConstructBMatrix_byIndex(ich_CC);
+   ConstructBMatrix_byIndex(ich_CC, Isovector);
 }
 
 
 ///
 /// <ai|A|bj> = <ai^-1,J|H|bj^-1,J>
 ///           = deta_ab delta_ij eps_ai  + <ai^-1,J|V|bj^-1,J>
-void RPA::ConstructAMatrix_byIndex(size_t ich_CC)
+void RPA::ConstructAMatrix_byIndex(size_t ich_CC, bool Isovector=false)
 {
-     
+     channel = ich_CC;
      TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ich_CC);
      size_t nkets_ph = tbc_CC.GetKetIndex_ph().size();
      A.zeros( nkets_ph, nkets_ph);
@@ -59,6 +59,11 @@ void RPA::ConstructAMatrix_byIndex(size_t ich_CC)
 
        int phase_ai = 1;
        int phase_ia = - AngMom::phase( ja+ji - Jph );
+       if (Isovector)
+       {
+           phase_ai *= modelspace->GetOrbit(a).tz2;
+           phase_ia *= modelspace->GetOrbit(a).tz2;
+       }
 
        if ( ket_ai.op->occ > ket_ai.oq->occ ) // if orbit a is more occupied than orbit i, switch them
        {
@@ -127,9 +132,10 @@ void RPA::ConstructAMatrix_byIndex(size_t ich_CC)
 //                 * {ja ji J } <ab; J' | V | ij; J'>
 //                   {jb jj J'}
 //  The sqrt factor out front can be incorporated by using un-normalized TBMEs.
-void RPA::ConstructBMatrix_byIndex(size_t ich_CC)
+void RPA::ConstructBMatrix_byIndex(size_t ich_CC, bool Isovector=false)
 {
      
+     channel = ich_CC;
      TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ich_CC);
      size_t nkets_ph = tbc_CC.GetKetIndex_ph().size();
      B.zeros( nkets_ph, nkets_ph);
@@ -147,6 +153,11 @@ void RPA::ConstructBMatrix_byIndex(size_t ich_CC)
 
        int phase_ai = 1;
        int phase_ia = - AngMom::phase( ja+ji - Jph );
+       if (Isovector)
+       {
+           phase_ai *= modelspace->GetOrbit(a).tz2;
+           phase_ia *= modelspace->GetOrbit(a).tz2;
+       }
 
        if ( ket_ai.op->occ > ket_ai.oq->occ ) // if orbit a is more occupied than orbit i, switch them
        {
@@ -284,12 +295,11 @@ double RPA::GetEgs()
 {
   double Erpa = 0;
 
-  size_t nch = modelspace->GetNumberTwoBodyChannels();
+  size_t nch = modelspace->GetNumberTwoBodyChannels_CC();
   for ( size_t ch=0; ch<nch; ch++)
   {
-     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-     ConstructAMatrix( tbc.J, tbc.parity, tbc.Tz );
-     ConstructBMatrix( tbc.J, tbc.parity, tbc.Tz );
+     ConstructAMatrix_byIndex( ch );
+     ConstructBMatrix_byIndex( ch );
      SolveRPA();
      int nbosons = Energies.size();
      for (int mu=0; mu<nbosons; mu++)
@@ -313,6 +323,11 @@ double RPA::TransitionToGroundState( Operator& OpIn, size_t mu )
    int lambda = OpIn.GetJRank();
    size_t ich_CC = modelspace->GetTwoBodyChannelIndex( lambda, OpIn.GetParity(), OpIn.GetTRank());
    TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ich_CC);
+   if ( ich_CC != channel )
+   {
+     std::cout << "Uh oh. OpIn has JPT " << lambda << " " << OpIn.GetParity() << " " << OpIn.GetTRank() << "   but A/B matrices computed for channel " << channel << std::endl;
+     return 0;
+   }
 //   int Jph = tbc_CC.J;
 
    size_t I_mi=0;
@@ -349,12 +364,18 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 //                << "E is a " << Energies.n_rows << "x" << Energies.n_cols << " matrix.   " << std::endl;
 
 //  size_t mu_collective = Energies.index_min();
+   if ( ich_CC != channel )
+   {
+     std::cout << "YIKES! TROUBLE " << __FILE__ << " "<< __func__ << " " << __LINE__  << std::endl;
+     std::cout << "Uh oh. OpIn has JPT " << OpIn.GetJRank() << " " << OpIn.GetParity() << " " << OpIn.GetTRank() << "   but A/B matrices computed for channel " << channel << std::endl;
+     return 0;
+   }
 
-  if ( nkets_ph != nbosons)
-  {
-      std::cout << "YIKES! TROUBLE " << __FILE__ << " "<< __func__ << " " << __LINE__ 
-                 << "  " << nkets_ph << " != " << nbosons << std::endl;
-  }
+//  if ( nkets_ph != nbosons)
+//  {
+//      std::cout << "YIKES! TROUBLE " << __FILE__ << " "<< __func__ << " " << __LINE__ 
+//                 << "  " << nkets_ph << " != " << nbosons << std::endl;
+//  }
   int Jph = tbc_CC.J;
 
   double Teff = OpIn.OneBody(k,l);
@@ -511,6 +532,7 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 ////            std::cout << " gamma_mu_kl = " << X(I_mi,mu) << " * " << VA_milk << std::endl;
 ////            std::cout << " gamma_mu_lk = " << X(I_mi,mu) << " * " << VA_mikl << std::endl;
 //         }
+         std::cout << "milk = " << m << " " << i << " " << l << " " << k << "   Omi = " << Omi << "  Vmilk = " << VA_milk << "  Vmikl = " << VA_mikl << std::endl;
          I_mi++;
      }// for iket_mi
 
@@ -519,9 +541,9 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 
      Teff += gamma_mu_kl * T_mu / ( el-ek-Omega_mu);
      Teff += gamma_mu_lk * T_mu / ( ek-el-Omega_mu);
-//     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << el << " - " << ek << " - " << Omega_mu << " ) " << std::endl;
-//     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << ek << " - " << el << " - " << Omega_mu << " ) " << std::endl;
-//     std::cout << "    => Teff = " << Teff << std::endl;
+     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << el << " - " << ek << " - " << Omega_mu << " ) " << std::endl;
+     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << ek << " - " << el << " - " << Omega_mu << " ) " << std::endl;
+     std::cout << "    => Teff = " << Teff << std::endl;
   }// for mu
 
   return Teff;

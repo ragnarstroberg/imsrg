@@ -1,0 +1,32 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: IMSRG++
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Steven Ragnar
+    family-names: Stroberg
+    email: rstroberg@nd.edu
+    affiliation: University of Notre Dame
+    orcid: 'https://orcid.org/0000-0002-0635-776X'
+repository-code: 'https://github.com/ragnarstroberg/imsrg'
+abstract: >-
+  In-Medium Similarity Renormalization Group software for
+  nuclear structure calculations. Written in C++, with
+  Python bindings.
+
+  It is capable of performing, among other things,
+  Hartree-Fock, single-reference IM-SRG, and valence-space
+  IM-SRG calculations.
+keywords:
+  - nuclear theory
+  - IMSRG
+  - many body physics
+license: GPL-2.0-or-later
+commit: dc89368a97890f7316b043c5e18b34edfc4daa84
+version: '0.1.0'
+date-released: '2018-09-13'

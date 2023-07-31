@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/copy.hpp>
+//#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
 /// Use half-precision floats. For documentation, see http://half.sourceforge.net

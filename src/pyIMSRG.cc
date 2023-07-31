@@ -177,6 +177,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTwoBodyDimension", &Operator::GetTwoBodyDimension)
       .def("ScaleOneBody", &Operator::ScaleOneBody)
       .def("ScaleTwoBody", &Operator::ScaleTwoBody)
+      .def("EraseOneBody", &Operator::EraseOneBody)
+      .def("EraseTwoBody", &Operator::EraseTwoBody)
       .def("DoNormalOrdering", &Operator::DoNormalOrdering)
       .def("DoNormalOrderingCore", &Operator::DoNormalOrderingCore)
       .def("UndoNormalOrdering", &Operator::UndoNormalOrdering)
@@ -475,6 +477,7 @@ PYBIND11_MODULE(pyIMSRG, m)
 //      .def("GetScratchDir",[](IMSRGSolver& self){ return self.rw->GetScratchDir();} )
       .def("GetScratchDir",[](IMSRGSolver& self){ return self.scratchdir;} )
       .def("FlushOmegaToScratch",&IMSRGSolver::FlushOmegaToScratch)
+      .def_readwrite("generator", &IMSRGSolver::generator)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
       .def_readwrite("n_omega_written",&IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
    ;
@@ -483,7 +486,9 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<Generator>(m,"Generator")
       .def(py::init<>())
       .def("SetType", &Generator::SetType, py::arg("gen_type"))
+      .def("SetDenominatorPartitioning", &Generator::SetDenominatorPartitioning, py::arg("Moller_Plessett or Epstein_Nesbet") )
       .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
+      .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
    ;
 
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
@@ -536,6 +541,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm221ss", &Commutator::comm221ss);
       Commutator.def("comm122ss", &Commutator::comm122ss);
       Commutator.def("comm222_pp_hh_221ss", &Commutator::comm222_pp_hh_221ss);
+      Commutator.def("comm222_pp_hhss", &Commutator::comm222_pp_hhss);
       Commutator.def("comm222_phss", &Commutator::comm222_phss);
       // IMSRG(3) commutators
       Commutator.def("comm330ss", &Commutator::comm330ss);
@@ -577,8 +583,8 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<RPA>(m,"RPA")
       .def(py::init<Operator&>())
-      .def("ConstructAMatrix",&RPA::ConstructAMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
-      .def("ConstructBMatrix",&RPA::ConstructBMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("ConstructAMatrix",&RPA::ConstructAMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz"),py::arg("Isovector") )
+      .def("ConstructBMatrix",&RPA::ConstructBMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz"),py::arg("Isovector") )
       .def("SolveCP",&RPA::SolveCP)
       .def("SolveTDA",&RPA::SolveTDA)
       .def("SolveRPA",&RPA::SolveRPA)
@@ -656,6 +662,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Mscheme_Test_comm333_ppp_hhhss", &UnitTest::Mscheme_Test_comm333_ppp_hhhss)
       .def("Mscheme_Test_comm333_pph_hhpss", &UnitTest::Mscheme_Test_comm333_pph_hhpss)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
+      .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b,py::arg("Op"),py::arg("a"),py::arg("ma"),py::arg("b"),py::arg("mb") ) // Op, a,ma, b,mb...
+      .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b) // Op, a,ma, b,mb...
       .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) // Op, a,ma, b,mb...
 
    ;
