@@ -242,7 +242,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
       comm222_phss(X, Y, Z);
 
 
-  if ( use_imsrg3 and  ( (X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold))  )
+  if ( use_imsrg3 and  ( (X.Norm() > threebody_threshold) && (Y.Norm() > threebody_threshold))  )
   {
        if ( Z.modelspace->scalar3b_transform_first_pass )   SetSingleThread(true);
 
@@ -1193,6 +1193,7 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
 // It's not dramatically slower, but slow enough that we should only use it when we need it.
 void comm122ss_slower( const Operator& X, const Operator& Y, Operator& Z ) 
 {
+//   std::cout << __func__ << "  line " << __LINE__ << std::endl;
    double t_start = omp_get_wtime();
    auto& X1 = X.OneBody;
    auto& Y1 = Y.OneBody;
@@ -1337,7 +1338,7 @@ void comm222_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
-/// Construct the intermediate matrices \f$ \mathcal{M}^J_{pp}\f$ and \f$ \mathal{M}^{J}_{hh} \f$
+/// Construct the intermediate matrices \f$ \mathcal{M}^J_{pp}\f$ and \f$ \mathcal{M}^{J}_{hh} \f$
 /// for use in Commutator::comm222_pp_hh_221ss().
 ///  \f$ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2} (X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J}\mathcal{P}_{pp} X^{J} ) \f$
 /// where \f$ \mathcal{P}_{pp} \f$ is a projector onto particle-particle states.
