@@ -90,6 +90,7 @@ std::map<std::string,bool> comm_term_on = {
 void SetIMSRG3Verbose(bool tf) {imsrg3_verbose=tf;};
 
 
+
 void TurnOffTerm( std::string term ) { comm_term_on[term] = false; }
 void TurnOnTerm( std::string term ) { comm_term_on[term] = true ;}
 
@@ -114,14 +115,49 @@ void SetUseBruecknerBCH(bool tf)
 void SetUseGooseTank(bool tf)
 {use_goose_tank_correction = tf;}
 
+//void SetUseIMSRG3(bool tf)
+//{use_imsrg3 = tf;}
 void SetUseIMSRG3(bool tf)
-{use_imsrg3 = tf;}
+{
+   for ( std::string term : {
+     "comm330ss","comm331ss" ,"comm231ss","comm132ss","comm232ss",
+     "comm332_ppph_hhhpss","comm332_pphhss","comm133ss", "comm223ss",           
+     "comm233_pp_hhss","comm233_phss","comm333_ppp_hhhss","comm333_pph_hhpss"} )
+   {
+      comm_term_on[term] = tf;
+   }
+   use_imsrg3 = tf;
+}
 
+
+//void SetUseIMSRG3N7(bool tf)
+//{use_imsrg3_n7 = tf;}
 void SetUseIMSRG3N7(bool tf)
-{use_imsrg3_n7 = tf;}
+{
+   SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
+   for ( std::string term : {
+     "comm330ss","comm331ss" ,"comm231ss","comm132ss","comm232ss",
+     "comm133ss", "comm223ss"} )
+   {
+      comm_term_on[term] = tf;
+   }
+   use_imsrg3_n7 = tf;
+}
 
+//void SetUseIMSRG3_MP4(bool tf)
+//{use_imsrg3_mp4 = tf;}
 void SetUseIMSRG3_MP4(bool tf)
-{use_imsrg3_mp4 = tf;}
+{
+   SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
+   for ( std::string term : {
+     "comm330ss","comm232ss",
+     "comm133ss", "comm223ss"} )
+   {
+      comm_term_on[term] = tf;
+   }
+   use_imsrg3_n7 = tf;
+}
+
 
 void SetOnly2bOmega(bool tf)
 {only_2b_omega = tf;}
@@ -247,28 +283,28 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( Z.modelspace->scalar3b_transform_first_pass )   SetSingleThread(true);
 
        // Turn on all the IMSRG(3) commutator terms. Below, we can turn off selected ones to make it faster.
-       for ( auto term : {  "comm330ss",   "comm331ss",    "comm231ss", "comm132ss",  "comm232ss", 
-                            "comm332_ppph_hhhpss",  "comm332_pphhss",  "comm133ss",  "comm223ss",            
-                            "comm233_pp_hhss",   "comm233_phss",  "comm333_ppp_hhhss", "comm333_pph_hhpss"
-                         } )
-          comm_term_on[term] = true; 
-
-      // keep only the terms that scale as n^7 or better
-      if ( use_imsrg3_n7 )
-      {
-         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss",  "comm233_pp_hhss",
-                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss"})
-             comm_term_on[term] = false;
-      }
-
-      // keep only the terms that contribute to 4th order energy
-      if ( use_imsrg3_mp4 )
-      {
-         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss", "comm233_pp_hhss",
-                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss",
-                            "comm331ss",  "comm231ss",  "comm132ss"})
-             comm_term_on[term] = false;
-      }
+//       for ( auto term : {  "comm330ss",   "comm331ss",    "comm231ss", "comm132ss",  "comm232ss", 
+//                            "comm332_ppph_hhhpss",  "comm332_pphhss",  "comm133ss",  "comm223ss",            
+//                            "comm233_pp_hhss",   "comm233_phss",  "comm333_ppp_hhhss", "comm333_pph_hhpss"
+//                         } )
+//          comm_term_on[term] = true; 
+//
+//      // keep only the terms that scale as n^7 or better
+//      if ( use_imsrg3_n7 )
+//      {
+//         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss",  "comm233_pp_hhss",
+//                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss"})
+//             comm_term_on[term] = false;
+//      }
+//
+//      // keep only the terms that contribute to 4th order energy
+//      if ( use_imsrg3_mp4 )
+//      {
+//         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss", "comm233_pp_hhss",
+//                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss",
+//                            "comm331ss",  "comm231ss",  "comm132ss"})
+//             comm_term_on[term] = false;
+//      }
 
 
 
