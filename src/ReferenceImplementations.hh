@@ -23,62 +23,61 @@
 
 #include "Operator.hh"
 
-
 namespace ReferenceImplementations
 {
 
+  void comm110ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm220ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm111ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm121ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm221ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm122ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm222_pp_hhss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm222_phss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm222_pp_hh_221ss(const Operator &X, const Operator &Y, Operator &Z);
 
-  void comm110ss( const Operator& X, const Operator& Y, Operator& Z ) ; 
-  void comm220ss( const Operator& X, const Operator& Y, Operator& Z ) ;
-  void comm111ss( const Operator& X, const Operator& Y, Operator& Z ) ;
-  void comm121ss( const Operator& X, const Operator& Y, Operator& Z ) ;
-  void comm221ss( const Operator& X, const Operator& Y, Operator& Z ) ;
-  void comm122ss( const Operator& X, const Operator& Y, Operator& Z ) ;
-  void comm222_pp_hhss( const Operator& X, const Operator& Y, Operator& Z) ;
-  void comm222_phss( const Operator& X, const Operator& Y, Operator& Z) ;
-  void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z) ;
+  void comm330ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm331ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm231ss(const Operator &X, const Operator &Y, Operator &Z);
 
-  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
+  void comm132ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm232ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm332_ppph_hhhpss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm332_pphhss(const Operator &X, const Operator &Y, Operator &Z);
 
-  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; 
-  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      
-  
-  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     
-  void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        
+  void comm133ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm223ss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm233_pp_hhss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm233_phss(const Operator &X, const Operator &Y, Operator &Z);
 
-  void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           
-  void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;          
-
+  void comm333_ppp_hhhss(const Operator &X, const Operator &Y, Operator &Z);
+  void comm333_pph_hhpss(const Operator &X, const Operator &Y, Operator &Z);
 
   // scalar-tensor commutators
-  void comm222_phst( const Operator& X, const Operator& Y, Operator& Z) ;
-
+  void comm222_phst(const Operator &X, const Operator &Y, Operator &Z);
 
   /// Two-nested-commutator expressions Z = [X,[X,Y]_3]  where X and Y are 2-body.
 
-  void diagram_CIa( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIb( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIIa( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIIb( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIIc( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIId( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIIIa( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_CIIIb( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIa(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIb(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIIa(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIIb(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIIc(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIId(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIIIa(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_CIIIb(const Operator &X, const Operator &Y, Operator &Z);
 
-  void diagram_DIa( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_DIb( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_DIa(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_DIb(const Operator &X, const Operator &Y, Operator &Z);
 
-  void diagram_DIVa( const Operator& X, const Operator& Y, Operator& Z );
-  void diagram_DIVb( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_DIVa(const Operator &X, const Operator &Y, Operator &Z);
+  void diagram_DIVb(const Operator &X, const Operator &Y, Operator &Z);
 
-  void diagram_DIVb_intermediate( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_DIVb_intermediate(const Operator &X, const Operator &Y, Operator &Z);
 
-}// namespace ReferenceImplementations
+  // The commutators for [Omega, [Omega, Gamma]]
+  void comm223_321_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
+
+} // namespace ReferenceImplementations
 
 #endif
