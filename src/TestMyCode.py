@@ -57,7 +57,7 @@ Commutator.comm223ss(Eta, H, Htemp)
 Commutator.comm231ss(Eta, Htemp, Hout1)
 
 # direct term
-# Commutator.comm223_321_BruteForce(Eta, H, Hout2)
+# ReferenceImplementations.comm223_321_BruteForce(Eta, H, Hout2)
 
 # Factorization
 Commutator.comm223_321_Factorization(Eta, H, Hout3)
@@ -94,8 +94,14 @@ Commutator.comm223_322_BruteForce(Eta, H, Hout2_2)
 
 print( "H1    {}    ".format(  Hout2_1.TwoBodyNorm()) )
 print( "H2    {}    ".format(  Hout2_2.TwoBodyNorm() ))
-
-
 print("\n\n")
+
+
+
+
+
+
+
+
 H.PrintTimes()
 
