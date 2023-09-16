@@ -142,6 +142,7 @@ void SetUseIMSRG3N7(bool tf)
       comm_term_on[term] = tf;
    }
    use_imsrg3_n7 = tf;
+   use_imsrg3 = tf;
 }
 
 //void SetUseIMSRG3_MP4(bool tf)
