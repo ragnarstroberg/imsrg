@@ -76,7 +76,8 @@ namespace ReferenceImplementations
   void diagram_DIVb_intermediate(const Operator &X, const Operator &Y, Operator &Z);
 
   // The commutators for [Omega, [Omega, Gamma]]
-  void comm223_321_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
+  void comm223_231_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
+  void comm223_232_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
 } // namespace ReferenceImplementations
 

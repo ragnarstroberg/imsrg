@@ -652,10 +652,10 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("Discard1bFrom3b", &Commutator::Discard1bFrom3b);
       Commutator.def("Discard2bFrom3b", &Commutator::Discard2bFrom3b);
 
-      Commutator.def("comm223_321_Factorization", &Commutator::comm223_321_Factorization);
-      Commutator.def("comm223_322_BruteForce", &Commutator::comm223_322_BruteForce);
-      Commutator.def("comm223_322_Factorization", &Commutator::comm223_322_Factorization);
-      
+      Commutator.def("comm223_231_Factorization", &Commutator::comm223_231_Factorization);
+      Commutator.def("comm223_232_Factorization", &Commutator::comm223_232_Factorization);
+
+
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
       ReferenceImplementations.def("comm110ss", &ReferenceImplementations::comm110ss);
@@ -684,7 +684,11 @@ PYBIND11_MODULE(pyIMSRG, m)
       ReferenceImplementations.def("diagram_DIVa", &ReferenceImplementations::diagram_DIVa);
       ReferenceImplementations.def("diagram_DIVb", &ReferenceImplementations::diagram_DIVb);
       ReferenceImplementations.def("diagram_DIVb_intermediate", &ReferenceImplementations::diagram_DIVb_intermediate);
-      ReferenceImplementations.def("comm223_321_BruteForce", &ReferenceImplementations::comm223_321_BruteForce);
+      ReferenceImplementations.def("comm223_231_BruteForce", &ReferenceImplementations::comm223_231_BruteForce);
+      ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
+
+
+
 
       py::class_<RPA>(m, "RPA")
           .def(py::init<Operator &>())

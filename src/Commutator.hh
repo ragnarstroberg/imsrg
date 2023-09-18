@@ -251,11 +251,9 @@ namespace Commutator
       Operator &Z);
 
   // factorize double commutator [Eta, [Eta, Gamma]]
-  void comm223_321_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z);
+  void comm223_231_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
-  void comm223_322_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
-
-  void comm223_322_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z);
+  void comm223_232_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
 }
 
