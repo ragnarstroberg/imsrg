@@ -563,7 +563,7 @@ void IMSRGSolver::Solve_flow_RK4()
            K3[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi);
         else
            K3[i] = Commutator::Commutator( Eta, Ktmp[i]);
-        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+        Ktmp[i] = FlowingOps[i] + 1.0*ds*K3[i];
       }
 //      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
 //      Htmp = Hs + 1.0*ds*K3;

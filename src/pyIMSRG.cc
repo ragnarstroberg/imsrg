@@ -56,6 +56,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetLocalIndex",[](TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex(p,q);})
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
       .def("GetKet",[](TwoBodyChannel& self, int i){return self.GetKet(i);} )
+      .def("GetKetIndex_pp", [](TwoBodyChannel& self) { auto& x=self.GetKetIndex_pp(); std::vector<size_t> v(x.begin(),x.end()); return v;} )
+      .def("GetKetIndex_hh", [](TwoBodyChannel& self) { auto& x=self.GetKetIndex_hh(); std::vector<size_t> v(x.begin(),x.end()); return v;} )
+      .def("GetKetIndex_ph", [](TwoBodyChannel& self) { auto& x=self.GetKetIndex_ph(); std::vector<size_t> v(x.begin(),x.end()); return v;} )
       .def_readwrite("J", &TwoBodyChannel::J)
       .def_readwrite("parity", &TwoBodyChannel::parity)
       .def_readwrite("Tz", &TwoBodyChannel::Tz)
@@ -191,6 +194,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetHermitian", &Operator::SetHermitian)
       .def("SetAntiHermitian", &Operator::SetAntiHermitian)
       .def("SetNonHermitian", &Operator::SetNonHermitian)
+      .def("IsHermitian", &Operator::IsHermitian)
+      .def("IsAntiHermitian", &Operator::IsAntiHermitian)
       .def("PrintOneBody", &Operator::PrintOneBody)
       .def("PrintTwoBody", [](Operator& self){self.PrintTwoBody();} )
       .def("PrintTwoBody_ch", [](Operator& self, int ch){self.PrintTwoBody(ch);} )
@@ -269,12 +274,18 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTBMEmonopole_norm",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole_norm(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetChannelMatrix",[](TwoBodyME& self, int J, int p, int Tz){ size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); return self.GetMatrix(ch,ch);},py::arg("J"),py::arg("parity"),py::arg("Tz") )
       .def("PrintAll", [](TwoBodyME& self ) { for (auto& it : self.MatEl){ if (it.second.n_rows>0) { std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;};  } ;} )
+      .def("PrintMatrix",&TwoBodyME::PrintMatrix, py::arg("ch_bra"),py::arg("ch_ket"))
       .def("Erase", &TwoBodyME::Erase)
+      .def("GetTBMEnorm_chij",[](TwoBodyME& self, int ch_bra, int ch_ket, size_t ibra, size_t iket){ return self.GetTBME_norm(ch_bra,ch_ket,ibra,iket);} )
+      .def("SetTBME_chij",[](TwoBodyME& self, int ch_bra, int ch_ket, size_t ibra, size_t iket, double tbme){ self.SetTBME(ch_bra,ch_ket,ibra,iket,tbme);} )
+      .def("Norm",&TwoBodyME::Norm )
       .def(py::self *= double())
       .def( double() * py::self)
       .def( py::self * double() )
       .def(py::self + TwoBodyME())
       .def(py::self += TwoBodyME())
+      .def(py::self - TwoBodyME())
+      .def(py::self -= TwoBodyME())
    ;
 
 //   py::class_<ThreeBodyME>(m,"ThreeBodyME")
@@ -477,6 +488,7 @@ PYBIND11_MODULE(pyIMSRG, m)
 //      .def("GetScratchDir",[](IMSRGSolver& self){ return self.rw->GetScratchDir();} )
       .def("GetScratchDir",[](IMSRGSolver& self){ return self.scratchdir;} )
       .def("FlushOmegaToScratch",&IMSRGSolver::FlushOmegaToScratch)
+      .def_readwrite("generator", &IMSRGSolver::generator)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
       .def_readwrite("n_omega_written",&IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
    ;
@@ -485,8 +497,10 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<Generator>(m,"Generator")
       .def(py::init<>())
       .def("SetType", &Generator::SetType, py::arg("gen_type"))
+      .def("SetDenominatorPartitioning", &Generator::SetDenominatorPartitioning, py::arg("Moller_Plessett or Epstein_Nesbet") )
       .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
       .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
+      .def("GetHod", &Generator::GetHod, py::arg("H"))
    ;
 
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
@@ -577,12 +591,31 @@ PYBIND11_MODULE(pyIMSRG, m)
       ReferenceImplementations.def("comm122ss", &ReferenceImplementations::comm122ss);
       ReferenceImplementations.def("comm222_pp_hh_221ss", &ReferenceImplementations::comm222_pp_hh_221ss);
       ReferenceImplementations.def("comm222_phss", &ReferenceImplementations::comm222_phss);
+//
+      ReferenceImplementations.def("comm223ss", &ReferenceImplementations::comm223ss);
+      ReferenceImplementations.def("comm232ss", &ReferenceImplementations::comm232ss);
+      ReferenceImplementations.def("comm231ss", &ReferenceImplementations::comm231ss);
+//
+      ReferenceImplementations.def("diagram_CIa", &ReferenceImplementations::diagram_CIa);
+      ReferenceImplementations.def("diagram_CIb", &ReferenceImplementations::diagram_CIb);
+      ReferenceImplementations.def("diagram_CIIa", &ReferenceImplementations::diagram_CIIa);
+      ReferenceImplementations.def("diagram_CIIb", &ReferenceImplementations::diagram_CIIb);
+      ReferenceImplementations.def("diagram_CIIc", &ReferenceImplementations::diagram_CIIc);
+      ReferenceImplementations.def("diagram_CIId", &ReferenceImplementations::diagram_CIId);
+      ReferenceImplementations.def("diagram_CIIIa", &ReferenceImplementations::diagram_CIIIa);
+      ReferenceImplementations.def("diagram_CIIIb", &ReferenceImplementations::diagram_CIIIb);
+      ReferenceImplementations.def("diagram_DIa", &ReferenceImplementations::diagram_DIa);
+      ReferenceImplementations.def("diagram_DIb", &ReferenceImplementations::diagram_DIb);
+      ReferenceImplementations.def("diagram_DIVa", &ReferenceImplementations::diagram_DIVa);
+      ReferenceImplementations.def("diagram_DIVb", &ReferenceImplementations::diagram_DIVb);
+      ReferenceImplementations.def("diagram_DIVb_intermediate", &ReferenceImplementations::diagram_DIVb_intermediate);
+
 
 
    py::class_<RPA>(m,"RPA")
       .def(py::init<Operator&>())
-      .def("ConstructAMatrix",&RPA::ConstructAMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
-      .def("ConstructBMatrix",&RPA::ConstructBMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("ConstructAMatrix",&RPA::ConstructAMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz"),py::arg("Isovector") )
+      .def("ConstructBMatrix",&RPA::ConstructBMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz"),py::arg("Isovector") )
       .def("SolveCP",&RPA::SolveCP)
       .def("SolveTDA",&RPA::SolveTDA)
       .def("SolveRPA",&RPA::SolveRPA)
@@ -660,6 +693,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Mscheme_Test_comm333_ppp_hhhss", &UnitTest::Mscheme_Test_comm333_ppp_hhhss)
       .def("Mscheme_Test_comm333_pph_hhpss", &UnitTest::Mscheme_Test_comm333_pph_hhpss)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
+      .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b,py::arg("Op"),py::arg("a"),py::arg("ma"),py::arg("b"),py::arg("mb") ) // Op, a,ma, b,mb...
+      .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b) // Op, a,ma, b,mb...
       .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) // Op, a,ma, b,mb...
 
    ;

@@ -18,7 +18,7 @@
 
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/copy.hpp>
+//#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
 #ifndef NO_HDF5
@@ -4963,12 +4963,13 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
   int norb = modelspace->GetNumberOrbits();
   for(int i=0; i<num; i++)
   {
+//    std::cout << "  i = " << i << "  num = " << num << std::endl;
     int iorb, n, l, j, tz;
     infile >> iorb >> n >> l >> j >> tz;
     int io = modelspace->GetOrbitIndex(n, l, j, tz);
+//    std::cout << __func__ << "  " << io << " " << iorb << " " << n << " " << l << " " << j << " " << tz << std::endl;
     if(io >= norb) continue;
     orbits_remap[iorb] = io;
-    //cout << io << " " << iorb << " " << n << " " << l << " " << j << " " << tz << endl;
   }
   skip_comments(infile);
   getline(infile, line);
@@ -5004,6 +5005,7 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
 
   skip_comments(infile);
   infile >> num;
+//  std::cout << "Now num is " << num << std::endl;
   getline(infile, line);
   skip_comments(infile);
   for(int n=0; n<num; n++)
@@ -5066,7 +5068,7 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
    intfile << "! input 3N: " << File3N.substr( File3N.find_last_of("/\\")+1 ) << std::endl;
    intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
    intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << std::endl;
-   intfile << "! Zero body term: " << op.ZeroBody << std::endl;
+   intfile << "! Zero body term: " << std::setprecision(9) << op.ZeroBody << std::endl;
    intfile << "! " << std::endl;
    intfile << "! model space" << std::endl;
    intfile << std::setw(wint) << valence_protons.size() << std::setw(wint) << valence_neutrons.size()

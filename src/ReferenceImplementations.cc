@@ -1603,6 +1603,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                      double x_3a45 = X2.GetTBME_J(J2p,J2p, I3,a,I4,I5);
                      double y_3a45 = Y2.GetTBME_J(J2p,J2p, I3,a,I4,I5);
 
+
                      zijklmn += rec_ijk * rec_lmn * sixj * sqrt( (2*J1p+1)*(2*J2p+1) )  * (x_126a * y_3a45 - y_126a * x_3a45);
   
                   }// for a
@@ -2410,6 +2411,1410 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z)
 //    if ( ch_bra==3) std::cout << __func__ << "   ch=3 Jpt " << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz << "   " << tbc_bra.GetKet(0).p << " " << tbc_bra.GetKet(0).q << " Z2 = " << std::endl << iter.second << std::endl;
   }// for iter
 }
+
+
+////// Start double nested commutators
+
+//
+//      *------*     |p
+//     /\     | \    |       diagrams Ia, and Ia* (which is just the Hermitian conjugate, with p<->q).
+//   a(  )i  b|  )   |
+//     \/     |  |j  |
+//      *~~~~~*  )   |
+//           c| /    |
+//             *-----*
+//                   |
+//                   |q
+//
+void diagram_CIa( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {
+     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto c : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            {
+               Orbit& oc = Z.modelspace->GetOrbit(c);
+               if ( (1-oc.occ)<1e-4 ) continue;
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 double yabic = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,c);
+                 double xabic = X.TwoBody.GetTBME_J(J1,J1,a,b,i,c);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                     int J2min = std::max( std::abs( oj.j2-op.j2), std::abs( oj.j2-oq.j2) )/2;
+                     int J2max = std::min(  oj.j2+op.j2,  oj.j2+oq.j2 )/2;
+                     for ( int J2=J2min; J2<=J2max; J2++)
+                     {
+                        double xcpjq = X.TwoBody.GetTBME_J(J2,J2,c,p,j,q);
+                        double xcqjp = X.TwoBody.GetTBME_J(J2,J2,c,q,j,p);
+                        double ycpjq = Y.TwoBody.GetTBME_J(J2,J2,c,p,j,q);
+                        double ycqjp = Y.TwoBody.GetTBME_J(J2,J2,c,q,j,p);
+                        zpq -= 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oj.j2+1) * (1-oc.occ) *  xijab * yabic * xcpjq;
+                        zpq -= 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oj.j2+1) * (1-oc.occ) *  xijab * yabic * xcqjp * hX*hX*hY;
+
+                        /// Also include the XXY and YXX contributions
+                        zpq += 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oj.j2+1) * (1-oc.occ) *  xijab * xabic * ycpjq;
+                        zpq += 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oj.j2+1) * (1-oc.occ) *  xijab * xabic * ycqjp * hX*hX*hY;
+                     }
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+//
+//      *------*     |p
+//     /\     | \    |       diagrams Ib, and Ib* (which is just the Hermitian conjugate, with p<->q).
+//   a(  )i  j|  )   |       eventually, this can probably be combined with diagram Ia.
+//     \/     |  |b  |
+//      *~~~~~*  )   |
+//           k| /    |
+//             *-----*
+//                   |
+//                   |q
+//
+void diagram_CIb( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {
+     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto k : X.OneBodyChannels.at({ob.l,ob.j2,ob.tz2}) )
+            {
+               Orbit& ok = Z.modelspace->GetOrbit(k);
+               if ( ok.occ<1e-4 ) continue;
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 double yakij = Y.TwoBody.GetTBME_J(J1,J1,a,k,i,j);
+                 double xakij = X.TwoBody.GetTBME_J(J1,J1,a,k,i,j);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                     int J2min = std::max( std::abs( ob.j2-op.j2), std::abs( ok.j2-oq.j2) )/2;
+                     int J2max = std::min(  ob.j2+op.j2,  ok.j2+oq.j2 )/2;
+                     for ( int J2=J2min; J2<=J2max; J2++)
+                     {
+                        double xbpkq = X.TwoBody.GetTBME_J(J2,J2,b,p,k,q);
+                        double xbqkp = X.TwoBody.GetTBME_J(J2,J2,b,q,k,p);
+                        double ybpkq = Y.TwoBody.GetTBME_J(J2,J2,b,p,k,q);
+                        double ybqkp = Y.TwoBody.GetTBME_J(J2,J2,b,q,k,p);
+                        zpq += 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(ok.j2+1) * ok.occ *  xijab * yakij * xbpkq;
+                        zpq += 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(ok.j2+1) * ok.occ *  xijab * yakij * xbqkp * hX*hX*hY;
+
+                        /// Also include the XXY and YXX contributions
+                        zpq -= 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(ok.j2+1) * ok.occ *  xijab * xakij * ybpkq;
+                        zpq -= 0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(ok.j2+1) * ok.occ *  xijab * xakij * ybqkp * hX*hX*hY;
+                     }
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+void diagram_CIIa( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto c : Z.modelspace->particles )
+            {
+               Orbit& oc = Z.modelspace->GetOrbit(c);
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                      
+                     double yabcq = Y.TwoBody.GetTBME_J(J1,J1,a,b,c,q);
+                     double yabcp = Y.TwoBody.GetTBME_J(J1,J1,a,b,c,p);
+                     double xcpij = X.TwoBody.GetTBME_J(J1,J1,c,p,i,j);
+                     double xcqij = X.TwoBody.GetTBME_J(J1,J1,c,q,i,j);
+
+                     double xabcq = X.TwoBody.GetTBME_J(J1,J1,a,b,c,q);
+                     double xabcp = X.TwoBody.GetTBME_J(J1,J1,a,b,c,p);
+                     double ycpij = Y.TwoBody.GetTBME_J(J1,J1,c,p,i,j);
+                     double ycqij = Y.TwoBody.GetTBME_J(J1,J1,c,q,i,j);
+                     zpq += 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * yabcq * xcpij;
+                     zpq += 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * yabcp * xcqij * hX*hX*hY;
+                     /// Also include the XXY and YXX contributions
+                     zpq -= 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * xabcq * ycpij;
+                     zpq -= 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * xabcp * ycqij * hX*hX*hY;
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+void diagram_CIIb( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   Z.modelspace->PreCalculateSixJ();
+   size_t norbits = Z.modelspace->GetNumberOrbits();
+
+//   for ( auto p : Z.modelspace->all_orbits )
+   #pragma omp parallel for schedule(dynamic)
+   for (size_t p=0; p<norbits; p++ )
+   {
+     Orbit& op = Z.modelspace->GetOrbit(p);
+     for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+     {
+       Orbit& oq = Z.modelspace->GetOrbit(q);
+       double zpq = 0;
+
+       for (auto a : Z.modelspace->particles )
+       {
+         Orbit& oa = Z.modelspace->GetOrbit(a);
+         for ( auto b : Z.modelspace->particles )
+         {
+           Orbit& ob = Z.modelspace->GetOrbit(b);
+           for ( auto i : Z.modelspace->holes )
+           {
+             Orbit& oi = Z.modelspace->GetOrbit(i);
+             for ( auto j : Z.modelspace->holes )
+             {
+                Orbit& oj = Z.modelspace->GetOrbit(j);
+                for ( auto c : Z.modelspace->particles )
+                {
+                   Orbit& oc = Z.modelspace->GetOrbit(c);
+
+                   int J4min = std::max( std::abs( op.j2-oc.j2), std::abs( oj.j2-ob.j2) )/2;
+                   int J4max = std::min(  op.j2+oc.j2,  oj.j2+ob.j2 )/2;
+                   for (int J4=J4min; J4<=J4max; J4++) 
+                   {
+
+
+                   double xijab = 0;
+                   int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+                   int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+                   for ( int J1=J1min; J1<=J1max; J1++)
+                   {
+                     //double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                     double sixj1 = AngMom::phase(J1)*(2*J1+1)*Z.modelspace->GetSixJ( oa.j2*0.5, oi.j2*0.5, J4,   oj.j2*0.5, ob.j2*0.5, J1);
+                     xijab += sixj1 * X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                   }
+
+                   double ybpjc = 0;
+                   double ybqjc = 0;
+                   double xbpjc = 0;
+                   double xbqjc = 0;
+                   int J2min = std::max( std::abs( ob.j2-op.j2), std::abs( oj.j2-oc.j2) )/2;
+                   int J2max = std::min(  ob.j2+op.j2,  oj.j2+oc.j2 )/2;
+                   for ( int J2=J2min; J2<=J2max; J2++)
+                   {
+//                      double ybpjc = Y.TwoBody.GetTBME_J(J2,J2,b,p,j,c);
+//                      double ybqjc = Y.TwoBody.GetTBME_J(J2,J2,b,q,j,c);
+//                      double xbpjc = X.TwoBody.GetTBME_J(J2,J2,b,p,j,c);
+//                      double xbqjc = X.TwoBody.GetTBME_J(J2,J2,b,q,j,c);
+                      double sixj2 = AngMom::phase(J2) * (2*J2+1)*Z.modelspace->GetSixJ( op.j2*0.5, oc.j2*0.5, J4,   oj.j2*0.5, ob.j2*0.5, J2);
+                      ybpjc += sixj2 * Y.TwoBody.GetTBME_J(J2,J2,b,p,j,c);
+                      ybqjc += sixj2 * Y.TwoBody.GetTBME_J(J2,J2,b,q,j,c);
+                      xbpjc += sixj2 * X.TwoBody.GetTBME_J(J2,J2,b,p,j,c);
+                      xbqjc += sixj2 * X.TwoBody.GetTBME_J(J2,J2,b,q,j,c);
+                   }
+
+                   double xaciq = 0;
+                   double xacip = 0;
+                   double yaciq = 0;
+                   double yacip = 0;
+                   int J3min = std::max( std::abs( oa.j2-oc.j2), std::abs( oi.j2-oq.j2) )/2;
+                   int J3max = std::min(  oa.j2+oc.j2,  oi.j2+oq.j2 )/2;
+                   for ( int J3=J3min; J3<=J3max; J3++)
+                   {
+                      //double xaciq = X.TwoBody.GetTBME_J(J3,J3,a,c,i,q);
+                      //double xacip = X.TwoBody.GetTBME_J(J3,J3,a,c,i,p);
+                      //double yaciq = Y.TwoBody.GetTBME_J(J3,J3,a,c,i,q);
+                      //double yacip = Y.TwoBody.GetTBME_J(J3,J3,a,c,i,p);
+                      double sixj3 = AngMom::phase(J3)*(2*J3+1)*Z.modelspace->GetSixJ( oa.j2*0.5, oi.j2*0.5, J4,   op.j2*0.5, oc.j2*0.5, J3);
+                      xaciq += sixj3 * X.TwoBody.GetTBME_J(J3,J3,a,c,i,q);
+                      xacip += sixj3 * X.TwoBody.GetTBME_J(J3,J3,a,c,i,p);
+                      yaciq += sixj3 * Y.TwoBody.GetTBME_J(J3,J3,a,c,i,q);
+                      yacip += sixj3 * Y.TwoBody.GetTBME_J(J3,J3,a,c,i,p);
+                   }
+                   
+
+                       //    int J4min = std::max( std::abs( op.j2-oc.j2), std::abs( oj.j2-ob.j2) )/2;
+                       //    int J4max = std::min(  op.j2+oc.j2,  oj.j2+ob.j2 )/2;
+                       //    double sixj_prod = 0;
+                       //    for (int J4=J4min; J4<=J4max; J4++) 
+                       //    {
+                       //       double sixj1 = Z.modelspace->GetSixJ( oa.j2*0.5, oi.j2*0.5, J4,   oj.j2*0.5, ob.j2*0.5, J1);
+                       //       double sixj2 = Z.modelspace->GetSixJ( op.j2*0.5, oc.j2*0.5, J4,   oj.j2*0.5, ob.j2*0.5, J2);
+                       //       double sixj3 = Z.modelspace->GetSixJ( oa.j2*0.5, oi.j2*0.5, J4,   op.j2*0.5, oc.j2*0.5, J3);
+                       //       sixj_prod += (2*J4+1) * AngMom::phase(J1+J2+J3+(ob.j2+oj.j2)/2) * sixj1*sixj2*sixj3;
+                       //    }
+                           
+//                           zpq -= (2*J1+1.)*(2*J2+1)*(2*J3+1)/(op.j2+1) * sixj_prod *  xijab * ybpjc * xaciq;
+//                           zpq -= (2*J1+1.)*(2*J2+1)*(2*J3+1)/(op.j2+1) * sixj_prod *  xijab * ybqjc * xacip * hX*hX*hY;
+                           zpq -= (2*J4+1.)/(op.j2+1) * AngMom::phase((ob.j2+oj.j2)/2) *  xijab * ybpjc * xaciq;
+                           zpq -= (2*J4+1.)/(op.j2+1) * AngMom::phase((ob.j2+oj.j2)/2) *  xijab * ybqjc * xacip * hX*hX*hY;
+                           /// Also include the XXY and YXX contributions
+                           zpq += (2*J4+1.)/(op.j2+1) * AngMom::phase((ob.j2+oj.j2)/2) *  xijab * xbpjc * yaciq;
+                           zpq += (2*J4+1.)/(op.j2+1) * AngMom::phase((ob.j2+oj.j2)/2) *  xijab * xbqjc * yacip * hX*hX*hY;
+                        //}
+                     //}
+                   }// for J4
+                 }
+               }// for j
+            }// for i
+         }// for b
+       }// for a
+        Z.OneBody(p,q) += zpq;
+     }// for q
+   }// for p
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+
+}
+
+void diagram_CIIc( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {
+     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto k : Z.modelspace->holes )
+            {
+               Orbit& ok = Z.modelspace->GetOrbit(k);
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                     int J2min = std::max( std::abs( ob.j2-ok.j2), std::abs( oj.j2-oq.j2) )/2;
+                     int J2max = std::min(  ob.j2+ok.j2,  oj.j2+oq.j2 )/2;
+                     for ( int J2=J2min; J2<=J2max; J2++)
+                     {
+                        double ybkjq = Y.TwoBody.GetTBME_J(J2,J2,b,k,j,q);
+                        double ybkjp = Y.TwoBody.GetTBME_J(J2,J2,b,k,j,p);
+                        double xbkjq = X.TwoBody.GetTBME_J(J2,J2,b,k,j,q);
+                        double xbkjp = X.TwoBody.GetTBME_J(J2,J2,b,k,j,p);
+
+                        int J3min = std::max( std::abs( oa.j2-op.j2), std::abs( oi.j2-ok.j2) )/2;
+                        int J3max = std::min(  oa.j2+op.j2,  oi.j2+ok.j2 )/2;
+                        for ( int J3=J3min; J3<=J3max; J3++)
+                        {
+                           double xapik = X.TwoBody.GetTBME_J(J3,J3,a,p,i,k);
+                           double xaqik = X.TwoBody.GetTBME_J(J3,J3,a,q,i,k);
+                           double yapik = Y.TwoBody.GetTBME_J(J3,J3,a,p,i,k);
+                           double yaqik = Y.TwoBody.GetTBME_J(J3,J3,a,q,i,k);
+
+                           int J4min = std::max( std::abs( op.j2-ok.j2), std::abs( oj.j2-ob.j2) )/2;
+                           int J4max = std::min(  op.j2+ok.j2,  oj.j2+ob.j2 )/2;
+                           double sixj_prod = 0;
+                           for (int J4=J4min; J4<=J4max; J4++) 
+                           {
+                              double sixj1 = Z.modelspace->GetSixJ( oa.j2*0.5, oi.j2*0.5, J4,   oj.j2*0.5, ob.j2*0.5, J1);
+                              double sixj2 = Z.modelspace->GetSixJ( ok.j2*0.5, op.j2*0.5, J4,   oj.j2*0.5, ob.j2*0.5, J2);
+                              double sixj3 = Z.modelspace->GetSixJ( oa.j2*0.5, oi.j2*0.5, J4,   ok.j2*0.5, op.j2*0.5, J3);
+                              sixj_prod += (2*J4+1) * AngMom::phase(J1+J2+J3+(ob.j2+oj.j2)/2) * sixj1*sixj2*sixj3;
+                           }
+                           
+                           zpq += (2*J1+1.)*(2*J2+1)*(2*J3+1)/(op.j2+1) * sixj_prod *  xijab * ybkjq * xapik;
+                           zpq += (2*J1+1.)*(2*J2+1)*(2*J3+1)/(op.j2+1) * sixj_prod *  xijab * ybkjp * xaqik * hX*hX*hY;
+                           /// Also include the XXY and YXX contributions
+                           zpq -= (2*J1+1.)*(2*J2+1)*(2*J3+1)/(op.j2+1) * sixj_prod *  xijab * xbkjq * yapik;
+                           zpq -= (2*J1+1.)*(2*J2+1)*(2*J3+1)/(op.j2+1) * sixj_prod *  xijab * xbkjp * yaqik * hX*hX*hY;
+                        }
+                     }
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+void diagram_CIId( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto k : Z.modelspace->holes )
+            {
+               Orbit& ok = Z.modelspace->GetOrbit(k);
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                      
+                     double ykpij = Y.TwoBody.GetTBME_J(J1,J1,k,p,i,j);
+                     double ykqij = Y.TwoBody.GetTBME_J(J1,J1,k,q,i,j);
+                     double xabkq = X.TwoBody.GetTBME_J(J1,J1,a,b,k,q);
+                     double xabkp = X.TwoBody.GetTBME_J(J1,J1,a,b,k,p);
+                     double xkpij = X.TwoBody.GetTBME_J(J1,J1,k,p,i,j);
+                     double xkqij = X.TwoBody.GetTBME_J(J1,J1,k,q,i,j);
+                     double yabkq = Y.TwoBody.GetTBME_J(J1,J1,a,b,k,q);
+                     double yabkp = Y.TwoBody.GetTBME_J(J1,J1,a,b,k,p);
+                     zpq -= 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * ykpij * xabkq;
+                     zpq -= 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * ykqij * xabkp * hX*hX*hY;
+                     /// Also include the XXY and YXX contributions
+                     zpq += 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * xkpij * yabkq;
+                     zpq += 0.25*(2*J1+1.)/(op.j2+1)  *  xijab * xkqij * yabkp * hX*hX*hY;
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+void diagram_CIIIa( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {
+     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto c : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+            {
+               Orbit& oc = Z.modelspace->GetOrbit(c);
+               if ( (1-oc.occ) <1e-4 ) continue;
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 double yijab = Y.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 double xcbij = X.TwoBody.GetTBME_J(J1,J1,c,b,i,j);
+                 double ycbij = Y.TwoBody.GetTBME_J(J1,J1,c,b,i,j);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                     int J2min = std::max( std::abs( op.j2-oa.j2), std::abs( oq.j2-oc.j2) )/2;
+                     int J2max = std::min(  op.j2+oa.j2,  oq.j2+oc.j2 )/2;
+                     for ( int J2=J2min; J2<=J2max; J2++)
+                     {
+                        // The "time reversed" diagram is identical, so we just get a factor of 2
+                        double ypaqc = Y.TwoBody.GetTBME_J(J2,J2,p,a,q,c);
+                        double xpaqc = X.TwoBody.GetTBME_J(J2,J2,p,a,q,c);
+                        zpq -= 2*0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oa.j2+1) * (1-oc.occ) *  xijab * ypaqc * xcbij;
+                     /// Also include the XXY and YXX contributions
+                        zpq += 1*0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oa.j2+1) * (1-oc.occ) *  xijab * xpaqc * ycbij;
+                        zpq += 1*0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oa.j2+1) * (1-oc.occ) *  yijab * xpaqc * xcbij;
+                     }
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+void diagram_CIIIb( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for (auto a : Z.modelspace->particles )
+   {     Orbit& oa = Z.modelspace->GetOrbit(a);
+     for ( auto b : Z.modelspace->particles )
+     {
+       Orbit& ob = Z.modelspace->GetOrbit(b);
+       for ( auto i : Z.modelspace->holes )
+       {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         for ( auto j : Z.modelspace->holes )
+         {
+            Orbit& oj = Z.modelspace->GetOrbit(j);
+            for ( auto k : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            {
+               Orbit& ok = Z.modelspace->GetOrbit(k);
+               if ( ok.occ < 1e-4 ) continue;
+               int J1min = std::max( std::abs( oi.j2 - oj.j2), std::abs( oa.j2-ob.j2) )/2;
+               int J1max = std::min(  oi.j2 + oj.j2,  oa.j2+ob.j2 )/2;
+               for ( int J1=J1min; J1<=J1max; J1++)
+               {
+                 double xijab = X.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 double yijab = Y.TwoBody.GetTBME_J(J1,J1,i,j,a,b);
+                 double xabkj = X.TwoBody.GetTBME_J(J1,J1,a,b,k,j);
+                 double yabkj = Y.TwoBody.GetTBME_J(J1,J1,a,b,k,j);
+                 for ( auto p : Z.modelspace->all_orbits )
+                 {
+                   Orbit& op = Z.modelspace->GetOrbit(p);
+                   for ( auto q : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+                   {
+                     Orbit& oq = Z.modelspace->GetOrbit(q);
+                     double zpq = 0;
+                     int J2min = std::max( std::abs( op.j2-ok.j2), std::abs( oq.j2-oi.j2) )/2;
+                     int J2max = std::min(  op.j2+ok.j2,  oq.j2+oi.j2 )/2;
+                     for ( int J2=J2min; J2<=J2max; J2++)
+                     {
+                        double ypkqi = Y.TwoBody.GetTBME_J(J2,J2,p,k,q,i);
+                        double xpkqi = X.TwoBody.GetTBME_J(J2,J2,p,k,q,i);
+                        zpq += 2*0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oi.j2+1) * ok.occ *  xijab * ypkqi * xabkj;
+                     /// Also include the XXY and YXX contributions
+                        zpq -= 1*0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oi.j2+1) * ok.occ *  xijab * xpkqi * yabkj;
+                        zpq -= 1*0.5*(2*J1+1.)*(2*J2+1)/(op.j2+1)/(oi.j2+1) * ok.occ *  yijab * xpkqi * xabkj;
+                     }
+                     Z.OneBody(p,q) += zpq;
+                   }
+                 }
+               }
+            }
+         }
+       }
+     }
+   }
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+// Initially, write it as the straightforward N^8 sum.
+// Then worry about factorizing it.
+void diagram_DIa( const Operator& X, const Operator& Y, Operator& Z )
+{
+   double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for ( auto itmat : Z.TwoBody.MatEl )
+   { 
+      size_t ch_bra = itmat.first[0];
+      size_t ch_ket = itmat.first[1];
+      TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+      int J = tbc_bra.J;
+      size_t nbras = tbc_bra.GetNumberKets();
+      size_t nkets = tbc_ket.GetNumberKets();
+      for ( size_t ibra=0; ibra<nbras; ibra++)
+      {
+        Ket& bra = tbc_bra.GetKet(ibra);
+        size_t p = bra.p;
+        size_t q = bra.q;
+       int phasepq = bra.Phase(J);
+//        for ( size_t iket=0; iket<nkets; iket++)
+        for ( size_t iket=ibra; iket<nkets; iket++)
+        {
+           Ket& ket = tbc_ket.GetKet(iket);
+           size_t r = ket.p;
+           size_t s = ket.q;
+          int phasers = ket.Phase(J);
+           double zpqrs = 0;
+           for ( auto a : Z.modelspace->particles)
+           {
+             Orbit& oa = Z.modelspace->GetOrbit(a);
+             for ( auto b : Z.modelspace->particles)
+             {
+               Orbit& ob = Z.modelspace->GetOrbit(b);
+               for ( auto c : Z.modelspace->particles)
+               {
+                 Orbit& oc = Z.modelspace->GetOrbit(c);
+                 for ( auto i : Z.modelspace->holes)
+                 {
+                     Orbit& oi = Z.modelspace->GetOrbit(i);
+                     double xcqrs = X.TwoBody.GetTBME_J(J,J,c,q,r,s);
+                     double xpcrs = X.TwoBody.GetTBME_J(J,J,p,c,r,s);
+                     double xpqrc = X.TwoBody.GetTBME_J(J,J,p,q,r,c);
+                     double xpqcs = X.TwoBody.GetTBME_J(J,J,p,q,c,s);
+                     int dcp = oc.j2 == bra.op->j2;
+                     int dcq = oc.j2 == bra.oq->j2;
+                     int dcr = oc.j2 == ket.op->j2;
+                     int dcs = oc.j2 == ket.oq->j2;
+//                     int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oc.j2) )/2;
+//                     int J1max = std::min(  oa.j2+ob.j2, oi.j2+oc.j2 )/2;
+                     int J1min =  std::abs( oa.j2-ob.j2 )/2;
+                     int J1max = ( oa.j2+ob.j2 )/2;
+                     for ( int J1=J1min; J1<=J1max; J1++)
+                     {
+                        double yabic = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,c);
+                        double xipab = X.TwoBody.GetTBME_J(J1,J1,i,p,a,b);
+                        double xabir = X.TwoBody.GetTBME_J(J1,J1,a,b,i,r);
+                        double xabis = X.TwoBody.GetTBME_J(J1,J1,a,b,i,s);
+                        double xiqab = X.TwoBody.GetTBME_J(J1,J1,i,p,a,b);
+                        //zpqrs += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xipab * yabic * xcqrs * dcp  +phasepq* xiqab * yabic * xcprs * dcq);  // Includes the (1-Ppq)
+                        //zpqrs += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xpqcs * yabic * xabir * dcr  +phasers* xpqcr * yabic * xabis * dcs) * hY; // DIa*   includes (1-Prs)
+                        zpqrs += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xipab * yabic * xcqrs * dcp  + xiqab * yabic * xpcrs * dcq);  // Includes the (1-Ppq)
+                        zpqrs += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xpqcs * yabic * xabir * dcr  + xpqrc * yabic * xabis * dcs) * hY; // DIa*   includes (1-Prs)
+                     }
+                 }//for j
+               }//for i
+             }//for b
+           }//for a
+           // normalize
+           if (p==q ) zpqrs /= PhysConst::SQRT2;
+           if (r==s ) zpqrs /= PhysConst::SQRT2;
+           Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+        }// for iket
+      }// for ibra
+
+   }// for itmat
+
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+/*
+void diagram_DIb( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+  arma::mat CHI_XX = Y.OneBody * 0;
+  arma::mat CHI_XY = Y.OneBody * 0;
+  size_t norb = Z.modelspace->GetNumberOrbits();
+
+  #pragma omp parallel for schedule(dynamic)
+  for ( size_t p=0; p<norb; p++)
+  {
+     Orbit& op = Z.modelspace->GetOrbit(p);
+     for ( auto q : X.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+     {
+         Orbit& oq = Z.modelspace->GetOrbit(q);
+
+         double chi_pq = 0;
+         double chiY_pq = 0;
+
+         for ( auto a : Z.modelspace->particles)
+          {
+            Orbit& oa = Z.modelspace->GetOrbit(a);
+
+            for ( auto i : Z.modelspace->holes)
+            {
+              Orbit& oi = Z.modelspace->GetOrbit(i);
+
+
+              for ( auto j : Z.modelspace->holes)
+              {
+                  Orbit& oj = Z.modelspace->GetOrbit(j);
+
+                  int J1min = std::max( std::abs( oa.j2-oq.j2), std::abs(oi.j2-oj.j2) )/2;
+                  int J1max = std::min(  oa.j2+oq.j2, oi.j2+oj.j2 )/2;
+
+                  for ( int J1=J1min; J1<=J1max; J1++)
+                  {
+
+                     double xijaq = X.TwoBody.GetTBME_J(J1,J1,i,j,a,q);
+                     double xapij = X.TwoBody.GetTBME_J(J1,J1,a,p,i,j);
+                     double yapij = Y.TwoBody.GetTBME_J(J1,J1,a,p,i,j);
+
+                     //chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * (1-oq.occ) * xijap * xaqij ;
+                    // chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * (1-oq.occ) * xijap * yaqij ;
+                     chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * (1) * xijaq * xapij ;
+                     chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * (1) * xijaq * yapij ;
+
+                     ///   chi_rk += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xijra * ykaij  *dkr  );  // Includes the (1-Prs)
+                        // chi_pq +=                             * ( xijpa & yqaij * dpq )  where ij holes, a particle.
+
+                  }
+              }//for j
+
+              //for ( auto b : Z.modelspace->particles)
+              //{
+              //    Orbit& ob = Z.modelspace->GetOrbit(b);
+
+              //    int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oq.j2) )/2;
+              //    int J1max = std::min(  oa.j2+ob.j2, oi.j2+oq.j2 )/2;
+
+              //    for ( int J1=J1min; J1<=J1max; J1++)
+              //    {
+
+              //       double xipab = X.TwoBody.GetTBME_J(J1,J1,i,p,a,b);
+              //       double xabiq = X.TwoBody.GetTBME_J(J1,J1,a,b,i,q);
+              //       double yabiq = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,q);
+
+              //       chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * 1 * xipab * xabiq ;
+              //       chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * 1 * xipab * yabiq ;
+              //    }
+              //}//for b
+
+            }//for i
+          }//for a
+          CHI_XX(p,q) = chi_pq;
+          CHI_XY(p,q) = chiY_pq;
+          }//for q
+      }// for p
+
+
+
+
+
+
+
+
+   for ( auto itmat : Z.TwoBody.MatEl )
+   { 
+      size_t ch_bra = itmat.first[0];
+      size_t ch_ket = itmat.first[1];
+      TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+      int J = tbc_bra.J;
+      size_t nbras = tbc_bra.GetNumberKets();
+      size_t nkets = tbc_ket.GetNumberKets();
+      for ( size_t ibra=0; ibra<nbras; ibra++)
+      {
+        Ket& bra = tbc_bra.GetKet(ibra);
+        size_t p = bra.p;
+        size_t q = bra.q;
+//        for ( size_t iket=0; iket<nkets; iket++)
+        for ( size_t iket=ibra; iket<nkets; iket++)
+        {
+           Ket& ket = tbc_ket.GetKet(iket);
+           size_t r = ket.p;
+           size_t s = ket.q;
+           double zpqrs = 0;
+           for ( auto k : Z.modelspace->holes)
+           {
+               Orbit& ok = Z.modelspace->GetOrbit(k);
+               double xpqks = X.TwoBody.GetTBME_J(J,J,p,q,k,s);
+               double xpqrk = X.TwoBody.GetTBME_J(J,J,p,q,r,k);
+               double xpkrs = X.TwoBody.GetTBME_J(J,J,p,k,r,s);
+               double xkqrs = X.TwoBody.GetTBME_J(J,J,k,q,r,s);
+
+//             zpqrs += xpqks * chi_rk + xpqrk * chi_sk + xkqrs * chi_pk + xpkrs * chi_qk;
+             zpqrs += xpqks * CHI_XY(k,r) + xpqrk * CHI_XY(k,s) + CHI_XY(p,k) * xkqrs  +  CHI_XY(q,k) * xpkrs ;
+           }//for k
+           // normalize
+           if (p==q ) zpqrs /= PhysConst::SQRT2;
+           if (r==s ) zpqrs /= PhysConst::SQRT2;
+           Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+        }// for iket
+      }// for ibra
+
+   }// for itmat
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+*/
+
+
+void diagram_DIb( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double t_start = omp_get_wtime();
+   int hX = X.IsHermitian() ? +1 : -1;
+   int hY = Y.IsHermitian() ? +1 : -1;
+   for ( auto itmat : Z.TwoBody.MatEl )
+   { 
+      size_t ch_bra = itmat.first[0];
+      size_t ch_ket = itmat.first[1];
+      TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+      int J = tbc_bra.J;
+      size_t nbras = tbc_bra.GetNumberKets();
+      size_t nkets = tbc_ket.GetNumberKets();
+      for ( size_t ibra=0; ibra<nbras; ibra++)
+      {
+        Ket& bra = tbc_bra.GetKet(ibra);
+        size_t p = bra.p;
+        size_t q = bra.q;
+//        for ( size_t iket=0; iket<nkets; iket++)
+        for ( size_t iket=ibra; iket<nkets; iket++)
+        {
+           Ket& ket = tbc_ket.GetKet(iket);
+           size_t r = ket.p;
+           size_t s = ket.q;
+           double zpqrs = 0;
+           for ( auto k : Z.modelspace->holes)
+           {
+               Orbit& ok = Z.modelspace->GetOrbit(k);
+               double xpqks = X.TwoBody.GetTBME_J(J,J,p,q,k,s);
+               double xpqrk = X.TwoBody.GetTBME_J(J,J,p,q,r,k);
+               double xpkrs = X.TwoBody.GetTBME_J(J,J,p,k,r,s);
+               double xkqrs = X.TwoBody.GetTBME_J(J,J,k,q,r,s);
+               int dkp = ok.j2 == bra.op->j2;
+               int dkq = ok.j2 == bra.oq->j2;
+               int dkr = ok.j2 == ket.op->j2;
+               int dks = ok.j2 == ket.oq->j2;
+
+               double chi_rk=0;
+               double chi_sk=0;
+               double chi_pk=0;
+               double chi_qk=0;
+
+               for ( auto a : Z.modelspace->particles)
+               {
+                 Orbit& oa = Z.modelspace->GetOrbit(a);
+                 for ( auto i : Z.modelspace->holes)
+                 {
+                   Orbit& oi = Z.modelspace->GetOrbit(i);
+                   for ( auto j : Z.modelspace->holes)
+                   {
+                     Orbit& oj = Z.modelspace->GetOrbit(j);
+
+//                     int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oc.j2) )/2;
+//                     int J1max = std::min(  oa.j2+ob.j2, oi.j2+oc.j2 )/2;
+                     int J1min =  std::abs( oi.j2-oj.j2 )/2;
+                     int J1max = ( oi.j2+oj.j2 )/2;
+                     for ( int J1=J1min; J1<=J1max; J1++)
+                     {
+                        double ykaij = Y.TwoBody.GetTBME_J(J1,J1,k,a,i,j);
+                        double yijka = Y.TwoBody.GetTBME_J(J1,J1,i,j,k,a);
+                        double xijra = X.TwoBody.GetTBME_J(J1,J1,i,j,r,a);
+                        double xijsa = X.TwoBody.GetTBME_J(J1,J1,i,j,s,a);
+                        double xpaij = X.TwoBody.GetTBME_J(J1,J1,p,a,i,j);
+                        double xqaij = X.TwoBody.GetTBME_J(J1,J1,q,a,i,j);
+                        //zpqrs += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xijra * ykaij * xpqks *dkr  + xijsa * ykaij * xpqrk *dks);  // Includes the (1-Prs)
+                        //zpqrs += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xkqrs * ykaij * xpaij *dkp  + xpkrs * ykaij * xqaij *dkq) * hY; // DIa*   includes (1-Ppq)
+
+                        chi_rk += 0.5*(2*J1+1)/(ket.op->j2+1) * ( xijra * ykaij *dkr );  // Includes the (1-Prs)
+                        chi_sk += 0.5*(2*J1+1)/(ket.op->j2+1) * ( xijsa * ykaij *dks );  // Includes the (1-Prs)
+                        chi_pk += 0.5*(2*J1+1)/(ket.op->j2+1) * ( yijka * xpaij *dkp ) ; // DIa*   includes (1-Ppq)
+                        chi_qk += 0.5*(2*J1+1)/(ket.op->j2+1) * ( yijka * xqaij *dkq ) ; // DIa*   includes (1-Ppq)
+                     }
+                 }//for j
+               }//for i
+             }//for a
+             zpqrs += xpqks * chi_rk + xpqrk * chi_sk + xkqrs * chi_pk + xpkrs * chi_qk;
+           }//for k
+           // normalize
+           if (p==q ) zpqrs /= PhysConst::SQRT2;
+           if (r==s ) zpqrs /= PhysConst::SQRT2;
+           Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+        }// for iket
+      }// for ibra
+
+   }// for itmat
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+void diagram_DIVa( const Operator& X, const Operator& Y, Operator& Z )
+{ 
+  double t_start = omp_get_wtime();
+  int hX = X.IsHermitian() ? +1 : -1;
+  int hY = Y.IsHermitian() ? +1 : -1;
+  for ( auto itmat : Z.TwoBody.MatEl )
+  { 
+     size_t ch_bra = itmat.first[0];
+     size_t ch_ket = itmat.first[1];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+     int J = tbc_bra.J;
+     size_t nbras = tbc_bra.GetNumberKets();
+     size_t nkets = tbc_ket.GetNumberKets();
+     for ( size_t ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       size_t p = bra.p;
+       size_t q = bra.q;
+//       int phasepq = bra.Phase(J);
+//       for ( size_t iket=0; iket<nkets; iket++)
+       for ( size_t iket=ibra; iket<nkets; iket++)
+       {
+          Ket& ket = tbc_ket.GetKet(iket);
+          size_t r = ket.p;
+          size_t s = ket.q;
+//          int phasers = ket.Phase(J);
+          double zpqrs = 0;
+          for ( auto a : Z.modelspace->particles)
+          {
+            Orbit& oa = Z.modelspace->GetOrbit(a);
+            for ( auto b : Z.modelspace->particles)
+            {
+              Orbit& ob = Z.modelspace->GetOrbit(b);
+              for ( auto i : Z.modelspace->holes)
+              {
+                Orbit& oi = Z.modelspace->GetOrbit(i);
+                for ( auto j : Z.modelspace->holes)
+                {
+                    Orbit& oj = Z.modelspace->GetOrbit(j);
+                    double yjqrs = Y.TwoBody.GetTBME_J(J,J,j,q,r,s);
+                    double ypjrs = Y.TwoBody.GetTBME_J(J,J,p,j,r,s);
+                    double ypqjs = Y.TwoBody.GetTBME_J(J,J,p,q,j,s);
+                    double ypqrj = Y.TwoBody.GetTBME_J(J,J,p,q,r,j);
+                    double xjqrs = X.TwoBody.GetTBME_J(J,J,j,q,r,s);
+                    double xpjrs = X.TwoBody.GetTBME_J(J,J,p,j,r,s);
+                    double xpqjs = X.TwoBody.GetTBME_J(J,J,p,q,j,s);
+                    double xpqrj = X.TwoBody.GetTBME_J(J,J,p,q,r,j);
+                    int djp = oj.j2 == bra.op->j2;
+                    int djq = oj.j2 == bra.oq->j2;
+                    int djr = oj.j2 == ket.op->j2;
+                    int djs = oj.j2 == ket.oq->j2;
+//                    int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oc.j2) )/2;
+//                    int J1max = std::min(  oa.j2+ob.j2, oi.j2+oc.j2 )/2;
+                    int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oj.j2) )/2;
+                    int J1max = std::min(  oa.j2+ob.j2, oi.j2+oj.j2 )/2;
+//                    int J1min =  std::abs( oa.j2-ob.j2 )/2;
+//                    int J1max = ( oa.j2+ob.j2 )/2;
+                    for ( int J1=J1min; J1<=J1max; J1++)
+                    {
+                       //if ( std::abs( oa.occ*ob.occ)<1e-3) continue;
+                       double xipab = X.TwoBody.GetTBME_J(J1,J1,i,p,a,b);
+                       double xiqab = X.TwoBody.GetTBME_J(J1,J1,i,q,a,b);
+                       double xirab = X.TwoBody.GetTBME_J(J1,J1,i,r,a,b);
+                       double xisab = X.TwoBody.GetTBME_J(J1,J1,i,s,a,b);
+                       double xabij = X.TwoBody.GetTBME_J(J1,J1,a,b,i,j);
+                       double yabij = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,j);
+
+                       zpqrs += 0.5*(2*J1+1)/(oj.j2+1) * ( xipab * yjqrs * xabij*djp  + xiqab * ypjrs * xabij * djq);  // Includes the (1-Ppq)
+                       zpqrs += 0.5*(2*J1+1)/(oj.j2+1) * ( xirab * ypqjs * xabij*djr  + xisab * ypqrj * xabij * djs) * hX*hX ; // DIVa*   includes (1-Prs)
+                       // Need to include the XXY and YXX term
+                       zpqrs -= 0.5*(2*J1+1)/(oj.j2+1) * ( xipab * xjqrs * yabij*djp  + xiqab * xpjrs * yabij * djq );  // Includes the (1-Ppq)
+                       zpqrs -= 0.5*(2*J1+1)/(oj.j2+1) * ( xirab * xpqjs * yabij*djr  + xisab * xpqrj * yabij * djs ) * hX*hY ; // DIVa*   includes (1-Prs)
+                    }
+                }//for j
+              }//for i
+            }//for b
+          }//for a
+          // normalize
+          if (p==q ) zpqrs /= PhysConst::SQRT2;
+          if (r==s ) zpqrs /= PhysConst::SQRT2;
+          Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+       }// for iket
+     }// for ibra
+
+  }// for itmat
+
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+void diagram_DIVb( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double t_start = omp_get_wtime();
+  int hX = X.IsHermitian() ? +1 : -1;
+  int hY = Y.IsHermitian() ? +1 : -1;
+  for ( auto itmat : Z.TwoBody.MatEl )
+  { 
+     size_t ch_bra = itmat.first[0];
+     size_t ch_ket = itmat.first[1];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+     int J = tbc_bra.J;
+     size_t nbras = tbc_bra.GetNumberKets();
+     size_t nkets = tbc_ket.GetNumberKets();
+     for ( size_t ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       size_t p = bra.p;
+       size_t q = bra.q;
+//       for ( size_t iket=0; iket<nkets; iket++)
+       for ( size_t iket=ibra; iket<nkets; iket++)
+       {
+          Ket& ket = tbc_ket.GetKet(iket);
+          size_t r = ket.p;
+          size_t s = ket.q;
+          double zpqrs = 0;
+          for ( auto a : Z.modelspace->particles)
+          {
+            Orbit& oa = Z.modelspace->GetOrbit(a);
+            for ( auto b : Z.modelspace->particles)
+            {
+              Orbit& ob = Z.modelspace->GetOrbit(b);
+              for ( auto i : Z.modelspace->holes)
+              {
+                Orbit& oi = Z.modelspace->GetOrbit(i);
+                for ( auto j : Z.modelspace->holes)
+                {
+                    Orbit& oj = Z.modelspace->GetOrbit(j);
+                    double ypqbs = Y.TwoBody.GetTBME_J(J,J,p,q,b,s);
+                    double ypqrb = Y.TwoBody.GetTBME_J(J,J,p,q,r,b);
+                    double ybqrs = Y.TwoBody.GetTBME_J(J,J,b,q,r,s);
+                    double ypbrs = Y.TwoBody.GetTBME_J(J,J,p,b,r,s);
+                    double xpqbs = X.TwoBody.GetTBME_J(J,J,p,q,b,s);
+                    double xpqrb = X.TwoBody.GetTBME_J(J,J,p,q,r,b);
+                    double xbqrs = X.TwoBody.GetTBME_J(J,J,b,q,r,s);
+                    double xpbrs = X.TwoBody.GetTBME_J(J,J,p,b,r,s);
+                    int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oj.j2) )/2;
+                    int J1max = std::min(  oa.j2+ob.j2, oi.j2+oj.j2 )/2;
+
+                    int dbp = ob.j2 == bra.op->j2;
+                    int dbq = ob.j2 == bra.oq->j2;
+                    int dbr = ob.j2 == ket.op->j2;
+                    int dbs = ob.j2 == ket.oq->j2;
+
+                    for ( int J1=J1min; J1<=J1max; J1++)
+                    {
+
+                       double xijar = X.TwoBody.GetTBME_J(J1,J1,i,j,a,r);
+                       double xijas = X.TwoBody.GetTBME_J(J1,J1,i,j,a,s);
+                       double xijap = X.TwoBody.GetTBME_J(J1,J1,i,j,a,p);
+                       double xijaq = X.TwoBody.GetTBME_J(J1,J1,i,j,a,q);
+                       double xabij = X.TwoBody.GetTBME_J(J1,J1,a,b,i,j);
+                       double yabij = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,j);
+
+
+                       // Here I suspect the * term just amounts to a factor of 2
+                       zpqrs += 0.5*(2*J1+1)/(ob.j2+1) * ( xijar * ypqbs * xabij*dbr  + xijas * ypqrb * xabij * dbs );  // Includes the (1-Prs)
+                       zpqrs += 0.5*(2*J1+1)/(ob.j2+1) * ( xijap * ybqrs * xabij*dbp  + xijaq * ypbrs * xabij * dbq )*hX*hX ; // DIVb*   includes (1-Ppq)
+//                       // Need to include the XXY and YXX term
+                       zpqrs -= 0.5*(2*J1+1)/(ob.j2+1) * ( xijar * xpqbs * yabij*dbr  + xijas * xpqrb * yabij * dbs);  // Includes the (1-Prs)
+                       zpqrs -= 0.5*(2*J1+1)/(ob.j2+1) * ( xijap * xbqrs * yabij*dbp  + xijaq * xpbrs * yabij * dbq)*hX*hY ; // DIVb*   includes (1-Ppq)
+
+                    }
+                }//for j
+              }//for i
+            }//for b
+          }//for a
+          // normalize
+          if (p==q ) zpqrs /= PhysConst::SQRT2;
+          if (r==s ) zpqrs /= PhysConst::SQRT2;
+          Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+       }// for iket
+     }// for ibra
+
+  }// for itmat
+
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+
+/// Now do the DIVa and DIVb together by constructing a one-body intermediate
+/// This reduces the scaling to N^5 + N^5.
+void diagram_DIVb_intermediate( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double t_start = omp_get_wtime();
+  int hX = X.IsHermitian() ? +1 : -1;
+  int hY = Y.IsHermitian() ? +1 : -1;
+
+
+  arma::mat CHI_XX = Y.OneBody * 0;
+  arma::mat CHI_XY = Y.OneBody * 0;
+//  size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
+  size_t norb = Z.modelspace->GetNumberOrbits();
+
+//  for ( auto p : Z.modelspace->all_orbits)
+  #pragma omp parallel for schedule(dynamic)
+  for ( size_t p=0; p<norb; p++)
+  {
+     Orbit& op = Z.modelspace->GetOrbit(p);
+     for ( auto q : X.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+     {
+         Orbit& oq = Z.modelspace->GetOrbit(q);
+
+         double chi_pq = 0;
+         double chiY_pq = 0;
+
+         for ( auto a : Z.modelspace->particles)
+          {
+            Orbit& oa = Z.modelspace->GetOrbit(a);
+
+            for ( auto i : Z.modelspace->holes)
+            {
+              Orbit& oi = Z.modelspace->GetOrbit(i);
+
+
+              for ( auto j : Z.modelspace->holes)
+              {
+                  Orbit& oj = Z.modelspace->GetOrbit(j);
+
+                  int J1min = std::max( std::abs( oa.j2-oq.j2), std::abs(oi.j2-oj.j2) )/2;
+                  int J1max = std::min(  oa.j2+oq.j2, oi.j2+oj.j2 )/2;
+
+                  for ( int J1=J1min; J1<=J1max; J1++)
+                  {
+
+                     double xijaq = X.TwoBody.GetTBME_J(J1,J1,i,j,a,q);
+                     double xapij = X.TwoBody.GetTBME_J(J1,J1,a,p,i,j);
+                     double yapij = Y.TwoBody.GetTBME_J(J1,J1,a,p,i,j);
+
+                     chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * xapij * xijaq ;
+                     chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * yapij * xijaq ;
+                  }
+              }//for j
+
+              for ( auto b : Z.modelspace->particles)
+              {
+                  Orbit& ob = Z.modelspace->GetOrbit(b);
+
+                  int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oq.j2) )/2;
+                  int J1max = std::min(  oa.j2+ob.j2, oi.j2+oq.j2 )/2;
+
+                  for ( int J1=J1min; J1<=J1max; J1++)
+                  {
+
+                     double xipab = X.TwoBody.GetTBME_J(J1,J1,i,p,a,b);
+                     double xabiq = X.TwoBody.GetTBME_J(J1,J1,a,b,i,q);
+                     double yabiq = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,q);
+
+                     chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * xipab * xabiq ;
+                     chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * xipab * yabiq ;
+                  }
+              }//for b
+
+            }//for i
+          }//for a
+          CHI_XX(p,q) = chi_pq;
+          CHI_XY(p,q) = chiY_pq;
+          }//for q
+      }// for p
+
+
+
+
+
+   std::vector<size_t> ch_bra_list,ch_ket_list;
+   for ( auto& iter : Z.TwoBody.MatEl )
+   {
+      ch_bra_list.push_back( iter.first[0] );
+      ch_ket_list.push_back( iter.first[1] );
+   }
+   size_t nch = ch_bra_list.size();
+   
+//   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ich=0; ich<nch; ich++)
+   { 
+     size_t ch_bra = ch_bra_list[ich];
+     size_t ch_ket = ch_ket_list[ich];
+//     size_t ch_bra = itmat.first[0];
+//     size_t ch_ket = itmat.first[1];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+     int J = tbc_bra.J;
+     size_t nbras = tbc_bra.GetNumberKets();
+     size_t nkets = tbc_ket.GetNumberKets();
+     for ( size_t ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       size_t p = bra.p;
+       size_t q = bra.q;
+       int phasepq = bra.Phase(J);
+//       for ( size_t iket=0; iket<nkets; iket++)
+       for ( size_t iket=ibra; iket<nkets; iket++)
+       {
+          Ket& ket = tbc_ket.GetKet(iket);
+          size_t r = ket.p;
+          size_t s = ket.q;
+          int phasers = ket.Phase(J);
+          double zpqrs = 0;
+
+         for ( auto b : Z.modelspace->all_orbits)
+         {
+           Orbit& ob = Z.modelspace->GetOrbit(b);
+
+
+            zpqrs += CHI_XX(p,b) * Y.TwoBody.GetTBME_J(J,J,b,q,r,s)  +  CHI_XX(q,b) * Y.TwoBody.GetTBME_J(J,J,p,b,r,s) ;
+            zpqrs +=  Y.TwoBody.GetTBME_J(J,J,p,q,b,s) * CHI_XX(b,r) +  Y.TwoBody.GetTBME_J(J,J,p,q,r,b)* CHI_XX(b,s);
+            zpqrs -=  CHI_XY(p,b) * X.TwoBody.GetTBME_J(J,J,b,q,r,s)  + CHI_XY(q,b) * X.TwoBody.GetTBME_J(J,J,p,b,r,s) ;
+            zpqrs -=  X.TwoBody.GetTBME_J(J,J,p,q,b,s) * CHI_XY(b,r) +  X.TwoBody.GetTBME_J(J,J,p,q,r,b)* CHI_XY(b,s);
+
+          }//for a
+
+//          for ( auto j : Z.modelspace->holes)
+//          {
+//              Orbit& oj = Z.modelspace->GetOrbit(j);
+//
+//
+//              zpqrs += Y.TwoBody.GetTBME_J(J,J,j,q,r,s)* CHI_XX(p,j) +  Y.TwoBody.GetTBME_J(J,J,p,j,r,s)* CHI_XX(q,j);
+//              zpqrs += Y.TwoBody.GetTBME_J(J,J,p,q,j,s)* CHI_XX(r,j) +  Y.TwoBody.GetTBME_J(J,J,p,q,r,j)* CHI_XX(s,j);
+//              zpqrs -= X.TwoBody.GetTBME_J(J,J,j,q,r,s)* CHI_XY(p,j) +  X.TwoBody.GetTBME_J(J,J,p,j,r,s)* CHI_XY(q,j);
+//              zpqrs -= X.TwoBody.GetTBME_J(J,J,p,q,j,s)* CHI_XY(r,j) +  X.TwoBody.GetTBME_J(J,J,p,q,r,j)* CHI_XY(s,j);
+//
+//          }
+
+          // normalize
+          if (p==q ) zpqrs /= PhysConst::SQRT2;
+          if (r==s ) zpqrs /= PhysConst::SQRT2;
+          Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+       }// for iket
+     }// for ibra
+
+  }// for itmat
+
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+/*
+void diagram_DIVb_intermediate( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double t_start = omp_get_wtime();
+  int hX = X.IsHermitian() ? +1 : -1;
+  int hY = Y.IsHermitian() ? +1 : -1;
+
+
+  arma::mat CHI_XX = Y.OneBody * 0;
+  arma::mat CHI_XY = Y.OneBody * 0;
+//  size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
+  size_t norb = Z.modelspace->GetNumberOrbits();
+
+//  for ( auto p : Z.modelspace->all_orbits)
+  #pragma omp parallel for schedule(dynamic)
+  for ( size_t p=0; p<norb; p++)
+  {
+     Orbit& op = Z.modelspace->GetOrbit(p);
+     for ( auto q : X.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+     {
+         Orbit& oq = Z.modelspace->GetOrbit(q);
+
+         double chi_pq = 0;
+         double chiY_pq = 0;
+
+         for ( auto a : Z.modelspace->particles)
+          {
+            Orbit& oa = Z.modelspace->GetOrbit(a);
+
+            for ( auto i : Z.modelspace->holes)
+            {
+              Orbit& oi = Z.modelspace->GetOrbit(i);
+
+
+              for ( auto j : Z.modelspace->holes)
+              {
+                  Orbit& oj = Z.modelspace->GetOrbit(j);
+
+                  int J1min = std::max( std::abs( oa.j2-oq.j2), std::abs(oi.j2-oj.j2) )/2;
+                  int J1max = std::min(  oa.j2+oq.j2, oi.j2+oj.j2 )/2;
+
+                  for ( int J1=J1min; J1<=J1max; J1++)
+                  {
+
+                     double xijap = X.TwoBody.GetTBME_J(J1,J1,i,j,a,p);
+                     double xaqij = X.TwoBody.GetTBME_J(J1,J1,a,q,i,j);
+                     double yaqij = Y.TwoBody.GetTBME_J(J1,J1,a,q,i,j);
+
+                     chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * (1-oq.occ) * xijap * xaqij ;
+                     chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * (1-oq.occ) * xijap * yaqij ;
+
+                     ///   chi_rk += 0.5*(2*J1+1)/(bra.op->j2+1) * ( xijra * ykaij  *dkr  );  // Includes the (1-Prs)
+
+                  }
+              }//for j
+
+              for ( auto b : Z.modelspace->particles)
+              {
+                  Orbit& ob = Z.modelspace->GetOrbit(b);
+
+                  int J1min = std::max( std::abs( oa.j2-ob.j2), std::abs(oi.j2-oq.j2) )/2;
+                  int J1max = std::min(  oa.j2+ob.j2, oi.j2+oq.j2 )/2;
+
+                  for ( int J1=J1min; J1<=J1max; J1++)
+                  {
+
+                     double xipab = X.TwoBody.GetTBME_J(J1,J1,i,p,a,b);
+                     double xabiq = X.TwoBody.GetTBME_J(J1,J1,a,b,i,q);
+                     double yabiq = Y.TwoBody.GetTBME_J(J1,J1,a,b,i,q);
+
+                     chi_pq  += 0.5*(2*J1+1)/(oq.j2+1) * op.occ * xipab * xabiq ;
+                     chiY_pq += 0.5*(2*J1+1)/(oq.j2+1) * op.occ * xipab * yabiq ;
+                  }
+              }//for b
+
+            }//for i
+          }//for a
+          CHI_XX(p,q) = chi_pq;
+          CHI_XY(p,q) = chiY_pq;
+          }//for q
+      }// for p
+
+
+
+
+
+   std::vector<size_t> ch_bra_list,ch_ket_list;
+   for ( auto& iter : Z.TwoBody.MatEl )
+   {
+      ch_bra_list.push_back( iter.first[0] );
+      ch_ket_list.push_back( iter.first[1] );
+   }
+   size_t nch = ch_bra_list.size();
+   
+//   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ich=0; ich<nch; ich++)
+   { 
+     size_t ch_bra = ch_bra_list[ich];
+     size_t ch_ket = ch_ket_list[ich];
+//     size_t ch_bra = itmat.first[0];
+//     size_t ch_ket = itmat.first[1];
+     TwoBodyChannel& tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
+     int J = tbc_bra.J;
+     size_t nbras = tbc_bra.GetNumberKets();
+     size_t nkets = tbc_ket.GetNumberKets();
+     for ( size_t ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       size_t p = bra.p;
+       size_t q = bra.q;
+       int phasepq = bra.Phase(J);
+//       for ( size_t iket=0; iket<nkets; iket++)
+       for ( size_t iket=ibra; iket<nkets; iket++)
+       {
+          Ket& ket = tbc_ket.GetKet(iket);
+          size_t r = ket.p;
+          size_t s = ket.q;
+          int phasers = ket.Phase(J);
+          double zpqrs = 0;
+
+         for ( auto b : Z.modelspace->particles)
+         {
+           Orbit& ob = Z.modelspace->GetOrbit(b);
+
+
+            zpqrs +=  Y.TwoBody.GetTBME_J(J,J,p,q,b,s) * CHI_XX(r,b) +  Y.TwoBody.GetTBME_J(J,J,p,q,r,b)* CHI_XX(s,b);
+            zpqrs +=  Y.TwoBody.GetTBME_J(J,J,b,q,r,s) * CHI_XX(p,b) +  Y.TwoBody.GetTBME_J(J,J,p,b,r,s)* CHI_XX(q,b);
+            zpqrs -=  X.TwoBody.GetTBME_J(J,J,p,q,b,s) * CHI_XY(r,b) +  X.TwoBody.GetTBME_J(J,J,p,q,r,b)* CHI_XY(s,b);
+            zpqrs -=  X.TwoBody.GetTBME_J(J,J,b,q,r,s) * CHI_XY(p,b) +  X.TwoBody.GetTBME_J(J,J,p,b,r,s)* CHI_XY(q,b);
+
+          }//for a
+
+          for ( auto j : Z.modelspace->holes)
+          {
+              Orbit& oj = Z.modelspace->GetOrbit(j);
+
+
+              zpqrs += Y.TwoBody.GetTBME_J(J,J,j,q,r,s)* CHI_XX(p,j) +  Y.TwoBody.GetTBME_J(J,J,p,j,r,s)* CHI_XX(q,j);
+              zpqrs += Y.TwoBody.GetTBME_J(J,J,p,q,j,s)* CHI_XX(r,j) +  Y.TwoBody.GetTBME_J(J,J,p,q,r,j)* CHI_XX(s,j);
+              zpqrs -= X.TwoBody.GetTBME_J(J,J,j,q,r,s)* CHI_XY(p,j) +  X.TwoBody.GetTBME_J(J,J,p,j,r,s)* CHI_XY(q,j);
+              zpqrs -= X.TwoBody.GetTBME_J(J,J,p,q,j,s)* CHI_XY(r,j) +  X.TwoBody.GetTBME_J(J,J,p,q,r,j)* CHI_XY(s,j);
+
+          }
+
+          // normalize
+          if (p==q ) zpqrs /= PhysConst::SQRT2;
+          if (r==s ) zpqrs /= PhysConst::SQRT2;
+          Z.TwoBody.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+       }// for iket
+     }// for ibra
+
+  }// for itmat
+
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+*/
+
 
 
 

@@ -1498,21 +1498,23 @@ int main(int argc, char** argv)
 
       op = imsrgsolver.Transform(op);
 
-      std::cout << "Before renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
+//      std::cout << "Before renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
       if (renormal_order) 
       {
+        if ( op.GetParticleRank()>2) op.SetParticleRank(2); // Discard the residual 3N because we don't want to deal with it in the valence calculation
         op = op.UndoNormalOrdering();
-        op.SetModelSpace(ms2);
-        op = op.DoNormalOrdering();
+//        op.SetModelSpace(ms2);
+//        op = op.DoNormalOrdering();
+        op = op.DoNormalOrderingCore();
       }
 //      std::cout << " (" << ops[i].ZeroBody << " ) " << std::endl;
-      std::cout << "   IMSRG: " << op.ZeroBody << std::endl;
+//      std::cout << "   IMSRG: " << op.ZeroBody << std::endl;
 //      rw.WriteOperatorHuman(ops[i],intfile+opnames[i]+"_step2.op");
 //      std::cout << "After renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
 
 
 
-    std::cout << "      " << op.GetJRank() << " " << op.GetTRank() << " " << op.GetParity() << "   " << op.GetNumberLegs() << std::endl;
+//    std::cout << "      " << op.GetJRank() << " " << op.GetTRank() << " " << op.GetParity() << "   " << op.GetNumberLegs() << std::endl;
     if ( ((op.GetJRank()+op.GetTRank()+op.GetParity())<1) and (op.GetNumberLegs()%2==0) )
     {
        std::cout << "writing scalar files " << std::endl;

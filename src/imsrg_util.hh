@@ -79,6 +79,7 @@ namespace imsrg_util
  Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list);
 
  Operator Isospin2_Op(ModelSpace& modelspace);
+ Operator TzSquared_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
  Operator Sigma_Op(ModelSpace& modelspace);

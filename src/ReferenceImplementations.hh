@@ -60,6 +60,25 @@ namespace ReferenceImplementations
   void comm222_phst( const Operator& X, const Operator& Y, Operator& Z) ;
 
 
+  /// Two-nested-commutator expressions Z = [X,[X,Y]_3]  where X and Y are 2-body.
+
+  void diagram_CIa( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIb( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIIa( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIIb( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIIc( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIId( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIIIa( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_CIIIb( const Operator& X, const Operator& Y, Operator& Z );
+
+  void diagram_DIa( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_DIb( const Operator& X, const Operator& Y, Operator& Z );
+
+  void diagram_DIVa( const Operator& X, const Operator& Y, Operator& Z );
+  void diagram_DIVb( const Operator& X, const Operator& Y, Operator& Z );
+
+  void diagram_DIVb_intermediate( const Operator& X, const Operator& Y, Operator& Z );
+
 }// namespace ReferenceImplementations
 
 #endif

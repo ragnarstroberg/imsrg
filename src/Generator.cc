@@ -26,6 +26,14 @@ Generator::Generator()
 {}
 
 
+
+void Generator::SetDenominatorPartitioning(std::string dp)
+{
+   if (dp=="Moller_Plesset") denominator_partitioning=Moller_Plesset;
+   else if ( dp=="MP_isospin") denominator_partitioning=MP_isospin;
+   else denominator_partitioning=Epstein_Nesbet;
+}
+
 //void Generator::Update(Operator * H_s, Operator * Eta_s)
 void Generator::Update(Operator& H_s, Operator& Eta_s)
 {
@@ -75,6 +83,23 @@ void Generator::AddToEta(Operator& H_s, Operator& Eta_s)
 }
 
 
+
+Operator Generator::GetHod(Operator& H)
+{
+   for (auto sr : {"wegner","white","atan","imaginary-time","qtransfer-atan"})
+   {
+      if (generator_type == sr )  return GetHod_SingleRef(H);
+   }
+   for (auto sm : {"shell-model-wegner","shell-model","shell-model-atan","shell-model-imaginary-time"})
+   {
+      if (generator_type == sm )  return GetHod_ShellModel(H);
+   }
+   std::cout << "GetHod not implemented for generator type " << generator_type << "   so you get zero." << std::endl;
+   return 0*H; 
+}
+
+
+
 // Old method used to test some things out. Not typically used.
 void Generator::SetDenominatorDeltaOrbit(std::string orb)
 {
@@ -98,6 +123,16 @@ double Generator::Get1bDenominator(int i, int j)
    if ( denominator_partitioning == Epstein_Nesbet)
    {
       denominator += ( ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j);
+   }
+   else if ( denominator_partitioning == MP_isospin )
+   {
+      // Average the SP energies of protons and neutrons to make the denominator isospin symmetric
+      Orbit& oi = H->modelspace->GetOrbit(i);
+      Orbit& oj = H->modelspace->GetOrbit(j);
+      size_t ii = H->modelspace->GetOrbitIndex( oi.n,oi.l,oi.j2,-oi.tz2);
+      size_t jj = H->modelspace->GetOrbitIndex( oj.n,oj.l,oj.j2,-oj.tz2);
+      denominator += H->OneBody(ii,ii) - H->OneBody(jj,jj);
+      denominator /=2;
    }
 
    if (denominator_delta_index==-12345 or i == denominator_delta_index or j==denominator_delta_index)
@@ -124,6 +159,22 @@ double Generator::Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket)
    int k = ket.p;
    int l = ket.q;
    double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l);
+
+   if ( denominator_partitioning == MP_isospin )
+   {
+      // Average the SP energies of protons and neutrons to make the denominator isospin symmetric
+      Orbit& oi = H->modelspace->GetOrbit(i);
+      Orbit& oj = H->modelspace->GetOrbit(j);
+      Orbit& ok = H->modelspace->GetOrbit(k);
+      Orbit& ol = H->modelspace->GetOrbit(l);
+      size_t ii = H->modelspace->GetOrbitIndex( oi.n,oi.l,oi.j2,-oi.tz2);
+      size_t jj = H->modelspace->GetOrbitIndex( oj.n,oj.l,oj.j2,-oj.tz2);
+      size_t kk = H->modelspace->GetOrbitIndex( ok.n,ok.l,ok.j2,-ok.tz2);
+      size_t ll = H->modelspace->GetOrbitIndex( ol.n,ol.l,ol.j2,-ol.tz2);
+      denominator += H->OneBody(ii,ii) + H->OneBody(jj,jj) - H->OneBody(kk,kk) - H->OneBody(ll,ll);
+      denominator /=2;
+   }
+
    if (denominator_delta_index == -12345) denominator += denominator_delta;
    double ni = bra.op->occ;
    double nj = bra.oq->occ;
@@ -230,14 +281,18 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
          {
 //            double denominator = Get2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
-//            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
+//            double denominator = Get2bDenominator_Jdep(ch_bra,ibra,iket);
 //            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+            Ket& bra = tbc_bra.GetKet(ibra);
+            Ket& ket = tbc_ket.GetKet(iket);
+//            std::cout << __func__ << "  line " << __LINE__ << " bra,ket " << bra.p << " " << bra.q << " , " << ket.p << " " << ket.q  << "  J = " << tbc_bra.J << "   numerator /denom = " << H2(ibra,iket) << " / " << denominator << std::endl;
          }
       }
     }
 
+    std::cout << "Eta and H particle ranks: " << Eta->GetParticleRank() << "  " << H->GetParticleRank() << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
     {
        double t_start = omp_get_wtime();
@@ -260,7 +315,7 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
      std::vector<size_t> corevec;
      for (auto a : modelspace->core) corevec.push_back(a);
      std::map<int,double> e_fermi = modelspace->GetEFermi();
-//     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
 //    for (auto a : modelspace->core )
      size_t nch3 = modelspace->GetNumberThreeBodyChannels();
     #pragma omp parallel for schedule(dynamic,1)
@@ -986,50 +1041,92 @@ Operator  Generator::GetHod_SingleRef(Operator& H )
    {
       for ( auto& i : VectorUnion(H.modelspace->valence,H.modelspace->qspace) )
       {
-//         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
          Hod.OneBody(i,a) = H.OneBody(i,a);
          Hod.OneBody(a,i) = H.OneBody(a,i);
       }
    }
 
    // Two body piece -- eliminate pp'hh' bits
-//   for (int ch=0;ch<Eta->nChannels;++ch)
-//   {
    for ( auto& iter : H.TwoBody.MatEl )
    {
       size_t ch_bra = iter.first[0];
       size_t ch_ket = iter.first[1];
-//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
-//      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
       arma::mat& H2 =  iter.second;
-//      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
       arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
 //      for ( auto& iket : tbc.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
-//         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
-//            double denominator = Get2bDenominator(ch,ibra,iket);
-//            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
-//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             Hod2(ibra,iket) =  H2(ibra,iket);
-            Hod2(iket,ibra) =  Hod2(ibra,iket) ; // Eta needs to be antisymmetric
+            Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
          }
       }
     }
-   std::cout << __func__ << "  line " << __LINE__ << std::endl;
 
    return Hod;
-//    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
-//    {
-//       double t_start = omp_get_wtime();
-////       ConstructGenerator_Atan_3body();
-//       ConstructGenerator_SingleRef_3body( etafunc );
-//       H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
-//    }// if particle rank >3
+   // Skip the 3b part for now...
 }
 
+
+
+
+
+ 
+Operator Generator::GetHod_ShellModel(Operator& H)
+{
+   Operator Hod = 0.0* H;
+   // One body piece -- make sure the valence one-body part is diagonal
+   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   {
+      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      {
+         if (i==a) continue;
+         Hod.OneBody(i,a) = H.OneBody(i,a);
+         Hod.OneBody(a,i) = H.OneBody(a,i);
+      }
+   }
+
+
+   // Two body piece -- eliminate pp'hh' bits
+   for ( auto& iter : H.TwoBody.MatEl )
+   {
+      size_t ch_bra = iter.first[0];
+      size_t ch_ket = iter.first[1];
+      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
+      arma::mat& H2 =  iter.second;
+      arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
+
+      // Decouple the core
+//      for ( auto& iket : VectorUnion( tbc_bra.GetKetIndex_vc() ) ) // cc means core-core ('holes' refer to the reference state)
+      for ( auto& iket : VectorUnion( tbc_ket.GetKetIndex_cc(), tbc_ket.GetKetIndex_vc() ) ) // cc means core-core ('holes' refer to the reference state)
+      {
+         for ( auto& ibra :  VectorUnion( tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv(), tbc_bra.GetKetIndex_qq() ) )
+         {
+            Hod2(ibra,iket) =  H2(ibra,iket);
+            Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+         }
+      }
+
+      // Decouple the valence space
+      for ( auto& iket :  tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
+      {
+         for ( auto& ibra :  VectorUnion( tbc_bra.GetKetIndex_qv(), tbc_bra.GetKetIndex_qq() ) )
+         {
+            Hod2(ibra,iket) =  H2(ibra,iket);
+            Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+         }
+      }
+
+    }
+
+ 
+   // Skip the 3b part for now...
+
+    return Hod;
+}
+ 
 
