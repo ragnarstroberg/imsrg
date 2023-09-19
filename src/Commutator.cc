@@ -292,10 +292,6 @@ namespace Commutator
     if (comm_term_on["comm222_phss"])
       comm222_phss(X, Y, Z);
 
-    if (use_imsrg3 and ((X.Norm() > threebody_threshold) && (Y.Norm() > threebody_threshold)))
-    {
-      if (Z.modelspace->scalar3b_transform_first_pass)
-        SetSingleThread(true);
 
   if ( use_imsrg3 and  ( (X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold))  )
   {
