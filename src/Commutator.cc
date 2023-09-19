@@ -130,9 +130,11 @@ namespace Commutator
              "comm233_pp_hhss", "comm233_phss", "comm333_ppp_hhhss", "comm333_pph_hhpss"})
     {
       comm_term_on[term] = tf;
-    }
-    use_imsrg3 = tf;
-  }
+
+   }
+   use_imsrg3_n7 = tf;
+   use_imsrg3 = tf;
+}
 
   // void SetUseIMSRG3N7(bool tf)
   //{use_imsrg3_n7 = tf;}
