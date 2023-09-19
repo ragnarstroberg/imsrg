@@ -14,7 +14,7 @@ INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
 #FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
-FLAGS     = -O3 -march=native -std=$(CXXSTD) -fopenmp -fPIC
+FLAGS     = -O3  -std=$(CXXSTD) -fopenmp -fPIC  # -march=native
 FLAGS    += $(WARNFLAGS)
 LIBS = -lopenblas -lgsl -lz
 LDFLAGS = -L$(PWD) 
@@ -47,7 +47,7 @@ endif
 
 ifeq ($(DEBUG),on)
 # FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
- FLAGS     = -march=native -std=$(CXXSTD) -fopenmp -fPIC -g
+ FLAGS     =  -std=$(CXXSTD) -fopenmp -fPIC -g  # -march=native
 endif
 
 #WITHHALF = 1
