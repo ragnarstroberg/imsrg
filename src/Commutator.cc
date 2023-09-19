@@ -32,6 +32,7 @@ namespace Commutator
   bool use_imsrg3 = false;
   bool use_imsrg3_n7 = false;
   bool use_imsrg3_mp4 = false;
+  bool use_factorized_correction = false;
   bool only_2b_omega = false;
   bool perturbative_triples = false;
   bool bch_skip_ieq1 = false;
@@ -132,7 +133,6 @@ namespace Commutator
       comm_term_on[term] = tf;
 
    }
-   use_imsrg3_n7 = tf;
    use_imsrg3 = tf;
 }
 
@@ -148,6 +148,7 @@ namespace Commutator
       comm_term_on[term] = tf;
     }
     use_imsrg3_n7 = tf;
+    use_imsrg3 = tf;
   }
 
   // void SetUseIMSRG3_MP4(bool tf)
@@ -162,6 +163,12 @@ namespace Commutator
       comm_term_on[term] = tf;
     }
     use_imsrg3_n7 = tf;
+  }
+
+  
+  void SetUseFactorizedCorrection(bool tf)
+  {
+     use_factorized_correction = tf;
   }
 
   void SetOnly2bOmega(bool tf)
@@ -542,13 +549,27 @@ namespace Commutator
       OpOut.SetParticleRank(3);
     }
     double factorial_denom = 1.0;
-    Operator goosetank_chi; // auxiliary one-body operator used to recover 4th-order quadruples.
+//    Operator goosetank_chi; // auxiliary one-body operator used to recover 4th-order quadruples.
+//    if (use_goose_tank_correction)
+//    {
+//      goosetank_chi = OpIn;
+//      goosetank_chi.SetParticleRank(1);
+//      goosetank_chi.Erase();
+//    }
+    Operator chi, chi2; // auxiliary one-body operator used to recover 4th-order quadruples.
     if (use_goose_tank_correction)
     {
-      goosetank_chi = OpIn;
-      goosetank_chi.SetParticleRank(1);
-      goosetank_chi.Erase();
+      chi = OpIn;
+      chi.SetParticleRank(1);
+      chi.Erase();
     }
+//    if ( use_factorized_correction )
+//    {
+//      chi = OpIn;
+//      chi.Erase();
+//      chi2 = OpIn;
+//      chi2.Erase();
+//    }
     if (nx > bch_transform_threshold)
     {
       //     Operator OpNested = OpIn;
@@ -571,13 +592,27 @@ namespace Commutator
 
         if (use_goose_tank_correction)
         {
-          auto chi_last = goosetank_chi.OneBody;
-          goosetank_chi = GooseTankUpdate(Omega, OpNested);
+//          auto chi_last = goosetank_chi.OneBody;
+//          goosetank_chi = GooseTankUpdate(Omega, OpNested);
+          auto chi_last = chi.OneBody;
+          chi = GooseTankUpdate(Omega, OpNested);
           //          std::cout << "goose_tank chi = " << goosetank_chi.OneBody(0,0) << " , " << goosetank_chi.OneBody(1,1)<< std::endl;
           OpNested.OneBody += chi_last; // add the chi from the previous step to OpNested.
         }
 
+        if ( use_factorized_correction )
+        {
+           chi2 = chi;     // keep nested commutator from two steps ago
+           chi = OpNested; // save nested commutator from previous step
+        }
+
         OpNested = Commutator(Omega, OpNested); // the ith nested commutator
+
+        if (i>1 and use_factorized_correction)
+        {
+           comm223_231_Factorization( Omega, chi2, OpNested);
+           comm223_232_Factorization( Omega, chi2, OpNested);
+        }
                                                 //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
 
         factorial_denom /= i;
@@ -16398,7 +16433,8 @@ namespace Commutator
         // std::cout<< "diagram IIIa and IIIb " << Z.OneBodyNorm() << std::endl;
         // Z.EraseOneBody();
 
-    Z.profiler.timer["_Factorization"] += omp_get_wtime() - t_internal;
+    Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
+//    Z.profiler.timer["_Factorization"] += omp_get_wtime() - t_internal;
     return;
   }
 
