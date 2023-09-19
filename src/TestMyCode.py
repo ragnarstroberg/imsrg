@@ -95,12 +95,12 @@ Hout2_2.TwoBody.Erase()
 print("\n   Two Body part: ")
 
 # double commutator
-Commutator.comm232ss(Eta, Htemp, Hout2_1)
+# Commutator.comm232ss(Eta, Htemp, Hout2_1)
+
+Commutator.comm223_232_Test(Eta, H, Hout2_1)
 
 
-
-
-
+'''
 Hout2_4 = Operator(ms,0,0,0,particle_rank)
 Hout2_4.ThreeBody.SetMode('pn')    
 Hout2_4.ThreeBody.Erase()
@@ -125,7 +125,7 @@ print("\n\n")
 ReferenceImplementations.diagram_DIVb_intermediate(Eta, H, Hout2_4)
 print( "diagram DIV_ragnar     {}    ".format(  Hout2_4.TwoBodyNorm() ))
 print("\n\n")
-
+'''
 
 '''
 print("\n  One Body part: ")
@@ -143,7 +143,9 @@ print( "H4    {}    ".format(  Hout2_4.OneBodyNorm() ))
 
 # direct term
 #Commutator.comm223_322_BruteForce(Eta, H, Hout2_2)
-ReferenceImplementations.comm223_232_BruteForce(Eta, H, Hout2_2)
+#ReferenceImplementations.comm223_232_BruteForce(Eta, H, Hout2_2)
+
+Commutator.comm223_232_Factorization(Eta, H, Hout2_2)
 
 print( "H1    {}    ".format(  Hout2_1.TwoBodyNorm()) )
 print( "H2    {}    ".format(  Hout2_2.TwoBodyNorm() ))

@@ -655,6 +655,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm223_231_Factorization", &Commutator::comm223_231_Factorization);
       Commutator.def("comm223_232_Factorization", &Commutator::comm223_232_Factorization);
 
+      Commutator.def("comm223_232_Test", &Commutator::comm223_232_Test);
+
+
 
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
