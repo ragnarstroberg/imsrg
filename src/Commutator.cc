@@ -15648,7 +15648,11 @@ namespace Commutator
   // factorize double commutator [Eta, [Eta, Gamma]_3b ]_1b
   void comm223_231_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
-    double t_internal = omp_get_wtime(); // timer
+    double t_start = omp_get_wtime(); // timer
+
+    bool diagramI = true;
+    bool diagramII = false;
+    bool diagramIII = true;
 
     Z.modelspace->PreCalculateSixJ();
     // ###########################################################
@@ -15664,6 +15668,8 @@ namespace Commutator
     //              | e
     // Chi_221_a = \sum \hat(J_0) ( nnnn - ... ) eta eta
 
+    double t_internal = omp_get_wtime(); // timer
+
     auto Chi_221_a = Z.OneBody;
     Chi_221_a.zeros(); // Set all elements to zero
 
@@ -15671,6 +15677,8 @@ namespace Commutator
     int norbits = Z.modelspace->all_orbits.size();
     std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
 
+    if (diagramI)
+    {
 #pragma omp parallel for
     for (int indexd = 0; indexd < norbits; ++indexd)
     {
@@ -15767,6 +15775,13 @@ namespace Commutator
     }   // for p
     // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
+
+    Z.profiler.timer["231_diagram_I"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime(); // timer
+    }
+
+    if (diagramII)
+    {
 
     // ###########################################################
     //  diagram II_a
@@ -16057,6 +16072,9 @@ namespace Commutator
     // std::cout << "diagram IIa " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
+    Z.profiler.timer["231_diagram_IIa"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime(); // timer
+
     // ###########################################################
     //  diagram II_b
     //
@@ -16196,6 +16214,9 @@ namespace Commutator
         // std::cout<< "diagram IIb " << Z.OneBodyNorm() << std::endl;
         // Z.EraseOneBody();
 
+    Z.profiler.timer["231_diagram_IIb"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime(); // timer
+
     // ###########################################################
     //  diagram II_c
     //
@@ -16317,6 +16338,10 @@ namespace Commutator
     // std::cout<< "diagram IId " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
+    Z.profiler.timer["231_diagram_IIc"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime(); // timer
+    }
+
     // ###########################################################
     //  diagram III_a and diagram III_b
 
@@ -16334,6 +16359,9 @@ namespace Commutator
     auto Chi_221_b = Z.OneBody;
     Chi_221_b.zeros(); // Set all elements to zero
 
+
+  if (diagramIII)
+  {
 #pragma omp parallel for
     for (int indexd = 0; indexd < norbits; ++indexd)
     {
@@ -16430,10 +16458,13 @@ namespace Commutator
         //--------------------------------------------------
       } // for q
     }   // for p
+  }
         // std::cout<< "diagram IIIa and IIIb " << Z.OneBodyNorm() << std::endl;
         // Z.EraseOneBody();
+    Z.profiler.timer["231_diagram_III"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime(); // timer
 
-    Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
+    Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
 //    Z.profiler.timer["_Factorization"] += omp_get_wtime() - t_internal;
     return;
   }
