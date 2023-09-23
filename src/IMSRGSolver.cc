@@ -563,7 +563,7 @@ void IMSRGSolver::Solve_flow_RK4()
            K3[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi);
         else
            K3[i] = Commutator::Commutator( Eta, Ktmp[i]);
-        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+        Ktmp[i] = FlowingOps[i] + 1.0*ds*K3[i];
       }
 //      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
 //      Htmp = Hs + 1.0*ds*K3;
@@ -1110,6 +1110,8 @@ double IMSRGSolver::GetPerturbativeTriples()
 //  Operator Wbar( (*modelspace), 0,0,0,3);
 //  Wbar.ThreeBody.SwitchToPN_and_discard();
   Operator Wbar( (*modelspace), 0,0,0,2);
+  Wbar.ThreeBody.SetMode("pn");
+  Wbar.SetParticleRank(3);
   Operator& omega = Omega.back();
 
   Operator& Hs = FlowingOps[0];
@@ -1119,17 +1121,19 @@ double IMSRGSolver::GetPerturbativeTriples()
   Commutator::SetBCHSkipiEq1(false);
 
 
+  std::cout << "Relevant two-body norms of omega H : " << omega.TwoBodyNorm() << " " << Htilde.TwoBodyNorm() << std::endl;
   Commutator::perturbative_triples = true;
+  Commutator::comm223ss( omega, Htilde, Wbar);
+  Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
-  Commutator::comm223ss( omega, Htilde, Wbar);
-  double pert_triples = Wbar.ZeroBody;
+//  double pert_triples = Wbar.ZeroBody;
+  std::cout << "  Wbar 3b norm is " << Wbar.ThreeBodyNorm() << std::endl;
 
-//  double pert_triples = Wbar.GetMP2_3BEnergy();
+  double pert_triples = Wbar.GetMP2_3BEnergy();
 //  double pert_triples = new_way;
   std::cout << "I GOT pert_triples = " << std::setw(14) << std::setprecision(8) << pert_triples
             << "  size of omega is " << Omega.size() << std::endl;
-  Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations
   return pert_triples;
 
 }
