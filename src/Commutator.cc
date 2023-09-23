@@ -278,9 +278,16 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
       comm222_phss(X, Y, Z);
 
 
+   bool any_imsrg3 = false;
+       for ( auto term : {  "comm330ss",   "comm331ss",    "comm231ss", "comm132ss",  "comm232ss", 
+                            "comm332_ppph_hhhpss",  "comm332_pphhss",  "comm133ss",  "comm223ss",            
+                            "comm233_pp_hhss",   "comm233_phss",  "comm333_ppp_hhhss", "comm333_pph_hhpss"
+                         } )  any_imsrg3 = any_imsrg3 or comm_term_on[term];
+
 //  if ( use_imsrg3 and  ( (X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold))  )
-  if (  ( (X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold))  )
+  if ( any_imsrg3 and  ( (X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold))  )
   {
+       
        if ( Z.modelspace->scalar3b_transform_first_pass )   SetSingleThread(true);
 
        // Turn on all the IMSRG(3) commutator terms. Below, we can turn off selected ones to make it faster.
@@ -2305,6 +2312,29 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 // A much slower, but more straighforward implementation which can handle parity and isospin changing operators.
 void comm222_phss_slower( const Operator& X, const Operator& Y, Operator& Z)
 {
+
+   // Right now, I think that even for J scalar operators, the tensor version is faster...
+   if ( X.GetParity()==0 and X.GetTRank()==0 )
+   {
+      Operator Ytmp = Y;
+      Operator Ztmp = Z*0;
+      Ytmp.MakeReduced();
+      comm222_phst(X,Ytmp,Ztmp);
+      Ztmp.MakeNotReduced();
+      Z.TwoBody += Ztmp.TwoBody;
+      return;
+   }
+   else if ( Y.GetParity()==0 and Y.GetTRank()==0 )
+   {
+      Operator Xtmp = -Y;
+      Operator Ztmp = Z*0;
+      Xtmp.MakeReduced();
+      comm222_phst(Y,Xtmp,Ztmp);
+      Ztmp.MakeNotReduced();
+      Z.TwoBody += Ztmp.TwoBody;
+      return;
+   }
+
    double t_start = omp_get_wtime();
    auto& X2 = X.TwoBody;
    auto& Y2 = Y.TwoBody;
@@ -13438,7 +13468,7 @@ void comm111st( const Operator & X, const Operator& Y, Operator& Z)
 {
    double tstart = omp_get_wtime();
    comm111ss(X,Y,Z);
-   X.profiler.timer["comm111st"] += omp_get_wtime() - tstart;
+   X.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -13722,7 +13752,7 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
          }
       }
    }
-   X.profiler.timer["comm122st"] += omp_get_wtime() - tstart;
+   X.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -13905,7 +13935,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
          if ( i!=j) Z.OneBody(j,i) += hZ * phase_ij * cijJ;
       } // for j
     } // for i
-    X.profiler.timer["comm222_pp_hh_221st"] += omp_get_wtime() - tstart;
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -14464,10 +14494,11 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 void comm222_phst( const Operator& X, const Operator& Y, Operator& Z ) 
 {
 
+   double t_start_full = omp_get_wtime();
+   double t_start = omp_get_wtime();
    int hX = X.IsHermitian() ? 1 : -1;
    int hY = Y.IsHermitian() ? 1 : -1;
 
-   double t_start = omp_get_wtime();
    Z.modelspace->PreCalculateSixJ(); // if we already did it, this does nothing.
    // We reuse Xt_bar multiple times, so it makes sense to calculate them once and store them in a deque.
    std::deque<arma::mat> Xt_bar_ph = InitializePandya( Z, Z.nChannels, "transpose"); // We re-use the scalar part multiple times, so there's a significant speed gain for saving it
@@ -14655,17 +14686,17 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
          arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
          arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
    
-            std::cout << __func__ << " " << __LINE__ << std::endl;
+      //      std::cout << __func__ << " " << __LINE__ << std::endl;
          DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
          if (ch_bra_cc==ch_ket_cc)
          {
-            std::cout << __func__ << " " << __LINE__ << std::endl;
+      //      std::cout << __func__ << " " << __LINE__ << std::endl;
    //         YJ2J1 = YJ1J2;
              // Dont do nothing..
          }
          else
          {
-            std::cout << __func__ << " " << __LINE__ << std::endl;
+        //    std::cout << __func__ << " " << __LINE__ << std::endl;
             DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
          }
       }
@@ -14754,12 +14785,12 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    
          Z_bar.at({ch_bra_cc,ch_ket_cc}) = Mleft * Mright;
 //         if ( ch_bra_cc==2 or ch_bra_cc==3 or ch_bra_cc==8 or ch_bra_cc==9 )
-         if (  ch_bra_cc==3  )
-         {
-            std::cout << __func__ << "  ch_cc = " << ch_bra_cc << std::endl << "Mleft " << std::endl << Mleft << std::endl << "Mright" << std::endl << Mright
-                      << std::endl << "Zbar " << std::endl <<  Z_bar.at({ch_bra_cc,ch_ket_cc})<< std::endl;
-            std::cout << "   and also XJ1 = " << std::endl << XJ1 << std::endl << "   and  YJ1J2 = " << std::endl<< YJ1J2 << std::endl;
-         }
+//         if (  ch_bra_cc==3  )
+//         {
+//            std::cout << __func__ << "  ch_cc = " << ch_bra_cc << std::endl << "Mleft " << std::endl << Mleft << std::endl << "Mright" << std::endl << Mright
+//                      << std::endl << "Zbar " << std::endl <<  Z_bar.at({ch_bra_cc,ch_ket_cc})<< std::endl;
+//            std::cout << "   and also XJ1 = " << std::endl << XJ1 << std::endl << "   and  YJ1J2 = " << std::endl<< YJ1J2 << std::endl;
+//         }
    
       }
       X.profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
@@ -14773,6 +14804,7 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    AddInverseTensorPandyaTransformation(Z, Z_bar);
 
    X.profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t_start;
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start_full;
 
 }
 
