@@ -131,10 +131,9 @@ namespace Commutator
              "comm233_pp_hhss", "comm233_phss", "comm333_ppp_hhhss", "comm333_pph_hhpss"})
     {
       comm_term_on[term] = tf;
-
-   }
-   use_imsrg3 = tf;
-}
+    }
+    use_imsrg3 = tf;
+  }
 
   // void SetUseIMSRG3N7(bool tf)
   //{use_imsrg3_n7 = tf;}
@@ -165,10 +164,9 @@ namespace Commutator
     use_imsrg3_n7 = tf;
   }
 
-  
   void SetUseFactorizedCorrection(bool tf)
   {
-     use_factorized_correction = tf;
+    use_factorized_correction = tf;
   }
 
   void SetOnly2bOmega(bool tf)
@@ -299,36 +297,34 @@ namespace Commutator
     if (comm_term_on["comm222_phss"])
       comm222_phss(X, Y, Z);
 
+    if (use_imsrg3 and ((X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold)))
+    {
+      if (Z.modelspace->scalar3b_transform_first_pass)
+        SetSingleThread(true);
 
-  if ( use_imsrg3 and  ( (X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold))  )
-  {
-       if ( Z.modelspace->scalar3b_transform_first_pass )   SetSingleThread(true);
-
-       // Turn on all the IMSRG(3) commutator terms. Below, we can turn off selected ones to make it faster.
-//       for ( auto term : {  "comm330ss",   "comm331ss",    "comm231ss", "comm132ss",  "comm232ss", 
-//                            "comm332_ppph_hhhpss",  "comm332_pphhss",  "comm133ss",  "comm223ss",            
-//                            "comm233_pp_hhss",   "comm233_phss",  "comm333_ppp_hhhss", "comm333_pph_hhpss"
-//                         } )
-//          comm_term_on[term] = true; 
-//
-//      // keep only the terms that scale as n^7 or better
-//      if ( use_imsrg3_n7 )
-//      {
-//         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss",  "comm233_pp_hhss",
-//                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss"})
-//             comm_term_on[term] = false;
-//      }
-//
-//      // keep only the terms that contribute to 4th order energy
-//      if ( use_imsrg3_mp4 )
-//      {
-//         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss", "comm233_pp_hhss",
-//                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss",
-//                            "comm331ss",  "comm231ss",  "comm132ss"})
-//             comm_term_on[term] = false;
-//      }
-
-
+      // Turn on all the IMSRG(3) commutator terms. Below, we can turn off selected ones to make it faster.
+      //       for ( auto term : {  "comm330ss",   "comm331ss",    "comm231ss", "comm132ss",  "comm232ss",
+      //                            "comm332_ppph_hhhpss",  "comm332_pphhss",  "comm133ss",  "comm223ss",
+      //                            "comm233_pp_hhss",   "comm233_phss",  "comm333_ppp_hhhss", "comm333_pph_hhpss"
+      //                         } )
+      //          comm_term_on[term] = true;
+      //
+      //      // keep only the terms that scale as n^7 or better
+      //      if ( use_imsrg3_n7 )
+      //      {
+      //         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss",  "comm233_pp_hhss",
+      //                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss"})
+      //             comm_term_on[term] = false;
+      //      }
+      //
+      //      // keep only the terms that contribute to 4th order energy
+      //      if ( use_imsrg3_mp4 )
+      //      {
+      //         for ( auto term : {"comm332_ppph_hhhpss", "comm332_pphhss", "comm233_pp_hhss",
+      //                            "comm233_phss",  "comm333_ppp_hhhss",  "comm333_pph_hhpss",
+      //                            "comm331ss",  "comm231ss",  "comm132ss"})
+      //             comm_term_on[term] = false;
+      //      }
 
       // This one is so important we always include it
       // important for suppressing off-diagonal H3
@@ -549,13 +545,13 @@ namespace Commutator
       OpOut.SetParticleRank(3);
     }
     double factorial_denom = 1.0;
-//    Operator goosetank_chi; // auxiliary one-body operator used to recover 4th-order quadruples.
-//    if (use_goose_tank_correction)
-//    {
-//      goosetank_chi = OpIn;
-//      goosetank_chi.SetParticleRank(1);
-//      goosetank_chi.Erase();
-//    }
+    //    Operator goosetank_chi; // auxiliary one-body operator used to recover 4th-order quadruples.
+    //    if (use_goose_tank_correction)
+    //    {
+    //      goosetank_chi = OpIn;
+    //      goosetank_chi.SetParticleRank(1);
+    //      goosetank_chi.Erase();
+    //    }
     Operator chi, chi2; // auxiliary one-body operator used to recover 4th-order quadruples.
     if (use_goose_tank_correction)
     {
@@ -563,13 +559,13 @@ namespace Commutator
       chi.SetParticleRank(1);
       chi.Erase();
     }
-//    if ( use_factorized_correction )
-//    {
-//      chi = OpIn;
-//      chi.Erase();
-//      chi2 = OpIn;
-//      chi2.Erase();
-//    }
+    //    if ( use_factorized_correction )
+    //    {
+    //      chi = OpIn;
+    //      chi.Erase();
+    //      chi2 = OpIn;
+    //      chi2.Erase();
+    //    }
     if (nx > bch_transform_threshold)
     {
       //     Operator OpNested = OpIn;
@@ -592,28 +588,28 @@ namespace Commutator
 
         if (use_goose_tank_correction)
         {
-//          auto chi_last = goosetank_chi.OneBody;
-//          goosetank_chi = GooseTankUpdate(Omega, OpNested);
+          //          auto chi_last = goosetank_chi.OneBody;
+          //          goosetank_chi = GooseTankUpdate(Omega, OpNested);
           auto chi_last = chi.OneBody;
           chi = GooseTankUpdate(Omega, OpNested);
           //          std::cout << "goose_tank chi = " << goosetank_chi.OneBody(0,0) << " , " << goosetank_chi.OneBody(1,1)<< std::endl;
           OpNested.OneBody += chi_last; // add the chi from the previous step to OpNested.
         }
 
-        if ( use_factorized_correction )
+        if (use_factorized_correction)
         {
-           chi2 = chi;     // keep nested commutator from two steps ago
-           chi = OpNested; // save nested commutator from previous step
+          chi2 = chi;     // keep nested commutator from two steps ago
+          chi = OpNested; // save nested commutator from previous step
         }
 
         OpNested = Commutator(Omega, OpNested); // the ith nested commutator
 
-        if (i>1 and use_factorized_correction)
+        if (i > 1 and use_factorized_correction)
         {
-           comm223_231_Factorization( Omega, chi2, OpNested);
-           comm223_232_Factorization( Omega, chi2, OpNested);
+          comm223_231_Factorization(Omega, chi2, OpNested);
+          comm223_232_Factorization(Omega, chi2, OpNested);
         }
-                                                //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
+        //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
 
         factorial_denom /= i;
 
@@ -15716,9 +15712,10 @@ namespace Commutator
               double occfactor = (nbar_a * nbar_c * n_b * n_d - nbar_b * nbar_d * n_a * n_c - nbar_b * nbar_e * n_a * n_c + nbar_a * nbar_c * n_b * n_e);
               if (std::abs(occfactor) < 1e-6)
                 continue;
-              eta_de += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J0, J0, a, c, b, e);
+              double doubleEta = (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J0, J0, a, c, b, e);
+              eta_de += doubleEta;
               if (a != c)
-                eta_de += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, c, a) * Eta.TwoBody.GetTBME_J(J0, J0, c, a, b, e);
+                eta_de += doubleEta;
             }
           }
         }
@@ -15768,6 +15765,7 @@ namespace Commutator
     // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
+return;
     // ###########################################################
     //  diagram II_a
     //
@@ -16434,7 +16432,6 @@ namespace Commutator
         // Z.EraseOneBody();
 
     Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
-//    Z.profiler.timer["_Factorization"] += omp_get_wtime() - t_internal;
     return;
   }
 
@@ -16519,6 +16516,7 @@ namespace Commutator
                   double jd = od.j2 * 0.5;
 
                   double occfactor = (nbar_b * nbar_d * n_c + nbar_c * n_b * n_d);
+                  occfactor = 1;
                   if (fabs(occfactor) < 1.e-7)
                     continue;
                   /// direct term
@@ -16767,8 +16765,8 @@ namespace Commutator
 
     } // for itmat
 
-/*
-    Z.EraseTwoBody();
+return;
+    // Z.EraseTwoBody();
 
     // ####################################################################################
     //  IIa
@@ -16860,8 +16858,8 @@ namespace Commutator
           double n_d = od.occ;
           double nbar_d = 1.0 - n_d;
 
-          double occfactor = (nbar_b * nbar_d * n_a - nbar_a * n_b * n_d);
-
+          double occfactor = (nbar_c * nbar_d * n_a + nbar_a * n_c * n_d);
+          occfactor = 1;
           int jmin = std::max(std::abs(oa.j2 - od.j2), std::abs(oc.j2 - ob.j2)) / 2;
           int jmax = std::min(oa.j2 + od.j2, oc.j2 + ob.j2) / 2;
           double Xbar = 0;
@@ -16905,103 +16903,223 @@ namespace Commutator
       barCHI_III[ch_cc] = bar_Eta[ch_cc] * nnnbar_Eta[ch_cc];
     }
     // Inverse Pandya transformation
-#pragma omp parallel for
+    /**
+    #pragma omp parallel for
+        for (int ch = 0; ch < nch; ++ch)
+        {
+          TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+          int J0 = tbc.J;
+          int nKets = tbc.GetNumberKets();
+          for (int ibra = 0; ibra < nKets; ++ibra)
+          {
+            Ket &bra = tbc.GetKet(ibra);
+            size_t i = bra.p;
+            size_t j = bra.q;
+            Orbit &oi = *(bra.op);
+            Orbit &oj = *(bra.oq);
+            int ji = oi.j2;
+            int jj = oj.j2;
+
+            double commij = 0;
+            double commji = 0;
+
+            for (int iket = ibra; iket < nKets; ++iket)
+            {
+              Ket &ket = tbc.GetKet(iket);
+              size_t k = ket.p;
+              size_t l = ket.q;
+              Orbit &ok = *(ket.op);
+              Orbit &ol = *(ket.oq);
+              int jk = ok.j2;
+              int jl = ol.j2;
+
+              // pqrs
+              int parity_cc = (oi.l + ol.l) % 2;
+              int Tz_cc = std::abs(oi.tz2 - ol.tz2) / 2;
+              int Jpmin = std::max(std::abs(ji - jl), std::abs(jj - jk)) / 2;
+              int Jpmax = std::min(ji + jl, jj + jk) / 2;
+
+              for (int Jprime = Jpmin; Jprime <= Jpmax; ++Jprime)
+              {
+                // double sixj = Z.modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
+                // double sixj = Z.modelspace->GetCachedSixJ(jji, jjj, J, jjk, jjl, Jprime);
+
+                double sixj = Z.modelspace->GetSixJ(ji * 0.5, jj * 0.5, J0, jk * 0.5, jl * 0.5, Jprime);
+                if (std::abs(sixj) < 1e-8)
+                  continue;
+                int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime, parity_cc, Tz_cc);
+                TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+                int nkets_cc = tbc_cc.GetNumberKets();
+                int indx_il = tbc_cc.GetLocalIndex(std::min(i, l), std::max(i, l)) + (i > l ? nkets_cc : 0);
+                int indx_kj = tbc_cc.GetLocalIndex(std::min(j, k), std::max(j, k)) + (k > j ? nkets_cc : 0);
+                double me1 = barCHI_III[ch_cc](indx_il, indx_kj);
+                commij -= (2 * Jprime + 1) * sixj * me1;
+              }
+
+              if (k == l)
+              {
+                commji = commij;
+              }
+              else if (i == j)
+              {
+                commji = Z.modelspace->phase((ji + jj + jk + jl) / 2) * commij;
+              }
+              else
+              {
+                // now loop over the cross coupled TBME's
+                parity_cc = (oi.l + ok.l) % 2;
+                Tz_cc = std::abs(oi.tz2 - ok.tz2) / 2;
+                Jpmin = std::max(std::abs(int(jj - jl)), std::abs(int(jk - ji))) / 2;
+                Jpmax = std::min(int(jj + jl), int(jk + ji)) / 2;
+                for (int Jprime = Jpmin; Jprime <= Jpmax; ++Jprime)
+                {
+                  //                 double sixj = Z.modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
+                  // double sixj = Z.modelspace->GetCachedSixJ(jjj, jji, J, jjk, jjl, Jprime);
+
+                  double sixj = Z.modelspace->GetSixJ(jj * 0.5, ji * 0.5, J0, jk * 0.5, jl * 0.5, Jprime);
+
+                  if (std::abs(sixj) < 1e-8)
+                    continue;
+                  int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime, parity_cc, Tz_cc);
+                  TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+                  int nkets_cc = tbc_cc.GetNumberKets();
+                  int indx_ik = tbc_cc.GetLocalIndex(std::min(i, k), std::max(i, k)) + (i > k ? nkets_cc : 0);
+                  int indx_lj = tbc_cc.GetLocalIndex(std::min(l, j), std::max(l, j)) + (l > j ? nkets_cc : 0);
+                  // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
+                  // the phase we get from that flip combines with the phase from Pij, to give the phase included below
+                  // double me1 = Zbar[ch_cc](indx_ik, indx_lj);
+                  double me1 = barCHI_III[ch_cc](indx_ik, indx_lj);
+                  commji -= (2 * Jprime + 1) * sixj * me1;
+                }
+              }
+              double norm = bra.delta_pq() == ket.delta_pq() ? 1 + bra.delta_pq() : PhysConst::SQRT2;
+              double zijkl = (commij - Z.modelspace->phase((jk + jl) / 2 - J0) * commji);
+              // zijkl = commij / norm;
+
+              Chi_III.GetMatrix(ch, ch)(ibra, iket) += zijkl;
+              if (ibra != iket)
+                Chi_III.GetMatrix(ch, ch)(iket, ibra) += zijkl;
+            }
+          }
+        }
+    */
+/*
+    // Test
+    std::deque<arma::mat> Chi_III_test(nch);
     for (int ch = 0; ch < nch; ++ch)
     {
       TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int J0 = tbc.J;
-      int nKets = tbc.GetNumberKets();
-      for (int ibra = 0; ibra < nKets; ++ibra)
+      int nKets_cc = tbc_cc.GetNumberKets();
+      // because the restriction a<b in the bar and ket vector, if we want to store the full
+      // Pandya transformed matrix, we twice the size of matrix
+
+      Chi_III_test[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
+
+      int J4 = tbc.J;
+// transform operator
+// loop over cross-coupled ph bras <ab| in this channel
+#pragma omp parallel for
+      for (int ibra = 0; ibra < nKets * 2; ++ibra)
       {
-        Ket &bra = tbc.GetKet(ibra);
-        size_t i = bra.p;
-        size_t j = bra.q;
-        Orbit &oi = *(bra.op);
-        Orbit &oj = *(bra.oq);
-        int ji = oi.j2;
-        int jj = oj.j2;
-
-        double commij = 0;
-        double commji = 0;
-
-        for (int iket = ibra; iket < nKets; ++iket)
+        int a, b;
+        if (ibra < nKets)
         {
-          Ket &ket = tbc.GetKet(iket);
-          size_t k = ket.p;
-          size_t l = ket.q;
-          Orbit &ok = *(ket.op);
-          Orbit &ol = *(ket.oq);
-          int jk = ok.j2;
-          int jl = ol.j2;
+          Ket &bra = tbc.GetKet(ibra);
+          a = bra.p;
+          b = bra.q;
+        }
+        else
+        {
+          Ket &bra = tbc.GetKet(ibra - nKets);
+          b = bra.p;
+          a = bra.q;
+        }
+        // if (ibra_cc >= nKets_cc and a == b)
+        //   continue;
 
-          // pqrs
-          int parity_cc = (oi.l + ol.l) % 2;
-          int Tz_cc = std::abs(oi.tz2 - ol.tz2) / 2;
-          int Jpmin = std::max(std::abs(ji - jl), std::abs(jj - jk)) / 2;
-          int Jpmax = std::min(ji + jl, jj + jk) / 2;
+        Orbit &oa = Z.modelspace->GetOrbit(a);
+        double ja = oa.j2 * 0.5;
+        double n_a = oa.occ;
+        double nbar_a = 1.0 - n_a;
 
-          for (int Jprime = Jpmin; Jprime <= Jpmax; ++Jprime)
+        Orbit &ob = Z.modelspace->GetOrbit(b);
+        double jb = ob.j2 * 0.5;
+        double n_b = ob.occ;
+        double nbar_b = 1.0 - n_b;
+
+        // loop over cross-coupled kets |cd> in this channel
+        for (int iket = 0; iket < nKets * 2; ++iket)
+        {
+          int c, d;
+          if (iket < nKets)
           {
-            // double sixj = Z.modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
-            // double sixj = Z.modelspace->GetCachedSixJ(jji, jjj, J, jjk, jjl, Jprime);
-
-            double sixj = Z.modelspace->GetSixJ(ji * 0.5, jj * 0.5, J0, jk * 0.5, jl * 0.5, Jprime);
-            if (std::abs(sixj) < 1e-8)
-              continue;
-            int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime, parity_cc, Tz_cc);
-            TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-            int nkets_cc = tbc_cc.GetNumberKets();
-            int indx_il = tbc_cc.GetLocalIndex(std::min(i, l), std::max(i, l)) + (i > l ? nkets_cc : 0);
-            int indx_kj = tbc_cc.GetLocalIndex(std::min(j, k), std::max(j, k)) + (k > j ? nkets_cc : 0);
-            double me1 = barCHI_III[ch_cc](indx_il, indx_kj);
-            commij -= (2 * Jprime + 1) * sixj * me1;
-          }
-
-          if (k == l)
-          {
-            commji = commij;
-          }
-          else if (i == j)
-          {
-            commji = Z.modelspace->phase((ji + jj + jk + jl) * 0.5) * commij;
+            Ket &ket_cd = tbc.GetKet(iket);
+            c = ket_cd.p;
+            d = ket_cd.q;
           }
           else
           {
-            // now loop over the cross coupled TBME's
-            parity_cc = (oi.l + ok.l) % 2;
-            Tz_cc = std::abs(oi.tz2 - ok.tz2) / 2;
-            Jpmin = std::max(std::abs(int(jj - jl)), std::abs(int(jk - ji))) / 2;
-            Jpmax = std::min(int(jj + jl), int(jk + ji)) / 2;
-            for (int Jprime = Jpmin; Jprime <= Jpmax; ++Jprime)
+            Ket &ket_cd = tbc.GetKet(iket - nKets);
+            d = ket_cd.p;
+            c = ket_cd.q;
+          }
+          // if (iket_cc >= nKets_cc and c == d)
+          //   continue;
+
+          Orbit &oc = Z.modelspace->GetOrbit(c);
+          double jc = oc.j2 * 0.5;
+          double n_c = oc.occ;
+          double nbar_c = 1.0 - n_c;
+
+          Orbit &od = Z.modelspace->GetOrbit(d);
+          double jd = od.j2 * 0.5;
+          double n_d = od.occ;
+          double nbar_d = 1.0 - n_d;
+
+          // pqrs
+          int parity_cc = (oa.l + od.l) % 2;
+          int Tz_cc = std::abs(oa.tz2 - od.tz2) / 2;
+          int jmin = std::max(std::abs(ja - jd), std::abs(jb - jc));
+          int jmax = std::min(ja + jd, jb + jc);
+
+          double occfactor = (nbar_c * nbar_d * n_a + nbar_a * n_c * n_d);
+          occfactor = 1;
+
+          // int jmin = std::max(std::abs(oa.j2 - od.j2), std::abs(oc.j2 - ob.j2)) / 2;
+          // int jmax = std::min(oa.j2 + od.j2, oc.j2 + ob.j2) / 2;
+          double Xbar = 0;
+          double Ybar = 0;
+          int dJ_std = 1;
+          if ((a == d or b == c))
+          {
+            dJ_std = 2;
+            jmin += jmin % 2;
+          }
+          for (int J_std = jmin; J_std <= jmax; J_std += dJ_std)
+          {
+
+            double sixj1 = Z.modelspace->GetSixJ(ja, jb, J_cc, jc, jd, J_std);
+            int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime, parity_cc, Tz_cc);
+            TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+            int nkets_cc = tbc_cc.GetNumberKets();
+            int indx_il = tbc_cc.GetLocalIndex(std::min(a, d), std::max(a, d)) + (a > d ? nkets_cc : 0);
+            int indx_kj = tbc_cc.GetLocalIndex(std::min(b, c), std::max(b, c)) + (b > c ? nkets_cc : 0);
+
+            if (std::abs(sixj1) > 1e-8)
             {
-              //                 double sixj = Z.modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
-              // double sixj = Z.modelspace->GetCachedSixJ(jjj, jji, J, jjk, jjl, Jprime);
-
-              double sixj = Z.modelspace->GetSixJ(jj * 0.5, ji * 0.5, J0, jk * 0.5, jl * 0.5, Jprime);
-
-              if (std::abs(sixj) < 1e-8)
-                continue;
-              int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime, parity_cc, Tz_cc);
-              TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-              int nkets_cc = tbc_cc.GetNumberKets();
-              int indx_ik = tbc_cc.GetLocalIndex(std::min(i, k), std::max(i, k)) + (i > k ? nkets_cc : 0);
-              int indx_lj = tbc_cc.GetLocalIndex(std::min(l, j), std::max(l, j)) + (l > j ? nkets_cc : 0);
-              // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
-              // the phase we get from that flip combines with the phase from Pij, to give the phase included below
-              // double me1 = Zbar[ch_cc](indx_ik, indx_lj);
-              double me1 = barCHI_III[ch_cc](indx_ik, indx_lj);
-              commji -= (2 * Jprime + 1) * sixj * me1;
+              //double temp_eta = Eta.TwoBody.GetTBME_J(J_std, a, d, c, b);
+              double temp_eta = barCHI_III(ch_cc)(indx_il, indx_kj);
+              
+              Xbar -= (2 * J_std + 1) * sixj1 * temp_eta;
             }
           }
-          double norm = bra.delta_pq() == ket.delta_pq() ? 1 + bra.delta_pq() : PhysConst::SQRT2;
-          double zijkl = -(commij - Z.modelspace->phase((jk + jl) / 2 - J0) * commji) / norm;
-
-          Chi_III.GetMatrix(ch, ch)(ibra, iket) += zijkl;
-          if (ibra != iket)
-            Chi_III.GetMatrix(ch, ch)(iket, ibra) += zijkl;
+          Chi_III_test[ch](ibra, iket) = Xbar;
         }
+
+        //-------------------
       }
     }
+    //-----------------------------------------///
 
     // IIa_pgqh = ( 1- P_pg) \sum_ad Chi_III^J0_pgda * Gamma^J0_daqh
 #pragma omp parallel for
@@ -17029,15 +17147,18 @@ namespace Commutator
             Ket bra_sum = tbc.GetKet(sumKet);
             int b = bra_sum.p;
             int c = bra_sum.q;
-            // double flip_factor = (b == c) ? 1 : 2; // looping over kets only gets b<=c. So we need a factor of 2 for the other ordering.
-            zpgqh += Chi_III.GetMatrix(ch, ch)(ibra, sumKet) * Gamma.TwoBody.GetMatrix(ch, ch)(sumKet, iket);
+            double flip_factor = (b == c) ? 1 : 2; // looping over kets only gets b<=c. So we need a factor of 2 for the other ordering.
+           // zpgqh += flip_factor * Chi_III.GetMatrix(ch, ch)(ibra, sumKet) * Gamma.TwoBody.GetMatrix(ch, ch)(sumKet, iket);
+            
+            zpgqh += flip_factor * Chi_III.GetMatrix(ch, ch)(ibra, sumKet) * Chi_III_test[ch](sumKet, iket);
+        
           }
-
-          if (p == g)
-            zpgqh /= PhysConst::SQRT2;
-          if (q == h)
-            zpgqh /= PhysConst::SQRT2;
-
+          / //  *
+                    if (p == g)
+                      zpgqh /= PhysConst::SQRT2;
+                    if (q == h)
+                      zpgqh /= PhysConst::SQRT2;
+          //  * /
           Z2.AddToTBME(ch, ch, ibra, iket, zpgqh);
 
         } // iket

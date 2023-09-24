@@ -3530,7 +3530,7 @@ namespace ReferenceImplementations
                 chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * xipab * yabiq;
 
                 double yipab = Y.TwoBody.GetTBME_J(J1, J1, i, p, a, b);
-                //chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * yipab * xabiq;
+                // chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * yipab * xabiq;
               }
             } // for b
 
@@ -3586,11 +3586,8 @@ namespace ReferenceImplementations
             zpqrs -= CHI_XY(p, b) * X.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XY(q, b) * X.TwoBody.GetTBME_J(J, J, p, b, r, s);
             zpqrs -= X.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_XY(b, r) + X.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_XY(b, s);
 
-
-
             // zpqrs += CHI_XY(b, p) * X.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XY(b, q) * X.TwoBody.GetTBME_J(J, J, p, b, r, s);
             // zpqrs -= X.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_XY(b, r) + X.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_XY(b, s);
-
 
           } // for a
 
@@ -3862,8 +3859,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-
-    // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     // ####################################################################################
@@ -3966,7 +3962,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    // std::cout << "diagram IIa " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram IIa " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     // ####################################################################################
@@ -4146,7 +4142,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    // std::cout << "diagram IIc " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram IIc " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     // ####################################################################################
@@ -4224,7 +4220,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    // std::cout << "diagram IId " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram IId " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     // ####################################################################################
@@ -4311,7 +4307,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    // std::cout << "diagram IIIa " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram IIIa " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     // ###########################################################
@@ -4398,7 +4394,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    // std::cout << "diagram IIIb " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram IIIb " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     return;
@@ -4815,17 +4811,17 @@ namespace ReferenceImplementations
     if (EraseTB)
       Z.EraseTwoBody();
 
-    // ####################################################################################
-    //   diagram IIa
-    //
-    //   II(a)^J0_pgqh = - P_pg \sum_{abcd J2 J3 J4} ( 2 * J2 + 1 ) ( 2 * J3 + 1 ) ( 2 * J4 + 1 )
-    //
-    //                   { jd jg J4 } { jp ja J4 } { jg jp J0 }
-    //                   { jc jb J2 } { jc jb J3 } { ja jd J4 }
-    //
-    //                   ( \bar{n_b} \bar{n_d} n_c + \bar{n_c} n_b n_d )
-    //                   eta^J2_cgdb eta^J3_pbca Gamma^J0_daqh
-    // ####################################################################################
+      // ####################################################################################
+      //   diagram IIa
+      //
+      //   II(a)^J0_pgqh = - P_pg \sum_{abcd J2 J3 J4} ( 2 * J2 + 1 ) ( 2 * J3 + 1 ) ( 2 * J4 + 1 )
+      //
+      //                   { jd jg J4 } { jp ja J4 } { jg jp J0 }
+      //                   { jc jb J2 } { jc jb J3 } { ja jd J4 }
+      //
+      //                   ( \bar{n_b} \bar{n_d} n_c + \bar{n_c} n_b n_d )
+      //                   eta^J2_cgdb eta^J3_pbca Gamma^J0_daqh
+      // ####################################################################################
 #pragma omp parallel for
     for (int ch = 0; ch < nch; ++ch)
     {
@@ -5773,8 +5769,6 @@ namespace ReferenceImplementations
                       }
                     }
                   }
-                
-                
                 }
               }
             }
@@ -5981,8 +5975,6 @@ namespace ReferenceImplementations
                       }
                     }
                   }
-                
-                
                 }
               }
             }
@@ -7188,7 +7180,279 @@ namespace ReferenceImplementations
     return;
   }
 
+  std::vector<double> &comm223_231_BruteForce_Test(const Operator &Eta, const Operator &Gamma, Operator &Z)
+  {
+    int index_i = 1;
+    std::vector<double> MEs;
 
+    Z.modelspace->PreCalculateSixJ();
+    // ####################################################################################
+    //   diagram I
+    //
+    //   I_pq = 1/2 \delta_{jp jq} / (2jp + 1) sum_{abcde J0 J1} \delta_{je jd}
+    //          (\barn_a \barn_c nd nb -\barn_b \barn_d na nc - \barn_b \barn_e na nc
+    //          + \barn_a \barn_c nb ne ) (2J_0 + 1) (2J_1 + 1) / (2jd + 1)
+    //          eta^J0_bdac  eta^J0_acbe   Gamma^J1_epdq
+    // ####################################################################################
+    for (auto &p : Z.modelspace->all_orbits)
+    {
+      Orbit &op = Z.modelspace->GetOrbit(p);
+      for (auto &q : Z.GetOneBodyChannel(op.l, op.j2, op.tz2)) // delta_jp jq
+      {
+        if (q > p)
+          continue;
+        Orbit &oq = Z.modelspace->GetOrbit(q);
+        double zij = 0;
+        if (p != index_i or q != index_i)
+        {
+          continue;
+        }
+
+        // loop abcde
+        for (auto &a : Z.modelspace->all_orbits)
+        {
+          Orbit &oa = Z.modelspace->GetOrbit(a);
+          double n_a = oa.occ;
+          double nbar_a = 1.0 - n_a;
+
+          for (auto &b : Z.modelspace->all_orbits)
+          {
+            Orbit &ob = Z.modelspace->GetOrbit(b);
+            double n_b = ob.occ;
+            double nbar_b = 1.0 - n_b;
+            for (auto &c : Z.modelspace->all_orbits)
+            {
+              Orbit &oc = Z.modelspace->GetOrbit(c);
+              double n_c = oc.occ;
+              double nbar_c = 1.0 - n_c;
+
+              for (auto &d : Z.modelspace->all_orbits)
+              {
+                Orbit &od = Z.modelspace->GetOrbit(d);
+                double n_d = od.occ;
+                double nbar_d = 1.0 - n_d;
+
+                for (auto &e : Z.modelspace->all_orbits)
+                {
+                  Orbit &oe = Z.modelspace->GetOrbit(e);
+                  if (oe.j2 != od.j2)
+                    continue;
+                  double n_e = oe.occ;
+                  double nbar_e = 1.0 - n_e;
+                  double occfactor = (nbar_a * nbar_c * n_b * n_d - nbar_b * nbar_d * n_a * n_c - nbar_b * nbar_e * n_a * n_c + nbar_a * nbar_c * n_b * n_e);
+                  if (std::abs(occfactor) < 1e-6)
+                    continue;
+                  // condition
+
+                  int J0min = std::max({std::abs(oa.j2 - oc.j2), std::abs(ob.j2 - od.j2), std::abs(ob.j2 - oe.j2)}) / 2;
+                  int J0max = std::min({oa.j2 + oc.j2, ob.j2 + od.j2, ob.j2 + oe.j2}) / 2;
+
+                  int J1min = std::max({std::abs(oe.j2 - op.j2), std::abs(od.j2 - oq.j2)}) / 2;
+                  int J1max = std::min({oe.j2 + op.j2, od.j2 + oq.j2}) / 2;
+
+                  for (int J0 = J0min; J0 <= J0max; J0++)
+                  {
+                    for (int J1 = J1min; J1 <= J1max; J1++)
+                    {
+                      zij += (2 * J0 + 1) * (2 * J1 + 1) / (od.j2 + 1.0) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J0, J0, a, c, b, e) * Gamma.TwoBody.GetTBME_J(J1, J1, e, p, d, q);
+
+                      // MEs.push_back(zij);
+                    }
+                  } // J0
+                }
+              }
+            }
+          }
+        }
+        Z.OneBody(p, q) += 0.5 * zij / (op.j2 + 1.0);
+        if (p != q)
+          Z.OneBody(q, p) += 0.5 * zij / (op.j2 + 1.0);
+        //--------------------------------------------------
+      } // for q
+    }   // for p
+    std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
+    // Z.EraseOneBody();
+
+    // ####################################################################################
+    //  diagram III_a
+    //
+    //   IIIa_pq = 1/2 \delta_{jp jq} / (2jp + 1) sum_{abcde J0 J1}
+    //          (\barn_a \barn_e nb nc -\barn_b \barn_c na ne ) (2J_0 + 1) (2J_1 + 1) / (2J_d + 1)
+    //          eta^J0_bcae  eta^J1_epdq  Gamma^J0_adbc
+    // ####################################################################################
+    for (auto &p : Z.modelspace->all_orbits)
+    {
+      Orbit &op = Z.modelspace->GetOrbit(p);
+      double jp = op.j2 / 2.;
+      for (auto &q : Z.GetOneBodyChannel(op.l, op.j2, op.tz2)) // delta_jp jq
+      {
+        if (q > p)
+          continue;
+        Orbit &oq = Z.modelspace->GetOrbit(q);
+        double jq = oq.j2 / 2.;
+        double zij = 0;
+
+        // loop abcde
+        for (auto &a : Z.modelspace->all_orbits)
+        {
+          Orbit &oa = Z.modelspace->GetOrbit(a);
+          double ja = oa.j2 / 2.;
+          double n_a = oa.occ;
+          double nbar_a = 1.0 - n_a;
+
+          for (auto &b : Z.modelspace->all_orbits)
+          {
+            Orbit &ob = Z.modelspace->GetOrbit(b);
+            double jb = ob.j2 / 2.;
+            double n_b = ob.occ;
+            double nbar_b = 1.0 - n_b;
+            for (auto &c : Z.modelspace->all_orbits)
+            {
+              Orbit &oc = Z.modelspace->GetOrbit(c);
+              double jc = oc.j2 / 2.;
+              double n_c = oc.occ;
+              double nbar_c = 1.0 - n_c;
+
+              for (auto &d : Z.modelspace->all_orbits)
+              {
+                Orbit &od = Z.modelspace->GetOrbit(d);
+                double jd = od.j2 / 2.;
+                double n_d = od.occ;
+                double nbar_d = 1.0 - n_d;
+
+                for (auto &e : Z.modelspace->all_orbits)
+                {
+                  Orbit &oe = Z.modelspace->GetOrbit(e);
+                  if (od.j2 != oe.j2)
+                    continue;
+
+                  double je = oe.j2 / 2.;
+                  double n_e = oe.occ;
+                  double nbar_e = 1.0 - n_e;
+                  double occfactor = (nbar_a * nbar_e * n_b * n_c - nbar_b * nbar_c * n_a * n_e);
+                  if (std::abs(occfactor) < 1e-6)
+                    continue;
+
+                  int J0min = std::abs(ob.j2 - oc.j2) / 2;
+                  int J0max = (ob.j2 + oc.j2) / 2;
+
+                  int J1min = std::abs(oe.j2 - op.j2) / 2;
+                  int J1max = (oe.j2 + op.j2) / 2;
+
+                  for (int J0 = J0min; J0 <= J0max; J0++)
+                  {
+                    for (int J1 = J1min; J1 <= J1max; J1++)
+                    {
+                      zij += (2 * J0 + 1) * (2 * J1 + 1) / (od.j2 + 1.) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, c, a, e) * Eta.TwoBody.GetTBME_J(J1, J1, e, p, d, q) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, b, c);
+
+                      MEs.push_back(zij);
+                    }
+                  } // J0
+                }
+              }
+            }
+          }
+        }
+        Z.OneBody(p, q) += 0.5 * zij / (op.j2 + 1.0);
+        if (p != q)
+          Z.OneBody(q, p) += 0.5 * zij / (op.j2 + 1.0);
+        //--------------------------------------------------
+      } // for q
+    }   // for p
+    std::cout << "diagram IIIa " << Z.OneBodyNorm() << std::endl;
+    // Z.EraseOneBody();
+
+    // ###########################################################
+    //  diagram III_b
+    //
+    //   IIIb_pq = - 1/2 \delta_{jp jq} / (2jp + 1) sum_{abcde J0 J1} \delta_{je jd}
+    //          (\barn_a \barn_c nb nd -\barn_b \barn_d na nc ) (2J_0 + 1) (2J_1 + 1) / (2J_d + 1)
+    //          eta^J0_bdac  eta^J1_epdq  Gamma^J0_acbe
+    // ####################################################################################
+    for (auto &p : Z.modelspace->all_orbits)
+    {
+      Orbit &op = Z.modelspace->GetOrbit(p);
+      double jp = op.j2 / 2.;
+      for (auto &q : Z.GetOneBodyChannel(op.l, op.j2, op.tz2)) // delta_jp jq
+      {
+        if (q > p)
+          continue;
+        Orbit &oq = Z.modelspace->GetOrbit(q);
+        double jq = oq.j2 / 2.;
+        double zij = 0;
+
+        // loop abcde
+        for (auto &a : Z.modelspace->all_orbits)
+        {
+          Orbit &oa = Z.modelspace->GetOrbit(a);
+          double ja = oa.j2 / 2.;
+          double n_a = oa.occ;
+          double nbar_a = 1.0 - n_a;
+
+          for (auto &b : Z.modelspace->all_orbits)
+          {
+            Orbit &ob = Z.modelspace->GetOrbit(b);
+            double jb = ob.j2 / 2.;
+            double n_b = ob.occ;
+            double nbar_b = 1.0 - n_b;
+            for (auto &c : Z.modelspace->all_orbits)
+            {
+              Orbit &oc = Z.modelspace->GetOrbit(c);
+              double jc = oc.j2 / 2.;
+              double n_c = oc.occ;
+              double nbar_c = 1.0 - n_c;
+
+              for (auto &d : Z.modelspace->all_orbits)
+              {
+                Orbit &od = Z.modelspace->GetOrbit(d);
+                double jd = od.j2 / 2.;
+                double n_d = od.occ;
+                double nbar_d = 1.0 - n_d;
+
+                for (auto &e : Z.modelspace->all_orbits)
+                {
+                  Orbit &oe = Z.modelspace->GetOrbit(e);
+                  if (od.j2 != oe.j2)
+                    continue;
+
+                  double je = oe.j2 / 2.;
+                  double n_e = oe.occ;
+                  double nbar_e = 1.0 - n_e;
+                  double occfactor = (nbar_a * nbar_c * n_b * n_d - nbar_b * nbar_d * n_a * n_c);
+                  if (std::abs(occfactor) < 1e-6)
+                    continue;
+
+                  int J0min = std::abs(ob.j2 - od.j2) / 2;
+                  int J0max = (ob.j2 + od.j2) / 2;
+
+                  int J1min = std::abs(oe.j2 - op.j2) / 2;
+                  int J1max = (oe.j2 + op.j2) / 2;
+
+                  for (int J0 = J0min; J0 <= J0max; J0++)
+                  {
+                    for (int J1 = J1min; J1 <= J1max; J1++)
+                    {
+                      zij += (2 * J0 + 1) * (2 * J1 + 1) / (od.j2 + 1.) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J1, J1, e, p, d, q) * Gamma.TwoBody.GetTBME_J(J0, J0, a, c, b, e);
+
+                      MEs.push_back(zij);
+                    }
+                  } // J0
+                }
+              }
+            }
+          }
+        }
+        Z.OneBody(p, q) -= 0.5 * zij / (op.j2 + 1.0);
+        if (p != q)
+          Z.OneBody(q, p) -= 0.5 * zij / (op.j2 + 1.0);
+        //--------------------------------------------------
+      } // for q
+    }   // for p
+    std::cout << "diagram IIIb " << Z.OneBodyNorm() << std::endl;
+    // Z.EraseOneBody();
+
+    return MEs;
+  }
 
 } // namespace ReferenceImplementations
 ////////////////////////////////////////////////////////////////////

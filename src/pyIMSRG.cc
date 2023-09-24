@@ -691,7 +691,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       ReferenceImplementations.def("comm223_231_BruteForce", &ReferenceImplementations::comm223_231_BruteForce);
       ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
 
-
+      ReferenceImplementations.def("comm223_231_BruteForce_Test", &ReferenceImplementations::comm223_231_BruteForce_Test);
 
 
       py::class_<RPA>(m, "RPA")
