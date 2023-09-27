@@ -16653,6 +16653,7 @@ namespace Commutator
     // ####################################################################################
     //                      Factorization of Ia Ib IVa and IVb
     // ####################################################################################
+    double t_internal = omp_get_wtime();
     arma::mat CHI_I = Gamma.OneBody * 0;
     arma::mat CHI_II = Gamma.OneBody * 0;
 
@@ -16716,7 +16717,7 @@ namespace Commutator
                 double xapij = Eta.TwoBody.GetTBME_J(J2, J2, a, p, i, j);
                 double yapij = Gamma.TwoBody.GetTBME_J(J2, J2, a, p, i, j);
 
-                chi_pq += 0.5 * occfactor * (2 * J2 + 1) / (oq.j2 + 1) * xapij * xijaq;
+                chi_pq +=  0.5 * occfactor * (2 * J2 + 1) / (oq.j2 + 1) * xapij * xijaq;
                 chiY_pq += 0.5 * occfactor * (2 * J2 + 1) / (oq.j2 + 1) * yapij * xijaq;
               }
             } // for j
@@ -16737,8 +16738,9 @@ namespace Commutator
                 double xabiq = Eta.TwoBody.GetTBME_J(J2, J2, a, b, i, q);
                 double yipab = Gamma.TwoBody.GetTBME_J(J2, J2, i, p, a, b);
 
-                chi_pq += 0.5 * occfactor * (2 * J2 + 1) / (oq.j2 + 1) * xipab * xabiq;
-                chiY_pq += 0.5 * (2 * J2 + 1) / (oq.j2 + 1) * yipab * xabiq;
+                chi_pq +=  0.5 * occfactor * (2 * J2 + 1) / (oq.j2 + 1) * xipab * xabiq;
+                chiY_pq += 0.5 * occfactor * (2 * J2 + 1) / (oq.j2 + 1) * yipab * xabiq;
+//                chiY_pq += 0.5 * (2 * J2 + 1) / (oq.j2 + 1) * yipab * xabiq;
               }
             } // for b
 
@@ -16748,6 +16750,9 @@ namespace Commutator
         CHI_II(p, q) = chiY_pq;
       } // for q
     }   // for p
+
+    Z.profiler.timer[std::string(__func__)+"_buildChi"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
 
 #pragma omp parallel for schedule(dynamic, 1)
     for (int ich = 0; ich < nch; ich++)
@@ -16766,6 +16771,8 @@ namespace Commutator
         Ket &bra = tbc_bra.GetKet(ibra);
         size_t p = bra.p;
         size_t q = bra.q;
+        Orbit& op = Z.modelspace->GetOrbit(p);
+        Orbit& oq = Z.modelspace->GetOrbit(q);
         int phasepq = bra.Phase(J);
         //       for ( size_t iket=0; iket<nkets; iket++)
         for (size_t iket = ibra; iket < nkets; iket++)
@@ -16773,18 +16780,29 @@ namespace Commutator
           Ket &ket = tbc_ket.GetKet(iket);
           size_t r = ket.p;
           size_t s = ket.q;
-          int phasers = ket.Phase(J);
+          Orbit& oR = Z.modelspace->GetOrbit(r);
+          Orbit& os = Z.modelspace->GetOrbit(s);
           double zpqrs = 0;
 
-          for (auto b : Z.modelspace->all_orbits)
+          for (auto b : Z.OneBodyChannels.at({op.l,op.j2,op.tz2}))
           {
-            Orbit &ob = Z.modelspace->GetOrbit(b);
-
-            zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
-            zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r) + Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
-            zpqrs += CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s);
-            zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r) + Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
-
+            zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s) ;
+            zpqrs += CHI_II(b, p) *  Eta.TwoBody.GetTBME_J(J, J, b, q, r, s) ; // tricky minus sign.
+          } // for a
+          for (auto b : Z.OneBodyChannels.at({oq.l,oq.j2,oq.tz2}))
+          {
+            zpqrs += CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
+            zpqrs += CHI_II(b, q) *  Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
+          } // for a
+          for (auto b : Z.OneBodyChannels.at({oR.l,oR.j2,oR.tz2}))
+          {
+            zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r) ;
+            zpqrs -=   Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r) ;
+          } // for a
+          for (auto b : Z.OneBodyChannels.at({os.l,os.j2,os.tz2}))
+          {
+            zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
+            zpqrs -=   Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
           } // for a
 
           // normalize
@@ -16797,6 +16815,7 @@ namespace Commutator
       }   // for ibra
 
     } // for itmat
+    Z.profiler.timer[std::string(__func__)+"_combineChi"] += omp_get_wtime() - t_internal;
 
 /*
     Z.EraseTwoBody();
