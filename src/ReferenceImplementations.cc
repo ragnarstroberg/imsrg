@@ -6237,8 +6237,8 @@ namespace ReferenceImplementations
       //   III(b)^J0_pgqh = P(p/g) * P(q/h) * \sum_{abcd J2 J3 J4 J5}
       //                   ( 2 * J2 + 1 ) ( 2 * J3 + 1 ) ( 2 * J4 + 1 ) ( 2 * J5 + 1 )
       //
-      //                   { ja jb J5 } { J0 J3 J5 } { jd jp J5 } { J0 J3 J5 }
-      //                   { jc jq J2 } { jc jq jh } { ja jb J4 } { jd jp jg }
+      //                   { ja jb J5 }  { jd jp J5 } { J0 J3 J5 } { J0 J3 J5 }
+      //                   { jc jq J2 }  { ja jb J4 } { jc jq jh } { jd jp jg }
       //
       //                   ( \bar{n_a} n_b n_c + \bar{n_b} \bar{n_c} n_a )
       //                   eta^J2_cbaq eta^J3_gdhc Gamma^J4_apdb
@@ -6556,8 +6556,8 @@ namespace ReferenceImplementations
                         // double sixj3 = Z.modelspace->GetCachedSixJ(J4, J3, J0, jh, jq, jb);
 
                         double sixj1 = Z.modelspace->GetSixJ(jq, jb, J4, jc, ja, J2);
-                        double sixj2 = Z.modelspace->GetSixJ(J3, J0, J4, jc, ja, jd);
-                        double sixj3 = Z.modelspace->GetSixJ(J4, J3, J0, jh, jq, jb);
+                        double sixj2 = AngMom::SixJ(J3, J0, J4, jc, ja, jd);
+                        double sixj3 = AngMom::SixJ(J4, J3, J0, jh, jq, jb);
 
                         zpgqh -= occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, b, c, a, q) * Eta.TwoBody.GetTBME_J(J0, p, g, c, d) * Gamma.TwoBody.GetTBME_J(J3, d, a, h, b);
                       }
@@ -6584,8 +6584,8 @@ namespace ReferenceImplementations
                         // double sixj3 = Z.modelspace->GetCachedSixJ(J4, J3, J0, jq, jh, jb);
 
                         double sixj1 = Z.modelspace->GetSixJ(jh, jb, J4, jc, ja, J2);
-                        double sixj2 = Z.modelspace->GetSixJ(J3, J0, J4, jc, ja, jd);
-                        double sixj3 = Z.modelspace->GetSixJ(J4, J3, J0, jq, jh, jb);
+                        double sixj2 = AngMom::SixJ(J3, J0, J4, jc, ja, jd);
+                        double sixj3 = AngMom::SixJ(J4, J3, J0, jq, jh, jb);
 
                         zpgqh -= phase_qh * occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Eta.TwoBody.GetTBME_J(J0, p, g, c, d) * Gamma.TwoBody.GetTBME_J(J3, d, a, q, b);
                       }
