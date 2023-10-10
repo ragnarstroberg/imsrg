@@ -606,20 +606,14 @@ namespace Commutator
 
         if (i > 1 and use_factorized_correction)
         {
-
-
           Operator Op_2b1b = OpNested;
           Op_2b1b.Erase();
-
           comm223_231_Factorization(Omega, chi2, Op_2b1b);
           comm223_232_Factorization(Omega, chi2, Op_2b1b);
           OpNested += Op_2b1b;
           /// Test
           if ( i > 2 )
           {
-            //comm220ss(Omega, Op_2b1b, OpNested);
-            // comm110ss(Omega, Op_2b1b, OpNested);
-
             comm220ss(Omega, Op_2b1b, Op_2b1b);
             comm110ss(Omega, Op_2b1b, Op_2b1b);
             OpNested.ZeroBody += 1./(i+1) * Op_2b1b.ZeroBody;
