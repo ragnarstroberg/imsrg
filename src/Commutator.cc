@@ -617,29 +617,13 @@ namespace Commutator
           /// Test
           if ( i > 2 )
           {
-            comm220ss(Omega, Op_2b1b, OpNested);
-            comm110ss(Omega, Op_2b1b, OpNested);
+            //comm220ss(Omega, Op_2b1b, OpNested);
+            // comm110ss(Omega, Op_2b1b, OpNested);
+
+            comm220ss(Omega, Op_2b1b, Op_2b1b);
+            comm110ss(Omega, Op_2b1b, Op_2b1b);
+            OpNested.ZeroBody += 1./(i+1) * Op_2b1b.ZeroBody;
           }
-
-          /*
-          Operator Op_3b = OpNested;
-          Operator ETA_3b = OpNested;
-          Op_3b.Erase();
-          ETA_3b.Erase();
-          Op_3b.ThreeBody.SetMode("pn");
-          Op_3b.SetParticleRank(3);
-          ETA_3b.ThreeBody.SetMode("pn");
-          ETA_3b.SetParticleRank(3);
-          // [3,3]0
-          // comm223ss(Omega, chi2, Op_3b);
-          // comm223ss(Omega, Omega, ETA_3b);
-          // comm330ss(ETA_3b, Op_3b, OpNested); // almost no contribution
-
-          // [3,3]0
-          // comm223ss(Omega, chi2, Op_3b);
-          // comm223ss(Omega, Omega, ETA_3b);
-          // comm330ss(Op_3b, Op_3b, OpNested); // almost no contribution
-          */
         }
         //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
 
