@@ -52,14 +52,14 @@ std::map<std::string, std::vector<std::string>> ModelSpace::ValenceSpaces{
     {"sdgh11pfhi13NRfr-shell", {"Sn140", "p0h11", "p0g7", "p1d5", "p1d3", "p2s1", "n2p3", "n2p1", "n1f5", "n0h9", "n0i13"}},                 // pfh + 0i13  for nuclei below lead208 remove n1f7
     {"sdgh11sdgij15NR-shell", {"Sn176", "p0h11", "p0g7", "p1d5", "p1d3", "p2s1", "n3s1", "n2d5", "n2d3", "n1g9", "n1g7", "n0i11", "n0j15"}}, // sdg h11  for proton and sdgi +j15 for neutron, nuclei above lead208
 
-    {"Pb208sdgij15NR-shell", {"Pb208", "n3s1", "n2d5", "n2d3", "n1g9", "n1g7", "n0i11", "n0j15"}}, //  sdgi +j15 for neutron, nuclei above lead isotone chain
-    {"Pb164pfhi13NR-shell", {"Pb164", "n2p3", "n2p1", "n1f5", "n1f7", "n0h9", "n0i13"}},           //  Pb chain pfh + 0i13 for nuclei below lead208
+    {"Pb208sdgij15NRSemiMagic-shell", {"Pb208", "n3s1", "n2d5", "n2d3", "n1g9", "n1g7", "n0i11", "n0j15"}}, //  sdgi +j15 for neutron, nuclei above lead isotone chain
+    {"Pb164pfhi13NRSemiMagic-shell", {"Pb164", "n2p3", "n2p1", "n1f5", "n1f7", "n0h9", "n0i13"}},           //  Pb chain pfh + 0i13 for nuclei below lead208
 
-    {"pfhi13_Proton", {"Pb208", "p2p3", "p2p1", "p1f5", "p1f7", "p0h9", "p0i13"}},
-    {"sdgh11_Proton", {"Sn176", "p0h11", "p0g7", "p1d5", "p1d3", "p2s1"}}, // sdg h11  for proton
+    {"pfhi13_ProtonSemiMagic", {"Pb208", "p2p3", "p2p1", "p1f5", "p1f7", "p0h9", "p0i13"}},
+    {"sdgh11_ProtonSemiMagic", {"Sn176", "p0h11", "p0g7", "p1d5", "p1d3", "p2s1"}}, // sdg h11  for proton
 
-    {"pfhi13NR_Neutron", {"Sn132", "n2p3", "n2p1", "n1f5", "n1f7", "n0h9", "n0i13"}}, // for Sn isotopes above Sn132
-    {"sdgh11_NeutronSn100", {"Sn100", "n0h11", "n0g7", "n1d5", "n1d3", "n2s1"}},      // for Sn isotopes between Sn100 and Sn132
+    {"pfhi13NR_NeutronSemiMagic", {"Sn132", "n2p3", "n2p1", "n1f5", "n1f7", "n0h9", "n0i13"}}, // for Sn isotopes above Sn132
+    {"sdgh11_NeutronSn100SemiMagic", {"Sn100", "n0h11", "n0g7", "n1d5", "n1d3", "n2s1"}},      // for Sn isotopes between Sn100 and Sn132
 
 };
 
