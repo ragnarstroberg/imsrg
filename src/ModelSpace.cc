@@ -61,6 +61,11 @@ std::map<std::string, std::vector<std::string>> ModelSpace::ValenceSpaces{
     {"pfhi13NR_NeutronSemiMagic", {"Sn132", "n2p3", "n2p1", "n1f5", "n1f7", "n0h9", "n0i13"}}, // for Sn isotopes above Sn132
     {"sdgh11_NeutronSn100SemiMagic", {"Sn100", "n0h11", "n0g7", "n1d5", "n1d3", "n2s1"}},      // for Sn isotopes between Sn100 and Sn132
 
+
+    {"Zr68_pfg9_NeutronSemiMagic", {"Zr68", "n0g9", "n0f5", "n1p3", "n1p1"}},             // for Zr isotopes between Zr68 and Zr90
+    {"Zr90_sdg9_NeutronSemiMagic", {"Zr90", "n0h11", "n0g7", "n1d5", "n1d3", "n2s1"}},    // for Zr isotopes between Zr90 and Zr122
+
+
 };
 
 ModelSpace::ModelSpace()

@@ -256,6 +256,7 @@ namespace Commutator
   void comm223_231_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z);
   void comm223_232_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
+  void comm223_232_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
   void comm223_232_Test(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
