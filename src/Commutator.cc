@@ -16189,21 +16189,20 @@ namespace Commutator
           Orbit &oc = Z.modelspace->GetOrbit(c);
           double jc = oc.j2 / 2.;
 
-          for (auto &a : Z.modelspace->all_orbits)
+          int J0min = std::abs(oc.j2 - op.j2) / 2;
+          int J0max = (oc.j2 + op.j2) / 2;
+
+          for (int J0 = J0min; J0 <= J0max; J0++)
           {
-            Orbit &oa = Z.modelspace->GetOrbit(a);
-            double ja = oa.j2 / 2.;
-
-            for (auto &d : Z.modelspace->all_orbits)
+            for (auto &a : Z.modelspace->all_orbits)
             {
-              Orbit &od = Z.modelspace->GetOrbit(d);
-              double jd = od.j2 / 2.;
+              Orbit &oa = Z.modelspace->GetOrbit(a);
+              double ja = oa.j2 / 2.;
 
-              int J0min = std::abs(oc.j2 - op.j2) / 2;
-              int J0max = (oc.j2 + op.j2) / 2;
-
-              for (int J0 = J0min; J0 <= J0max; J0++)
+              for (auto &d : Z.modelspace->all_orbits)
               {
+                Orbit &od = Z.modelspace->GetOrbit(d);
+                double jd = od.j2 / 2.;
 
                 zij += Chi_222_b.GetTBME_J_norm(J0, J0, c, p, a, d) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, q);
               } // J0
@@ -16250,11 +16249,11 @@ namespace Commutator
 
             for (auto &b : Z.modelspace->all_orbits)
             {
-              // Orbit &ob = Z.modelspace->GetOrbit(b);
-              zij -= Chi_222_b.GetTBME_J_norm(J0, J0, b, q, a, e) * Gamma.TwoBody.GetTBME_J(J0, J0, b, p, a, e);
+              double MEs = Chi_222_b.GetTBME_J_norm(J0, J0, b, q, a, e) * Gamma.TwoBody.GetTBME_J(J0, J0, b, p, a, e);
+              zij -= MEs;
               if (a != e)
               {
-                zij -= Chi_222_b.GetTBME_J_norm(J0, J0, b, q, e, a) * Gamma.TwoBody.GetTBME_J(J0, J0, b, p, e, a);
+                zij -= MEs;
               }
             }
           }
@@ -16333,9 +16332,10 @@ namespace Commutator
               double occfactor = (nbar_a * nbar_e * n_b * n_c - nbar_b * nbar_c * n_a * n_e);
               if (std::abs(occfactor) < 1e-6)
                 continue;
-              eta_de += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, c, a, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, b, c);
+              double MEs = (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, c, a, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, b, c);
+              eta_de += MEs;
               if (b != c)
-                eta_de += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, c, b, a, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, b);
+                eta_de += MEs;
             }
           }
         }
@@ -17037,7 +17037,6 @@ namespace Commutator
 
     //-------------------------------------------------------------------------------
     std::deque<arma::mat> barCHI_III(n_nonzero);
-    std::deque<arma::mat> barCHI_III_RC(n_nonzero); // Recoupled bar CHI_III
     std::deque<arma::mat> bar_CHI_VI(n_nonzero);
     /// build intermediate bar operator
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
@@ -17047,7 +17046,6 @@ namespace Commutator
       // because the restriction a<b in the bar and ket vector, if we want to store the full
       // Pandya transformed matrix, we twice the size of matrix
       barCHI_III[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      barCHI_III_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_VI[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
     }
 
@@ -17319,13 +17317,15 @@ namespace Commutator
       }   // ibra
     }     // J0 channel
 
-    // ####################################################################################
-    // ####################################################################################
+    /// release memory
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      bar_CHI_VI[ch_cc].clear();
+    }
+    bar_CHI_VI.clear();
+
     std::deque<arma::mat> bar_CHI_V(n_nonzero);
-    std::deque<arma::mat> bar_CHI_V_RC(n_nonzero);
     std::deque<arma::mat> bar_CHI_VII_CC(n_nonzero);
-    std::deque<arma::mat> bar_CHI_VII_CC_ef(n_nonzero);
-    std::deque<arma::mat> bar_CHI_IV(n_nonzero);
     std::deque<arma::mat> bar_CHI_gamma(n_nonzero);
     /// initial bar_CHI_V
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
@@ -17335,10 +17335,7 @@ namespace Commutator
       // because the restriction a<b in the bar and ket vector, if we want to store the full
       // Pandya transformed matrix, we twice the size of matrix
       bar_CHI_V[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      bar_CHI_V_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_VII_CC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      bar_CHI_VII_CC_ef[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      bar_CHI_IV[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_gamma[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
     }
 
@@ -17375,6 +17372,21 @@ namespace Commutator
     {
       CHI_IV[ch] = Eta_matrix[ch] * Eta_matrix_c[ch];
       CHI_IV[ch] += (Eta_matrix[ch] * Eta_matrix_d[ch]).t();
+    }
+
+    std::deque<arma::mat> barCHI_III_RC(n_nonzero); // Recoupled bar CHI_III
+    std::deque<arma::mat> bar_CHI_IV(n_nonzero);
+    std::deque<arma::mat> bar_CHI_V_RC(n_nonzero);
+    /// build intermediate bar operator
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      // because the restriction a<b in the bar and ket vector, if we want to store the full
+      // Pandya transformed matrix, we twice the size of matrix
+      barCHI_III_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+      bar_CHI_IV[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+      bar_CHI_V_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
     }
 
     /// Pandya transformation only recouple the angula momentum
@@ -17494,17 +17506,45 @@ namespace Commutator
       }
     }
 
+    /// release memory
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      barCHI_III[ch_cc].clear();
+      bar_CHI_V[ch_cc].clear();
+    }
+    barCHI_III.clear();
+    bar_CHI_V.clear();
+    for (int ch = 0; ch < nch; ++ch)
+    {
+      CHI_IV[ch].clear();
+      CHI_VII[ch].clear();
+    }
+    CHI_IV.clear();
+    CHI_VII.clear();
+
 #pragma omp parallel for
     for (int ch = 0; ch < n_nonzero; ++ch)
     {
       CHI_III_final[ch] = bar_Gamma[ch] * barCHI_III_RC[ch];
     }
+    /// release memory
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      barCHI_III_RC[ch_cc].clear();
+    }
+    barCHI_III_RC.clear();
 
 #pragma omp parallel for
     for (int ch = 0; ch < n_nonzero; ++ch)
     {
       CHI_V_final[ch] = bar_Eta[ch] * bar_CHI_V_RC[ch];
     }
+    /// release memory
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      bar_CHI_V_RC[ch_cc].clear();
+    }
+    bar_CHI_V_RC.clear();
 
     // calculate bat_chi_IV * bar_gamma
 #pragma omp parallel for
@@ -17513,6 +17553,15 @@ namespace Commutator
       bar_CHI_gamma[ch_cc] = bar_CHI_IV[ch_cc] * bar_Gamma[ch_cc];
     }
 
+    std::deque<arma::mat> bar_CHI_VII_CC_ef(n_nonzero);
+    for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
+    {
+      TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      // because the restriction a<b in the bar and ket vector, if we want to store the full
+      // Pandya transformed matrix, we twice the size of matrix
+      bar_CHI_VII_CC_ef[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+    }
     // bar_CHI_VII_CC_ef = bar_CHI_VII_CC * bar_Eta
 #pragma omp parallel for
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
