@@ -16608,6 +16608,13 @@ exit(0);
 
     } // for itmat
 
+    CHI_I.clear();
+    CHI_II.clear();
+
+    // *********************************************************************************** //
+    //                                  Diagram II                                         //
+    // *********************************************************************************** //
+
     //______________________________________________________________________
     // global array
     std::deque<arma::mat> bar_Eta(n_nonzero);
@@ -16729,10 +16736,6 @@ exit(0);
     Z.profiler.timer[std::string(__func__) + " Global array"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
-    // *********************************************************************************** //
-    //                                  Diagram II                                         //
-    // *********************************************************************************** //
-
     //-------------------------------------------------------------------------------
     std::deque<arma::mat> barCHI_III(n_nonzero); //  released
     std::deque<arma::mat> bar_CHI_VI(n_nonzero); //  released
@@ -16745,17 +16748,6 @@ exit(0);
       // Pandya transformed matrix, we twice the size of matrix
       barCHI_III[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_VI[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-    }
-
-    // build Chi_III
-    std::deque<arma::mat> Chi_III(nch); // released
-    std::deque<arma::mat> CHI_VI(nch);  // released
-    for (int ch = 0; ch < nch; ++ch)
-    {
-      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int nKets = tbc.GetNumberKets();
-      Chi_III[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-      CHI_VI[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
     }
 
 // matrix multiplication
@@ -16772,6 +16764,7 @@ exit(0);
     {
       bar_CHI_VI[ch_cc] = bar_Gamma[ch_cc] * nnnbar_Eta_d[ch_cc];
     }
+
     // release memory
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
     {
@@ -16779,6 +16772,20 @@ exit(0);
     }
     nnnbar_Eta_d.clear();
 
+    // build Chi_III
+    std::deque<arma::mat> Chi_III(nch); // released
+    std::deque<arma::mat> CHI_VI(nch);  // released
+    for (int ch = 0; ch < nch; ++ch)
+    {
+      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int nKets = tbc.GetNumberKets();
+      Chi_III[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
+      CHI_VI[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
+    }
+
+    // ***
+    // Todo : Combine the following two block
+    //
     // Inverse Pandya transformation
     //  X^J_ijkl  = - ( 1- P_ij )  sum_J' (2J'+1)  { i j J }  \bar{X}^J'_il`kj`
     //                                             { k l J'}
@@ -16979,6 +16986,7 @@ exit(0);
         }
       }
     }
+    // ***
 
     // release memory
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
@@ -17134,7 +17142,6 @@ exit(0);
     CHI_VI.clear();
 
     std::deque<arma::mat> bar_CHI_V(n_nonzero);          // released
-    std::deque<arma::mat> bar_CHI_VII_CC(n_nonzero);
     /// initial bar_CHI_V
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
     {
@@ -17143,18 +17150,6 @@ exit(0);
       // because the restriction a<b in the bar and ket vector, if we want to store the full
       // Pandya transformed matrix, we twice the size of matrix
       bar_CHI_V[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      bar_CHI_VII_CC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-    }
-
-    std::deque<arma::mat> CHI_VII(nch);    // released
-    std::deque<arma::mat> CHI_IV(nch);     // released
-    for (int ch = 0; ch < nch; ++ch)
-    {
-      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int nKets = tbc.GetNumberKets();
-      // Not symmetric
-      CHI_VII[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-      CHI_IV[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
     }
 
     // build bar_CHI_V
@@ -17169,6 +17164,17 @@ exit(0);
       nnnbar_Eta[ch_cc].clear();
     }
     nnnbar_Eta.clear();
+
+    std::deque<arma::mat> CHI_VII(nch);    // released
+    std::deque<arma::mat> CHI_IV(nch);     // released
+    for (int ch = 0; ch < nch; ++ch)
+    {
+      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int nKets = tbc.GetNumberKets();
+      // Not symmetric
+      CHI_VII[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
+      CHI_IV[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
+    }
 
 #pragma omp parallel for
     for (int ch = 0; ch < nch; ++ch)
@@ -17199,6 +17205,7 @@ exit(0);
     std::deque<arma::mat> barCHI_III_RC(n_nonzero); // released Recoupled bar CHI_III
     std::deque<arma::mat> bar_CHI_IV(n_nonzero);    // released
     std::deque<arma::mat> bar_CHI_V_RC(n_nonzero);  // released
+    std::deque<arma::mat> bar_CHI_VII_CC(n_nonzero);
     /// build intermediate bar operator
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
     {
@@ -17209,6 +17216,7 @@ exit(0);
       barCHI_III_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_IV[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_V_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+      bar_CHI_VII_CC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
     }
 
     /// Pandya transformation only recouple the angula momentum
