@@ -134,35 +134,42 @@ namespace Commutator
 
    }
    use_imsrg3 = tf;
-}
+  }
 
   // void SetUseIMSRG3N7(bool tf)
   //{use_imsrg3_n7 = tf;}
   void SetUseIMSRG3N7(bool tf)
   {
-    SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
-    for (std::string term : {
-             "comm330ss", "comm331ss", "comm231ss", "comm132ss", "comm232ss",
-             "comm133ss", "comm223ss"})
-    {
-      comm_term_on[term] = tf;
-    }
     use_imsrg3_n7 = tf;
-    use_imsrg3 = tf;
+    if (use_imsrg3_n7)
+    {
+      SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
+      for (std::string term : {
+               "comm330ss", "comm331ss", "comm231ss", "comm132ss", "comm232ss",
+               "comm133ss", "comm223ss"})
+      {
+        comm_term_on[term] = tf;
+      }
+      use_imsrg3 = tf;
+    }
   }
 
   // void SetUseIMSRG3_MP4(bool tf)
   //{use_imsrg3_mp4 = tf;}
   void SetUseIMSRG3_MP4(bool tf)
   {
-    SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
-    for (std::string term : {
-             "comm330ss", "comm232ss",
-             "comm133ss", "comm223ss"})
+    if ( tf )
     {
-      comm_term_on[term] = tf;
+      SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
+      for (std::string term : {
+               "comm330ss", "comm232ss",
+               "comm133ss", "comm223ss"})
+      {
+        comm_term_on[term] = tf;
+      }
+      use_imsrg3 = tf;
     }
-    use_imsrg3_n7 = tf;
+//    use_imsrg3_n7 = tf;
   }
 
   
