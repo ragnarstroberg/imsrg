@@ -33,6 +33,7 @@ namespace Commutator
   bool use_imsrg3_n7 = false;
   bool use_imsrg3_mp4 = false;
   bool use_factorized_correction = false;
+  bool use_factorized_correction_goose_tank = false;
   bool only_2b_omega = false;
   bool perturbative_triples = false;
   bool bch_skip_ieq1 = false;
@@ -167,6 +168,11 @@ namespace Commutator
   void SetUseFactorizedCorrection(bool tf)
   {
     use_factorized_correction = tf;
+  }
+
+  void SetUseFactorized_GooseTank_Correction(bool tf)
+  {
+    use_factorized_correction_goose_tank = tf;
   }
 
   void SetOnly2bOmega(bool tf)
@@ -612,7 +618,7 @@ namespace Commutator
           comm223_232_Factorization(Omega, chi2, Op_2b1b);
           OpNested += Op_2b1b;
           /// Test
-          if (i > 2)
+          if (i > 2 and use_factorized_correction_goose_tank == false )
           {
             comm220ss(Omega, Op_2b1b, Op_2b1b);
             comm110ss(Omega, Op_2b1b, Op_2b1b);
@@ -15851,6 +15857,11 @@ namespace Commutator
     // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
+    if (use_factorized_correction_goose_tank)
+    {
+      return;
+    }
+
     // return;
     // *********************************************************************************** //
     //                                  Diagram II                                         //
@@ -16007,7 +16018,6 @@ namespace Commutator
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
     {
       TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-      int nKets_cc = tbc_cc.GetNumberKets();
       int J3 = tbc_cc.J;
       Chi_222_a[ch_cc] = (2 * J3 + 1) * Eta_bar[ch_cc] * Eta_bar_nnnn[ch_cc];
     }
@@ -16435,6 +16445,11 @@ namespace Commutator
     }   // for p
     // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
+
+    if (use_factorized_correction_goose_tank)
+    {
+      return;
+    }
 
     // return;
     // *********************************************************************************** //
@@ -17274,6 +17289,11 @@ namespace Commutator
 
     CHI_I.clear();
     CHI_II.clear();
+
+    if (use_factorized_correction_goose_tank)
+    {
+      return;
+    }
 
     // *********************************************************************************** //
     //                                  Diagram II                                         //
@@ -18457,6 +18477,11 @@ namespace Commutator
 
     Z.profiler.timer[std::string(__func__) + " Diagram I and IV"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
+
+    if (use_factorized_correction_goose_tank)
+    {
+      return;
+    }
 
     //______________________________________________________________________
     // global array

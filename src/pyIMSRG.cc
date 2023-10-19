@@ -612,6 +612,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
       Commutator.def("SetUseFactorizedCorrection", &Commutator::SetUseFactorizedCorrection);
+      Commutator.def("SetUseFactorized_GooseTank_Correction", &Commutator::SetUseFactorized_GooseTank_Correction);
       Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
