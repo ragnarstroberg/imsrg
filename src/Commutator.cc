@@ -630,7 +630,7 @@ namespace Commutator
           comm223_232_Factorization(Omega, chi2, Op_2b1b);
           OpNested += Op_2b1b;
           /// Test
-          if (i > 2 and use_factorized_correction_goose_tank == false)
+          if (i > 2 and use_factorized_correct_ZBterm )
           {
             comm220ss(Omega, Op_2b1b, Op_2b1b);
             comm110ss(Omega, Op_2b1b, Op_2b1b);
