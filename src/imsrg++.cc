@@ -1103,7 +1103,8 @@ int main(int argc, char** argv)
 //    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
 //    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
 //    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
-    double dE_triples = imsrgsolver.GetPerturbativeTriples();
+//    double dE_triples = imsrgsolver.GetPerturbativeTriples();
+    double dE_triples = imsrgsolver.CalculatePerturbativeTriples();
     std::cout << "Perturbative triples:  " << std::setw(16) << std::setprecision(8) << dE_triples << " -> " << imsrgsolver.GetH_s().ZeroBody + dE_triples << std::endl;
   }
 

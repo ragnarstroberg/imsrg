@@ -66,8 +66,8 @@ class IMSRGSolver
 
   double Elast;
   double cumulative_error;
-  double pert_triples_this_omega;
-  double pert_triples_sum;
+//  double pert_triples_this_omega;
+//  double pert_triples_sum;
   
   // Per step, ds may not grow more than 1.2 times its previous value.
   double ds_max_growth_factor_ = 1.2;
@@ -152,7 +152,8 @@ class IMSRGSolver
   double EstimateStepError();
   double EstimateBCHError( );
 
-  double GetPerturbativeTriples();
+//  double GetPerturbativeTriples();
+  double CalculatePerturbativeTriples();
 
 
   // This is used to get flow info from odeint
