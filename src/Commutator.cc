@@ -8878,6 +8878,7 @@ namespace Commutator
     // In this case, Z3 isn't allocated, so we need to manually specify which channels to loop over.
     if (perturbative_triples)
     {
+      bra_ket_channels.clear(); // just in case we somehow had things allocated, we don't want to double count.
       size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
       for (size_t ch3 = 0; ch3 < nch3; ch3++)
       {
@@ -8885,6 +8886,8 @@ namespace Commutator
         size_t nkets = Tbc.GetNumberKets();
         for (size_t ibra = 0; ibra < nkets; ibra++)
         {
+          auto &bra = Tbc.GetKet(ibra); // Will we need this bra? Check here to help with load balancing in parallel loop below
+          if ( not((bra.op->cvq + bra.oq->cvq + bra.oR->cvq) == 0 or (bra.op->cvq > 0 and bra.oq->cvq > 0 and bra.oR->cvq > 0))) continue;
           bra_ket_channels.push_back({ch3, ch3, ibra}); // (ch_bra, ch_ket,ibra)
         }
       }
@@ -8974,7 +8977,7 @@ namespace Commutator
           continue;
         if (perturbative_triples and not((ol.cvq + om.cvq + on.cvq) == 0 or (ol.cvq > 0 and om.cvq > 0 and on.cvq > 0)))
           continue;
-        if (perturbative_triples and ((oi.cvq == 0 and ol.cvq == 0) or (oi.cvq != 0 and ol.cvq != 0)))
+        if (perturbative_triples and ((oi.cvq == 0 and ol.cvq == 0) or (oi.cvq != 0 and ol.cvq != 0))) // want ppp|hhh, so shouldn't have p or h on both bra and ket side.
           continue;
         if (imsrg3_no_qqq and (ol.cvq + om.cvq + on.cvq) > 5)
           continue;
