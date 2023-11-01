@@ -8887,7 +8887,11 @@ namespace Commutator
         for (size_t ibra = 0; ibra < nkets; ibra++)
         {
           auto &bra = Tbc.GetKet(ibra); // Will we need this bra? Check here to help with load balancing in parallel loop below
-          if ( not((bra.op->cvq + bra.oq->cvq + bra.oR->cvq) == 0 or (bra.op->cvq > 0 and bra.oq->cvq > 0 and bra.oR->cvq > 0))) continue;
+          // if ( not((bra.op->cvq + bra.oq->cvq + bra.oR->cvq) == 0 or (bra.op->cvq > 0 and bra.oq->cvq > 0 and bra.oR->cvq > 0))) continue;
+          double occ_ijk = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
+          double unocc_ijk = (1 - bra.op->occ) * (1 - bra.oq->occ) * (1 - bra.oR->occ);
+          if ( (occ_ijk<1e-8) and (unocc_ijk<1e-8 ) ) continue;
+          // if ( not((bra.op->cvq + bra.oq->cvq + bra.oR->cvq) == 0 or (bra.op->cvq > 0 and bra.oq->cvq > 0 and bra.oR->cvq > 0))) continue;
           bra_ket_channels.push_back({ch3, ch3, ibra}); // (ch_bra, ch_ket,ibra)
         }
       }
@@ -8938,11 +8942,16 @@ namespace Commutator
       double occnat_i = oi.occ_nat;
       double occnat_j = oj.occ_nat;
       double occnat_k = ok.occ_nat;
+
+      double occ_ijk = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
+      double unocc_ijk = (1 - bra.op->occ) * (1 - bra.oq->occ) * (1 - bra.oR->occ);
+
       if ((d_ei + d_ej + d_ek) > Z.modelspace->dE3max)
         continue;
       if ((occnat_i * (1 - occnat_i) * occnat_j * (1 - occnat_j) * occnat_k * (1 - occnat_k)) < Z.modelspace->GetOccNat3Cut())
         continue;
-      if (perturbative_triples and not((oi.cvq + oj.cvq + ok.cvq) == 0 or (oi.cvq > 0 and oj.cvq > 0 and ok.cvq > 0)))
+      //if (perturbative_triples and not((oi.cvq + oj.cvq + ok.cvq) == 0 or (oi.cvq > 0 and oj.cvq > 0 and ok.cvq > 0)))
+      if (perturbative_triples and  (occ_ijk<1e-8) and (unocc_ijk<1e-8) )
         continue;
       if (imsrg3_no_qqq and (oi.cvq + oj.cvq + ok.cvq) > 5)
         continue; // Need at least one core or valence particle
@@ -8971,13 +8980,16 @@ namespace Commutator
         double occnat_l = ol.occ_nat;
         double occnat_m = om.occ_nat;
         double occnat_n = on.occ_nat;
+        double occ_lmn = (ket.op->occ) * (ket.oq->occ) * (ket.oR->occ);
+        double unocc_lmn = (1 - ket.op->occ) * (1 - ket.oq->occ) * (1 - ket.oR->occ);
         if ((d_el + d_em + d_en) > Z.modelspace->dE3max)
           continue;
         if ((occnat_l * (1 - occnat_l) * occnat_m * (1 - occnat_m) * occnat_n * (1 - occnat_n)) < Z.modelspace->GetOccNat3Cut())
           continue;
-        if (perturbative_triples and not((ol.cvq + om.cvq + on.cvq) == 0 or (ol.cvq > 0 and om.cvq > 0 and on.cvq > 0)))
-          continue;
-        if (perturbative_triples and ((oi.cvq == 0 and ol.cvq == 0) or (oi.cvq != 0 and ol.cvq != 0))) // want ppp|hhh, so shouldn't have p or h on both bra and ket side.
+        //if (perturbative_triples and not((ol.cvq + om.cvq + on.cvq) == 0 or (ol.cvq > 0 and om.cvq > 0 and on.cvq > 0)))
+        //  continue;
+        // if (perturbative_triples and ((oi.cvq == 0 and ol.cvq == 0) or (oi.cvq != 0 and ol.cvq != 0))) // want ppp|hhh, so shouldn't have p or h on both bra and ket side.
+        if (perturbative_triples and (std::abs(occ_ijk*unocc_lmn - unocc_ijk*occ_lmn)<1e-8) )
           continue;
         if (imsrg3_no_qqq and (ol.cvq + om.cvq + on.cvq) > 5)
           continue;
@@ -9242,10 +9254,10 @@ namespace Commutator
         // The relevant one-body matrix elements should have been put in Z.
         if (perturbative_triples)
         {
-          double occ_ijk = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
-          double occ_lmn = (ket.op->occ) * (ket.oq->occ) * (ket.oR->occ);
-          double unocc_ijk = (1 - bra.op->occ) * (1 - bra.oq->occ) * (1 - bra.oR->occ);
-          double unocc_lmn = (1 - ket.op->occ) * (1 - ket.oq->occ) * (1 - ket.oR->occ);
+          //double occ_ijk = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
+          //double occ_lmn = (ket.op->occ) * (ket.oq->occ) * (ket.oR->occ);
+          //double unocc_ijk = (1 - bra.op->occ) * (1 - bra.oq->occ) * (1 - bra.oR->occ);
+          //double unocc_lmn = (1 - ket.op->occ) * (1 - ket.oq->occ) * (1 - ket.oR->occ);
           double symm_ijk = 6;
           if (i == j and i == k)
             symm_ijk = 1;
@@ -16371,6 +16383,7 @@ namespace Commutator
     std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
 
     if (use_factorized_correction_goose_tank)
+    {
 #pragma omp parallel for
       for (int indexd = 0; indexd < norbits; ++indexd)
       {
@@ -16429,7 +16442,6 @@ namespace Commutator
         } // e
       }   // d
 
-    if (use_factorized_correction_goose_tank)
 #pragma omp parallel for
       for (int indexp = 0; indexp < norbits; ++indexp)
       {
@@ -16466,13 +16478,12 @@ namespace Commutator
       }   // for p
     // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
-
+    }
     if (use_factorized_correction_goose_tank_only)
     {
       return;
     }
 
-    // return;
     // *********************************************************************************** //
     //                                  Diagram II                                         //
     // *********************************************************************************** //
@@ -18503,7 +18514,7 @@ namespace Commutator
     Z.profiler.timer[std::string(__func__) + " Diagram I and IV"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
-    if (use_factorized_correction_goose_tank)
+    if (use_factorized_correction_goose_tank_only)
     {
       return;
     }
