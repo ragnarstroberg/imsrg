@@ -8901,7 +8901,7 @@ namespace Commutator
           double occ_ijk = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
           double unocc_ijk = (1 - bra.op->occ) * (1 - bra.oq->occ) * (1 - bra.oR->occ);
           if ( (occ_ijk<1e-8) and (unocc_ijk<1e-8 ) ) continue;
-          // if ( not((bra.op->cvq + bra.oq->cvq + bra.oR->cvq) == 0 or (bra.op->cvq > 0 and bra.oq->cvq > 0 and bra.oR->cvq > 0))) continue;
+
           bra_ket_channels.push_back({ch3, ch3, ibra}); // (ch_bra, ch_ket,ibra)
         }
       }
@@ -8960,9 +8960,10 @@ namespace Commutator
         continue;
       if ((occnat_i * (1 - occnat_i) * occnat_j * (1 - occnat_j) * occnat_k * (1 - occnat_k)) < Z.modelspace->GetOccNat3Cut())
         continue;
-      //if (perturbative_triples and not((oi.cvq + oj.cvq + ok.cvq) == 0 or (oi.cvq > 0 and oj.cvq > 0 and ok.cvq > 0)))
       if (perturbative_triples and  (occ_ijk<1e-8) and (unocc_ijk<1e-8) )
         continue;
+//      if (perturbative_triples and not((oi.cvq + oj.cvq + ok.cvq) == 0 or (oi.cvq > 0 and oj.cvq > 0 and ok.cvq > 0)))
+//        continue;
       if (imsrg3_no_qqq and (oi.cvq + oj.cvq + ok.cvq) > 5)
         continue; // Need at least one core or valence particle
 
@@ -8996,11 +8997,12 @@ namespace Commutator
           continue;
         if ((occnat_l * (1 - occnat_l) * occnat_m * (1 - occnat_m) * occnat_n * (1 - occnat_n)) < Z.modelspace->GetOccNat3Cut())
           continue;
-        //if (perturbative_triples and not((ol.cvq + om.cvq + on.cvq) == 0 or (ol.cvq > 0 and om.cvq > 0 and on.cvq > 0)))
-        //  continue;
-        // if (perturbative_triples and ((oi.cvq == 0 and ol.cvq == 0) or (oi.cvq != 0 and ol.cvq != 0))) // want ppp|hhh, so shouldn't have p or h on both bra and ket side.
         if (perturbative_triples and (std::abs(occ_ijk*unocc_lmn - unocc_ijk*occ_lmn)<1e-8) )
           continue;
+//        if (perturbative_triples and not((ol.cvq + om.cvq + on.cvq) == 0 or (ol.cvq > 0 and om.cvq > 0 and on.cvq > 0)))
+//          continue;
+//        if (perturbative_triples and ((oi.cvq == 0 and ol.cvq == 0) or (oi.cvq != 0 and ol.cvq != 0))) // want ppp|hhh, so shouldn't have p or h on both bra and ket side.
+//          continue;
         if (imsrg3_no_qqq and (ol.cvq + om.cvq + on.cvq) > 5)
           continue;
         int J2 = ket.Jpq;
@@ -9268,6 +9270,7 @@ namespace Commutator
           //double occ_lmn = (ket.op->occ) * (ket.oq->occ) * (ket.oR->occ);
           //double unocc_ijk = (1 - bra.op->occ) * (1 - bra.oq->occ) * (1 - bra.oR->occ);
           //double unocc_lmn = (1 - ket.op->occ) * (1 - ket.oq->occ) * (1 - ket.oR->occ);
+
           double symm_ijk = 6;
           if (i == j and i == k)
             symm_ijk = 1;

@@ -3583,11 +3583,21 @@ void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
    }
    opfile << op.GetJRank() << "  " << op.GetTRank() << "  " << op.GetParity() << std::endl;
 
+   int norb = modelspace->GetNumberOrbits();
+   opfile << "$Single-particle states:" << std::endl;
+   opfile << "$ i\tn\tl\t2j\t2tz  (protons are 2tz=-1)" << std::endl;
+   for (int i=0;i<norb;i++)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      opfile << i << "\t" << oi.n << "\t" << oi.l << "\t" << oi.j2 << "\t" << oi.tz2 << std::endl;
+   }
+
+
    opfile << "$ZeroBody:\t" << std::setprecision(10) << op.ZeroBody << std::endl;
 
    opfile << "$OneBody:\t" << std::endl;
+   opfile << "$ i\tj\t<i|O|j>" << std::endl;
 
-   int norb = modelspace->GetNumberOrbits();
    for (int i=0;i<norb;++i)
    {
       int jmin = op.IsNonHermitian() ? 0 : i;
@@ -3599,6 +3609,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
    }
 
    opfile <<  "$TwoBody:\t"  << std::endl;
+   opfile <<  "$ J  p  Tz  J'  p'  Tz'  i  j  k  l    <ij JpTz| O | kl J'p'Tz'>" << std::endl;
 
    for ( auto& it : op.TwoBody.MatEl )
    {
@@ -3799,11 +3810,14 @@ void ReadWrite::ReadOperatorHuman(Operator &op, std::string filename)
    int jrank,trank,parity;
    opfile >> jrank >> trank >> parity;
 
-   opfile >> tmpstr >> v;
+   while (tmpstr != "$ZeroBody:")
+   {
+      opfile >> tmpstr >> v;
+   }
    op.ZeroBody = v;
 
-   getline(opfile, tmpstr);
-   getline(opfile, tmpstr);
+   getline(opfile, tmpstr);  //  $OneBody:
+   getline(opfile, tmpstr);  //  $ i	j	<i|O|j>
    getline(opfile, tmpstr);
    while (tmpstr[0] != '$')
    {
@@ -3817,6 +3831,7 @@ void ReadWrite::ReadOperatorHuman(Operator &op, std::string filename)
       getline(opfile, tmpstr);
    }
 
+   getline(opfile, tmpstr);
 //  while(opfile >> chbra >> chket >> i >> j >> v)
   while(opfile >> Jbra >> pbra >> Tzbra >> Jket >> pket >> Tzket >> i >> j >> k >> l >> v)
   {
