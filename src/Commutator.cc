@@ -15914,7 +15914,7 @@ namespace Commutator
 
     if (use_factorized_correction_goose_tank_only)
     {
-      Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
+      Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
       return;
     }
 
@@ -16392,7 +16392,7 @@ namespace Commutator
         // std::cout<< "diagram IIIa and IIIb " << Z.OneBodyNorm() << std::endl;
         // Z.EraseOneBody();
 
-    Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
+    Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
     return;
   }
 
