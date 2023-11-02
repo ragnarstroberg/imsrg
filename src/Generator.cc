@@ -292,7 +292,7 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
       }
     }
 
-    std::cout << "Eta and H particle ranks: " << Eta->GetParticleRank() << "  " << H->GetParticleRank() << std::endl;
+//    std::cout << "Eta and H particle ranks: " << Eta->GetParticleRank() << "  " << H->GetParticleRank() << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
     {
        double t_start = omp_get_wtime();
