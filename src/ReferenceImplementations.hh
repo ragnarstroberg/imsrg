@@ -79,6 +79,9 @@ namespace ReferenceImplementations
   void comm223_231_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
   void comm223_232_BruteForce(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
+
+  void comm223_231_BruteForce_Test(const Operator &Eta, const Operator &Gamma, Operator &Z);
+
 } // namespace ReferenceImplementations
 
 #endif
