@@ -315,7 +315,7 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
      std::vector<size_t> corevec;
      for (auto a : modelspace->core) corevec.push_back(a);
      std::map<int,double> e_fermi = modelspace->GetEFermi();
-     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+//     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
 //    for (auto a : modelspace->core )
      size_t nch3 = modelspace->GetNumberThreeBodyChannels();
     #pragma omp parallel for schedule(dynamic,1)
