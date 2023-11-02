@@ -613,6 +613,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
       Commutator.def("SetUseFactorizedCorrection", &Commutator::SetUseFactorizedCorrection);
+      Commutator.def("SetUseFactorized_GooseTank_Correction", &Commutator::SetUseFactorized_GooseTank_Correction);
+      Commutator.def("SetUseFactorized_GooseTank_Correction_only", &Commutator::SetUseFactorized_GooseTank_Correction_only);
+      Commutator.def("SetUseFactorized_Correct_ZBTerm", &Commutator::SetUseFactorized_Correct_ZBTerm);
       Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
@@ -657,9 +660,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm223_231_Factorization", &Commutator::comm223_231_Factorization);
       Commutator.def("comm223_232_Factorization", &Commutator::comm223_232_Factorization);
 
+      Commutator.def("comm223_231_Factorization_slow", &Commutator::comm223_231_Factorization_slow);
+      Commutator.def("comm223_232_Factorization_slow", &Commutator::comm223_232_Factorization_slow);
       Commutator.def("comm223_232_Test", &Commutator::comm223_232_Test);
-
-
 
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
