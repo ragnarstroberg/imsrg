@@ -153,6 +153,18 @@ namespace Commutator
     use_imsrg3 = tf;
   }
 
+  void SetUseIMSRG3N7_testing()
+  {
+    SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
+    for (std::string term : {
+            "comm330ss", "comm331ss", "comm231ss", "comm232ss", "comm223ss"})  //"comm132ss",  "comm133ss"
+    {
+      comm_term_on[term] = true;
+    }
+    use_imsrg3_n7 = true;
+    use_imsrg3 = true;
+  }
+
   // void SetUseIMSRG3_MP4(bool tf)
   //{use_imsrg3_mp4 = tf;}
   void SetUseIMSRG3_MP4(bool tf)
