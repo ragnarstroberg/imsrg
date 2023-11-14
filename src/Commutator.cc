@@ -145,14 +145,18 @@ namespace Commutator
     use_imsrg3_n7 = tf;
     if (use_imsrg3_n7)
     {
-      SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
+    for (std::string term : {
+             "comm332_ppph_hhhpss", "comm332_pphhss", 
+             "comm233_pp_hhss", "comm233_phss", "comm333_ppp_hhhss", "comm333_pph_hhpss"})
+    {
+      comm_term_on[term] = false;
+    }
       for (std::string term : {
                "comm330ss", "comm331ss", "comm231ss", "comm132ss", "comm232ss",
                "comm133ss", "comm223ss"})
       {
-        comm_term_on[term] = tf;
+        comm_term_on[term] = true;
       }
-      use_imsrg3 = tf;
     }
   }
 
@@ -162,16 +166,20 @@ namespace Commutator
   {
     if ( tf )
     {
-      SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
-      for (std::string term : {
-               "comm330ss", "comm232ss",
-               "comm133ss", "comm223ss"})
-      {
-        comm_term_on[term] = tf;
-      }
-      use_imsrg3 = tf;
+       for (std::string term : {
+                "comm331ss", "comm231ss", "comm132ss", 
+                "comm332_ppph_hhhpss", "comm332_pphhss", 
+                "comm233_pp_hhss", "comm233_phss", "comm333_ppp_hhhss", "comm333_pph_hhpss"})
+       {
+         comm_term_on[term] = false;
+       }
+       for (std::string term : {
+                "comm330ss", "comm232ss",
+                "comm133ss", "comm223ss"})
+       {
+         comm_term_on[term] = true;
+       }
     }
-//    use_imsrg3_n7 = tf;
   }
 
   void SetUseFactorizedCorrection(bool tf)
