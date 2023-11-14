@@ -621,6 +621,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
       Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
       Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
+      Commutator.def("SetOnly2bOmega", &Commutator::SetOnly2bOmega);
+      
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);

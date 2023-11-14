@@ -4040,7 +4040,7 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    // std::cout << "diagram IIb " << Z.OneBodyNorm() << std::endl;
+    std::cout << "diagram IIb " << Z.OneBodyNorm() << std::endl;
     // Z.EraseOneBody();
 
     // ####################################################################################
