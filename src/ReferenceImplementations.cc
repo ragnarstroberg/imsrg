@@ -4409,7 +4409,7 @@ namespace ReferenceImplementations
     std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
     auto &Z2 = Z.TwoBody;
     bool EraseTB = false;
-    // EraseTB = true;
+    EraseTB = true;
 
     // ####################################################################################
     //   diagram Ia

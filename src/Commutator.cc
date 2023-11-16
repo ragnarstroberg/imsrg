@@ -157,7 +157,7 @@ namespace Commutator
   {
     SetUseIMSRG3(false); // Turn off everything, then turn back on selected terms
     for (std::string term : {
-            "comm330ss", "comm331ss", "comm231ss", "comm232ss", "comm223ss"})  //"comm132ss",  "comm133ss"
+        "comm330ss", "comm231ss", "comm232ss", "comm223ss"}) // "comm331ss"  "comm132ss",  "comm133ss"
     {
       comm_term_on[term] = true;
     }
@@ -17117,44 +17117,6 @@ namespace Commutator
   // factorize double commutator [Eta, [Eta, Gamma]_3b ]_2b
   void comm223_232_Test(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
-    // global variables
-    // Z.modelspace->PreCalculateSixJ();
-    int nch = Z.modelspace->GetNumberTwoBodyChannels(); // number of TB channels
-    int norbits = Z.modelspace->all_orbits.size();
-    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
-    auto &Z2 = Z.TwoBody;
-    bool EraseTB = false;
-    // EraseTB = true;
-    int n_nonzero = Z.modelspace->GetNumberTwoBodyChannels_CC(); // number of CC channels
-    //------------------------------------------------------------------------
-    std::deque<arma::mat> bar_Eta(n_nonzero);
-    /// initial bar_Eta and nnnbar_Eta
-    for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
-    {
-      TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-      int nKets_cc = tbc_cc.GetNumberKets();
-      // because the restriction a<b in the bar and ket vector, if we want to store the full
-      // Pandya transformed matrix, we twice the size of matrix
-      bar_Eta[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-    }
-
-    // Estimate the memory usage
-    size_t totalMemory = 0;
-    for (const auto &mat : bar_Eta)
-    {
-      // Estimate memory usage of each arma::mat object
-      size_t matMemory = mat.n_elem * sizeof(double); // Assuming double precision
-      totalMemory += matMemory;
-    }
-
-    // Estimate memory usage of the deque itself
-    size_t dequeMemory = bar_Eta.size() * sizeof(arma::mat);
-
-    // Calculate the total memory usage
-    size_t totalMemoryUsage = totalMemory + dequeMemory;
-
-    std::cout << "Estimated memory usage of std::deque<arma::mat>: " << static_cast<double>(totalMemoryUsage) / 1073741824.0 << " Gb" << std::endl;
-    exit(0);
 
     return;
   }
@@ -17182,27 +17144,28 @@ namespace Commutator
     //                      Factorization of Ia, Ib, IVa and IVb
     // ####################################################################################
 
-    arma::mat CHI_I = Gamma.OneBody * 0;
-    arma::mat CHI_II = Gamma.OneBody * 0;
-
-    // The intermidate one body operator
-    //  CHI_I :                            //  CHI_II :
-    //          eta | p                    //          eta | p
-    //         _____|                      //         _____|
-    //       /\     |                      //       /\     |
-    //   a  (  ) b  | c                    //   a  (  ) b  | c
-    //       \/_____|                      //       \/~~~~~|
-    //          eta |                      //        gamma |
-    //              | q                    //              | q
-    //-------------------------------------------------------------------------------------
-    // CHI_I_pq  = 1/2 \sum_abcJ2 \hat(J_2) ( \bar{n}_a \bar{n}_c n_b - \bar{n}_c n_a n_c )
-    //             eta^J2_bpac eta^J2_acbq
-    //
-    // CHI_II_pq = 1/2 \sum_abcJ2 \hat(J_2) ( \bar{n}_b \bar{n}_c n_a - \bar{n}_a n_b n_c )
-    //             eta^J2_bcaq gamma^J2_apbc
-    //-------------------------------------------------------------------------------------
     if (use_factorized_correction_goose_tank)
     {
+      arma::mat CHI_I = Gamma.OneBody * 0;
+      arma::mat CHI_II = Gamma.OneBody * 0;
+
+      // The intermidate one body operator
+      //  CHI_I :                            //  CHI_II :
+      //          eta | p                    //          eta | p
+      //         _____|                      //         _____|
+      //       /\     |                      //       /\     |
+      //   a  (  ) b  | c                    //   a  (  ) b  | c
+      //       \/_____|                      //       \/~~~~~|
+      //          eta |                      //        gamma |
+      //              | q                    //              | q
+      //-------------------------------------------------------------------------------------
+      // CHI_I_pq  = 1/2 \sum_abcJ2 \hat(J_2) ( \bar{n}_a \bar{n}_c n_b - \bar{n}_c n_a n_c )
+      //             eta^J2_bpac eta^J2_acbq
+      //
+      // CHI_II_pq = 1/2 \sum_abcJ2 \hat(J_2) ( \bar{n}_b \bar{n}_c n_a - \bar{n}_a n_b n_c )
+      //             eta^J2_bcaq gamma^J2_apbc
+      //-------------------------------------------------------------------------------------
+
 #pragma omp parallel for schedule(dynamic)
       for (size_t p = 0; p < norbits; p++)
       {
@@ -17214,7 +17177,7 @@ namespace Commutator
           double chi_pq = 0;
           double chiY_pq = 0;
 
-          for (auto a : Z.modelspace->particles)
+          for (auto a : Z.modelspace->all_orbits)
           {
             Orbit &oa = Z.modelspace->GetOrbit(a);
             double n_a = oa.occ;
@@ -17231,6 +17194,11 @@ namespace Commutator
                 double n_j = oj.occ;
 
                 double occfactor = nbar_a * n_i * n_j;
+                if ( occfactor < 1.e-7 )
+                {
+                  continue;
+                }
+                
                 int J2min = std::max(std::abs(oa.j2 - oq.j2), std::abs(oi.j2 - oj.j2)) / 2;
                 int J2max = std::min(oa.j2 + oq.j2, oi.j2 + oj.j2) / 2;
 
@@ -17245,13 +17213,16 @@ namespace Commutator
                 }
               } // for j
 
-              for (auto b : Z.modelspace->particles)
+              for (auto b : Z.modelspace->all_orbits)
               {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double n_b = ob.occ;
                 double nbar_b = 1.0 - n_b;
                 double occfactor = nbar_a * nbar_b * n_i;
-
+                if ( occfactor < 1.e-7 )
+                {
+                  continue;
+                }
                 int J2min = std::max({std::abs(oa.j2 - ob.j2), std::abs(oi.j2 - oq.j2), std::abs(oi.j2 - op.j2)}) / 2;
                 int J2max = std::min({oa.j2 + ob.j2, oi.j2 + oq.j2, oi.j2 + op.j2}) / 2;
 
@@ -17516,8 +17487,7 @@ namespace Commutator
       CHI_VI[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
     }
 
-    // ***
-    // Todo : Combine the following two block
+    // Todo : Combine the following two blocks
     //
     // Inverse Pandya transformation
     //  X^J_ijkl  = - ( 1- P_ij )  sum_J' (2J'+1)  { i j J }  \bar{X}^J'_il`kj`
@@ -17719,7 +17689,6 @@ namespace Commutator
         }
       }
     }
-    // ***
 
     // release memory
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
@@ -18531,9 +18500,6 @@ namespace Commutator
     {
       return;
     }
-
-    std::cout << "diagram I " << Z.TwoBodyNorm() << std::endl;
-    Z.EraseTwoBody();
 
     //______________________________________________________________________
     // global array
@@ -19485,10 +19451,6 @@ namespace Commutator
     Z.profiler.timer[std::string(__func__) + "Diagram II"] += omp_get_wtime() - t_type;
     t_type = omp_get_wtime();
 
-
-    std::cout << "diagram II " << Z.TwoBodyNorm() << std::endl;
-    Z.EraseTwoBody();
-
     // *********************************************************************************** //
     //                                Diagram III                                          //
     // *********************************************************************************** //
@@ -20254,9 +20216,6 @@ namespace Commutator
     t_internal = omp_get_wtime();
 
     Z.profiler.timer[std::string(__func__) + "Diagram III"] += omp_get_wtime() - t_type;
-
-    std::cout << "diagram III " << Z.TwoBodyNorm() << std::endl;
-
 
     // Timer
     Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
