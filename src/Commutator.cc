@@ -18369,7 +18369,7 @@ namespace Commutator
         double chi_pq = 0;
         double chiY_pq = 0;
 
-        for (auto a : Z.modelspace->particles)
+        for (auto a : Z.modelspace->all_orbits)
         {
           Orbit &oa = Z.modelspace->GetOrbit(a);
           double n_a = oa.occ;
@@ -18400,7 +18400,7 @@ namespace Commutator
               }
             } // for j
 
-            for (auto b : Z.modelspace->particles)
+            for (auto b : Z.modelspace->all_orbits)
             {
               Orbit &ob = Z.modelspace->GetOrbit(b);
               double n_b = ob.occ;
