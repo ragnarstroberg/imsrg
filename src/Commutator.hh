@@ -70,7 +70,8 @@ namespace Commutator
     void SetUseIMSRG3_MP4(bool tf);
     void SetUseFactorizedCorrection(bool tf);
     void SetUseFactorized_GooseTank_Correction(bool tf);
-    void SetUseFactorized_GooseTank_Correction_only(bool tf);
+    void SetUseFactorized_GooseTank_Correction_only_1b(bool tf);
+    void SetUseFactorized_GooseTank_Correction_only_2b(bool tf);
     void SetUseFactorized_Correct_ZBTerm(bool tf);
     void SetOnly2bOmega(bool tf);
     void SetBCHSkipiEq1(bool tf);

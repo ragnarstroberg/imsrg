@@ -34,7 +34,8 @@ namespace Commutator
   bool use_imsrg3_mp4 = false;
   bool use_factorized_correction = false;
   bool use_factorized_correction_goose_tank = true;       // always include
-  bool use_factorized_correction_goose_tank_only = false; // only calculate Goose Tanks
+  bool use_factorized_correction_goose_tank_only_1b = false; // only calculate Goose Tanks
+  bool use_factorized_correction_goose_tank_only_2b = false; // only calculate Goose Tanks
   bool use_factorized_correct_ZBterm = false;             // correct zero body term at the end of IMSRG2
   bool only_2b_omega = false;
   bool perturbative_triples = false;
@@ -190,9 +191,14 @@ namespace Commutator
     use_factorized_correction_goose_tank = tf;
   }
 
-  void SetUseFactorized_GooseTank_Correction_only(bool tf)
+  void SetUseFactorized_GooseTank_Correction_only_1b(bool tf)
   {
-    use_factorized_correction_goose_tank_only = tf;
+    use_factorized_correction_goose_tank_only_1b = tf;
+  }
+
+  void SetUseFactorized_GooseTank_Correction_only_2b(bool tf)
+  {
+    use_factorized_correction_goose_tank_only_2b = tf;
   }
 
   void SetUseFactorized_Correct_ZBTerm(bool tf)
@@ -15907,7 +15913,7 @@ namespace Commutator
       // Z.EraseOneBody();
     }
 
-    if (use_factorized_correction_goose_tank_only)
+    if (use_factorized_correction_goose_tank_only_1b)
     {
       Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
       return;
@@ -16499,7 +16505,7 @@ namespace Commutator
       // std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
       // Z.EraseOneBody();
     }
-    if (use_factorized_correction_goose_tank_only)
+    if (use_factorized_correction_goose_tank_only_1b)
     {
       return;
     }
@@ -17316,7 +17322,7 @@ namespace Commutator
       CHI_I.clear();
       CHI_II.clear();
     }
-    if (use_factorized_correction_goose_tank_only)
+    if (use_factorized_correction_goose_tank_only_2b)
     {
       Z.profiler.timer[__func__] += omp_get_wtime() - t_internal;
       return;
@@ -18503,7 +18509,7 @@ namespace Commutator
     Z.profiler.timer[std::string(__func__) + " Diagram I and IV"] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
 
-    if (use_factorized_correction_goose_tank_only)
+    if (use_factorized_correction_goose_tank_only_2b)
     {
       return;
     }
