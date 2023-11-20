@@ -79,6 +79,7 @@ namespace Commutator
     void SetIMSRG3Verbose(bool tf);
     void SetSingleThread(bool tf);
     void SetUseIMSRG3N7_testing();
+    void SetDoubleCommutatorOnTheFly(bool tf);
 
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);

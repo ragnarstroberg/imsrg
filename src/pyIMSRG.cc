@@ -623,6 +623,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
       Commutator.def("SetOnly2bOmega", &Commutator::SetOnly2bOmega);
       Commutator.def("SetUseIMSRG3N7_testing", &Commutator::SetUseIMSRG3N7_testing);
+      Commutator.def("SetDoubleCommutatorOnTheFly", &Commutator::SetDoubleCommutatorOnTheFly);
 
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);

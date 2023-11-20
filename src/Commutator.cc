@@ -50,6 +50,7 @@ namespace Commutator
   double bch_product_threshold = 1e-4;
   double threebody_threshold = 0;
   double imsrg3_dE6max = 1e20;
+  bool DoubleCommutatorOnTheFly = true;
 
   std::map<std::string, bool> comm_term_on = {
       {"comm110ss", true},
@@ -222,6 +223,11 @@ namespace Commutator
   void SetSingleThread(bool tf)
   {
     single_thread = tf;
+  }
+
+  void SetDoubleCommutatorOnTheFly(bool tf)
+  {
+    DoubleCommutatorOnTheFly = tf;
   }
 
   // Operator Operator::Commutator( Operator& opright)
@@ -638,7 +644,8 @@ namespace Commutator
         {
           Operator Op_2b1b = OpNested;
           Op_2b1b.Erase();
-          comm223_231_Factorization(Omega, chi2, Op_2b1b);
+          if(DoubleCommutatorOnTheFly)
+            comm223_231_Factorization(Omega, chi2, Op_2b1b);
           comm223_232_Factorization(Omega, chi2, Op_2b1b);
           OpNested += Op_2b1b;
           /// Test
