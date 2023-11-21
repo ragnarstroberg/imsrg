@@ -82,6 +82,12 @@ namespace Commutator
     void SetUseIMSRG3N7_testing();
     void SetDoubleCommutatorOnTheFly(bool tf);
 
+    void SetUseFactorized_TypeII_Correction_1b(bool tf);
+    void SetUseFactorized_TypeIII_Correction_1b(bool tf);
+    void SetUseFactorized_TypeII_Correction_2b(bool tf);
+    void SetUseFactorized_TypeIII_Correction_2b(bool tf);
+    void UseSlowVersionOfDoubleCommutator();
+
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);
 

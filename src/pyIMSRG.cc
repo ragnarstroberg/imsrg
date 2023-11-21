@@ -626,6 +626,12 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3N7_testing", &Commutator::SetUseIMSRG3N7_testing);
       Commutator.def("SetDoubleCommutatorOnTheFly", &Commutator::SetDoubleCommutatorOnTheFly);
 
+      Commutator.def("SetUseFactorized_TypeII_Correction_1b", &Commutator::SetUseFactorized_TypeII_Correction_1b);
+      Commutator.def("SetUseFactorized_TypeIII_Correction_1b", &Commutator::SetUseFactorized_TypeIII_Correction_1b);
+      Commutator.def("SetUseFactorized_TypeII_Correction_2b", &Commutator::SetUseFactorized_TypeII_Correction_2b);
+      Commutator.def("SetUseFactorized_TypeIII_Correction_2b", &Commutator::SetUseFactorized_TypeIII_Correction_2b);
+      Commutator.def("UseSlowVersionOfDoubleCommutator", &Commutator::UseSlowVersionOfDoubleCommutator);
+      
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
