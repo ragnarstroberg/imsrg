@@ -33,15 +33,14 @@
 
 namespace Commutator
 {
-
     extern bool use_goose_tank_correction;
     extern bool use_brueckner_bch;
     extern bool use_imsrg3;
     extern bool use_imsrg3_n7;
     extern bool use_imsrg3_mp4;
     extern bool use_factorized_correction;
-    extern bool use_factorized_correction_goose_tank_only;
-    extern bool use_factorized_correction_goose_tank;
+    extern bool use_factorized_correction_goose_tank_1b;
+    extern bool use_factorized_correction_goose_tank_2b;
     extern bool use_factorized_correct_ZBterm;
     extern bool perturbative_triples;
     extern bool bch_skip_ieq1;
@@ -58,6 +57,13 @@ namespace Commutator
     extern double threebody_threshold;
     extern double imsrg3_dE6max;
 
+    extern bool use_factorized_correction_goose_tank_only_1b;
+    extern bool use_factorized_correction_goose_tank_only_2b;
+    extern bool use_factorized_correction_TypeII_1b;
+    extern bool use_factorized_correction_TypeIII_1b;
+    extern bool use_factorized_correction_TypeII_2b;
+    extern bool use_factorized_correction_TypeIII_2b;
+
     extern std::map<std::string, bool> comm_term_on; // This allows turning on/off individual IMSRG(3) commutator terms for testing.
 
     void Set_BCH_Transform_Threshold(double x);
@@ -68,25 +74,24 @@ namespace Commutator
     void SetUseIMSRG3(bool tf);
     void SetUseIMSRG3N7(bool tf);
     void SetUseIMSRG3_MP4(bool tf);
-    void SetUseFactorizedCorrection(bool tf);
-    void SetUseFactorized_GooseTank_Correction(bool tf);
-    void SetUseFactorized_GooseTank_Correction_only_1b(bool tf);
-    void SetUseFactorized_GooseTank_Correction_only_2b(bool tf);
-    void SetUseFactorized_Correct_ZBTerm(bool tf);
     void SetOnly2bOmega(bool tf);
     void SetBCHSkipiEq1(bool tf);
     void SetIMSRG3Noqqq(bool tf);
     void SetIMSRG3valence2b(bool tf);
     void SetIMSRG3Verbose(bool tf);
     void SetSingleThread(bool tf);
-    void SetUseIMSRG3N7_testing();
-    void SetDoubleCommutatorOnTheFly(bool tf);
 
+    void SetUseFactorizedCorrection(bool tf);
+    void SetUseFactorized_GooseTank_Correction_1b(bool tf);
+    void SetUseFactorized_GooseTank_Correction_2b(bool tf);
+    void SetUseFactorized_GooseTank_Correction_only_1b(bool tf);
+    void SetUseFactorized_GooseTank_Correction_only_2b(bool tf);
+    void SetUseFactorized_Correct_ZBTerm(bool tf);
     void SetUseFactorized_TypeII_Correction_1b(bool tf);
     void SetUseFactorized_TypeIII_Correction_1b(bool tf);
     void SetUseFactorized_TypeII_Correction_2b(bool tf);
     void SetUseFactorized_TypeIII_Correction_2b(bool tf);
-    void UseSlowVersionOfDoubleCommutator();
+    void UseSlowVersionOfDoubleCommutator(bool tf);
 
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);
