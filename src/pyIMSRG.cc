@@ -631,6 +631,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseFactorized_TypeIII_Correction_2b", &Commutator::SetUseFactorized_TypeIII_Correction_2b);
       Commutator.def("UseSlowVersionOfDoubleCommutator", &Commutator::UseSlowVersionOfDoubleCommutator);
 
+      Commutator.def("SetUseFactorized_GT_TypeI_Correction_2b", &Commutator::SetUseFactorized_GT_TypeI_Correction_2b);
+      Commutator.def("SetUseFactorized_GT_TypeIV_Correction_2b", &Commutator::SetUseFactorized_GT_TypeIV_Correction_2b);
+
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);

@@ -58,7 +58,6 @@ namespace Commutator
   bool use_factorized_correction_TypeII_2b = true;
   bool use_factorized_correction_TypeIII_2b = true;
 
-
   std::map<std::string, bool> comm_term_on = {
       {"comm110ss", true},
       {"comm220ss", true},
@@ -254,6 +253,18 @@ namespace Commutator
   void UseSlowVersionOfDoubleCommutator(bool tf)
   {
     SlowVersionOfDoubleCommutator = tf;
+  }
+
+  bool use_factorized_correction__GT_TypeI_2b = true;
+  bool use_factorized_correction__GT_TypeIV_2b = true;
+  void SetUseFactorized_GT_TypeI_Correction_2b(bool tf)
+  {
+    use_factorized_correction__GT_TypeI_2b = tf;
+  }
+
+  void SetUseFactorized_GT_TypeIV_Correction_2b(bool tf)
+  {
+    use_factorized_correction__GT_TypeIV_2b = tf;
   }
 
   // Operator Operator::Commutator( Operator& opright)
@@ -810,6 +821,8 @@ namespace Commutator
       Z += (1. / 12) * Commutator(Nested, X);
     }
 
+    Operator chi, chi2; // intermidate operator for factorization code  B.C. He
+
     size_t k = 1;
     // k=1 adds 1/2[X,Y],  k=2 adds 1/12 [Y,[Y,X]], k=4 adds -1/720 [Y,[Y,[Y,[Y,X]]]], and so on.
     //   while( Nested.Norm() > bch_product_threshold and k<9)
@@ -825,7 +838,34 @@ namespace Commutator
         break; // don't evaluate the commutator if we're not going to use it
       if (2 * ny * nxy < bch_product_threshold)
         break;
+
+      if (use_factorized_correction)
+      {
+        chi2 = chi;     // keep nested commutator from two steps ago
+        chi = Nested; // save nested commutator from previous step
+      }
+
       Nested = Commutator(Y, Nested);
+
+      if (k > 2 and use_factorized_correction)
+      {
+        Operator Op_2b1b = Nested;
+        Op_2b1b.Erase();
+        if (SlowVersionOfDoubleCommutator)
+        {
+          comm223_231_Factorization_slow(Y, chi2, Op_2b1b);
+          comm223_232_Factorization_slow(Y, chi2, Op_2b1b);
+          Nested += Op_2b1b;
+        }
+        else
+        {
+
+          comm223_231_Factorization(Y, chi2, Op_2b1b);
+          comm223_232_Factorization(Y, chi2, Op_2b1b);
+          Nested += Op_2b1b;
+        }
+      }
+
       nxy = Nested.Norm();
       //     k++;
     }
@@ -17171,6 +17211,326 @@ namespace Commutator
   void comm223_232_Test(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
 
+    // global variables
+    Z.modelspace->PreCalculateSixJ();
+    int nch = Z.modelspace->GetNumberTwoBodyChannels(); // number of TB channels
+    int norbits = Z.modelspace->all_orbits.size();
+    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
+    auto &Z2 = Z.TwoBody;
+    bool EraseTB = false;
+    EraseTB = true;
+    ///_______________________________________________________
+
+      // ####################################################################################
+      //   diagram IIa
+      //
+      //   II(a)^J0_pgqh = - P_pg \sum_{abcd J2 J3 J4} ( 2 * J2 + 1 ) ( 2 * J3 + 1 ) ( 2 * J4 + 1 )
+      //
+      //                   { jd jg J4 } { jp ja J4 } { jg jp J0 }
+      //                   { jc jb J2 } { jc jb J3 } { ja jd J4 }
+      //
+      //                   ( \bar{n_b} \bar{n_d} n_c + \bar{n_c} n_b n_d )
+      //                   eta^J2_cgdb eta^J3_pbca Gamma^J0_daqh
+      // ####################################################################################
+#pragma omp parallel for
+    for (int ch = 0; ch < nch; ++ch)
+    {
+      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int J0 = tbc.J;
+      int nKets = tbc.GetNumberKets();
+      for (int ibra = 0; ibra < nKets; ++ibra)
+      {
+        Ket &bra = tbc.GetKet(ibra);
+        size_t p = bra.p;
+        size_t g = bra.q;
+        Orbit &op = *(bra.op);
+        Orbit &og = *(bra.oq);
+        double jp = op.j2 * 0.5;
+        double jg = og.j2 * 0.5;
+
+        if( p != 2 and g != 3)
+          continue;
+
+        int phase_pg = bra.Phase(J0);
+
+        for (int iket = ibra; iket < nKets; ++iket)
+        {
+          Ket &ket = tbc.GetKet(iket);
+          size_t q = ket.p;
+          size_t h = ket.q;
+          Orbit &oq = *(ket.op);
+          Orbit &oh = *(ket.oq);
+          double jq = oq.j2 * 0.5;
+          double jh = oh.j2 * 0.5;
+
+          if( q != 2 and h != 3)
+            continue;
+
+          double zpgqh = 0.;
+
+          for (auto &a : Z.modelspace->all_orbits)
+          {
+            Orbit &oa = Z.modelspace->GetOrbit(a);
+            double n_a = oa.occ;
+            double nbar_a = 1.0 - n_a;
+            double ja = oa.j2 * 0.5;
+
+            for (auto &b : Z.modelspace->all_orbits)
+            {
+              Orbit &ob = Z.modelspace->GetOrbit(b);
+              double n_b = ob.occ;
+              double nbar_b = 1.0 - n_b;
+              double jb = ob.j2 * 0.5;
+
+              for (auto &c : Z.modelspace->all_orbits)
+              {
+                Orbit &oc = Z.modelspace->GetOrbit(c);
+                double n_c = oc.occ;
+                double nbar_c = 1.0 - n_c;
+                double jc = oc.j2 * 0.5;
+
+                for (auto &d : Z.modelspace->all_orbits)
+                {
+                  Orbit &od = Z.modelspace->GetOrbit(d);
+                  double n_d = od.occ;
+                  double nbar_d = 1.0 - n_d;
+                  double jd = od.j2 * 0.5;
+
+                  double occfactor = (nbar_b * nbar_d * n_c + nbar_c * n_b * n_d);
+                  if (fabs(occfactor) < 1.e-7)
+                    continue;
+                  /// direct term
+                  int j2min = std::max(std::abs(oc.j2 - og.j2), std::abs(ob.j2 - od.j2)) / 2;
+                  int j2max = std::min(oc.j2 + og.j2, ob.j2 + od.j2) / 2;
+
+                  int j3min = std::max(std::abs(oa.j2 - oc.j2), std::abs(ob.j2 - op.j2)) / 2;
+                  int j3max = std::min(oa.j2 + oc.j2, ob.j2 + op.j2) / 2;
+
+                  int j4min = std::max({std::abs(od.j2 - og.j2), std::abs(oa.j2 - op.j2), std::abs(oc.j2 - ob.j2)}) / 2;
+                  int j4max = std::min({od.j2 + og.j2, oa.j2 + op.j2, oc.j2 + ob.j2}) / 2;
+
+                  for (int J2 = j2min; J2 <= j2max; J2++)
+                  {
+                    for (int J3 = j3min; J3 <= j3max; J3++)
+                    {
+                      for (int J4 = j4min; J4 <= j4max; J4++)
+                      {
+
+                        double sixj1 = Z.modelspace->GetSixJ(jd, jg, J4, jc, jb, J2);
+                        double sixj2 = Z.modelspace->GetSixJ(jp, ja, J4, jc, jb, J3);
+                        double sixj3 = Z.modelspace->GetSixJ(jg, jp, J0, ja, jd, J4);
+
+                        zpgqh -= occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, c, g, d, b) * Eta.TwoBody.GetTBME_J(J3, p, b, c, a) * Gamma.TwoBody.GetTBME_J(J0, d, a, q, h);
+                      }
+                    }
+                  }
+
+                  /// exchange term, exchange pg
+                  j2min = std::max(std::abs(oc.j2 - op.j2), std::abs(ob.j2 - od.j2)) / 2;
+                  j2max = std::min(oc.j2 + op.j2, ob.j2 + od.j2) / 2;
+
+                  j3min = std::max(std::abs(oa.j2 - oc.j2), std::abs(ob.j2 - og.j2)) / 2;
+                  j3max = std::min(oa.j2 + oc.j2, ob.j2 + og.j2) / 2;
+
+                  j4min = std::max({std::abs(od.j2 - op.j2), std::abs(oa.j2 - og.j2), std::abs(oc.j2 - ob.j2)}) / 2;
+                  j4max = std::min({od.j2 + op.j2, oa.j2 + og.j2, oc.j2 + ob.j2}) / 2;
+
+                  for (int J2 = j2min; J2 <= j2max; J2++)
+                  {
+                    for (int J3 = j3min; J3 <= j3max; J3++)
+                    {
+                      for (int J4 = j4min; J4 <= j4max; J4++)
+                      {
+                        // double sixj1 = Z.modelspace->GetCachedSixJ(jd, jp, J4, jc, jb, J2);
+                        // double sixj2 = Z.modelspace->GetCachedSixJ(jg, ja, J4, jc, jb, J3);
+                        // double sixj3 = Z.modelspace->GetCachedSixJ(jp, jg, J0, ja, jd, J4);
+
+                        double sixj1 = Z.modelspace->GetSixJ(jd, jp, J4, jc, jb, J2);
+                        double sixj2 = Z.modelspace->GetSixJ(jg, ja, J4, jc, jb, J3);
+                        double sixj3 = Z.modelspace->GetSixJ(jp, jg, J0, ja, jd, J4);
+
+                        zpgqh -= phase_pg * occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, c, p, d, b) * Eta.TwoBody.GetTBME_J(J3, g, b, c, a) * Gamma.TwoBody.GetTBME_J(J0, d, a, q, h);
+                      }
+                    }
+                  }
+                  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+                } // d
+              }   // c
+            }     // b
+          }       // a
+
+          if (p == g)
+            zpgqh /= PhysConst::SQRT2;
+          if (q == h)
+            zpgqh /= PhysConst::SQRT2;
+
+          Z2.AddToTBME(ch, ch, ibra, iket, zpgqh);
+
+        } // iket
+      }   // ibra
+    }     // J0 channel
+    std::cout << "diagram IIa " << Z.TwoBodyNorm() << std::endl;
+    if (EraseTB)
+      Z.EraseTwoBody();
+
+
+      // ####################################################################################
+      //   diagram IIa
+      //
+      //   II(a)^J0_pgqh = - P_pg \sum_{abcd J2 J3 J4} ( 2 * J2 + 1 ) ( 2 * J3 + 1 ) ( 2 * J4 + 1 )
+      //
+      //                   { jd jg J4 } { jp ja J4 } { jg jp J0 }
+      //                   { jc jb J2 } { jc jb J3 } { ja jd J4 }
+      //
+      //                   ( \bar{n_b} \bar{n_d} n_c + \bar{n_c} n_b n_d )
+      //                   eta^J2_cgdb eta^J3_pbca Gamma^J0_daqh
+      // ####################################################################################
+#pragma omp parallel for
+    for (int ch = 0; ch < nch; ++ch)
+    {
+      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int J0 = tbc.J;
+      int nKets = tbc.GetNumberKets();
+      for (int ibra = 0; ibra < nKets; ++ibra)
+      {
+        Ket &bra = tbc.GetKet(ibra);
+        size_t p = bra.p;
+        size_t g = bra.q;
+        Orbit &op = *(bra.op);
+        Orbit &og = *(bra.oq);
+        double jp = op.j2 * 0.5;
+        double jg = og.j2 * 0.5;
+        if( p != 2 and g != 3)
+          continue;
+
+        int phase_pg = bra.Phase(J0);
+
+        for (int iket = ibra; iket < nKets; ++iket)
+        {
+          Ket &ket = tbc.GetKet(iket);
+          size_t q = ket.p;
+          size_t h = ket.q;
+          Orbit &oq = *(ket.op);
+          Orbit &oh = *(ket.oq);
+          double jq = oq.j2 * 0.5;
+          double jh = oh.j2 * 0.5;
+          double zpgqh = 0.;
+
+          if( q != 2 and h != 3)
+            continue;
+
+          for (auto &a : Z.modelspace->all_orbits)
+          {
+            Orbit &oa = Z.modelspace->GetOrbit(a);
+            double n_a = oa.occ;
+            double nbar_a = 1.0 - n_a;
+            double ja = oa.j2 * 0.5;
+
+            for (auto &b : Z.modelspace->all_orbits)
+            {
+              Orbit &ob = Z.modelspace->GetOrbit(b);
+              double n_b = ob.occ;
+              double nbar_b = 1.0 - n_b;
+              double jb = ob.j2 * 0.5;
+
+              for (auto &c : Z.modelspace->all_orbits)
+              {
+                Orbit &oc = Z.modelspace->GetOrbit(c);
+                double n_c = oc.occ;
+                double nbar_c = 1.0 - n_c;
+                double jc = oc.j2 * 0.5;
+
+                for (auto &d : Z.modelspace->all_orbits)
+                {
+                  Orbit &od = Z.modelspace->GetOrbit(d);
+                  double n_d = od.occ;
+                  double nbar_d = 1.0 - n_d;
+                  double jd = od.j2 * 0.5;
+
+                  if ( a != g and p != d )
+                  {
+                    continue;
+                  }
+                  
+                  double occfactor = (nbar_b * nbar_d * n_c + nbar_c * n_b * n_d);
+                  if (fabs(occfactor) < 1.e-7)
+                    continue;
+                  /// direct term
+                  int j2min = std::max(std::abs(oc.j2 - og.j2), std::abs(ob.j2 - od.j2)) / 2;
+                  int j2max = std::min(oc.j2 + og.j2, ob.j2 + od.j2) / 2;
+
+                  int j3min = std::max(std::abs(oa.j2 - oc.j2), std::abs(ob.j2 - op.j2)) / 2;
+                  int j3max = std::min(oa.j2 + oc.j2, ob.j2 + op.j2) / 2;
+
+                  int j4min = std::max({std::abs(od.j2 - og.j2), std::abs(oa.j2 - op.j2), std::abs(oc.j2 - ob.j2)}) / 2;
+                  int j4max = std::min({od.j2 + og.j2, oa.j2 + op.j2, oc.j2 + ob.j2}) / 2;
+
+                  for (int J2 = j2min; J2 <= j2max; J2++)
+                  {
+                    for (int J3 = j3min; J3 <= j3max; J3++)
+                    {
+                      for (int J4 = j4min; J4 <= j4max; J4++)
+                      {
+                        // double sixj1 = Z.modelspace->GetCachedSixJ(jd, jg, J4, jc, jb, J2);
+                        // double sixj2 = Z.modelspace->GetCachedSixJ(jp, ja, J4, jc, jb, J3);
+                        // double sixj3 = Z.modelspace->GetCachedSixJ(jg, jp, J0, ja, jd, J4);
+
+                        double sixj1 = Z.modelspace->GetSixJ(jd, jg, J4, jc, jb, J2);
+                        double sixj2 = Z.modelspace->GetSixJ(jp, ja, J4, jc, jb, J3);
+                        double sixj3 = Z.modelspace->GetSixJ(jg, jp, J0, ja, jd, J4);
+
+                        zpgqh -= occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, c, g, d, b) * Eta.TwoBody.GetTBME_J(J3, p, b, c, a) * Gamma.TwoBody.GetTBME_J(J0, d, a, q, h);
+                      }
+                    }
+                  }
+
+                  /// exchange term, exchange pg
+                  j2min = std::max(std::abs(oc.j2 - op.j2), std::abs(ob.j2 - od.j2)) / 2;
+                  j2max = std::min(oc.j2 + op.j2, ob.j2 + od.j2) / 2;
+
+                  j3min = std::max(std::abs(oa.j2 - oc.j2), std::abs(ob.j2 - og.j2)) / 2;
+                  j3max = std::min(oa.j2 + oc.j2, ob.j2 + og.j2) / 2;
+
+                  j4min = std::max({std::abs(od.j2 - op.j2), std::abs(oa.j2 - og.j2), std::abs(oc.j2 - ob.j2)}) / 2;
+                  j4max = std::min({od.j2 + op.j2, oa.j2 + og.j2, oc.j2 + ob.j2}) / 2;
+
+                  for (int J2 = j2min; J2 <= j2max; J2++)
+                  {
+                    for (int J3 = j3min; J3 <= j3max; J3++)
+                    {
+                      for (int J4 = j4min; J4 <= j4max; J4++)
+                      {
+                        // double sixj1 = Z.modelspace->GetCachedSixJ(jd, jp, J4, jc, jb, J2);
+                        // double sixj2 = Z.modelspace->GetCachedSixJ(jg, ja, J4, jc, jb, J3);
+                        // double sixj3 = Z.modelspace->GetCachedSixJ(jp, jg, J0, ja, jd, J4);
+
+                        double sixj1 = Z.modelspace->GetSixJ(jd, jp, J4, jc, jb, J2);
+                        double sixj2 = Z.modelspace->GetSixJ(jg, ja, J4, jc, jb, J3);
+                        double sixj3 = Z.modelspace->GetSixJ(jp, jg, J0, ja, jd, J4);
+
+                        zpgqh -= phase_pg * occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, c, p, d, b) * Eta.TwoBody.GetTBME_J(J3, g, b, c, a) * Gamma.TwoBody.GetTBME_J(J0, d, a, q, h);
+                      }
+                    }
+                  }
+                  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+                } // d
+              }   // c
+            }     // b
+          }       // a
+
+          if (p == g)
+            zpgqh /= PhysConst::SQRT2;
+          if (q == h)
+            zpgqh /= PhysConst::SQRT2;
+
+          Z2.AddToTBME(ch, ch, ibra, iket, zpgqh);
+
+        } // iket
+      }   // ibra
+    }     // J0 channel
+    std::cout << "diagram IIa " << Z.TwoBodyNorm() << std::endl;
+    if (EraseTB)
+      Z.EraseTwoBody();
     return;
   }
 
@@ -18516,23 +18876,31 @@ namespace Commutator
 
             for (auto b : Z.OneBodyChannels.at({op.l, op.j2, op.tz2}))
             {
-              zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
-              zpqrs += CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
+              if (use_factorized_correction__GT_TypeI_2b)
+                zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
+              if (use_factorized_correction__GT_TypeIV_2b)
+                zpqrs += CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
             }                                                                  // for a
             for (auto b : Z.OneBodyChannels.at({oq.l, oq.j2, oq.tz2}))
             {
-              zpqrs += CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
-              zpqrs += CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
+              if (use_factorized_correction__GT_TypeI_2b)
+                zpqrs += CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
+              if (use_factorized_correction__GT_TypeIV_2b)
+                zpqrs += CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
             }                                                                  // for a
             for (auto b : Z.OneBodyChannels.at({oR.l, oR.j2, oR.tz2}))
             {
-              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r);
+              if (use_factorized_correction__GT_TypeI_2b)
+                zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r);
+              if (use_factorized_correction__GT_TypeIV_2b)
               zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r);
             } // for a
             for (auto b : Z.OneBodyChannels.at({os.l, os.j2, os.tz2}))
             {
-              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
-              zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
+              if (use_factorized_correction__GT_TypeI_2b)
+                zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
+              if (use_factorized_correction__GT_TypeIV_2b)
+                zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
             } // for a
 
             // normalize
