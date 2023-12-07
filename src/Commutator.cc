@@ -3023,6 +3023,7 @@ namespace Commutator
     auto &Y2 = Y.TwoBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z1 = Z.OneBody;
+    int hZ = Z.IsHermitian() ? +1 : -1;
     int x_particle_rank = X.GetParticleRank();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
@@ -3184,7 +3185,7 @@ namespace Commutator
       Z1(i, j) += zij / (oi.j2 + 1.0);
       if (i != j)
       {
-        Z1(j, i) += zij / (oi.j2 + 1.0);
+        Z1(j, i) += hZ * zij / (oi.j2 + 1.0);
       }
       // }// for j
       //    Z.profiler.timer[ oss.str() ] += omp_get_wtime() - t_local;
