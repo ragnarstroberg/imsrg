@@ -3782,7 +3782,13 @@ namespace ReferenceImplementations
   {
     Z.modelspace->PreCalculateSixJ();
     bool EraseOB = false;
-    EraseOB = true;
+    // EraseOB = true;
+
+    // determine symmetry
+    int hEta = Eta.IsHermitian() ? 1 : -1;
+    int hGamma = Gamma.IsHermitian() ? 1 : -1;
+    // int hZ = Z.IsHermitian() ? 1 : -1;
+    int hZ = hGamma;
     // ####################################################################################
     //   diagram I
     //
@@ -3857,7 +3863,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) += 0.5 * zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += 0.5 * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += 0.5 * hZ * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -3961,7 +3967,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) += zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += hZ * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -4040,7 +4046,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) += 0.25 * zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += 0.25 * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += hZ * 0.25 * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -4143,7 +4149,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) += zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += hZ * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -4222,7 +4228,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) -= 0.25 * zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) -= 0.25 * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) -= hZ * 0.25 * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -4310,7 +4316,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) += 0.5 * zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += 0.5 * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += hZ * 0.5 * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -4398,7 +4404,7 @@ namespace ReferenceImplementations
         }
         Z.OneBody(p, q) -= 0.5 * zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) -= 0.5 * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) -= hZ * 0.5 * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -4418,8 +4424,13 @@ namespace ReferenceImplementations
     std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
     auto &Z2 = Z.TwoBody;
     bool EraseTB = false;
-    EraseTB = true;
+    // EraseTB = true;
 
+    // determine symmetry
+    int hEta = Eta.IsHermitian() ? 1 : -1;
+    int hGamma = Gamma.IsHermitian() ? 1 : -1;
+    // int hZ = Z.IsHermitian() ? 1 : -1;
+    int hZ = hGamma;
     // ####################################################################################
     //   diagram Ia
     //

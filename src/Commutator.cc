@@ -819,10 +819,22 @@ namespace Commutator
     if (nxy * nx > bch_product_threshold)
     {
       Z += (1. / 12) * Commutator(Nested, X);
+      if ( use_factorized_correction)
+      {
+        Operator Op_2b1b = Nested;
+        Op_2b1b.Erase();
+        comm223_231_Factorization(X, Y, Op_2b1b);
+        comm223_232_Factorization(X, Y, Op_2b1b);
+        Z += (1. / 12) * Op_2b1b;
+      }
     }
 
     Operator chi, chi2; // intermidate operator for factorization code  B.C. He
-
+    if (use_factorized_correction)
+    {
+      chi2 = X;     // keep nested commutator from two steps ago
+      chi = X;   // save nested commutator from previous step
+    }
     size_t k = 1;
     // k=1 adds 1/2[X,Y],  k=2 adds 1/12 [Y,[Y,X]], k=4 adds -1/720 [Y,[Y,[Y,[Y,X]]]], and so on.
     //   while( Nested.Norm() > bch_product_threshold and k<9)
@@ -842,32 +854,21 @@ namespace Commutator
       if (use_factorized_correction)
       {
         chi2 = chi;     // keep nested commutator from two steps ago
-        chi = Nested; // save nested commutator from previous step
+        chi = Nested;   // save nested commutator from previous step
       }
 
       Nested = Commutator(Y, Nested);
 
-      if (k > 2 and use_factorized_correction)
+      if (k >= 2 and use_factorized_correction)
       {
         Operator Op_2b1b = Nested;
         Op_2b1b.Erase();
-        if (SlowVersionOfDoubleCommutator)
-        {
-          comm223_231_Factorization_slow(Y, chi2, Op_2b1b);
-          comm223_232_Factorization_slow(Y, chi2, Op_2b1b);
-          Nested += Op_2b1b;
-        }
-        else
-        {
-
-          comm223_231_Factorization(Y, chi2, Op_2b1b);
-          comm223_232_Factorization(Y, chi2, Op_2b1b);
-          Nested += Op_2b1b;
-        }
+        comm223_231_Factorization(Y, chi2, Op_2b1b);
+        comm223_232_Factorization(Y, chi2, Op_2b1b);
+        Nested += Op_2b1b;
       }
 
       nxy = Nested.Norm();
-      //     k++;
     }
 
     use_imsrg3 = _save_imsrg3; // set it back to how it was.
@@ -3102,6 +3103,8 @@ namespace Commutator
     int x_particle_rank = X.GetParticleRank();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
+    int herm = Z.IsHermitian() ? 1 : -1;
+
     size_t norb = Z.modelspace->GetNumberOrbits();
     std::vector<std::array<size_t, 2>> ij_pairs;
     for (size_t i = 0; i < norb; i++)
@@ -3260,7 +3263,7 @@ namespace Commutator
       Z1(i, j) += zij / (oi.j2 + 1.0);
       if (i != j)
       {
-        Z1(j, i) += zij / (oi.j2 + 1.0);
+        Z1(j, i) += herm * zij / (oi.j2 + 1.0);
       }
       // }// for j
       //    Z.profiler.timer[ oss.str() ] += omp_get_wtime() - t_local;
@@ -15783,8 +15786,13 @@ namespace Commutator
   void comm223_231_Factorization(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
     double t_internal = omp_get_wtime(); // timer
-
     Z.modelspace->PreCalculateSixJ();
+
+    // determine symmetry
+    int hEta = Eta.IsHermitian() ? 1 : -1;
+    int hGamma = Gamma.IsHermitian() ? 1 : -1;
+    // int hZ = Z.IsHermitian() ? 1 : -1;
+    int hZ = hGamma;
     // ###########################################################
     //  diagram I
     // The intermediate one body operator
@@ -15974,7 +15982,7 @@ namespace Commutator
 
           Z.OneBody(p, q) += 0.5 * zij / (op.j2 + 1.0);
           if (p != q)
-            Z.OneBody(q, p) += 0.5 * zij / (op.j2 + 1.0);
+            Z.OneBody(q, p) += 0.5 * hZ * zij / (op.j2 + 1.0);
           //--------------------------------------------------
         } // for q
       }   // for p
@@ -16215,7 +16223,7 @@ namespace Commutator
           }
           Z.OneBody(p, q) += zij / j2hat2;
           if (p != q)
-            Z.OneBody(q, p) += zij / j2hat2;
+            Z.OneBody(q, p) += hZ * zij / j2hat2;
         }
       }
     }
@@ -16323,7 +16331,7 @@ namespace Commutator
         }
         Z.OneBody(p, q) += 0.25 * zij / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += 0.25 * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += 0.25 * hZ * zij / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -16437,14 +16445,14 @@ namespace Commutator
             {
               double etaME = (2 * J1 + 1) * Eta.TwoBody.GetTBME_J(J1, J1, e, p, d, q);
               zij_a += Chi_221_b(d, e) * etaME;
-              zij_b += Chi_221_b(e, d) * etaME;
+              zij_b += hZ * Chi_221_b(e, d) * etaME;
             }
           }
         }
 
         Z.OneBody(p, q) += 0.5 * (zij_a - zij_b) / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += 0.5 * (zij_a - zij_b) / (op.j2 + 1.0);
+          Z.OneBody(q, p) += 0.5 * hZ *  (zij_a - zij_b) / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
@@ -16458,8 +16466,13 @@ namespace Commutator
   void comm223_231_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
     double t_internal = omp_get_wtime(); // timer
-
     Z.modelspace->PreCalculateSixJ();
+
+    // determine symmetry
+    int hEta = Eta.IsHermitian() ? 1 : -1;
+    int hGamma = Gamma.IsHermitian() ? 1 : -1;
+    // int hZ = Z.IsHermitian() ? 1 : -1;
+    int hZ = hGamma;
     // ###########################################################
     //  diagram I
     // The intermediate one body operator
@@ -16570,7 +16583,7 @@ namespace Commutator
 
           Z.OneBody(p, q) += 0.5 * zij / (op.j2 + 1.0);
           if (p != q)
-            Z.OneBody(q, p) += 0.5 * zij / (op.j2 + 1.0);
+            Z.OneBody(q, p) += 0.5 * hZ * zij / (op.j2 + 1.0);
           //--------------------------------------------------
         } // for q
       }   // for p
@@ -16872,12 +16885,12 @@ namespace Commutator
               int jket_cc = tbc_cc.GetLocalIndex(q, e);
               int iket_cc2 = tbc_cc.GetLocalIndex(e, q);
               int jket_cc2 = tbc_cc.GetLocalIndex(e, p);
-              zij += IntermediateTwobody[ch_cc](iket_cc, jket_cc);
-              zij -= IntermediateTwobody[ch_cc](iket_cc2, jket_cc2);
+              zij += IntermediateTwobody[ch_cc](iket_cc, jket_cc);   // II_a
+              zij -= IntermediateTwobody[ch_cc](iket_cc2, jket_cc2); // II_c
             }
             Z.OneBody(p, q) += zij / j2hat2;
             if (p != q)
-              Z.OneBody(q, p) += zij / j2hat2;
+              Z.OneBody(q, p) += hZ * zij / j2hat2;
           }
         }
       }
@@ -16980,6 +16993,8 @@ namespace Commutator
         //--------------------------------------------------
       } // for p
 
+      // ###########################################################
+      //  diagram II_b
       // IIb_pq = 1/4 1/(2 jp + 1) \sum_acdJ0 Chi_222_b_cpad * Gamma_bar_adcq
 #pragma omp parallel for
       for (int indexp = 0; indexp < norbits; ++indexp)
@@ -17023,7 +17038,7 @@ namespace Commutator
           }
           Z.OneBody(p, q) += 0.25 * zij / (op.j2 + 1.0);
           if (p != q)
-            Z.OneBody(q, p) += 0.25 * zij / (op.j2 + 1.0);
+            Z.OneBody(q, p) += 0.25 * hZ * zij / (op.j2 + 1.0);
           //--------------------------------------------------
         } // for q
       }   // for p
@@ -17033,7 +17048,7 @@ namespace Commutator
       // ###########################################################
       //  diagram II_d
       //
-      // IIb_pq = - 1/4 1/(2 jp + 1) \sum_abeJ0  Chi_222_a_bqae * Gamma_bar_bqae
+      // IId_pq = - 1/4 1/(2 jp + 1) \sum_abeJ0  Chi_222_a_bqae * Gamma_bar_bqae
       // ###########################################################
 #pragma omp parallel for
       for (int indexp = 0; indexp < norbits; ++indexp)
@@ -17073,7 +17088,7 @@ namespace Commutator
 
           Z.OneBody(p, q) -= 0.25 * zij / (op.j2 + 1.0);
           if (p != q)
-            Z.OneBody(q, p) -= 0.25 * zij / (op.j2 + 1.0);
+            Z.OneBody(q, p) -= 0.25 * hZ * zij / (op.j2 + 1.0);
           //--------------------------------------------------
 
         } // for q
@@ -17113,8 +17128,6 @@ namespace Commutator
 
         for (auto &e : Z.GetOneBodyChannel(od.l, od.j2, od.tz2)) // delta_jd je
         {
-          // if (e > d)
-          //   continue;
           Orbit &oe = Z.modelspace->GetOrbit(e);
           double n_e = oe.occ;
           double nbar_e = 1.0 - n_e;
@@ -17156,7 +17169,7 @@ namespace Commutator
               }
             }
           }
-          Chi_221_b(d, e) += eta_de / (od.j2 + 1.0);
+          Chi_221_b(d, e) += eta_de / (od.j2 + 1.0);        
         } // e
       }   // d
 
@@ -17189,14 +17202,14 @@ namespace Commutator
               {
                 double etaME = (2 * J1 + 1) * Eta.TwoBody.GetTBME_J(J1, J1, e, p, d, q);
                 zij_a += Chi_221_b(d, e) * etaME;
-                zij_b += Chi_221_b(e, d) * etaME;
+                zij_b += hZ * Chi_221_b(e, d) * etaME;
               }
             }
           }
 
           Z.OneBody(p, q) += 0.5 * (zij_a - zij_b) / (op.j2 + 1.0);
           if (p != q)
-            Z.OneBody(q, p) += 0.5 * (zij_a - zij_b) / (op.j2 + 1.0);
+            Z.OneBody(q, p) += 0.5 * hZ * (zij_a - zij_b) / (op.j2 + 1.0);
           //--------------------------------------------------
         } // for q
       }   // for p
@@ -17553,6 +17566,11 @@ namespace Commutator
     int n_nonzero = Z.modelspace->GetNumberTwoBodyChannels_CC(); // number of CC channels
     auto &Z2 = Z.TwoBody;
 
+    // determine symmetry
+    int hEta = Eta.IsHermitian() ? 1 : -1;
+    int hGamma = Gamma.IsHermitian() ? 1 : -1;
+    // int hZ = Z.IsHermitian() ? 1 : -1;
+    int hZ = hGamma;
     // ####################################################################################
     //                      Factorization of Ia, Ib, IVa and IVb
     // ####################################################################################
@@ -17690,12 +17708,12 @@ namespace Commutator
             for (auto b : Z.OneBodyChannels.at({op.l, op.j2, op.tz2}))
             {
               zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
-              zpqrs += CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
+              zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
             }                                                                  // for a
             for (auto b : Z.OneBodyChannels.at({oq.l, oq.j2, oq.tz2}))
             {
               zpqrs += CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
-              zpqrs += CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
+              zpqrs += hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
             }                                                                  // for a
             for (auto b : Z.OneBodyChannels.at({oR.l, oR.j2, oR.tz2}))
             {
@@ -17729,7 +17747,7 @@ namespace Commutator
     }
 
     // *********************************************************************************** //
-    //                                  Diagram II                                         //
+    //                             Diagram II and III                                      //
     // *********************************************************************************** //
 
     //______________________________________________________________________
@@ -18230,7 +18248,7 @@ namespace Commutator
           size_t q = ket.p;
           size_t h = ket.q;
           double z_IIa = Multi_matirx(ibra, iket);
-          double z_IIc = Multi_matirx(iket, ibra);
+          double z_IIc = hZ * Multi_matirx(iket, ibra);
 
           if (p == g)
           {
@@ -18417,7 +18435,7 @@ namespace Commutator
                 if (b > c)
                   indx_bc += nkets;
                 XbarIIbd -= Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (barCHI_III[ch_cc_old](indx_bc, indx_ad) + barCHI_III[ch_cc_old](indx_ad, indx_bc));
-                XbarIIIab += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) - bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
+                XbarIIIab += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) - hZ * bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
               }
               /// IIIef
               int Tz_J2 = (ob.tz2 + oc.tz2) / 2;
@@ -18553,7 +18571,7 @@ namespace Commutator
       int nKets = tbc_cc.GetNumberKets();
       arma::Mat<double> Multi_matirx(nKets * 2, nKets * 2);
       Multi_matirx = bar_CHI_VII_CC[ch_cc] * bar_Eta[ch_cc];
-      bar_CHI_VII_CC_ef[ch_cc] = Multi_matirx + Multi_matirx.t();
+      bar_CHI_VII_CC_ef[ch_cc] = Multi_matirx + hZ * Multi_matirx.t();
     }
 
     //  Inverse Pandya transformation
@@ -18749,6 +18767,11 @@ namespace Commutator
     int n_nonzero = Z.modelspace->GetNumberTwoBodyChannels_CC(); // number of CC channels
     auto &Z2 = Z.TwoBody;
 
+    // determine symmetry
+    int hEta = Eta.IsHermitian() ? 1 : -1;
+    int hGamma = Gamma.IsHermitian() ? 1 : -1;
+    // int hZ = Z.IsHermitian() ? 1 : -1;
+    int hZ = hGamma;
     // ####################################################################################
     //                      Factorization of Ia, Ib, IVa and IVb
     // ####################################################################################
@@ -18879,21 +18902,21 @@ namespace Commutator
               if (use_factorized_correction__GT_TypeI_2b)
                 zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
               if (use_factorized_correction__GT_TypeIV_2b)
-                zpqrs += CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
+                zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
             }                                                                  // for a
             for (auto b : Z.OneBodyChannels.at({oq.l, oq.j2, oq.tz2}))
             {
               if (use_factorized_correction__GT_TypeI_2b)
                 zpqrs += CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
               if (use_factorized_correction__GT_TypeIV_2b)
-                zpqrs += CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
+                zpqrs += hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
             }                                                                  // for a
             for (auto b : Z.OneBodyChannels.at({oR.l, oR.j2, oR.tz2}))
             {
               if (use_factorized_correction__GT_TypeI_2b)
                 zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r);
               if (use_factorized_correction__GT_TypeIV_2b)
-              zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r);
+                zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r);
             } // for a
             for (auto b : Z.OneBodyChannels.at({os.l, os.j2, os.tz2}))
             {
@@ -18924,6 +18947,8 @@ namespace Commutator
     {
       return;
     }
+
+    // std::cout << "diagram I and IV " << Z.TwoBodyNorm() << std::endl;
 
     //______________________________________________________________________
     // global array
@@ -19318,7 +19343,7 @@ namespace Commutator
             size_t h = ket.q;
 
             double z_IIa = Multi_matirx(ibra, iket);
-            double z_IIc = Multi_matirx(iket, ibra);
+            double z_IIc = hZ * Multi_matirx(iket, ibra);
 
             if (p == g)
             {
@@ -20033,7 +20058,7 @@ namespace Commutator
               double sixj1 = Z.modelspace->GetSixJ(ja, jb, J_cc, jc, jd, J_std);
               if (std::abs(sixj1) > 1e-8)
               {
-                Xbar += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) - bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
+                Xbar += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) - hZ * bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
               }
             }
 
@@ -20176,7 +20201,11 @@ namespace Commutator
       Z.profiler.timer[std::string(__func__) + " Diagram IIIa and IIIb"] += omp_get_wtime() - t_internal;
       t_internal = omp_get_wtime();
 
-      //------------------------------------------------------------------------------
+
+      // ####################################################################################
+      //                      Factorization of IIIc and IIId
+      // ####################################################################################
+
       //------------------------------------------------------------------------------
       //  The intermediate two body operator
       //  Chi_V :
@@ -20349,7 +20378,7 @@ namespace Commutator
             size_t h = ket.q;
 
             double zpgqhIIIc = Multi_matirx(ibra, iket);
-            double zpgqhIIId = Multi_matirx(iket, ibra);
+            double zpgqhIIId = hZ * Multi_matirx(iket, ibra);
 
             if (p == g)
             {
@@ -20369,7 +20398,7 @@ namespace Commutator
 
       Z.profiler.timer[std::string(__func__) + " Diagram IIIc and IIId"] += omp_get_wtime() - t_internal;
       t_internal = omp_get_wtime();
-
+      
       // ####################################################################################
       //                      Factorization of IIIe and IIIf
       // ####################################################################################
@@ -20516,7 +20545,7 @@ namespace Commutator
       for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
       {
         bar_CHI_VII_CC_ef[ch_cc] = bar_CHI_VII_CC[ch_cc] * bar_Eta[ch_cc];
-        bar_CHI_VII_CC_ef[ch_cc] += bar_Eta[ch_cc].t() * bar_CHI_VII_CC[ch_cc].t();
+        bar_CHI_VII_CC_ef[ch_cc] += hZ * bar_Eta[ch_cc].t() * bar_CHI_VII_CC[ch_cc].t();
       }
 
       Z.profiler.timer[std::string(__func__) + " Diagram IIIe and IIIf  -b"] += omp_get_wtime() - t_internal;
