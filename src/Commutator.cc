@@ -3023,6 +3023,7 @@ namespace Commutator
     auto &Y2 = Y.TwoBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z1 = Z.OneBody;
+    int hZ = Z.IsHermitian() ? +1 : -1;
     int x_particle_rank = X.GetParticleRank();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
@@ -3184,7 +3185,7 @@ namespace Commutator
       Z1(i, j) += zij / (oi.j2 + 1.0);
       if (i != j)
       {
-        Z1(j, i) += zij / (oi.j2 + 1.0);
+        Z1(j, i) += hZ * zij / (oi.j2 + 1.0);
       }
       // }// for j
       //    Z.profiler.timer[ oss.str() ] += omp_get_wtime() - t_local;
@@ -17269,11 +17270,13 @@ namespace Commutator
           double chi_pq = 0;
           double chiY_pq = 0;
 
-          for (auto a : Z.modelspace->particles)
+//          for (auto a : Z.modelspace->particles)
+          for (auto a : Z.modelspace->all_orbits)
           {
             Orbit &oa = Z.modelspace->GetOrbit(a);
             double n_a = oa.occ;
             double nbar_a = 1.0 - n_a;
+            if ( nbar_a<1e-6) continue;
 
             for (auto i : Z.modelspace->holes)
             {
@@ -17300,12 +17303,14 @@ namespace Commutator
                 }
               } // for j
 
-              for (auto b : Z.modelspace->particles)
+//              for (auto b : Z.modelspace->particles)
+              for (auto b : Z.modelspace->all_orbits)
               {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double n_b = ob.occ;
                 double nbar_b = 1.0 - n_b;
                 double occfactor = nbar_a * nbar_b * n_i;
+                if ( std::abs(occfactor)<1e-6) continue;
 
                 int J2min = std::max({std::abs(oa.j2 - ob.j2), std::abs(oi.j2 - oq.j2), std::abs(oi.j2 - op.j2)}) / 2;
                 int J2max = std::min({oa.j2 + ob.j2, oi.j2 + oq.j2, oi.j2 + op.j2}) / 2;
@@ -18455,11 +18460,13 @@ namespace Commutator
         double chi_pq = 0;
         double chiY_pq = 0;
 
-        for (auto a : Z.modelspace->particles)
+//        for (auto a : Z.modelspace->particles)
+        for (auto a : Z.modelspace->all_orbits)
         {
           Orbit &oa = Z.modelspace->GetOrbit(a);
           double n_a = oa.occ;
           double nbar_a = 1.0 - n_a;
+          if (std::abs(nbar_a)<1e-6) continue;
 
           for (auto i : Z.modelspace->holes)
           {
@@ -18486,12 +18493,14 @@ namespace Commutator
               }
             } // for j
 
-            for (auto b : Z.modelspace->particles)
+//            for (auto b : Z.modelspace->particles)
+            for (auto b : Z.modelspace->all_orbits)
             {
               Orbit &ob = Z.modelspace->GetOrbit(b);
               double n_b = ob.occ;
               double nbar_b = 1.0 - n_b;
               double occfactor = nbar_a * nbar_b * n_i;
+              if ( std::abs(occfactor)<1e-6) continue;
 
               int J2min = std::max({std::abs(oa.j2 - ob.j2), std::abs(oi.j2 - oq.j2), std::abs(oi.j2 - op.j2)}) / 2;
               int J2max = std::min({oa.j2 + ob.j2, oi.j2 + oq.j2, oi.j2 + op.j2}) / 2;
