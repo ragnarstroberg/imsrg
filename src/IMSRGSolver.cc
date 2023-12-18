@@ -98,7 +98,7 @@ void IMSRGSolver::NewOmega()
 void IMSRGSolver::GatherOmega()
 {
   std::cout << "gathering Omega. "  << std::endl;
-  if (Omega.size()<2)
+  if (Omega.size()< 2 - OnlyOneOmega)  // 2    B.C. He
   {
     auto& last = Omega.back();
     Omega.emplace_back( last );

@@ -96,8 +96,6 @@ namespace Commutator
     void SetUseFactorized_GT_TypeI_Correction_2b(bool tf);
     void SetUseFactorized_GT_TypeIV_Correction_2b(bool tf);
 
-
-
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);
 
@@ -284,6 +282,7 @@ namespace Commutator
     void comm223_231_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
     void comm223_232_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
     void comm223_232_Test(const Operator &Eta, const Operator &Gamma, Operator &Z);
+    void comm223_232_Test_2(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
 }
 

@@ -570,6 +570,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def_readwrite("generator", &IMSRGSolver::generator)
           .def_readwrite("Eta", &IMSRGSolver::Eta)
           .def_readwrite("n_omega_written", &IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
+          .def("SetOnlyOneOmega", &IMSRGSolver::SetOnlyOneOmega)
           ;
 
       py::class_<Generator>(m, "Generator")
@@ -676,6 +677,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm223_231_Factorization_slow", &Commutator::comm223_231_Factorization_slow);
       Commutator.def("comm223_232_Factorization_slow", &Commutator::comm223_232_Factorization_slow);
       Commutator.def("comm223_232_Test", &Commutator::comm223_232_Test);
+      Commutator.def("comm223_232_Test_2", &Commutator::comm223_232_Test_2);
 
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
