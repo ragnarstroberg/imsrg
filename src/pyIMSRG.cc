@@ -570,7 +570,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def_readwrite("generator", &IMSRGSolver::generator)
           .def_readwrite("Eta", &IMSRGSolver::Eta)
           .def_readwrite("n_omega_written", &IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
-          .def("SetOnlyOneOmega", &IMSRGSolver::SetOnlyOneOmega)
           ;
 
       py::class_<Generator>(m, "Generator")

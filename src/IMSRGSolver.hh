@@ -63,7 +63,6 @@ class IMSRGSolver
   bool magnus_adaptive;
   bool hunter_gatherer;
   bool perturbative_triples;
-  bool OnlyOneOmega = false;
 
   double Elast;
   double cumulative_error;
@@ -126,7 +125,6 @@ class IMSRGSolver
   void SetMagnusAdaptive(bool b=true){magnus_adaptive = b;};
   void SetHunterGatherer(bool b=true){hunter_gatherer = b;};
   void SetPerturbativeTriples(bool b=true){perturbative_triples = b;};
-  void SetOnlyOneOmega(bool b=true){OnlyOneOmega = b;};
 
   int GetSystemDimension();
   double GetS(){return s;};

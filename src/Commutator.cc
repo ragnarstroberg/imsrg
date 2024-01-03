@@ -809,7 +809,7 @@ namespace Commutator
     if (only_2b_omega)
     {
       Z.ThreeBody.Erase();
-      // use_imsrg3 = false;
+      use_imsrg3 = false;
     }
 
     Operator Nested = Commutator(Y, X); // [Y,X]
@@ -870,11 +870,7 @@ namespace Commutator
 
       nxy = Nested.Norm();
     }
-    if (only_2b_omega)
-    {
-      Z.ThreeBody.Erase();
-      // use_imsrg3 = false;
-    }
+
     use_imsrg3 = _save_imsrg3; // set it back to how it was.
 
     X.profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
@@ -20769,6 +20765,7 @@ namespace Commutator
         }
       }
 
+      // Diagram IIIe and Diagram IIIf
       Z.profiler.timer[std::string(__func__) + " Diagram IIIe and IIIf  -a"] += omp_get_wtime() - t_internal;
       t_internal = omp_get_wtime();
 
