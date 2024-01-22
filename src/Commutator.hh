@@ -39,6 +39,7 @@ namespace Commutator
     extern bool use_imsrg3_n7;
     extern bool use_imsrg3_mp4;
     extern bool use_factorized_correction;
+    extern bool use_factorized_correction_BCH_Product;
     extern bool use_factorized_correction_goose_tank_1b;
     extern bool use_factorized_correction_goose_tank_2b;
     extern bool use_factorized_correct_ZBterm;
@@ -82,6 +83,7 @@ namespace Commutator
     void SetSingleThread(bool tf);
 
     void SetUseFactorizedCorrection(bool tf);
+    void SetUseFactorizedCorrectionBCH_product(bool tf);
     void SetUseFactorized_GooseTank_Correction_1b(bool tf);
     void SetUseFactorized_GooseTank_Correction_2b(bool tf);
     void SetUseFactorized_GooseTank_Correction_only_1b(bool tf);
@@ -281,9 +283,6 @@ namespace Commutator
 
     void comm223_231_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
     void comm223_232_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
-    void comm223_232_Test(const Operator &Eta, const Operator &Gamma, Operator &Z);
-    void comm223_232_Test_2(const Operator &Eta, const Operator &Gamma, Operator &Z);
-
 }
 
 #endif

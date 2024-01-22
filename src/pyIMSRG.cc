@@ -620,6 +620,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetOnly2bOmega", &Commutator::SetOnly2bOmega);
 
       Commutator.def("SetUseFactorizedCorrection", &Commutator::SetUseFactorizedCorrection);
+      Commutator.def("SetUseFactorizedCorrectionBCH_product", &Commutator::SetUseFactorizedCorrectionBCH_product);
       Commutator.def("SetUseFactorized_GooseTank_Correction_1b", &Commutator::SetUseFactorized_GooseTank_Correction_1b);
       Commutator.def("SetUseFactorized_GooseTank_Correction_2b", &Commutator::SetUseFactorized_GooseTank_Correction_2b);
       Commutator.def("SetUseFactorized_GooseTank_Correction_only_1b", &Commutator::SetUseFactorized_GooseTank_Correction_only_1b);
@@ -675,8 +676,6 @@ PYBIND11_MODULE(pyIMSRG, m)
 
       Commutator.def("comm223_231_Factorization_slow", &Commutator::comm223_231_Factorization_slow);
       Commutator.def("comm223_232_Factorization_slow", &Commutator::comm223_232_Factorization_slow);
-      Commutator.def("comm223_232_Test", &Commutator::comm223_232_Test);
-      Commutator.def("comm223_232_Test_2", &Commutator::comm223_232_Test_2);
 
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
