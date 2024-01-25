@@ -17432,7 +17432,7 @@ namespace Commutator
 
     //______________________________________________________________________
     // global array
-    std::deque<arma::mat> bar_Eta(n_nonzero);
+    std::deque<arma::mat> bar_Eta(n_nonzero);      // released
     std::deque<arma::mat> nnnbar_Eta(n_nonzero);   // released
     std::deque<arma::mat> nnnbar_Eta_d(n_nonzero); // released
     std::deque<arma::mat> bar_Gamma(n_nonzero);    // released
@@ -18114,9 +18114,7 @@ namespace Commutator
 
 
     std::deque<arma::mat> barCHI_III_RC(n_nonzero); // released Recoupled bar CHI_III
-    std::deque<arma::mat> bar_CHI_IV(n_nonzero);    // released
     std::deque<arma::mat> bar_CHI_V_RC(n_nonzero);  // released
-    std::deque<arma::mat> bar_CHI_VII_CC(n_nonzero);
     /// build intermediate bar operator
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
     {
@@ -18125,16 +18123,12 @@ namespace Commutator
       // because the restriction a<b in the bar and ket vector, if we want to store the full
       // Pandya transformed matrix, we twice the size of matrix
       barCHI_III_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      bar_CHI_IV[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       bar_CHI_V_RC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
-      bar_CHI_VII_CC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
     }
 
     /// Pandya transformation only recouple the angula momentum
     /// IIb and IId
-    /// IIe and IIf
     /// diagram IIIa - diagram IIIb
-    /// diagram IIIe and IIIf
 #pragma omp parallel for
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
     {
@@ -18215,13 +18209,112 @@ namespace Commutator
                 XbarIIbd -= Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (barCHI_III[ch_cc_old](indx_bc, indx_ad) + barCHI_III[ch_cc_old](indx_ad, indx_bc));
                 XbarIIIab += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) - hZ * bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
               }
+            }
+          }
+          barCHI_III_RC[ch_cc](ibra_cc, iket_cc) = XbarIIbd;
+          bar_CHI_V_RC[ch_cc](ibra_cc, iket_cc) = XbarIIIab;
+        }
+        //-------------------
+      }
+    }
+
+    /// release memory
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      barCHI_III[ch_cc].clear();
+      bar_CHI_V[ch_cc].clear();
+    }
+    barCHI_III.clear();
+    bar_CHI_V.clear();
+
+    //_______________________________________________________________________________
+    std::deque<arma::mat> bar_CHI_IV(n_nonzero);    // released
+    std::deque<arma::mat> bar_CHI_VII_CC(n_nonzero);// released
+    /// build intermediate bar operator
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      // because the restriction a<b in the bar and ket vector, if we want to store the full
+      // Pandya transformed matrix, we twice the size of matrix
+      bar_CHI_IV[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+      bar_CHI_VII_CC[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+    }
+
+    /// Pandya transformation only recouple the angula momentum
+    /// IIe and IIf
+    /// diagram IIIe and IIIf
+#pragma omp parallel for
+    for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
+    {
+      TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      int J_cc = tbc_cc.J;
+      for (int ibra_cc = 0; ibra_cc < nKets_cc * 2; ++ibra_cc)
+      {
+        int a, b;
+        if (ibra_cc < nKets_cc)
+        {
+          Ket &bra_cc = tbc_cc.GetKet(ibra_cc);
+          a = bra_cc.p;
+          b = bra_cc.q;
+        }
+        else
+        {
+          Ket &bra_cc = tbc_cc.GetKet(ibra_cc - nKets_cc);
+          b = bra_cc.p;
+          a = bra_cc.q;
+        }
+        if (ibra_cc >= nKets_cc and a == b)
+          continue;
+        Orbit &oa = Z.modelspace->GetOrbit(a);
+        Orbit &ob = Z.modelspace->GetOrbit(b);
+        double ja = oa.j2 * 0.5;
+        double jb = ob.j2 * 0.5;
+
+        // loop over cross-coupled kets |cd> in this channel
+        for (int iket_cc = 0; iket_cc < nKets_cc * 2; ++iket_cc)
+        {
+          int c, d;
+          if (iket_cc < nKets_cc)
+          {
+            Ket &ket_cc_cd = tbc_cc.GetKet(iket_cc);
+            c = ket_cc_cd.p;
+            d = ket_cc_cd.q;
+          }
+          else
+          {
+            Ket &ket_cc_cd = tbc_cc.GetKet(iket_cc - nKets_cc);
+            d = ket_cc_cd.p;
+            c = ket_cc_cd.q;
+          }
+          if (iket_cc >= nKets_cc and c == d)
+            continue;
+          Orbit &oc = Z.modelspace->GetOrbit(c);
+          Orbit &od = Z.modelspace->GetOrbit(d);
+          double jc = oc.j2 * 0.5;
+          double jd = od.j2 * 0.5;
+
+          int jmin = std::max(std::abs(oa.j2 - od.j2), std::abs(oc.j2 - ob.j2)) / 2;
+          int jmax = std::min(oa.j2 + od.j2, oc.j2 + ob.j2) / 2;
+          double XbarIIbd = 0;
+          double XbarIIef = 0;
+          double XbarIIIab = 0;
+          double XbarIIIef = 0;
+          for (int J_std = jmin; J_std <= jmax; J_std++)
+          {
+            int phaseFactor = Z.modelspace->phase(J_std + (oc.j2 + ob.j2) / 2);
+            double sixj1 = Z.modelspace->GetSixJ(ja, jb, J_cc, jc, jd, J_std);
+            if (std::abs(sixj1) > 1e-8)
+            {
               /// IIIef
+              int parity_cc = (oa.l + od.l) % 2;
               int Tz_J2 = (ob.tz2 + oc.tz2) / 2;
               int ch_J2 = Z.modelspace->GetTwoBodyChannelIndex(J_std, parity_cc, Tz_J2);
               TwoBodyChannel &tbc_J2 = Z.modelspace->GetTwoBodyChannel(ch_J2);
-              nkets = tbc_J2.GetNumberKets();
-              indx_ad = tbc_J2.GetLocalIndex(std::min(int(a), int(d)), std::max(int(a), int(d)));
-              indx_bc = tbc_J2.GetLocalIndex(std::min(int(b), int(c)), std::max(int(b), int(c)));
+              int nkets = tbc_J2.GetNumberKets();
+              int indx_ad = tbc_J2.GetLocalIndex(std::min(int(a), int(d)), std::max(int(a), int(d)));
+              int indx_bc = tbc_J2.GetLocalIndex(std::min(int(b), int(c)), std::max(int(b), int(c)));
               if (indx_ad >= 0 and indx_bc >= 0)
               {
                 int indx_cb = indx_bc;
@@ -18237,9 +18330,7 @@ namespace Commutator
               }
             }
           }
-          barCHI_III_RC[ch_cc](ibra_cc, iket_cc) = XbarIIbd;
           bar_CHI_IV[ch_cc](ibra_cc, iket_cc) = XbarIIef;
-          bar_CHI_V_RC[ch_cc](ibra_cc, iket_cc) = XbarIIIab;
           bar_CHI_VII_CC[ch_cc](ibra_cc, iket_cc) = XbarIIIef;
         }
 
@@ -18247,14 +18338,7 @@ namespace Commutator
       }
     }
 
-    /// release memory
-    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
-    {
-      barCHI_III[ch_cc].clear();
-      bar_CHI_V[ch_cc].clear();
-    }
-    barCHI_III.clear();
-    bar_CHI_V.clear();
+    /// release memory    
     for (int ch = 0; ch < nch; ++ch)
     {
       CHI_IV[ch].clear();
@@ -18263,7 +18347,7 @@ namespace Commutator
     CHI_IV.clear();
     CHI_VII.clear();
 
-    std::deque<arma::mat> CHI_III_final(nch);
+    std::deque<arma::mat> CHI_III_final(nch);  // released
     for (int ch = 0; ch < nch; ++ch)
     {
       TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -18412,7 +18496,7 @@ namespace Commutator
     CHI_III_final.clear();
 
     // ##########################################
-    std::deque<arma::mat> CHI_V_final(nch);
+    std::deque<arma::mat> CHI_V_final(nch);    // released
     for (int ch = 0; ch < nch; ++ch)
     {
       TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -18562,7 +18646,7 @@ namespace Commutator
     // ######################################
 
 
-    std::deque<arma::mat> bar_CHI_gamma(n_nonzero);
+    std::deque<arma::mat> bar_CHI_gamma(n_nonzero);   // released
     /// initial bar_CHI_V
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
     {
@@ -18718,7 +18802,7 @@ namespace Commutator
 
 
 
-    std::deque<arma::mat> bar_CHI_VII_CC_ef(n_nonzero);
+    std::deque<arma::mat> bar_CHI_VII_CC_ef(n_nonzero);    // released
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
     {
       TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
@@ -18738,6 +18822,17 @@ namespace Commutator
       Multi_matirx = bar_CHI_VII_CC[ch_cc] * bar_Eta[ch_cc];
       bar_CHI_VII_CC_ef[ch_cc] = Multi_matirx + hZ * Multi_matirx.t();
     }
+
+    // release bar_Eta
+    // release bar_CHI_VII_CC
+    for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
+    {
+      bar_Eta[ch_cc].clear();
+      bar_CHI_VII_CC[ch_cc].clear();
+    }
+    bar_Eta.clear();
+    bar_CHI_VII_CC.clear();
+
 
     //  Inverse Pandya transformation
     //  X^J_ijkl  = - ( 1- P_ij ) ( 1- P_kl ) (-)^{J + ji + jj}  sum_J' (2J'+1)
