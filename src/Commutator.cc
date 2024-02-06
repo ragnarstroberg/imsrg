@@ -632,7 +632,7 @@ namespace Commutator
           //          goosetank_chi = GooseTankUpdate(Omega, OpNested);
           auto chi_last = chi.OneBody;
           chi = GooseTankUpdate(Omega, OpNested);
-          //          std::cout << "goose_tank chi = " << goosetank_chi.OneBody(0,0) << " , " << goosetank_chi.OneBody(1,1)<< std::endl;
+          //          std::cout << "i = " << i << " goose_tank chi = " << chi.OneBody(0,0) << " , chi_last= " << chi_last(1,1)<< std::endl;
           OpNested.OneBody += chi_last; // add the chi from the previous step to OpNested.
         }
 
@@ -17328,8 +17328,8 @@ namespace Commutator
 
             } // for i
           }   // for a
-          CHI_I(p, q) = chi_pq;
-          CHI_II(p, q) = chiY_pq;
+          CHI_I(p, q) = chi_pq ;
+          CHI_II(p, q) = chiY_pq  ;
         } // for q
       }   // for p
 
@@ -17925,6 +17925,7 @@ namespace Commutator
       }   // ibra
     }     // J0 channel
 
+
     // release memory
     for (int ch = 0; ch < nch; ++ch)
     {
@@ -18313,6 +18314,7 @@ namespace Commutator
             meIIef = bar_CHI_gamma[ch_cc](indx_jl, indx_ki);
             commijkl -= 0.5 * phaseFactor * (2 * Jprime + 1) * sixj1 * meIIef;
 
+
             // IIIa and IIIb
             // direct term
             double meIIIa = CHI_V_final[ch_cc](indx_jl, indx_ik);
@@ -18328,6 +18330,8 @@ namespace Commutator
             // exchange ij and kl
             double meIIIef2 = bar_CHI_VII_CC_ef[ch_cc](indx_ik, indx_lj);
             commijlk -= 0.5 * (2 * Jprime + 1) * sixj1 * meIIIef2;
+
+
           }
 
           // ijkl,  exchange i and j -->  il  kj
@@ -18364,6 +18368,7 @@ namespace Commutator
             double meIId = CHI_III_final[ch_cc](indx_il, indx_jk);
             commijkl -= phase2 * (2 * Jprime + 1) * sixj1 * meIId;
 
+
             // IIe and IIf
             // ijlk, exchange k and l     ->  ik lj
             double meIIef = bar_CHI_gamma[ch_cc](indx_jk, indx_li);
@@ -18372,6 +18377,9 @@ namespace Commutator
             meIIef = bar_CHI_gamma[ch_cc](indx_il, indx_kj);
             commjikl -= 0.5 * phaseFactor * (2 * Jprime + 1) * sixj1 * meIIef;
 
+
+
+/*
             /// IIIa and IIIb
             // exchange k and l
             double meIIIa = CHI_V_final[ch_cc](indx_jk, indx_il);
@@ -18387,6 +18395,8 @@ namespace Commutator
             // exchange i and j
             double meIIIef2 = bar_CHI_VII_CC_ef[ch_cc](indx_il, indx_kj);
             commijkl -= 0.5 * (2 * Jprime + 1) * sixj1 * meIIIef2;
+*/
+
           }
 
           double zijkl = (commjikl - Z.modelspace->phase((ji + jj) / 2 - J0) * commijkl);
@@ -18406,6 +18416,12 @@ namespace Commutator
     Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
     return;
   }
+
+
+
+
+
+
 
   void comm223_232_Factorization_slow(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
