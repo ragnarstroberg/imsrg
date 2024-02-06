@@ -4865,6 +4865,47 @@ bool UnitTest::TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, 
 
 
 
+bool UnitTest::TestFactorizedDoubleCommutators(ModelSpace& ms)
+{
+  bool passed = true;
+
+  int jrank = 0;
+  int tz = 0;
+  int parity = 0;
+  int particle_rank = 2;
+
+  Operator eta = RandomOp( ms, jrank, tz, parity, particle_rank, -1);
+  Operator H   = RandomOp( ms, jrank, tz, parity, particle_rank, +1);
+  Operator OpOut_direct(ms, jrank,tz,parity,3);
+  Operator OpOut_factorized(ms, jrank,tz,parity,2);
+  OpOut_direct.ThreeBody.SetMode("pn");
+  H.ThreeBody.SetMode("pn");
+  eta.ThreeBody.SetMode("pn");
+
+  Commutator::comm223ss( eta,H, OpOut_direct);
+  Commutator::comm231ss( eta,OpOut_direct, OpOut_direct);
+  Commutator::comm232ss( eta,OpOut_direct, OpOut_direct);
+
+  OpOut_direct.ThreeBody.Erase();
+
+  Commutator::comm223_231_Factorization(eta,H,OpOut_factorized);
+  Commutator::comm223_232_Factorization(eta,H,OpOut_factorized);
+
+  std::cout << "Norm of OpOut_direct: " << OpOut_direct.Norm() << "  1b : " << OpOut_direct.OneBodyNorm() << "  2b : " << OpOut_direct.TwoBodyNorm() << std::endl ;
+  std::cout << "Norm of OpOut_factorized: " << OpOut_factorized.Norm() << "  1b : " << OpOut_factorized.OneBodyNorm() << "  2b : " << OpOut_factorized.TwoBodyNorm() << std::endl ;
+
+  OpOut_direct  -=  OpOut_factorized;
+  passed = OpOut_direct.Norm() < 1e-6;
+  if (not passed )
+  {
+     std::cout << __func__ << "  Uh Oh. Norm of difference is " << OpOut_direct.Norm()
+               << "  1b part: " << OpOut_direct.OneBodyNorm() << "  2b part: " << OpOut_direct.TwoBodyNorm()
+               << std::endl;
+  }
+
+
+  return passed;
+}
 
 
 
