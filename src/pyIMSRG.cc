@@ -612,15 +612,29 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("EstimateBCHError", &Commutator::EstimateBCHError);
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
-      Commutator.def("SetUseFactorizedCorrection", &Commutator::SetUseFactorizedCorrection);
-      Commutator.def("SetUseFactorized_GooseTank_Correction", &Commutator::SetUseFactorized_GooseTank_Correction);
-      Commutator.def("SetUseFactorized_GooseTank_Correction_only", &Commutator::SetUseFactorized_GooseTank_Correction_only);
-      Commutator.def("SetUseFactorized_Correct_ZBTerm", &Commutator::SetUseFactorized_Correct_ZBTerm);
       Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
       Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
       Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
       Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
+      Commutator.def("SetOnly2bOmega", &Commutator::SetOnly2bOmega);
+
+      Commutator.def("SetUseFactorizedCorrection", &Commutator::SetUseFactorizedCorrection);
+      Commutator.def("SetUseFactorizedCorrectionBCH_product", &Commutator::SetUseFactorizedCorrectionBCH_product);
+      Commutator.def("SetUseFactorized_GooseTank_Correction_1b", &Commutator::SetUseFactorized_GooseTank_Correction_1b);
+      Commutator.def("SetUseFactorized_GooseTank_Correction_2b", &Commutator::SetUseFactorized_GooseTank_Correction_2b);
+      Commutator.def("SetUseFactorized_GooseTank_Correction_only_1b", &Commutator::SetUseFactorized_GooseTank_Correction_only_1b);
+      Commutator.def("SetUseFactorized_GooseTank_Correction_only_2b", &Commutator::SetUseFactorized_GooseTank_Correction_only_2b);
+      Commutator.def("SetUseFactorized_Correct_ZBTerm", &Commutator::SetUseFactorized_Correct_ZBTerm);
+      Commutator.def("SetUseFactorized_TypeII_Correction_1b", &Commutator::SetUseFactorized_TypeII_Correction_1b);
+      Commutator.def("SetUseFactorized_TypeIII_Correction_1b", &Commutator::SetUseFactorized_TypeIII_Correction_1b);
+      Commutator.def("SetUseFactorized_TypeII_Correction_2b", &Commutator::SetUseFactorized_TypeII_Correction_2b);
+      Commutator.def("SetUseFactorized_TypeIII_Correction_2b", &Commutator::SetUseFactorized_TypeIII_Correction_2b);
+      Commutator.def("UseSlowVersionOfDoubleCommutator", &Commutator::UseSlowVersionOfDoubleCommutator);
+
+      Commutator.def("SetUseFactorized_GT_TypeI_Correction_2b", &Commutator::SetUseFactorized_GT_TypeI_Correction_2b);
+      Commutator.def("SetUseFactorized_GT_TypeIV_Correction_2b", &Commutator::SetUseFactorized_GT_TypeIV_Correction_2b);
+
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
@@ -662,7 +676,6 @@ PYBIND11_MODULE(pyIMSRG, m)
 
       Commutator.def("comm223_231_Factorization_slow", &Commutator::comm223_231_Factorization_slow);
       Commutator.def("comm223_232_Factorization_slow", &Commutator::comm223_232_Factorization_slow);
-      Commutator.def("comm223_232_Test", &Commutator::comm223_232_Test);
 
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
