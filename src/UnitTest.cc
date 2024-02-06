@@ -5,6 +5,7 @@
 #include <random>
 #include <string>
 #include "Commutator.hh"
+#include "FactorizedDoubleCommutator.hh"
 #include "imsrg_util.hh"
 #include "version.hh"
 #include "ReferenceImplementations.hh" // for commutators
@@ -4888,8 +4889,8 @@ bool UnitTest::TestFactorizedDoubleCommutators(ModelSpace& ms)
 
   OpOut_direct.ThreeBody.Erase();
 
-  Commutator::comm223_231_Factorization(eta,H,OpOut_factorized);
-  Commutator::comm223_232_Factorization(eta,H,OpOut_factorized);
+  Commutator::FactorizedDoubleCommutator::comm223_231(eta,H,OpOut_factorized);
+  Commutator::FactorizedDoubleCommutator::comm223_232(eta,H,OpOut_factorized);
 
   std::cout << "Norm of OpOut_direct: " << OpOut_direct.Norm() << "  1b : " << OpOut_direct.OneBodyNorm() << "  2b : " << OpOut_direct.TwoBodyNorm() << std::endl ;
   std::cout << "Norm of OpOut_factorized: " << OpOut_factorized.Norm() << "  1b : " << OpOut_factorized.OneBodyNorm() << "  2b : " << OpOut_factorized.TwoBodyNorm() << std::endl ;

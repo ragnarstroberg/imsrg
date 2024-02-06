@@ -432,7 +432,7 @@ int main(int argc, char** argv)
   Hbare.SetHermitian();
 
 
-  Commutator::SetUseGooseTank(goose_tank);
+  BCH::SetUseGooseTank(goose_tank);
   Commutator::SetThreebodyThreshold(threebody_threshold);
 
   std::cout << "Reading interactions..." << std::endl;
@@ -917,7 +917,7 @@ int main(int argc, char** argv)
   if (only_2b_omega)
   {
     std::cout << " Restricting the Magnus operator Omega to be 2b." << std::endl;
-    Commutator::SetOnly2bOmega(only_2b_omega);
+    BCH::SetOnly2bOmega(only_2b_omega);
   }
 
 
@@ -1045,7 +1045,7 @@ int main(int argc, char** argv)
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
-  Commutator::SetUseBruecknerBCH(use_brueckner_bch);
+  BCH::SetUseBruecknerBCH(use_brueckner_bch);
   Commutator::SetUseIMSRG3(IMSRG3);
   Commutator::SetUseIMSRG3N7(imsrg3_n7);
   Commutator::SetUseIMSRG3_MP4(imsrg3_mp4);
