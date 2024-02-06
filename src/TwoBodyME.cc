@@ -775,7 +775,28 @@ void TwoBodyME::PrintAllMatrices() const
 {
   for ( auto& itmat : MatEl )
   {
-    std::cout << "ch_bra, ch_ket : " << itmat.first[0] << " " << itmat.first[1] << std::endl << itmat.second << std::endl << std::endl;
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel( itmat.first[0] );
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel( itmat.first[1] );
+    std::cout << "ch_bra, ch_ket : " << itmat.first[0] << " " << itmat.first[1] << "  (J,p,Tz): "
+              << "  ( " << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz << " ) "
+              << "  ( " << tbc_ket.J << " " << tbc_ket.parity << " " << tbc_ket.Tz << " ) "
+              << std::endl;
+    for (int i=0; i< tbc_bra.GetNumberKets(); i++)
+    {
+       Ket& bra = tbc_bra.GetKet(i);
+       std::cout << " ( " << bra.p << " " << bra.q << " ) ";
+    }
+    std::cout << std::endl;
+    if (itmat.first[0] != itmat.first[1] )
+    {
+       for (int i=0; i< tbc_ket.GetNumberKets(); i++)
+       {
+          Ket& ket = tbc_ket.GetKet(i);
+          std::cout << " ( " << ket.p << " " << ket.q << " ) ";
+       }
+       std::cout << std::endl;
+    }
+    std::cout << itmat.second << std::endl << std::endl;
   }
 }
 
