@@ -3525,12 +3525,12 @@ namespace ReferenceImplementations
                 double xipab = X.TwoBody.GetTBME_J(J1, J1, i, p, a, b);
                 double xabiq = X.TwoBody.GetTBME_J(J1, J1, a, b, i, q);
                 double yabiq = Y.TwoBody.GetTBME_J(J1, J1, a, b, i, q);
+                double yipab = Y.TwoBody.GetTBME_J(J1, J1, i, p, a, b);
 
                 chi_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * xipab * xabiq;
-                chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * xipab * yabiq;
+//                chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * xipab * yabiq;
+                chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * yipab * xabiq;  // JUST TRYING THIS WITHOUT CONFIRMING...
 
-                double yipab = Y.TwoBody.GetTBME_J(J1, J1, i, p, a, b);
-                // chiY_pq += 0.5 * (2 * J1 + 1) / (oq.j2 + 1) * yipab * xabiq;
               }
             } // for b
 
@@ -3583,7 +3583,8 @@ namespace ReferenceImplementations
 
             zpqrs += CHI_XX(p, b) * Y.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XX(q, b) * Y.TwoBody.GetTBME_J(J, J, p, b, r, s);
             zpqrs += Y.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_XX(b, r) + Y.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_XX(b, s);
-            zpqrs -= CHI_XY(p, b) * X.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XY(q, b) * X.TwoBody.GetTBME_J(J, J, p, b, r, s);
+////            zpqrs -= CHI_XY(p, b) * X.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XY(q, b) * X.TwoBody.GetTBME_J(J, J, p, b, r, s);
+            zpqrs += CHI_XY(b, p) * X.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XY(b, q) * X.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign
             zpqrs -= X.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_XY(b, r) + X.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_XY(b, s);
 
             // zpqrs += CHI_XY(b, p) * X.TwoBody.GetTBME_J(J, J, b, q, r, s) + CHI_XY(b, q) * X.TwoBody.GetTBME_J(J, J, p, b, r, s);
@@ -4500,6 +4501,7 @@ namespace ReferenceImplementations
                     for (int J2 = j2min; J2 <= j2max; J2++)
                     {
                       zpgqh += occfactor * (2 * J2 + 1) / denominator_p * Eta.TwoBody.GetTBME_J(J2, b, p, a, c) * Eta.TwoBody.GetTBME_J(J2, a, c, b, d) * Gamma.TwoBody.GetTBME_J(J0, d, g, q, h);
+//                    zpgqh -= occfactor * (2 * J2 + 1) / denominator_p * Eta.TwoBody.GetTBME_J(J2, b, p, a, c) * Eta.TwoBody.GetTBME_J(J0, d, g, q, h) * Gamma.TwoBody.GetTBME_J(J2, a, c, b, d);
                     }
 
                   // exchanging  p <-> g
@@ -4510,6 +4512,7 @@ namespace ReferenceImplementations
                     {
                       // zpgqh += phase_pg * occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J2, a, c, b, d) * Gamma.TwoBody.GetTBME_J(J0, d, p, q, h);
                       zpgqh += occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J2, a, c, b, d) * Gamma.TwoBody.GetTBME_J(J0, p, d, q, h);
+//                    zpgqh -= occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J0, p, d, q, h) * Gamma.TwoBody.GetTBME_J(J2, a, c, b, d);
                     }
                 }
               }
@@ -4629,6 +4632,7 @@ namespace ReferenceImplementations
     std::cout << "diagram Ib " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
+
 
       // ####################################################################################
       //   diagram IVa
@@ -7196,6 +7200,7 @@ namespace ReferenceImplementations
     std::cout << "diagram IIIf " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
+
 
     return;
   }

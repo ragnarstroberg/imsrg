@@ -1121,6 +1121,7 @@ double IMSRGSolver::EstimateBCHError()
 /// \f[ W=[\Omega,H]_3b \f]
 double IMSRGSolver::CalculatePerturbativeTriples()
 {
+
   Operator Wbar((*modelspace), 0, 0, 0, 2);
   // Wbar.ThreeBody.SetMode("pn");  // Dont do this. It automatically allocates and we don't want that.
 
