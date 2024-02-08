@@ -384,45 +384,143 @@ bool UnitTest::TestCommutators()
   Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
   modelspace->PreCalculateSixJ();
 
+  bool all_good = true;
+
+
+  if ( Commutator::comm_term_on["comm110ss"] )             all_good &= Test_comm110ss( X, Y );
+  if ( Commutator::comm_term_on["comm220ss"] )             all_good &= Test_comm220ss( X, Y );
+
+  if ( Commutator::comm_term_on["comm111ss"] )             all_good &= Test_comm111ss( X, Y );
+  if ( Commutator::comm_term_on["comm121ss"] )             all_good &= Test_comm121ss( X, Y );
+  if ( Commutator::comm_term_on["comm221ss"] )             all_good &= Test_comm221ss( X, Y );
+
+  if ( Commutator::comm_term_on["comm122ss"] )             all_good &= Test_comm122ss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hhss"] )       all_good &= Test_comm222_pp_hhss( X, Y );
+  if ( Commutator::comm_term_on["comm222_phss"] )          all_good &= Test_comm222_phss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+
+  if ( Commutator::comm_term_on["comm330ss"] )             all_good &= Test_comm330ss(X,Y);
+  if ( Commutator::comm_term_on["comm331ss"] )             all_good &= Test_comm331ss(X,Y);
+  if ( Commutator::comm_term_on["comm231ss"] )             all_good &= Test_comm231ss(X,Y);
+  if ( Commutator::comm_term_on["comm132ss"] )             all_good &= Test_comm132ss(X,Y);
+  if ( Commutator::comm_term_on["comm232ss"] )             all_good &= Test_comm232ss(X,Y);
+  if ( Commutator::comm_term_on["comm223ss"] )             all_good &= Test_comm223ss(X,Y);
+  if ( Commutator::comm_term_on["comm133ss"] )             all_good &= Test_comm133ss(X,Y);
+
+ if ( Commutator::comm_term_on["comm332_ppph_hhhpss"] )    all_good &= Test_comm332_ppph_hhhpss(X,Y);
+ if ( Commutator::comm_term_on["comm332_pphhss"] )         all_good &= Test_comm332_pphhss(X,Y);
+ if ( Commutator::comm_term_on["comm233_pp_hhss"] )        all_good &= Test_comm233_pp_hhss(X,Y);
+ if ( Commutator::comm_term_on["comm233_phss"] )           all_good &= Test_comm233_phss(X,Y);
+
+ if ( Commutator::comm_term_on["comm333_ppp_hhhss"] )      all_good &= Test_comm333_ppp_hhhss(X,Y);
+ if ( Commutator::comm_term_on["comm333_pph_hhpss"] )      all_good &= Test_comm333_pph_hhpss(X,Y);
+
+  if ( all_good )
+  {
+    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
+  }
+  else
+  {
+    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
+  }
+
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+  return all_good;
+}
+
+
+
+
+bool UnitTest::TestCommutators_IsospinChanging()
+{
+  double t_start = omp_get_wtime();
+  arma::arma_rng::set_seed( random_seed );
+  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
+  Operator Y = RandomOp(*modelspace, 0, 1, 0, 3, +1);
+  modelspace->PreCalculateSixJ();
 
   bool all_good = true;
 
-  all_good &= Test_comm110ss( X, Y );
-  all_good &= Test_comm220ss( X, Y );
 
-  all_good &= Test_comm111ss( X, Y );
-  all_good &= Test_comm121ss( X, Y );
-  all_good &= Test_comm221ss( X, Y );
+  if ( Commutator::comm_term_on["comm110ss"] )             all_good &= Test_comm110ss( X, Y );
+  if ( Commutator::comm_term_on["comm220ss"] )             all_good &= Test_comm220ss( X, Y );
 
-  all_good &= Test_comm122ss( X, Y );
-  all_good &= Test_comm222_pp_hhss( X, Y );
-  all_good &= Test_comm222_phss( X, Y );
-  all_good &= Test_comm222_pp_hh_221ss( X, Y );
+  if ( Commutator::comm_term_on["comm111ss"] )             all_good &= Test_comm111ss( X, Y );
+  if ( Commutator::comm_term_on["comm121ss"] )             all_good &= Test_comm121ss( X, Y );
+  if ( Commutator::comm_term_on["comm221ss"] )             all_good &= Test_comm221ss( X, Y );
 
- if ( Commutator::use_imsrg3 )
- {
-  all_good &= Test_comm330ss(X,Y);
-  all_good &= Test_comm331ss(X,Y);
-  all_good &= Test_comm231ss(X,Y);
-  all_good &= Test_comm132ss(X,Y);
+  if ( Commutator::comm_term_on["comm122ss"] )             all_good &= Test_comm122ss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hhss"] )       all_good &= Test_comm222_pp_hhss( X, Y );
+  if ( Commutator::comm_term_on["comm222_phss"] )          all_good &= Test_comm222_phss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
 
-  all_good &= Test_comm232ss(X,Y);
+  if ( Commutator::comm_term_on["comm330ss"] )             all_good &= Test_comm330ss(X,Y);
+  if ( Commutator::comm_term_on["comm331ss"] )             all_good &= Test_comm331ss(X,Y);
+  if ( Commutator::comm_term_on["comm231ss"] )             all_good &= Test_comm231ss(X,Y);
+  if ( Commutator::comm_term_on["comm132ss"] )             all_good &= Test_comm132ss(X,Y);
+  if ( Commutator::comm_term_on["comm232ss"] )             all_good &= Test_comm232ss(X,Y);
+  if ( Commutator::comm_term_on["comm223ss"] )             all_good &= Test_comm223ss(X,Y);
+  if ( Commutator::comm_term_on["comm133ss"] )             all_good &= Test_comm133ss(X,Y);
 
-  all_good &= Test_comm223ss(X,Y);
-  all_good &= Test_comm133ss(X,Y);
+ if ( Commutator::comm_term_on["comm332_ppph_hhhpss"] )    all_good &= Test_comm332_ppph_hhhpss(X,Y);
+ if ( Commutator::comm_term_on["comm332_pphhss"] )         all_good &= Test_comm332_pphhss(X,Y);
+ if ( Commutator::comm_term_on["comm233_pp_hhss"] )        all_good &= Test_comm233_pp_hhss(X,Y);
+ if ( Commutator::comm_term_on["comm233_phss"] )           all_good &= Test_comm233_phss(X,Y);
 
-  if (not Commutator::use_imsrg3_n7 )
+ if ( Commutator::comm_term_on["comm333_ppp_hhhss"] )      all_good &= Test_comm333_ppp_hhhss(X,Y);
+ if ( Commutator::comm_term_on["comm333_pph_hhpss"] )      all_good &= Test_comm333_pph_hhpss(X,Y);
+
+  if ( all_good )
   {
-   all_good &= Test_comm332_ppph_hhhpss(X,Y);
-   all_good &= Test_comm332_pphhss(X,Y);
-
-   all_good &= Test_comm233_pp_hhss(X,Y);
-   all_good &= Test_comm233_phss(X,Y);
-
-   all_good &= Test_comm333_ppp_hhhss(X,Y);
-   all_good &= Test_comm333_pph_hhpss(X,Y);
+    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
   }
- }
+  else
+  {
+    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
+  }
+
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+  return all_good;
+}
+
+bool UnitTest::TestCommutators_ParityChanging()
+{
+  double t_start = omp_get_wtime();
+  arma::arma_rng::set_seed( random_seed );
+  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
+  Operator Y = RandomOp(*modelspace, 0, 0, 1, 3, +1);
+  modelspace->PreCalculateSixJ();
+
+  bool all_good = true;
+
+
+  if ( Commutator::comm_term_on["comm110ss"] )             all_good &= Test_comm110ss( X, Y );
+  if ( Commutator::comm_term_on["comm220ss"] )             all_good &= Test_comm220ss( X, Y );
+
+  if ( Commutator::comm_term_on["comm111ss"] )             all_good &= Test_comm111ss( X, Y );
+  if ( Commutator::comm_term_on["comm121ss"] )             all_good &= Test_comm121ss( X, Y );
+  if ( Commutator::comm_term_on["comm221ss"] )             all_good &= Test_comm221ss( X, Y );
+
+  if ( Commutator::comm_term_on["comm122ss"] )             all_good &= Test_comm122ss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hhss"] )       all_good &= Test_comm222_pp_hhss( X, Y );
+  if ( Commutator::comm_term_on["comm222_phss"] )          all_good &= Test_comm222_phss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+
+  if ( Commutator::comm_term_on["comm330ss"] )             all_good &= Test_comm330ss(X,Y);
+  if ( Commutator::comm_term_on["comm331ss"] )             all_good &= Test_comm331ss(X,Y);
+  if ( Commutator::comm_term_on["comm231ss"] )             all_good &= Test_comm231ss(X,Y);
+  if ( Commutator::comm_term_on["comm132ss"] )             all_good &= Test_comm132ss(X,Y);
+  if ( Commutator::comm_term_on["comm232ss"] )             all_good &= Test_comm232ss(X,Y);
+  if ( Commutator::comm_term_on["comm223ss"] )             all_good &= Test_comm223ss(X,Y);
+  if ( Commutator::comm_term_on["comm133ss"] )             all_good &= Test_comm133ss(X,Y);
+
+ if ( Commutator::comm_term_on["comm332_ppph_hhhpss"] )    all_good &= Test_comm332_ppph_hhhpss(X,Y);
+ if ( Commutator::comm_term_on["comm332_pphhss"] )         all_good &= Test_comm332_pphhss(X,Y);
+ if ( Commutator::comm_term_on["comm233_pp_hhss"] )        all_good &= Test_comm233_pp_hhss(X,Y);
+ if ( Commutator::comm_term_on["comm233_phss"] )           all_good &= Test_comm233_phss(X,Y);
+
+ if ( Commutator::comm_term_on["comm333_ppp_hhhss"] )      all_good &= Test_comm333_ppp_hhhss(X,Y);
+ if ( Commutator::comm_term_on["comm333_pph_hhpss"] )      all_good &= Test_comm333_pph_hhpss(X,Y);
 
   if ( all_good )
   {
@@ -442,7 +540,10 @@ bool UnitTest::TestCommutators()
 // TODO: THIS IS DEPRECATED. I SHOULD PROBABLY JUST REMOVE IT... -SRS
 void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist)
 {
-  double t_start = omp_get_wtime();
+   std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+   std::cout << __func__ << "  is deprecated. Use UnitTest::TestCommutators() instead." << std::endl;
+   std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+//  double t_start = omp_get_wtime();
 //  std::cout << " random_seed = " << random_seed << std::endl;
 //  arma::arma_rng::set_seed( random_seed );
 //  modelspace->PreCalculateSixJ();
@@ -450,83 +551,66 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
 //  random_seed ++;
 //  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
 //  random_seed --;
-  std::cout << "BEGIN " << __func__ << std::endl;
+//  std::cout << "BEGIN " << __func__ << std::endl;
 
-  Operator Xherm = Y;
-  Xherm.TwoBody.Erase();
-  Xherm.ThreeBody.Erase();
-  X += RandomOp(*modelspace, 0, 0, 0, 2, -1);
-  Y += RandomOp(*modelspace, 0, 0, 0, 2, +1);
-  Xherm += RandomOp(*modelspace, 0, 0, 0, 2, +1);
-  X.ThreeBody.Erase();
-  Commutator::SetSingleThread(false);
-  Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
-  Commutator::comm133ss( Xherm, X, Y);
-
-//  X.modelspace->scalar3b_transform_first_pass = false;
-//  Commutator::comm223ss( Xherm, Y, X);
-  bool all_good = true;
-
-  std::cout << "3body norms of X and Y: " << X.ThreeBodyNorm() << " " << Y.ThreeBodyNorm() << std::endl;
-
-  all_good &= Test_comm330ss(X,Y);
-
-  if ( std::find(skiplist.begin(),skiplist.end(), "allN6") == skiplist.end() )
-  {
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm330ss") == skiplist.end())   all_good &= Test_comm330ss( X, Y );
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm231ss") == skiplist.end())   all_good &= Test_comm231ss( X, Y );
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm132ss") == skiplist.end())   all_good &= Test_comm132ss( X, Y );
-  }
-
-  if ( std::find(skiplist.begin(),skiplist.end(), "allN7") == skiplist.end() )
-  {
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm331ss") == skiplist.end())   all_good &= Test_comm331ss( X, Y );
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm232ss") == skiplist.end())   all_good &= Test_comm232ss( X, Y );
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm223ss") == skiplist.end())   all_good &= Test_comm223ss( X, Y );
-     if ( std::find(skiplist.begin(),skiplist.end(), "comm133ss") == skiplist.end())   all_good &= Test_comm133ss( X, Y );
-  }
-
-  if ( std::find(skiplist.begin(),skiplist.end(), "allN8") == skiplist.end() )
-  {
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm332_ppph_hhhpss") == skiplist.end())   all_good &= Test_comm332_ppph_hhhpss( X, Y );
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm332_pphhss") == skiplist.end())   all_good &= Test_comm332_pphhss( X, Y );
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_pp_hhss") == skiplist.end())   all_good &= Test_comm233_pp_hhss( X, Y );
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_phss") == skiplist.end())   all_good &= Test_comm233_phss( X, Y );
-  }
-  if ( std::find(skiplist.begin(),skiplist.end(), "allN9") == skiplist.end() )
-  {
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_ppp_hhhss") == skiplist.end())   all_good &= Test_comm333_ppp_hhhss( X, Y );
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_pph_hhpss") == skiplist.end())   all_good &= Test_comm333_pph_hhpss( X, Y );
-  }
-
-
-//  all_good &= Test_comm330ss( X, Y );
-//  all_good &= Test_comm331ss( X, Y );
-//  all_good &= Test_comm231ss( X, Y );
-//  all_good &= Test_comm132ss( X, Y );
-//  all_good &= Test_comm232ss( X, Y );
-//  all_good &= Test_comm223ss( X, Y );
-//  all_good &= Test_comm133ss( X, Y );
+//  Operator Xherm = Y;
+//  Xherm.TwoBody.Erase();
+//  Xherm.ThreeBody.Erase();
+//  X += RandomOp(*modelspace, 0, 0, 0, 2, -1);
+//  Y += RandomOp(*modelspace, 0, 0, 0, 2, +1);
+//  Xherm += RandomOp(*modelspace, 0, 0, 0, 2, +1);
+//  X.ThreeBody.Erase();
+//  Commutator::SetSingleThread(false);
+//  Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
+//  Commutator::comm133ss( Xherm, X, Y);
 //
-//  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
-//  all_good &= Test_comm332_pphhss( X, Y );  
+////  X.modelspace->scalar3b_transform_first_pass = false;
+////  Commutator::comm223ss( Xherm, Y, X);
+//  bool all_good = true;
 //
-//  all_good &= Test_comm233_pp_hhss( X, Y );   
-//  all_good &= Test_comm233_ph_ss( X, Y );  
-//  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
-//  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
-
-
-
-  if ( all_good )
-  {
-    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
-  }
-  else
-  {
-    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
-  }
-  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+//  std::cout << "3body norms of X and Y: " << X.ThreeBodyNorm() << " " << Y.ThreeBodyNorm() << std::endl;
+//
+//  all_good &= Test_comm330ss(X,Y);
+//
+//  if ( std::find(skiplist.begin(),skiplist.end(), "allN6") == skiplist.end() )
+//  {
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm330ss") == skiplist.end())   all_good &= Test_comm330ss( X, Y );
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm231ss") == skiplist.end())   all_good &= Test_comm231ss( X, Y );
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm132ss") == skiplist.end())   all_good &= Test_comm132ss( X, Y );
+//  }
+//
+//  if ( std::find(skiplist.begin(),skiplist.end(), "allN7") == skiplist.end() )
+//  {
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm331ss") == skiplist.end())   all_good &= Test_comm331ss( X, Y );
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm232ss") == skiplist.end())   all_good &= Test_comm232ss( X, Y );
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm223ss") == skiplist.end())   all_good &= Test_comm223ss( X, Y );
+//     if ( std::find(skiplist.begin(),skiplist.end(), "comm133ss") == skiplist.end())   all_good &= Test_comm133ss( X, Y );
+//  }
+//
+//  if ( std::find(skiplist.begin(),skiplist.end(), "allN8") == skiplist.end() )
+//  {
+//    if ( std::find(skiplist.begin(),skiplist.end(), "comm332_ppph_hhhpss") == skiplist.end())   all_good &= Test_comm332_ppph_hhhpss( X, Y );
+//    if ( std::find(skiplist.begin(),skiplist.end(), "comm332_pphhss") == skiplist.end())   all_good &= Test_comm332_pphhss( X, Y );
+//    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_pp_hhss") == skiplist.end())   all_good &= Test_comm233_pp_hhss( X, Y );
+//    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_phss") == skiplist.end())   all_good &= Test_comm233_phss( X, Y );
+//  }
+//  if ( std::find(skiplist.begin(),skiplist.end(), "allN9") == skiplist.end() )
+//  {
+//    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_ppp_hhhss") == skiplist.end())   all_good &= Test_comm333_ppp_hhhss( X, Y );
+//    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_pph_hhpss") == skiplist.end())   all_good &= Test_comm333_pph_hhpss( X, Y );
+//  }
+//
+//
+//
+//  if ( all_good )
+//  {
+//    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
+//  }
+//  else
+//  {
+//    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
+//  }
+//  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
@@ -969,13 +1053,19 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y)
 
 bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y) 
 {
-
-  return Test_against_ref_impl(X,Y,  Commutator::comm133ss,  ReferenceImplementations::comm133ss,  "comm133ss");
+  Operator Xmod = X;
+//  Xmod.ThreeBody.Erase();
+  Operator Ymod = Y;
+  Ymod.ThreeBody.Erase();
+  return Test_against_ref_impl(Xmod,Ymod,  Commutator::comm133ss,  ReferenceImplementations::comm133ss,  "comm133ss");
+//  return Test_against_ref_impl(X,Y,  Commutator::comm133ss,  ReferenceImplementations::comm133ss,  "comm133ss");
+//  return Test_against_ref_impl(X,Y,  ReferenceImplementations::comm133ss,  ReferenceImplementations::comm133ss,  "comm133ss");
 }
 
 bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y) 
 {
   return Test_against_ref_impl(X,Y,  Commutator::comm223ss,  ReferenceImplementations::comm223ss,  "comm223ss");
+//  return Test_against_ref_impl(X,Y,  ReferenceImplementations::comm223ss,  ReferenceImplementations::comm223ss,  "comm223ss");
 }
 
 bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y) 

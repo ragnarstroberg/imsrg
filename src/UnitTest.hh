@@ -41,6 +41,8 @@ class UnitTest
   // and make sure that they give the same answer
 //  void TestCommutators();
   bool TestCommutators();
+  bool TestCommutators_IsospinChanging();
+  bool TestCommutators_ParityChanging();
 //  void TestCommutators3();
 //  void TestCommutators3(Operator& X, Operator& Y); 
   void TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist ); 
