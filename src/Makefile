@@ -247,7 +247,7 @@ test:
                             ms=pyIMSRG.ModelSpace(1,'He4','He4'); ut=pyIMSRG.UnitTest(ms); pyIMSRG.Commutator.SetUseIMSRG3(True); passed &=ut.TestCommutators();\
                               print('passed? ',passed); "
 test-factorized:
-	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestFactorizedDoubleCommutators(ms); \
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestFactorizedDoubleCommutators(); \
                               print('passed? ',passed); "
 
 install: splashscreen

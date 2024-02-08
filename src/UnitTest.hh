@@ -120,7 +120,8 @@ class UnitTest
 
   bool TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, size_t k, size_t l);
 
-  bool TestFactorizedDoubleCommutators(ModelSpace& ms);
+//  bool TestFactorizedDoubleCommutators(ModelSpace& ms);
+  bool TestFactorizedDoubleCommutators();
 
   bool SanityCheck();
 

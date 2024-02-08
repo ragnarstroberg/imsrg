@@ -4956,7 +4956,7 @@ bool UnitTest::TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, 
 
 
 
-bool UnitTest::TestFactorizedDoubleCommutators(ModelSpace& ms)
+bool UnitTest::TestFactorizedDoubleCommutators()
 {
   bool passed = true;
 
@@ -4965,10 +4965,10 @@ bool UnitTest::TestFactorizedDoubleCommutators(ModelSpace& ms)
   int parity = 0;
   int particle_rank = 2;
 
-  Operator eta = RandomOp( ms, jrank, tz, parity, particle_rank, -1);
-  Operator H   = RandomOp( ms, jrank, tz, parity, particle_rank, +1);
-  Operator OpOut_direct(ms, jrank,tz,parity,3);
-  Operator OpOut_factorized(ms, jrank,tz,parity,2);
+  Operator eta = RandomOp( *modelspace, jrank, tz, parity, particle_rank, -1);
+  Operator H   = RandomOp( *modelspace, jrank, tz, parity, particle_rank, +1);
+  Operator OpOut_direct( *modelspace, jrank,tz,parity,3);
+  Operator OpOut_factorized( *modelspace, jrank,tz,parity,2);
   OpOut_direct.ThreeBody.SetMode("pn");
   H.ThreeBody.SetMode("pn");
   eta.ThreeBody.SetMode("pn");
