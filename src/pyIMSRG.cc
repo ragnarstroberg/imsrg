@@ -614,17 +614,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
        Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
 
-       Commutator.def("SetUseFactorized_GooseTank_Correction_1b", &Commutator::SetUseFactorized_GooseTank_Correction_1b);
-       Commutator.def("SetUseFactorized_GooseTank_Correction_2b", &Commutator::SetUseFactorized_GooseTank_Correction_2b);
-       Commutator.def("SetUseFactorized_GooseTank_Correction_only_1b", &Commutator::SetUseFactorized_GooseTank_Correction_only_1b);
-       Commutator.def("SetUseFactorized_GooseTank_Correction_only_2b", &Commutator::SetUseFactorized_GooseTank_Correction_only_2b);
-       Commutator.def("SetUseFactorized_TypeII_Correction_1b", &Commutator::SetUseFactorized_TypeII_Correction_1b);
-       Commutator.def("SetUseFactorized_TypeIII_Correction_1b", &Commutator::SetUseFactorized_TypeIII_Correction_1b);
-       Commutator.def("SetUseFactorized_TypeII_Correction_2b", &Commutator::SetUseFactorized_TypeII_Correction_2b);
-       Commutator.def("SetUseFactorized_TypeIII_Correction_2b", &Commutator::SetUseFactorized_TypeIII_Correction_2b);
 
-       Commutator.def("SetUseFactorized_GT_TypeI_Correction_2b", &Commutator::SetUseFactorized_GT_TypeI_Correction_2b);
-       Commutator.def("SetUseFactorized_GT_TypeIV_Correction_2b", &Commutator::SetUseFactorized_GT_TypeIV_Correction_2b);
 
        // IMSRG(2) commutators
        Commutator.def("comm110ss", &Commutator::comm110ss);
@@ -669,6 +659,26 @@ PYBIND11_MODULE(pyIMSRG, m)
 //      Commutator.def("comm223_232_Factorization_slow", &Commutator::comm223_232_Factorization_slow);
 
 
+//       BCH.def("EstimateBCHError", &BCH::EstimateBCHError); // This doesn't really work
+
+       py::module FactorizedDoubleCommutator = Commutator.def_submodule("FactorizedDoubleCommutator", "FactorizedDoubleCommutator namespace");
+        FactorizedDoubleCommutator.def("comm223_231",      &Commutator::FactorizedDoubleCommutator::comm223_231);
+        FactorizedDoubleCommutator.def("comm223_232",      &Commutator::FactorizedDoubleCommutator::comm223_232);
+        FactorizedDoubleCommutator.def("comm223_231_slow", &Commutator::FactorizedDoubleCommutator::comm223_231_slow);
+        FactorizedDoubleCommutator.def("comm223_232_slow", &Commutator::FactorizedDoubleCommutator::comm223_232_slow);
+        FactorizedDoubleCommutator.def("UseSlowVersion",   &Commutator::FactorizedDoubleCommutator::UseSlowVersion);
+        FactorizedDoubleCommutator.def("SetUse_GooseTank_1b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_1b);
+        FactorizedDoubleCommutator.def("SetUse_GooseTank_2b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_2b);
+        FactorizedDoubleCommutator.def("SetUse_GooseTank_only_1b", &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_only_1b);
+        FactorizedDoubleCommutator.def("SetUse_GooseTank_only_2b", &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_only_2b);
+        FactorizedDoubleCommutator.def("SetUse_TypeII_1b",         &Commutator::FactorizedDoubleCommutator::SetUse_TypeII_1b);
+        FactorizedDoubleCommutator.def("SetUse_TypeIII_1b",        &Commutator::FactorizedDoubleCommutator::SetUse_TypeIII_1b);
+        FactorizedDoubleCommutator.def("SetUse_TypeII_2b",         &Commutator::FactorizedDoubleCommutator::SetUse_TypeII_2b);
+        FactorizedDoubleCommutator.def("SetUse_TypeIII_2b",        &Commutator::FactorizedDoubleCommutator::SetUse_TypeIII_2b);
+        FactorizedDoubleCommutator.def("SetUse_GT_TypeI_2b",       &Commutator::FactorizedDoubleCommutator::SetUse_GT_TypeI_2b);
+        FactorizedDoubleCommutator.def("SetUse_GT_TypeIV_2b",      &Commutator::FactorizedDoubleCommutator::SetUse_GT_TypeIV_2b);
+
+
 
       py::module BCH = m.def_submodule("BCH", "BCH namespace");
        BCH.def("BCH_Transform", &BCH::BCH_Transform);
@@ -679,44 +689,38 @@ PYBIND11_MODULE(pyIMSRG, m)
        BCH.def("SetOnly2bOmega", &BCH::SetOnly2bOmega);
        BCH.def("Set_BCH_Transform_Threshold", &BCH::Set_BCH_Transform_Threshold);
        BCH.def("Set_BCH_Product_Threshold", &BCH::Set_BCH_Product_Threshold);
-//       BCH.def("EstimateBCHError", &BCH::EstimateBCHError); // This doesn't really work
 
-       py::module FactorizedDoubleCommutator = Commutator.def_submodule("FactorizedDoubleCommutator", "FactorizedDoubleCommutator namespace");
-        FactorizedDoubleCommutator.def("comm223_231",      &Commutator::FactorizedDoubleCommutator::comm223_231);
-        FactorizedDoubleCommutator.def("comm223_232",      &Commutator::FactorizedDoubleCommutator::comm223_232);
-        FactorizedDoubleCommutator.def("comm223_231_slow", &Commutator::FactorizedDoubleCommutator::comm223_231_slow);
-        FactorizedDoubleCommutator.def("comm223_232_slow", &Commutator::FactorizedDoubleCommutator::comm223_232_slow);
-        FactorizedDoubleCommutator.def("UseSlowVersion",   &Commutator::FactorizedDoubleCommutator::UseSlowVersion);
+
 
       py::module ReferenceImplementations = m.def_submodule("ReferenceImplementations", "ReferenceImplementations namespace");
-      ReferenceImplementations.def("comm110ss", &ReferenceImplementations::comm110ss);
-      ReferenceImplementations.def("comm220ss", &ReferenceImplementations::comm220ss);
-      ReferenceImplementations.def("comm111ss", &ReferenceImplementations::comm111ss);
-      ReferenceImplementations.def("comm121ss", &ReferenceImplementations::comm121ss);
-      ReferenceImplementations.def("comm221ss", &ReferenceImplementations::comm221ss);
-      ReferenceImplementations.def("comm122ss", &ReferenceImplementations::comm122ss);
-      ReferenceImplementations.def("comm222_pp_hh_221ss", &ReferenceImplementations::comm222_pp_hh_221ss);
-      ReferenceImplementations.def("comm222_phss", &ReferenceImplementations::comm222_phss);
-      //
-      ReferenceImplementations.def("comm223ss", &ReferenceImplementations::comm223ss);
-      ReferenceImplementations.def("comm232ss", &ReferenceImplementations::comm232ss);
-      ReferenceImplementations.def("comm231ss", &ReferenceImplementations::comm231ss);
-      //
-      ReferenceImplementations.def("diagram_CIa", &ReferenceImplementations::diagram_CIa);
-      ReferenceImplementations.def("diagram_CIb", &ReferenceImplementations::diagram_CIb);
-      ReferenceImplementations.def("diagram_CIIa", &ReferenceImplementations::diagram_CIIa);
-      ReferenceImplementations.def("diagram_CIIb", &ReferenceImplementations::diagram_CIIb);
-      ReferenceImplementations.def("diagram_CIIc", &ReferenceImplementations::diagram_CIIc);
-      ReferenceImplementations.def("diagram_CIId", &ReferenceImplementations::diagram_CIId);
-      ReferenceImplementations.def("diagram_CIIIa", &ReferenceImplementations::diagram_CIIIa);
-      ReferenceImplementations.def("diagram_CIIIb", &ReferenceImplementations::diagram_CIIIb);
-      ReferenceImplementations.def("diagram_DIa", &ReferenceImplementations::diagram_DIa);
-      ReferenceImplementations.def("diagram_DIb", &ReferenceImplementations::diagram_DIb);
-      ReferenceImplementations.def("diagram_DIVa", &ReferenceImplementations::diagram_DIVa);
-      ReferenceImplementations.def("diagram_DIVb", &ReferenceImplementations::diagram_DIVb);
-      ReferenceImplementations.def("diagram_DIVb_intermediate", &ReferenceImplementations::diagram_DIVb_intermediate);
-      ReferenceImplementations.def("comm223_231_BruteForce", &ReferenceImplementations::comm223_231_BruteForce);
-      ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
+       ReferenceImplementations.def("comm110ss", &ReferenceImplementations::comm110ss);
+       ReferenceImplementations.def("comm220ss", &ReferenceImplementations::comm220ss);
+       ReferenceImplementations.def("comm111ss", &ReferenceImplementations::comm111ss);
+       ReferenceImplementations.def("comm121ss", &ReferenceImplementations::comm121ss);
+       ReferenceImplementations.def("comm221ss", &ReferenceImplementations::comm221ss);
+       ReferenceImplementations.def("comm122ss", &ReferenceImplementations::comm122ss);
+       ReferenceImplementations.def("comm222_pp_hh_221ss", &ReferenceImplementations::comm222_pp_hh_221ss);
+       ReferenceImplementations.def("comm222_phss", &ReferenceImplementations::comm222_phss);
+       //
+       ReferenceImplementations.def("comm223ss", &ReferenceImplementations::comm223ss);
+       ReferenceImplementations.def("comm232ss", &ReferenceImplementations::comm232ss);
+       ReferenceImplementations.def("comm231ss", &ReferenceImplementations::comm231ss);
+       //
+       ReferenceImplementations.def("diagram_CIa", &ReferenceImplementations::diagram_CIa);
+       ReferenceImplementations.def("diagram_CIb", &ReferenceImplementations::diagram_CIb);
+       ReferenceImplementations.def("diagram_CIIa", &ReferenceImplementations::diagram_CIIa);
+       ReferenceImplementations.def("diagram_CIIb", &ReferenceImplementations::diagram_CIIb);
+       ReferenceImplementations.def("diagram_CIIc", &ReferenceImplementations::diagram_CIIc);
+       ReferenceImplementations.def("diagram_CIId", &ReferenceImplementations::diagram_CIId);
+       ReferenceImplementations.def("diagram_CIIIa", &ReferenceImplementations::diagram_CIIIa);
+       ReferenceImplementations.def("diagram_CIIIb", &ReferenceImplementations::diagram_CIIIb);
+       ReferenceImplementations.def("diagram_DIa", &ReferenceImplementations::diagram_DIa);
+       ReferenceImplementations.def("diagram_DIb", &ReferenceImplementations::diagram_DIb);
+       ReferenceImplementations.def("diagram_DIVa", &ReferenceImplementations::diagram_DIVa);
+       ReferenceImplementations.def("diagram_DIVb", &ReferenceImplementations::diagram_DIVb);
+       ReferenceImplementations.def("diagram_DIVb_intermediate", &ReferenceImplementations::diagram_DIVb_intermediate);
+       ReferenceImplementations.def("comm223_231_BruteForce", &ReferenceImplementations::comm223_231_BruteForce);
+       ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
 
 
 
@@ -748,6 +752,8 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetRandomSeed", &UnitTest::SetRandomSeed)
           .def("RandomOp", &UnitTest::RandomOp)
           .def("TestCommutators", &UnitTest::TestCommutators)
+          .def("TestCommutators_IsospinChanging", &UnitTest::TestCommutators_IsospinChanging)
+          .def("TestCommutators_ParityChanging", &UnitTest::TestCommutators_ParityChanging)
           .def("TestCommutators3", &UnitTest::TestCommutators3)
           .def("TestDaggerCommutators", &UnitTest::TestDaggerCommutators)
           .def("TestDaggerCommutatorsAlln", &UnitTest::TestDaggerCommutatorsAlln)

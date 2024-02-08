@@ -359,22 +359,22 @@ namespace Commutator
     comm222_pp_hh_221st(X, Y, Z);
     comm222_phst(X, Y, Z);
 
-    if (use_imsrg3 and X.GetJRank() == 0 and Y.GetJRank() == 0 and Z.GetJRank() == 0)
-    {
-      if (Z.GetParticleRank() < 3)
-      {
-        Z.ThreeBody.SwitchToPN_and_discard();
-      }
-      std::cout << "tensor comm223ss" << std::endl;
-      comm223ss(X, Y, Z);
-      std::cout << "tensor comm232ss" << std::endl;
-      comm232ss_slow(X, Y, Z);
-      std::cout << "tensor comm231ss" << std::endl;
-      comm231ss_slow(X, Y, Z);
-    }
+//    // We shouldn't be here, because Commutator calls CommutatorScalar Scalar if Z had J Rank = 0.
+//    if (use_imsrg3 and X.GetJRank() == 0 and Y.GetJRank() == 0 and Z.GetJRank() == 0)
+//    {
+//      if (Z.GetParticleRank() < 3)
+//      {
+//        Z.ThreeBody.SwitchToPN_and_discard();
+//      }
+//      std::cout << "tensor comm223ss" << std::endl;
+//      comm223ss(X, Y, Z);
+//      std::cout << "tensor comm232ss" << std::endl;
+//      comm232ss_slow(X, Y, Z);
+//      std::cout << "tensor comm231ss" << std::endl;
+//      comm231ss_slow(X, Y, Z);
+//    }
 
     // This is a better place to put this.
-    //   Z.modelspace->tensor_transform_first_pass.at( Z.GetJRank()*2+Z.GetParity() ) = false;
     Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank() * 4 + X.GetParity() + 2 * Y.GetParity()) = false;
     SetSingleThread(save_single_thread);
 
@@ -426,7 +426,6 @@ namespace Commutator
   /// \f[
   ///  [X_{1)},Y_{(1)}]_{(0)} = \sum_{a} n_a (2j_a+1) \left(X_{(1)}Y_{(1)}-Y_{(1)}X_{(1)}\right)_{aa}
   /// \f]
-  // void Operator::comm110ss( const Operator& X, const Operator& Y)
   void comm110ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
@@ -464,7 +463,6 @@ namespace Commutator
   /// [X_{(2)},Y_{(2)}]_{(0)} = 2 \sum_{J} (2J+1) Tr(X_{hh'pp'}^{J} Y_{pp'hh'}^{J})
   /// \f] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.e. \f$\sum_{ab} \rightarrow \sum_{a\leq b} \f$,
   /// and using the normalized TBME.
-  // void Operator::comm220ss( const Operator& X, const Operator& Y)
   void comm220ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
@@ -508,8 +506,6 @@ namespace Commutator
   /// \f[
   /// [X_{(1)},Y_{(1)}]_{(1)} = X_{(1)}Y_{(1)} - Y_{(1)}X_{(1)}
   /// \f]
-  // void Operator::comm111ss( Operator & Y, Operator& Z)
-  // void Operator::comm111ss( const Operator & X, const Operator& Y)
   void comm111ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
@@ -536,7 +532,6 @@ namespace Commutator
   /// \f[
   /// [X_{(1)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1}\sum_{ab} (n_a \bar{n}_b) \sum_{J} (2J+1) (X_{ab} Y^J_{biaj} - X_{ba} Y^J_{aibj})
   /// \f]
-  // void Operator::comm121ss( const Operator& X, const Operator& Y)
   void comm121ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
@@ -633,20 +628,12 @@ namespace Commutator
 
     double t_start = omp_get_wtime();
 
-    //   static TwoBodyME Mpp = Y.TwoBody; // SRS: Is there a good reason to make these static?
-    //   static TwoBodyME Mhh = Y.TwoBody;
-
     int hZ = Z.IsHermitian() ? 1 : -1;
 
     TwoBodyME Mpp(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
     TwoBodyME Mhh(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
-    //   TwoBodyME Mpp = Z.TwoBody;
-    //   TwoBodyME Mhh = Z.TwoBody;
-    //   Mpp.Erase();
-    //   Mhh.Erase();
     ConstructScalarMpp_Mhh(X, Y, Z, Mpp, Mhh);
 
-    //   int norbits = Z.modelspace->GetNumberOrbits();
     int norbits = Z.modelspace->all_orbits.size();
     std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
 #pragma omp parallel for schedule(dynamic, 1)
@@ -712,8 +699,6 @@ namespace Commutator
   /// \f]
   /// here, all TBME are unnormalized, i.e. they should have a tilde.
   // This is still too slow...
-  // void Operator::comm122ss( Operator& Y, Operator& Z )
-  // void Operator::comm122ss( const Operator& X, const Operator& Y )
   // TODO: MODIFY THIS TO ACCOMMODATE J=0, T!=0 operators
   void comm122ss(const Operator &X, const Operator &Y, Operator &Z)
   {
@@ -816,7 +801,6 @@ namespace Commutator
   // It's not dramatically slower, but slow enough that we should only use it when we need it.
   void comm122ss_slower(const Operator &X, const Operator &Y, Operator &Z)
   {
-    //   std::cout << __func__ << "  line " << __LINE__ << std::endl;
     double t_start = omp_get_wtime();
     auto &X1 = X.OneBody;
     auto &Y1 = Y.OneBody;
@@ -832,7 +816,6 @@ namespace Commutator
     }
     int nch = ch_bra_list.size();
 
-    //   int nch = Z.modelspace->GetNumberTwoBodyChannels();
 #pragma omp parallel for schedule(dynamic, 1)
     for (int ich = 0; ich < nch; ich++)
     {
@@ -1037,15 +1020,6 @@ namespace Commutator
 
       // If X or Y change parity or isospin, then we need to worry about the fact that we only store
       // ch_bra <= ch_ket. If we need the other ordering we get it by Hermiticity.
-      //      int flipphase_Xijab = 1;
-      //      int flipphase_Xabkl = 1;
-      //      int flipphase_Yijab = 1;
-      //      int flipphase_Yabkl = 1;
-      //      if ( ch_bra > ch_ab_XY ) flipphase_Xijab = hX;
-      //      if ( ch_ab_YX > ch_ket ) flipphase_Xabkl = hX;
-      //      if ( ch_bra > ch_ab_YX ) flipphase_Yijab = hY;
-      //      if ( ch_ab_XY > ch_ket ) flipphase_Yabkl = hY;
-
       auto &X_ijab = (ch_bra <= ch_ab_XY) ? X.TwoBody.GetMatrix(ch_bra, ch_ab_XY) : X.TwoBody.GetMatrix(ch_ab_XY, ch_bra).t() * hX;
       auto &X_abkl = (ch_ab_YX <= ch_ket) ? X.TwoBody.GetMatrix(ch_ab_YX, ch_ket) : X.TwoBody.GetMatrix(ch_ket, ch_ab_YX).t() * hX;
       auto &Y_ijab = (ch_bra <= ch_ab_YX) ? Y.TwoBody.GetMatrix(ch_bra, ch_ab_YX) : Y.TwoBody.GetMatrix(ch_ab_YX, ch_bra).t() * hY;
@@ -1116,10 +1090,7 @@ namespace Commutator
     int hZ = Z.IsHermitian() ? 1 : -1;
     if (X.GetParticleRank() < 2 or Y.GetParticleRank() < 2)
       return;
-    //   Operator& Z = *this;
 
-    //   static TwoBodyME Mpp = Z.TwoBody;
-    //   static TwoBodyME Mhh = Z.TwoBody;
     TwoBodyME Mpp = Z.TwoBody;
     TwoBodyME Mhh = Z.TwoBody;
     Mpp.Erase();
@@ -1178,8 +1149,6 @@ namespace Commutator
             }
           }
         }
-
-        //         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
 
         Z.OneBody(i, j) += zij / (oi.j2 + 1.0);
         if (jmin == i and i != j)
@@ -1359,18 +1328,11 @@ namespace Commutator
             dJ_std = 2;
             jmin += jmin % 2;
           }
-          //           for (int J_std=jmin; J_std<=jmax; ++J_std)
           for (int J_std = jmin; J_std <= jmax; J_std += dJ_std)
           {
-            // double sixj = X.modelspace->GetSixJ(ja,jb,J_cc,jc,jd,J_std);
             double sixj = X.modelspace->GetCachedSixJ(jjai, jjbi, J_cc, jjci, jjdi, J_std);
             if (std::abs(sixj) < 1e-8)
               continue;
-            ////              double tbme = Z.TwoBody.GetTBME_J(J_std,a,d,c,b);
-            //              double xcbad = X.TwoBody.GetTBME_J(J_std,c,b,a,d);
-            //              double yadcb = Y.TwoBody.GetTBME_J(J_std,a,d,c,b);
-            //              Xbar -= (2*J_std+1) * sixj * xcbad  ;
-            //              Ybar -= (2*J_std+1) * sixj * yadcb  ;
 
             // Since we want the same element of two different operators, we use GetTBME_J_norm_twoOps
             // which does all the phase/index lookup stuff once and then just accesses the two matrices.
@@ -1380,25 +1342,16 @@ namespace Commutator
             Xbar -= (2 * J_std + 1) * sixj * xcbad;
             Ybar -= (2 * J_std + 1) * sixj * yadcb * hY;
 
-            //             if (ch_cc==3)
-            //             {
-            //                std::cout << __func__ << " " << __LINE__ << "  ibra,iket = " << ibra << " " << iket_cc
-            //                          << " - " << 2*J_std+1 << " * " << sixj << " * " << yadcb << " * " << hY << " Ybar = " << Ybar
-            //                          << "   the sixj is { " << jjai << " " << jjbi << " " << J_cc << " " << jjci << " " << jjdi << " " << J_std << " } "  << std::endl;
-            //             }
           }
           X2_CC_ph(iket_cc, ibra + bra_shift) = Xbar * normfactor * na_nb_factor;
           Y2_CC_ph(ibra + bra_shift, iket_cc) = Ybar * normfactor;
 
-          //           X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar  * na_nb_factor;
-          //           Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar ;
 
         } // for iket_cc
       }   // for ab_case
     }     // for ibra
   }
 
-  // void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_ph, std::string orientation="normal") const
   void DoPandyaTransformation(const Operator &Z, std::deque<arma::mat> &TwoBody_CC_ph, std::string orientation = "normal")
   {
     // loop over cross-coupled channels
@@ -1420,7 +1373,6 @@ namespace Commutator
     int hZ = Z.IsHermitian() ? 1 : -1;
 
     // Collapse two outer loops into one for better load balancing
-    //   std::vector< std::array<int,2>> ch_and_ibra;
     std::vector<int> ch_vec;
     std::vector<int> ibra_vec;
     for (int ch = 0; ch < nch; ++ch)
@@ -1432,27 +1384,14 @@ namespace Commutator
         ibra_vec.push_back(ibra);
       }
     }
-    //   size_t nch_and_ibra = ch_and_ibra.size();
     size_t nch_and_ibra = ch_vec.size();
 
-    //   #pragma omp parallel for schedule(dynamic,1)
-    //   for (int ch = 0; ch < nch; ++ch)
-    //   {
-    //      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-    //      int J = tbc.J;
-    //      int nKets = tbc.GetNumberKets();
-    //      auto& ZMat = Z.TwoBody.GetMatrix(ch,ch);
-
-    //      for (int ibra=0; ibra<nKets; ++ibra)
-    //      {
 
 #pragma omp parallel for schedule(dynamic, 1)
     for (size_t ichbra = 0; ichbra < nch_and_ibra; ichbra++)
     {
       int ch = ch_vec[ichbra];
       int ibra = ibra_vec[ichbra];
-      //      int ch   = ch_and_ibra[ichbra][0];
-      //      int ibra = ch_and_ibra[ichbra][1];
 
       TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
@@ -1490,7 +1429,6 @@ namespace Commutator
         int Jpmax = std::min(int(ji + jl), int(jk + jj));
         for (int Jprime = Jpmin; Jprime <= Jpmax; ++Jprime)
         {
-          //                double sixj = Z.modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
           double sixj = Z.modelspace->GetCachedSixJ(jji, jjj, J, jjk, jjl, Jprime);
           if (std::abs(sixj) < 1e-8)
             continue;
@@ -1499,14 +1437,8 @@ namespace Commutator
           int nkets_cc = tbc_cc.GetNumberKets();
           int indx_il = tbc_cc.GetLocalIndex(std::min(i, l), std::max(i, l)) + (i > l ? nkets_cc : 0);
           int indx_kj = tbc_cc.GetLocalIndex(std::min(j, k), std::max(j, k)) + (k > j ? nkets_cc : 0);
-          //               double me1 = Zbar.at(ch_cc)(indx_il,indx_kj);
           double me1 = Zbar[ch_cc](indx_il, indx_kj); // do we need to use at() or is it safe to just use []?
           commij -= (2 * Jprime + 1) * sixj * me1;
-          //               if ( ch==1)
-          //               {
-          //                 std::cout << "   " << __func__ << " " << __LINE__ << " ilkj " << i << " " << l << " " << k << " " << j << "   Jprime " << Jprime
-          //                           << "   me " << me1 << "   sixj =" << sixj << "   commij = " << commij << "  depends on ch_cc= " << ch_cc<< std::endl;
-          //               }
         }
 
         if (k == l)
@@ -1526,7 +1458,6 @@ namespace Commutator
           Jpmax = std::min(int(jj + jl), int(jk + ji));
           for (int Jprime = Jpmin; Jprime <= Jpmax; ++Jprime)
           {
-            //                 double sixj = Z.modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
             double sixj = Z.modelspace->GetCachedSixJ(jjj, jji, J, jjk, jjl, Jprime);
             if (std::abs(sixj) < 1e-8)
               continue;
@@ -1540,53 +1471,20 @@ namespace Commutator
             //                 double me1 = Zbar.at(ch_cc)(indx_ik, indx_lj) ;
             double me1 = Zbar[ch_cc](indx_ik, indx_lj);
             commji -= (2 * Jprime + 1) * sixj * me1;
-            //               if ( ch==1)
-            //               {
-            //                 std::cout << "   " << __func__ << " " << __LINE__ << " iklj " << i << " " << k << " " << l << " " << j << "   Jprime " << Jprime
-            //                           << "   me " << me1 << "   sixj =" << sixj << "   commji = " << commji << "  depends on ch_cc= " << ch_cc << std::endl;
-            //               }
           }
         }
 
         double norm = bra.delta_pq() == ket.delta_pq() ? 1 + bra.delta_pq() : PhysConst::SQRT2;
-        //            Z.TwoBody.GetMatrix(ch,ch)(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
         double zijkl = -(commij - Z.modelspace->phase(jk + jl - J) * commji) / norm;
 
-        //            if ( ch==1)
-        //            {
-        //               std::cout << __func__ << " " << __LINE__ << "   commij, ji " << commij << " " << commji << "   zijjkl = " << zijkl << std::endl;
-        //            }
 
         ZMat(ibra, iket) += zijkl;
         if (ibra != iket)
           ZMat(iket, ibra) += hZ * zijkl;
       } // for iket
-        //      }// for ibra
-        //   }// for ch
     }   // for ichbra
   }
 
-  ///*************************************
-  /// convenience function
-  /// called by comm222_phst
-  ///*************************************
-  std::deque<arma::mat> InitializePandya(Operator &Z, size_t nch, std::string orientation = "normal")
-  {
-    std::deque<arma::mat> X(nch);
-    int n_nonzero = Z.modelspace->SortedTwoBodyChannels_CC.size();
-    for (int ich = 0; ich < n_nonzero; ++ich)
-    {
-      int ch_cc = Z.modelspace->SortedTwoBodyChannels_CC[ich];
-      TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-      int nKets_cc = tbc_cc.GetNumberKets();
-      int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
-      if (orientation == "normal")
-        X[ch_cc] = arma::mat(2 * nph_kets, nKets_cc, arma::fill::zeros);
-      else if (orientation == "transpose")
-        X[ch_cc] = arma::mat(nKets_cc, 2 * nph_kets, arma::fill::zeros);
-    }
-    return X;
-  }
 
   //*****************************************************************************************
   //
@@ -1725,7 +1623,6 @@ namespace Commutator
       arma::mat Y_bar_ph_flip = arma::join_vert(Y_bar_ph.tail_rows(nph_kets) % PhaseMatY, Y_bar_ph.head_rows(nph_kets) % PhaseMatY);
       Zbar_ch = Xt_bar_ph * arma::join_horiz(Y_bar_ph, Y_bar_ph_flip);
 
-      //         if ( ch==2 or ch==3 or ch==8 or ch==9 )
 
       // If Z is hermitian, then XY is anti-hermitian, and so XY - YX = XY + (XY)^T
       if (Z.IsHermitian())
@@ -1743,12 +1640,7 @@ namespace Commutator
       // so we end up adding in either case.
       Zbar_ch.tail_cols(nKets_cc) += Zbar_ch.tail_cols(nKets_cc).t() % PhaseMatZ;
 
-      //         if (  ch==3  )
-      //         {
-      //            std::cout << __func__ <<  "  ch_cc = " << ch << std::endl << "Mleft " << std::endl << Xt_bar_ph << std::endl << "Mright" << std::endl << arma::join_horiz( Y_bar_ph ,  Y_bar_ph_flip )
-      //                      << std::endl << "Zbar " << std::endl <<  Zbar_ch << std::endl;
-      //            std::cout << "   and also Xtbar_ph = " << std::endl << Xt_bar_ph << std::endl << "   and  Y_bar_ph = " << std::endl << Y_bar_ph << std::endl;
-      //         }
+
     }
 
     X.profiler.timer["Build Z_bar"] += omp_get_wtime() - t_start;
@@ -1793,11 +1685,6 @@ namespace Commutator
       TwoBodyChannel &tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
 
-      //   int nch = Z.modelspace->GetNumberTwoBodyChannels();
-      //   #pragma omp parallel for schedule(dynamic,1)
-      //   for (int ch=0; ch<nch; ch++)
-      //   {
-      //     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
       int J = tbc_bra.J;
       int nbras = tbc_bra.GetNumberKets();
       int nkets = tbc_ket.GetNumberKets();
@@ -1822,8 +1709,6 @@ namespace Commutator
           Orbit &ol = Z.modelspace->GetOrbit(l);
 
           double zijkl = 0;
-          //         int Jpmin = std::max( std::abs(oi.j2-ol.j2) , std::abs(oj.j2-ok.j2) )/2;
-          //         int Jpmax = std::min( oi.j2+ol.j2 , oj.j2+ok.j2 )/2;
           int Jpmin = std::min(std::max(std::abs(oi.j2 - ol.j2), std::abs(oj.j2 - ok.j2)),
                                std::max(std::abs(oj.j2 - ol.j2), std::abs(oi.j2 - ok.j2))) /
                       2;
