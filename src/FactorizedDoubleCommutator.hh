@@ -63,6 +63,11 @@ namespace Commutator
     void comm223_231(const Operator &Eta, const Operator &Gamma, Operator &Z);
     void comm223_232(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
+    void comm223_231_chi1b(const Operator &Eta, const Operator &Gamma, Operator &Z);
+    void comm223_231_chi2b(const Operator &Eta, const Operator &Gamma, Operator &Z);
+    void comm223_232_chi1b(const Operator &Eta, const Operator &Gamma, Operator &Z);
+    void comm223_232_chi2b(const Operator &Eta, const Operator &Gamma, Operator &Z);
+
     void comm223_231_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
     void comm223_232_slow(const Operator &Eta, const Operator &Gamma, Operator &Z);
 
