@@ -191,7 +191,7 @@ all: $(ALL)
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o AngMomCache.o\
       IMSRGProfiler.o \
-	  Commutator.o Commutator232.o \
+	  BCH.o Commutator.o TensorCommutators.o IMSRG3Commutators.o DaggerCommutators.o FactorizedDoubleCommutator.o\
 	  HFMBPT.o  RPA.o\
       M0nu.o DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
       TwoBodyChannel.o ThreeBodyChannel.o \
@@ -243,8 +243,11 @@ clean:
 
 test:
 	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.SanityCheck(); \
-                              pyIMSRG.Commutator.SetUseIMSRG3(True); pyIMSRG.Commutator.SetUseIMSRG3N7(True); passed &=ut.TestCommutators(); \
-                            ms=pyIMSRG.ModelSpace(1,'He4','He4'); ut=pyIMSRG.UnitTest(ms); pyIMSRG.Commutator.SetUseIMSRG3N7(False); passed &=ut.TestCommutators();\
+                              pyIMSRG.Commutator.SetUseIMSRG3N7(True); passed &=ut.TestCommutators(); \
+                            ms=pyIMSRG.ModelSpace(1,'He4','He4'); ut=pyIMSRG.UnitTest(ms); pyIMSRG.Commutator.SetUseIMSRG3(True); passed &=ut.TestCommutators();\
+                              print('passed? ',passed); "
+test-factorized:
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestFactorizedDoubleCommutators(); \
                               print('passed? ',passed); "
 
 install: splashscreen

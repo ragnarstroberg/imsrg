@@ -775,19 +775,14 @@ void TwoBodyME::PrintAllMatrices() const
 {
   for ( auto& itmat : MatEl )
   {
-
     
     arma::uvec subscript = itmat.second.is_empty()  ?  arma::uvec({0,0}) 
                            :   arma::ind2sub( arma::size(itmat.second),  arma::abs(itmat.second).index_max() ) ; // get row,column of maximum entry
-//    arma::uvec subscript({0,0});
-//    if ( not itmat.second.is_empty() )
-//    {
-//      subscript = arma::ind2sub( arma::size(itmat.second),  arma::abs(itmat.second).index_max() ) ; // get row,column of maximum entry
-//    }
     std::cout << "ch_bra, ch_ket : " << itmat.first[0] << " " << itmat.first[1] << "     norm = " << arma::norm( itmat.second, "fro")
               << "  max entry at ( " << subscript(0) << " , " << subscript(1) << " ) ";
     if ( not itmat.second.is_empty() )  std::cout << "     " << itmat.second(subscript(0),subscript(1));
     std::cout << std::endl  << itmat.second << std::endl << std::endl;
+
   }
 }
 

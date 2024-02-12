@@ -41,6 +41,8 @@ class UnitTest
   // and make sure that they give the same answer
 //  void TestCommutators();
   bool TestCommutators();
+  bool TestCommutators_IsospinChanging();
+  bool TestCommutators_ParityChanging();
 //  void TestCommutators3();
 //  void TestCommutators3(Operator& X, Operator& Y); 
   void TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist ); 
@@ -117,6 +119,9 @@ class UnitTest
   bool Test_comm433sd_ph(     const Operator& X, const Operator& Y   );
 
   bool TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, size_t k, size_t l);
+
+//  bool TestFactorizedDoubleCommutators(ModelSpace& ms);
+  bool TestFactorizedDoubleCommutators();
 
   bool SanityCheck();
 
