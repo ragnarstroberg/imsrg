@@ -14,6 +14,9 @@ namespace Commutator
 
   bool use_goose_tank_1b = true;       // always include
   bool use_goose_tank_2b = true;       // always include
+
+  bool use_1b_intermediates;
+  bool use_2b_intermediates;
   bool use_goose_tank_only_1b = false; // only calculate Goose Tanks
   bool use_goose_tank_only_2b = false; // only calculate Goose Tanks
   bool use_TypeII_1b = true;
@@ -33,6 +36,15 @@ namespace Commutator
   void SetUse_GooseTank_2b(bool tf)
   {
     use_goose_tank_2b = tf;
+  }
+
+  void SetUse_1b_Intermediates(bool tf)
+  {
+    use_1b_intermediates = tf;
+  }
+  void SetUse_2b_Intermediates(bool tf)
+  {
+    use_2b_intermediates = tf;
   }
 
   void SetUse_GooseTank_only_1b(bool tf)
@@ -86,8 +98,14 @@ namespace Commutator
   void comm223_231(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
 
-    comm223_231_chi1b( Eta, Gamma, Z);  // topology with 1-body intermediate (fast)
-    comm223_231_chi2b( Eta, Gamma, Z);  // topology with 2-body intermediate (slow)
+    if( use_1b_intermediates)
+    {
+      comm223_231_chi1b( Eta, Gamma, Z);  // topology with 1-body intermediate (fast)
+    }
+    if( use_2b_intermediates)
+    {
+      comm223_231_chi2b( Eta, Gamma, Z);  // topology with 2-body intermediate (slow)
+    }
     return;
   } //comm223_231
 
@@ -1720,9 +1738,17 @@ void comm223_231_slow(const Operator &Eta, const Operator &Gamma, Operator &Z)
 
   void comm223_232(const Operator &Eta, const Operator &Gamma, Operator &Z)
   {
-     comm223_232_chi1b(Eta,Gamma,Z); // topology with intermediate 1b (fast)
-     comm223_232_chi2b(Eta,Gamma,Z); // topology with intermediate 2b (slow)
-     return;
+
+    if( use_1b_intermediates)
+    {
+      comm223_232_chi1b( Eta, Gamma, Z);  // topology with 1-body intermediate (fast)
+    }
+    if( use_2b_intermediates)
+    {
+      comm223_232_chi2b( Eta, Gamma, Z);  // topology with 2-body intermediate (slow)
+    }
+
+    return;
   }
 
 
