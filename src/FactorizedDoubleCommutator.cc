@@ -15,8 +15,8 @@ namespace Commutator
   bool use_goose_tank_1b = true;       // always include
   bool use_goose_tank_2b = true;       // always include
 
-  bool use_1b_intermediates;
-  bool use_2b_intermediates;
+  bool use_1b_intermediates = true;
+  bool use_2b_intermediates = true;
   bool use_goose_tank_only_1b = false; // only calculate Goose Tanks
   bool use_goose_tank_only_2b = false; // only calculate Goose Tanks
   bool use_TypeII_1b = true;
@@ -472,6 +472,7 @@ namespace Commutator
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////
 /// factorized 223_231 double commutator with 2b intermediate
 ////////////////////////////////////////////////////////////////////////////
@@ -504,21 +505,9 @@ namespace Commutator
 
     int nch = Z.modelspace->GetNumberTwoBodyChannels();
     int norbits = Z.modelspace->all_orbits.size();
-    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
 
-//    std::deque<arma::mat> Eta_matrix(nch);      // used
-//    std::deque<arma::mat> Eta_matrix_nnnn(nch); // used
-//    std::deque<arma::mat> Gamma_matrix(nch);
-    std::deque<arma::mat> intermediateTB(nch);
-    for (int ch = 0; ch < nch; ++ch)
-    {
-      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int nKets = tbc.GetNumberKets();
-//      Eta_matrix[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-//      Eta_matrix_nnnn[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-//      Gamma_matrix[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-      intermediateTB[ch] = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-    }
+   TwoBodyME intermediateTB = Z.TwoBody;
+   intermediateTB.Erase();
 
 // fill  Gamma_matrix Eta_matrix, Eta_matrix_nnnn
 #pragma omp parallel for schedule(dynamic,1)
@@ -528,83 +517,34 @@ namespace Commutator
       int J0 = tbc.J;
       int nKets = tbc.GetNumberKets();
 
-      arma::mat Eta_matrix = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-      arma::mat Eta_matrix_nnnn = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
-      arma::mat Gamma_matrix = arma::mat(nKets * 2, nKets * 2, arma::fill::zeros);
+      arma::mat Eta_matrix = Eta.TwoBody.GetMatrix(ch,ch);
+      arma::mat Eta_matrix_nnnn = Eta_matrix;
+      arma::mat Gamma_matrix = Gamma.TwoBody.GetMatrix(ch,ch);
 
       for (int ibra = 0; ibra < nKets; ++ibra)
       {
         Ket &bra = tbc.GetKet(ibra);
-        size_t i = bra.p;
-        size_t j = bra.q;
-        Orbit &oi = *(bra.op);
-        Orbit &oj = *(bra.oq);
-        int ji = oi.j2;
-        int jj = oj.j2;
-        double n_i = oi.occ;
-        double bar_n_i = 1. - n_i;
-        double n_j = oj.occ;
-        double bar_n_j = 1. - n_j;
+        double n_i = bra.op->occ;
+        double n_j = bra.oq->occ;
 
         for (int iket = 0; iket < nKets; ++iket)
         {
-          size_t k, l;
           Ket &ket = tbc.GetKet(iket);
-          k = ket.p;
-          l = ket.q;
-          Orbit &ok = Z.modelspace->GetOrbit(k);
-          Orbit &ol = Z.modelspace->GetOrbit(l);
-          int jk = ok.j2;
-          int jl = ol.j2;
-          double n_k = ok.occ;
-          double bar_n_k = 1. - n_k;
-          double n_l = ol.occ;
-          double bar_n_l = 1. - n_l;
+          double n_k = ket.op->occ;
+          double n_l = ket.oq->occ;
+          double occfactor = n_i*n_j*(1-n_k)*(1-n_l) - (1-n_i)*(1-n_j)*n_k*n_l;
 
-          double occfactor_k = (bar_n_k * bar_n_l * n_i * n_j - bar_n_i * bar_n_j * n_k * n_l);
-//          double EtaME = Eta.TwoBody.GetTBME_J(J0, i, j, k, l);
-//          double GammaME = Gamma.TwoBody.GetTBME_J(J0, i, j, k, l);
-          double EtaME = Eta.TwoBody.GetTBME(ch,ch,bra,ket);
-          double GammaME = Gamma.TwoBody.GetTBME(ch,ch,bra,ket);
-          Eta_matrix(ibra, iket) = EtaME;  // Eta_ijkl
-          Gamma_matrix(ibra, iket) = GammaME;
-          Eta_matrix_nnnn(ibra, iket) = occfactor_k * EtaME;
-          if (i != j)
-          {
-            int phase = Z.modelspace->phase((ji + jj) / 2 + J0 + 1);
-            Eta_matrix(ibra + nKets, iket) = phase * EtaME;  // Eta_jikl
-            Gamma_matrix(ibra + nKets, iket) = phase * GammaME;
-            Eta_matrix_nnnn(ibra + nKets, iket) = occfactor_k * phase * EtaME;
-            if (k != l)
-            {
-              phase = Z.modelspace->phase((ji + jj + jk + jl) / 2);
-              Eta_matrix(ibra + nKets, iket + nKets) = phase * EtaME; // Eta_jilk
-              Gamma_matrix(ibra + nKets, iket + nKets) = phase * GammaME;
-              Eta_matrix_nnnn(ibra + nKets, iket + nKets) = occfactor_k * phase * EtaME;
+          Eta_matrix_nnnn(ibra,iket) *= occfactor;
 
-              phase = Z.modelspace->phase((jk + jl) / 2 + J0 + 1);
-              Eta_matrix(ibra, iket + nKets) = phase * EtaME;  // Eta_ijlk
-              Gamma_matrix(ibra, iket + nKets) = phase * GammaME;
-              Eta_matrix_nnnn(ibra, iket + nKets) = occfactor_k * phase * EtaME;
-            }
-          }
-          else
-          {
-            if (k != l)
-            {
-              int phase = Z.modelspace->phase((jk + jl) / 2 + J0 + 1);
-              Eta_matrix(ibra, iket + nKets) = phase * EtaME; // Eta_ijlk
-              Gamma_matrix(ibra, iket + nKets) = phase * GammaME;
-              Eta_matrix_nnnn(ibra, iket + nKets) = occfactor_k * phase * EtaME;
-            }
-          }
         }// for iket
       }// for ibra
 
-      arma::mat Chi_222_b = (2 * J0 + 1) * Eta_matrix * Eta_matrix_nnnn;
+      arma::mat Chi_222_b = 4 * (2 * J0 + 1) * Eta_matrix * Eta_matrix_nnnn * Gamma_matrix;
 
-      intermediateTB[ch] = Chi_222_b * Gamma_matrix;
-      intermediateTB[ch] += Gamma_matrix * Chi_222_b.t();
+      Chi_222_b += Chi_222_b.t();
+
+      intermediateTB.GetMatrix(ch,ch) = Chi_222_b;
+
     }// for ch
 
     Z.profiler.timer["_231_F_chi2_pp_fill_chi"] += omp_get_wtime() - t_internal;
@@ -627,6 +567,7 @@ namespace Commutator
     // IIb_pq = 1/4 1/(2 jp + 1) \sum_acdJ0 Chi_222_b_cpad * Gamma_bar_adcq
     // IIb_pq = - 1/4 1/(2 jp + 1) \sum_abeJ0  Chi_222_a_bqae * Gamma_bar_bqae
     // ###########################################################
+    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
 #pragma omp parallel for schedule(dynamic,1)
     for (int indexp = 0; indexp < norbits; ++indexp)
     {
@@ -639,7 +580,7 @@ namespace Commutator
           continue;
         Orbit &oq = Z.modelspace->GetOrbit(q);
         double jq = oq.j2 / 2.;
-        double zij = 0;
+        double zpq = 0;
 
         // loop abcde
         for (auto &c : Z.modelspace->all_orbits)
@@ -649,30 +590,14 @@ namespace Commutator
 
           int J0min = std::abs(oc.j2 - op.j2) / 2;
           int J0max = (oc.j2 + op.j2) / 2;
-          int parity = (op.l + oc.l) % 2;
-          int Tz_J0 = (op.tz2 + oc.tz2) / 2;
           for (int J0 = J0min; J0 <= J0max; J0++)
           {
-            int ch_J0 = Z.modelspace->GetTwoBodyChannelIndex(J0, parity, Tz_J0);
-            TwoBodyChannel &tbc_J0 = Z.modelspace->GetTwoBodyChannel(ch_J0);
-            int nkets = tbc_J0.GetNumberKets();
-            int indx_cp = tbc_J0.GetLocalIndex(std::min(int(c), int(p)), std::max(int(c), int(p)));
-            int indx_cq = tbc_J0.GetLocalIndex(std::min(int(c), int(q)), std::max(int(c), int(q)));
-            if (indx_cp < 0 or indx_cq < 0)
-            {
-              continue;
-            }
-            if (c > p)
-              indx_cp += nkets;
-            if (c > q)
-              indx_cq += nkets;
-
-            zij += intermediateTB[ch_J0](indx_cp, indx_cq);
+            zpq += intermediateTB.GetTBME_J(J0,J0,c,p,c,q);
           }
         }
-        Z.OneBody(p, q) += 0.25 * zij / (op.j2 + 1.0);
+        Z.OneBody(p, q) += 0.25 * zpq / (op.j2 + 1.0);
         if (p != q)
-          Z.OneBody(q, p) += 0.25 * hZ * zij / (op.j2 + 1.0);
+          Z.OneBody(q, p) += 0.25 * hZ * zpq / (op.j2 + 1.0);
         //--------------------------------------------------
       } // for q
     }   // for p
