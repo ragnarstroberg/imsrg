@@ -2006,7 +2006,7 @@ void ModelSpace::Print()
   for (size_t ch = 0; ch < GetNumberTwoBodyChannels(); ch++)
   {
     TwoBodyChannel &tbc = GetTwoBodyChannel(ch);
-    std::cout << " " << ch << " JPT : " << tbc.J << " " << tbc.Tz << " " << tbc.parity << std::endl;
+    std::cout << " " << ch << " JPTz : " << tbc.J << "" << tbc.parity << " " << tbc.Tz << std::endl;
     size_t nkets = tbc.GetNumberKets();
     for (size_t iket = 0; iket < nkets; iket++)
     {
