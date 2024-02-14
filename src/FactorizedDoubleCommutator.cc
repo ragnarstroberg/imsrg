@@ -629,15 +629,21 @@ namespace Commutator
       int nKets_cc = tbc_cc.GetNumberKets();
       int J_cc = tbc_cc.J;
 
-      arma::mat Eta_bar = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros); // SRS ADDED
+      // We don't need to double the rows of the Eta_bar matrix, since these lead to rows in
+      // the IntermediateTwobody matrix which can be obtained by symmetry from the top rows.
+      // So this will save us some time, and when filling the resuliting one-body matrix we just
+      // ensure we always access with the ordering that is stored. -SRS
+      arma::mat Eta_bar = arma::mat(nKets_cc , nKets_cc * 2, arma::fill::zeros); // SRS ADDED
+//      arma::mat Eta_bar = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros); // SRS ADDED
       arma::mat Eta_bar_nnnn = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros); // SRS ADDED 
       arma::mat Gamma_bar = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros); // SRS ADDED
 //      Gamma_bar[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros); // SRS ADDED
       arma::mat Chi_222_a;
-      IntermediateTwobody[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
+//      IntermediateTwobody[ch_cc] = arma::mat(nKets_cc * 2, nKets_cc * 2, arma::fill::zeros);
       // transform operator
       // loop over cross-coupled ph bras <ab| in this channel
-      for (int ibra_cc = 0; ibra_cc < nKets_cc * 2; ++ibra_cc)
+//      for (int ibra_cc = 0; ibra_cc < nKets_cc * 2; ++ibra_cc)
+      for (int ibra_cc = 0; ibra_cc < nKets_cc; ++ibra_cc)
       {
         int a, b;
         if (ibra_cc < nKets_cc)
@@ -666,8 +672,10 @@ namespace Commutator
         double jb = ob.j2 * 0.5;
 
         // loop over cross-coupled kets |cd> in this channel
-        for (int iket_cc = 0; iket_cc < nKets_cc * 2; ++iket_cc)
+//        for (int iket_cc = 0; iket_cc < nKets_cc * 2; ++iket_cc)
+        for (int iket_cc = ibra_cc; iket_cc < nKets_cc * 2; ++iket_cc)
         {
+          if ( (iket_cc%nKets_cc) < ibra_cc ) continue;// We'll get these from symmetry
           int c, d;
           if (iket_cc < nKets_cc)
           {
@@ -681,6 +689,7 @@ namespace Commutator
             d = ket_cc_cd.p;
             c = ket_cc_cd.q;
           }
+
           Orbit &oc = Z.modelspace->GetOrbit(c);
           double n_c = oc.occ;
           double nbar_c = 1 - n_c;
@@ -692,13 +701,14 @@ namespace Commutator
           double jd = od.j2 * 0.5;
 
           double occ_factor = nbar_c * nbar_b * n_a * n_d - n_c * n_b * nbar_a * nbar_d;
-          if (iket_cc >= nKets_cc and c == d)
-            continue;
+//          if (iket_cc >= nKets_cc and c == d)
+//            continue;
 
           // Check the isospin projection. If this isn't conserved in the usual channel,
           // then all the xcbad and yadcb will be zero and we don't need to bother computing SixJs.
-          // if (std::abs(oa.tz2 + od.tz2 - ob.tz2 - oc.tz2) != 0)
-          //   continue;
+           if ( std::abs(oa.tz2 + od.tz2 - ob.tz2 - oc.tz2) != Gamma.GetTRank()  
+            and std::abs(oa.tz2 + od.tz2 - ob.tz2 - oc.tz2) != Eta.GetTRank()  )
+             continue;
 
           int jmin = std::max(std::abs(oa.j2 - od.j2), std::abs(oc.j2 - ob.j2)) / 2;
           int jmax = std::min(oa.j2 + od.j2, oc.j2 + ob.j2) / 2;
@@ -720,15 +730,41 @@ namespace Commutator
               Ybar -= (2 * J_std + 1) * sixj1 * Gamma.TwoBody.GetTBME_J(J_std, a, d, c, b);
             }
           }
-          Eta_bar(ibra_cc, iket_cc) = Xbar;
-          Eta_bar_nnnn(ibra_cc, iket_cc) = Xbar * occ_factor;
-          Gamma_bar(ibra_cc, iket_cc) = Ybar;
+          double flip_phase = Z.modelspace->phase( (oa.j2 + ob.j2 + oc.j2 + od.j2)/2);
+
+           Gamma_bar(ibra_cc, iket_cc) = Ybar;
+           Eta_bar(ibra_cc, iket_cc) = Xbar;
+           Eta_bar_nnnn(ibra_cc, iket_cc) = Xbar * occ_factor;
+
+           // Hermiticity: Xbar_cdab = hX * Xbar_abcd.  We get a minus sign on the occupation factor
+           Gamma_bar(iket_cc, ibra_cc) = hGamma * Ybar;
+           Eta_bar_nnnn(iket_cc, ibra_cc) = hEta * Xbar * (-occ_factor);
+           if ( iket_cc < nKets_cc)
+             Eta_bar(iket_cc, ibra_cc) = hEta * Xbar;
+
+           // By exchange symmetry Xbar_badc = phase * hX * Xbar_abcd.  For Eta_bar_nnnn, this also requires swapping labels in the occupations -> minus sign.
+           Gamma_bar(    ibra_cc+nKets_cc, (iket_cc + nKets_cc)%(2*nKets_cc)) = Ybar * flip_phase * hGamma;
+           Eta_bar_nnnn( ibra_cc+nKets_cc, (iket_cc + nKets_cc)%(2*nKets_cc)) = Xbar * flip_phase * hEta * (-occ_factor) ;
+//           Eta_bar(      ibra_cc+nKets_cc, (iket_cc + nKets_cc)%(2*nKets_cc)) = Xbar * flip_phase * hEta;
+
+           // Combined exchange symmetry and hermiticity
+           Gamma_bar(     (iket_cc + nKets_cc)%(2*nKets_cc), ibra_cc+nKets_cc) = Ybar * flip_phase ;
+           Eta_bar_nnnn(  (iket_cc + nKets_cc)%(2*nKets_cc), ibra_cc+nKets_cc) = Xbar * flip_phase * occ_factor ;
+           if ( iket_cc > nKets_cc)
+             Eta_bar(       (iket_cc + nKets_cc)%(2*nKets_cc), ibra_cc+nKets_cc) = Xbar * flip_phase ;
+
         }// for iket-cc
 
         //-------------------
       }// for ibra_cc
       // SRS EDIT
       IntermediateTwobody[ch_cc] = (2*J_cc+1) * Eta_bar * Eta_bar_nnnn * Gamma_bar;
+//      if (nKets_cc>0)
+//      {
+//        arma::mat tmp = (2*J_cc+1)* Eta_bar.rows(0,nKets_cc) * Eta_bar_nnnn;
+//        tmp = tmp * Gamma_bar;
+//        IntermediateTwobody[ch_cc] = tmp;
+//      }
     }// for ch_cc
 
     Z.profiler.timer["_231_F_chi2_ph_fill_chi"] += omp_get_wtime() - t_internal;
@@ -783,12 +819,54 @@ namespace Commutator
           {
             int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jt, parity_cc, Tz_cc);
             TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-            int iket_cc = tbc_cc.GetLocalIndex(p, e);
-            int jket_cc = tbc_cc.GetLocalIndex(q, e);
-            int iket_cc2 = tbc_cc.GetLocalIndex(e, q);
-            int jket_cc2 = tbc_cc.GetLocalIndex(e, p);
-            zij += IntermediateTwobody[ch_cc](iket_cc, jket_cc);
-            zij -= IntermediateTwobody[ch_cc](iket_cc2, jket_cc2);
+
+            int ind_pe= tbc_cc.GetLocalIndex(p, e);
+            int ind_qe= tbc_cc.GetLocalIndex(q, e);
+            int ind_eq = tbc_cc.GetLocalIndex(e, q);
+            int ind_ep = tbc_cc.GetLocalIndex(e, p);
+
+            if (p<=e)
+            {
+               zij += IntermediateTwobody[ch_cc](ind_pe, ind_qe);
+            }
+            else
+            {
+               zij -= IntermediateTwobody[ch_cc](ind_ep, ind_eq);
+            }
+
+            if (q<=e)
+            {
+               zij += IntermediateTwobody[ch_cc](ind_qe, ind_pe);
+            }
+            else
+            {
+               zij -= IntermediateTwobody[ch_cc](ind_eq, ind_ep);
+            }
+
+//            int iket_cc = tbc_cc.GetLocalIndex(p, e);
+//            int jket_cc = tbc_cc.GetLocalIndex(q, e);
+//            int iket_cc2 = tbc_cc.GetLocalIndex(e, q);
+//            int jket_cc2 = tbc_cc.GetLocalIndex(e, p);
+//            std::cout << " ch_cc = " <<ch_cc << "   e = " << e << "   indices: " << iket_cc << " " << jket_cc << "  " << iket_cc2 << " " << jket_cc2 << " "
+//                      << " Xpeqe = " << IntermediateTwobody[ch_cc](iket_cc, jket_cc)
+//                      << " Xeqep = " << IntermediateTwobody[ch_cc](iket_cc2, jket_cc2)
+//                      << " Xpeeq = " << IntermediateTwobody[ch_cc](iket_cc, iket_cc2)
+//                      << " Xeqpe = " << IntermediateTwobody[ch_cc](iket_cc2, iket_cc)
+//                      << " Xqeep = " << IntermediateTwobody[ch_cc](jket_cc, jket_cc2)
+//                      << " Xepqe = " << IntermediateTwobody[ch_cc](jket_cc2, jket_cc)
+//                      << " Xepeq = " << IntermediateTwobody[ch_cc](jket_cc2, iket_cc2)
+//                      << " Xqepe = " << IntermediateTwobody[ch_cc](jket_cc, iket_cc)
+//                      << std::endl;
+////            if ( std::abs( IntermediateTwobody[ch_cc](iket_cc, jket_cc) + IntermediateTwobody[ch_cc](iket_cc2, jket_cc2)) > 1e-5 )
+//            if ( std::abs( IntermediateTwobody[ch_cc](iket_cc, jket_cc) + IntermediateTwobody[ch_cc](jket_cc2, iket_cc2)) > 1e-5 )
+//            {
+//               std::cout << "!!!!!!!!!!!!!!!!!!!!!!!  NOT HERE !!!!!!!!!!!!!!!!" << std::endl;
+//            }
+////            zij += 2*IntermediateTwobody[ch_cc](iket_cc, jket_cc);
+//            // zpq = Xpeqe - Xeqep   =  Xpeqe + Xqepe  =  - Xepeq - Xeqep
+//            zij += IntermediateTwobody[ch_cc](iket_cc, jket_cc);
+//            zij += IntermediateTwobody[ch_cc](jket_cc, iket_cc);
+////            zij -= IntermediateTwobody[ch_cc](iket_cc2, jket_cc2);
           }
           Z.OneBody(p, q) += zij / j2hat2;
           if (p != q)
