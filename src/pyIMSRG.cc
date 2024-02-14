@@ -669,6 +669,8 @@ PYBIND11_MODULE(pyIMSRG, m)
         FactorizedDoubleCommutator.def("UseSlowVersion",   &Commutator::FactorizedDoubleCommutator::UseSlowVersion);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_1b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_1b);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_2b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_2b);
+        FactorizedDoubleCommutator.def("SetUse_1b_Intermediates",      &Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates);
+        FactorizedDoubleCommutator.def("SetUse_2b_Intermediates",      &Commutator::FactorizedDoubleCommutator::SetUse_2b_Intermediates);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_only_1b", &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_only_1b);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_only_2b", &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_only_2b);
         FactorizedDoubleCommutator.def("SetUse_TypeII_1b",         &Commutator::FactorizedDoubleCommutator::SetUse_TypeII_1b);

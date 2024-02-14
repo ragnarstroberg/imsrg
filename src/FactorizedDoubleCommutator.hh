@@ -31,6 +31,8 @@ namespace Commutator
     extern bool use_goose_tank_1b;
     extern bool use_goose_tank_2b;
 
+    extern bool use_1b_intermediates;
+    extern bool use_2b_intermediates;
 
     extern bool use_goose_tank_only_1b;
     extern bool use_goose_tank_only_2b;
@@ -39,13 +41,15 @@ namespace Commutator
     extern bool use_TypeII_2b;
     extern bool use_TypeIII_2b;
 
-
     extern bool use__GT_TypeI_2b;
     extern bool use__GT_TypeIV_2b;
 
 
     void SetUse_GooseTank_1b(bool tf);
     void SetUse_GooseTank_2b(bool tf);
+    void SetUse_1b_Intermediates(bool tf);
+    void SetUse_2b_Intermediates(bool tf);
+
     void SetUse_GooseTank_only_1b(bool tf);
     void SetUse_GooseTank_only_2b(bool tf);
     void SetUse_TypeII_1b(bool tf);
