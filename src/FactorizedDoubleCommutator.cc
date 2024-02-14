@@ -750,21 +750,15 @@ namespace Commutator
            // Combined exchange symmetry and hermiticity
            Gamma_bar(     (iket_cc + nKets_cc)%(2*nKets_cc), ibra_cc+nKets_cc) = Ybar * flip_phase ;
            Eta_bar_nnnn(  (iket_cc + nKets_cc)%(2*nKets_cc), ibra_cc+nKets_cc) = Xbar * flip_phase * occ_factor ;
-           if ( iket_cc > nKets_cc)
+           if ( iket_cc >= nKets_cc)
              Eta_bar(       (iket_cc + nKets_cc)%(2*nKets_cc), ibra_cc+nKets_cc) = Xbar * flip_phase ;
 
         }// for iket-cc
 
         //-------------------
       }// for ibra_cc
-      // SRS EDIT
+
       IntermediateTwobody[ch_cc] = (2*J_cc+1) * Eta_bar * Eta_bar_nnnn * Gamma_bar;
-//      if (nKets_cc>0)
-//      {
-//        arma::mat tmp = (2*J_cc+1)* Eta_bar.rows(0,nKets_cc) * Eta_bar_nnnn;
-//        tmp = tmp * Gamma_bar;
-//        IntermediateTwobody[ch_cc] = tmp;
-//      }
     }// for ch_cc
 
     Z.profiler.timer["_231_F_chi2_ph_fill_chi"] += omp_get_wtime() - t_internal;
@@ -820,6 +814,7 @@ namespace Commutator
             int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jt, parity_cc, Tz_cc);
             TwoBodyChannel_CC &tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
 
+            // Make sure we access the element <ab|X|cd> with a<=b. If we want the other ordering, we get a minus sign.
             int ind_pe= tbc_cc.GetLocalIndex(p, e);
             int ind_qe= tbc_cc.GetLocalIndex(q, e);
             int ind_eq = tbc_cc.GetLocalIndex(e, q);
@@ -842,31 +837,6 @@ namespace Commutator
             {
                zij -= IntermediateTwobody[ch_cc](ind_eq, ind_ep);
             }
-
-//            int iket_cc = tbc_cc.GetLocalIndex(p, e);
-//            int jket_cc = tbc_cc.GetLocalIndex(q, e);
-//            int iket_cc2 = tbc_cc.GetLocalIndex(e, q);
-//            int jket_cc2 = tbc_cc.GetLocalIndex(e, p);
-//            std::cout << " ch_cc = " <<ch_cc << "   e = " << e << "   indices: " << iket_cc << " " << jket_cc << "  " << iket_cc2 << " " << jket_cc2 << " "
-//                      << " Xpeqe = " << IntermediateTwobody[ch_cc](iket_cc, jket_cc)
-//                      << " Xeqep = " << IntermediateTwobody[ch_cc](iket_cc2, jket_cc2)
-//                      << " Xpeeq = " << IntermediateTwobody[ch_cc](iket_cc, iket_cc2)
-//                      << " Xeqpe = " << IntermediateTwobody[ch_cc](iket_cc2, iket_cc)
-//                      << " Xqeep = " << IntermediateTwobody[ch_cc](jket_cc, jket_cc2)
-//                      << " Xepqe = " << IntermediateTwobody[ch_cc](jket_cc2, jket_cc)
-//                      << " Xepeq = " << IntermediateTwobody[ch_cc](jket_cc2, iket_cc2)
-//                      << " Xqepe = " << IntermediateTwobody[ch_cc](jket_cc, iket_cc)
-//                      << std::endl;
-////            if ( std::abs( IntermediateTwobody[ch_cc](iket_cc, jket_cc) + IntermediateTwobody[ch_cc](iket_cc2, jket_cc2)) > 1e-5 )
-//            if ( std::abs( IntermediateTwobody[ch_cc](iket_cc, jket_cc) + IntermediateTwobody[ch_cc](jket_cc2, iket_cc2)) > 1e-5 )
-//            {
-//               std::cout << "!!!!!!!!!!!!!!!!!!!!!!!  NOT HERE !!!!!!!!!!!!!!!!" << std::endl;
-//            }
-////            zij += 2*IntermediateTwobody[ch_cc](iket_cc, jket_cc);
-//            // zpq = Xpeqe - Xeqep   =  Xpeqe + Xqepe  =  - Xepeq - Xeqep
-//            zij += IntermediateTwobody[ch_cc](iket_cc, jket_cc);
-//            zij += IntermediateTwobody[ch_cc](jket_cc, iket_cc);
-////            zij -= IntermediateTwobody[ch_cc](iket_cc2, jket_cc2);
           }
           Z.OneBody(p, q) += zij / j2hat2;
           if (p != q)
