@@ -4961,6 +4961,7 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
   std::string line;
   std::ifstream infile;
   infile.open(filename);
+//  std::cout << __func__ << " filename = " << filename << std::endl;
   if (!infile.good() )
   {
     std::cerr << "************************************" << std::endl
@@ -4976,8 +4977,11 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
   infile >> prtorb >> ntnorb >> pcore >> ncore;
   int num=prtorb+ntnorb;
   int norb = modelspace->GetNumberOrbits();
-  for(int i=0; i<num; i++)
+
+  for( int i=0; i<num; i++)
   {
+     std::getline( infile, line );
+     std::istringstream iss(line);  // SRS modified this to handle comments at the end of the line
 //    std::cout << "  i = " << i << "  num = " << num << std::endl;
     int iorb, n, l, j, tz;
     infile >> iorb >> n >> l >> j >> tz;
@@ -4986,8 +4990,10 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
     if(io >= norb) continue;
     orbits_remap[iorb] = io;
   }
-  skip_comments(infile);
-  getline(infile, line);
+
+
+//  skip_comments(infile);
+//  getline(infile, line);
 
   skip_comments(infile);
 //  double zerobody;
