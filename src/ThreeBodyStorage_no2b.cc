@@ -185,7 +185,8 @@ ThreeBodyStorage_no2b<StoreType>::ThreeBodyStorage_no2b( const ThreeBodyStorage_
 
 
 template<class StoreType>
-std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b<StoreType>::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_no2b<StoreType>( *this)); };
+std::unique_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b<StoreType>::Clone() const { return std::unique_ptr<ThreeBodyStorage>( new ThreeBodyStorage_no2b<StoreType>( *this)); };
+//std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b<StoreType>::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_no2b<StoreType>( *this)); };
 
 
 template<class StoreType>

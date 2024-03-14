@@ -24,7 +24,8 @@ ThreeBodyStorage_pn::~ThreeBodyStorage_pn( )
   if (is_allocated)  number_allocated--;
 }
 
-std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_pn( *this)); };
+//std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_pn( *this)); };
+std::unique_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return std::unique_ptr<ThreeBodyStorage>( new ThreeBodyStorage_pn( *this)); };
 
 
   void ThreeBodyStorage_pn::Multiply(const double rhs) 

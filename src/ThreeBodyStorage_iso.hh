@@ -20,8 +20,10 @@ class ThreeBodyStorage_iso : public ThreeBodyStorage
 
   using ThreeBodyStorage::ThreeBodyStorage;
   ThreeBodyStorage_iso( const ThreeBodyStorage_iso& );
+//  ~ThreeBodyStorage_iso();
 
-  std::shared_ptr<ThreeBodyStorage> Clone() const override;
+//  std::shared_ptr<ThreeBodyStorage> Clone() const override;
+  std::unique_ptr<ThreeBodyStorage> Clone() const override;
 
   std::string GetStorageMode() const override {return "isospin";};
 

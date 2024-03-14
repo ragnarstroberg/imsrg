@@ -12,7 +12,13 @@ ThreeBodyStorage_iso::ThreeBodyStorage_iso( const ThreeBodyStorage_iso& TBS_in )
 {}
 
 
-std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_iso::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_iso( *this)); };
+//ThreeBodyStorage_iso::~ThreeBodyStorage_iso( )
+//{
+//}
+
+
+//std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_iso::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_iso( *this)); };
+std::unique_ptr<ThreeBodyStorage> ThreeBodyStorage_iso::Clone() const { return std::unique_ptr<ThreeBodyStorage>( new ThreeBodyStorage_iso( *this)); };
 
 
 

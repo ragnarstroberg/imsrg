@@ -22,7 +22,8 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   ThreeBodyStorage_pn( const ThreeBodyStorage_pn& ); // copy constructor
   ~ThreeBodyStorage_pn(); // explicit destructor to count 3 allocations
 
-  std::shared_ptr<ThreeBodyStorage> Clone() const override ;
+//  std::shared_ptr<ThreeBodyStorage> Clone() const override ;
+  std::unique_ptr<ThreeBodyStorage> Clone() const override ;
 
   std::string GetStorageMode() const override {return "pn";};
 

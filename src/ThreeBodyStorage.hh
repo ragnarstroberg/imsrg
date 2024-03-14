@@ -95,7 +95,10 @@ class ThreeBodyStorage
   ThreeBodyStorage(ModelSpace*, int rank_J, int rank_T, int parity);
   ThreeBodyStorage(ModelSpace* ms, int e3max, int rank_J, int rank_T, int parity);
 
-  virtual std::shared_ptr<ThreeBodyStorage> Clone() const =0;
+  virtual ~ThreeBodyStorage() {}; // virtual destructor so we can delete instances of derived classes
+
+//  virtual std::shared_ptr<ThreeBodyStorage> Clone() const =0;
+  virtual std::unique_ptr<ThreeBodyStorage> Clone() const =0;
 
   virtual std::string GetStorageMode() const =0;
 

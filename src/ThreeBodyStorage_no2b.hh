@@ -115,7 +115,8 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
     using ThreeBodyStorage::ThreeBodyStorage;  // inherit constructors from the base class
     ThreeBodyStorage_no2b( const ThreeBodyStorage_no2b& ); // also implement at copy constructor
 
-    std::shared_ptr<ThreeBodyStorage> Clone() const override;
+//    std::shared_ptr<ThreeBodyStorage> Clone() const override;
+    std::unique_ptr<ThreeBodyStorage> Clone() const override;
 
     std::string GetStorageMode() const override {return "no2b";};
 

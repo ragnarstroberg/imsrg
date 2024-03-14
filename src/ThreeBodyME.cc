@@ -50,14 +50,29 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
 
 ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
 : threebody_storage( Tbme.threebody_storage->Clone()), modelspace(Tbme.modelspace), 
-//   storage_mode(Tbme.storage_mode), E3max(Tbme.E3max), emax(Tbme.emax), herm(Tbme.herm),
+//:  modelspace(Tbme.modelspace), 
     E3max(Tbme.E3max), emax(Tbme.emax), herm(Tbme.herm),
    rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity)
 {
+//   *threebody_storage = *(Tbme.threebody_storage);
 }
 
 
 
+
+ ThreeBodyME& ThreeBodyME::operator=(const ThreeBodyME& rhs)
+ {
+   modelspace = rhs.modelspace;
+   E3max = rhs.E3max;
+   emax = rhs.emax;
+   herm = rhs.herm;
+   rank_J = rhs.rank_J;
+   rank_T = rhs.rank_T;
+   parity = rhs.parity;
+//   *threebody_storage = *(rhs.threebody_storage);
+   threebody_storage = std::unique_ptr<ThreeBodyStorage>( rhs.threebody_storage->Clone());
+   return *this;
+ }
 
  ThreeBodyME& ThreeBodyME::operator*=(const double rhs)
  {
@@ -245,7 +260,8 @@ ThreeBME_type ThreeBodyME::GetME_pn_mono(int a, int b, int c, int d, int e, int 
 void ThreeBodyME::TransformToPN()
 {
 //  ThreeBodyStorage_pn TBS_pn( modelspace, E3max, rank_J, rank_T, parity  );
-  std::shared_ptr<ThreeBodyStorage> TBS_pn( new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+//  std::shared_ptr<ThreeBodyStorage> TBS_pn( new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+  std::unique_ptr<ThreeBodyStorage> TBS_pn( new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
   TBS_pn->SetHerm( this->herm );
 
 //  TBS_pn.Allocate();
@@ -302,7 +318,8 @@ void ThreeBodyME::TransformToPN()
   // Assign the new ThreeBodyStorage to our shared pointer.
   // The old data will be cleaned up automatically
 //  threebody_storage = std::shared_ptr<ThreeBodyStorage_pn>( TBS_pn );
-  threebody_storage = TBS_pn;
+//  threebody_storage = TBS_pn;
+  *threebody_storage = *TBS_pn;
 //  std::cout << "DONE ASSIGNING" << std::endl;
 
 //  storage_mode = pn;
@@ -320,7 +337,8 @@ void ThreeBodyME::TransformToPN()
 void ThreeBodyME::SwitchToPN_and_discard()
 {
   double t_start = omp_get_wtime();
-  threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+//  threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+  threebody_storage = std::unique_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
 
   threebody_storage->SetHerm( this->herm );
   threebody_storage->Allocate();
@@ -335,23 +353,28 @@ void ThreeBodyME::SetMode(std::string mode)
   double t_start = omp_get_wtime();
   if (mode == "isospin" )
   {
-      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_iso( modelspace, E3max, rank_J, rank_T, parity)  );
+//      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_iso( modelspace, E3max, rank_J, rank_T, parity)  );
+      threebody_storage = std::unique_ptr<ThreeBodyStorage>(new ThreeBodyStorage_iso( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else if ( mode == "pn" )
   {
-      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+//      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+      threebody_storage = std::unique_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else if (mode == "no2b" )
   {
-    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+//    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+    threebody_storage = std::unique_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else if (mode == "no2bhalf" )
   {
-    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_half_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+//    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_half_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+    threebody_storage = std::unique_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_half_type>( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else if (mode == "mono" )
   {
-    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_mono<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+//    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_mono<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+    threebody_storage = std::unique_ptr<ThreeBodyStorage>(new ThreeBodyStorage_mono<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else
   {

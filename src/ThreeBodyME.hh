@@ -45,7 +45,8 @@ class ThreeBodyME
 {
  private:
 
-  std::shared_ptr<ThreeBodyStorage> threebody_storage;
+//  std::shared_ptr<ThreeBodyStorage> threebody_storage;
+  std::unique_ptr<ThreeBodyStorage> threebody_storage;
 
   ModelSpace * modelspace;
 //  enum Storage_Mode {isospin,pn};
@@ -65,7 +66,7 @@ class ThreeBodyME
   int rank_J=0;
   int rank_T=0;
   int parity=0;
-  int ISOSPIN_BLOCK_DIMENSION=5;
+  int ISOSPIN_BLOCK_DIMENSION=5; //default is 5, but can be different for charge-changing operators
 
 //  bool isospin_is_allocated = false;
 //  bool pn_is_allocated = false;
@@ -84,6 +85,7 @@ class ThreeBodyME
   ThreeBodyME(ModelSpace* ms, int e3max, int rank_J, int rank_T, int parity);
 
   // Overloaded operators
+  ThreeBodyME& operator=(const ThreeBodyME&);
   ThreeBodyME& operator*=(const double);
   ThreeBodyME& operator+=(const ThreeBodyME&);
   ThreeBodyME& operator-=(const ThreeBodyME&);
