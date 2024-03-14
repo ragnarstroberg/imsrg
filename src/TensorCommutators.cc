@@ -1248,17 +1248,17 @@ namespace Commutator
         arma::uvec kets_ph = arma::join_cols(tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph());
         arma::uvec bras_ph = arma::join_cols(tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph());
 
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+//        std::cout << __func__ << " " << __LINE__ << std::endl;
         DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
         if (ch_bra_cc == ch_ket_cc)
         {
-          std::cout << __func__ << " " << __LINE__ << std::endl;
+//          std::cout << __func__ << " " << __LINE__ << std::endl;
           //         YJ2J1 = YJ1J2;
           // Dont do nothing..
         }
         else
         {
-          std::cout << __func__ << " " << __LINE__ << std::endl;
+//          std::cout << __func__ << " " << __LINE__ << std::endl;
           DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
         }
       }
