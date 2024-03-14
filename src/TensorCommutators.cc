@@ -1068,7 +1068,7 @@ namespace Commutator
     std::deque<arma::mat> Xt_bar_ph = InitializePandya(Z, Z.nChannels, "transpose"); // We re-use the scalar part multiple times, so there's a significant speed gain for saving it
     std::map<std::array<index_t, 2>, arma::mat> Y_bar_ph;
     DoPandyaTransformation(X, Xt_bar_ph, "transpose");
-    X.profiler.timer["DoTensorPandyaTransformationX"] += omp_get_wtime() - t_start;
+    X.profiler.timer["_DoTensorPandyaTransformationX"] += omp_get_wtime() - t_start;
 
     t_start = omp_get_wtime();
     // Construct the intermediate matrix Z_bar
@@ -1076,10 +1076,11 @@ namespace Commutator
     // to avoid problems in the parallel loop -- (do we even want a parallel loop here?)
     std::map<std::array<index_t, 2>, arma::mat> Z_bar;
 
-    t_start = omp_get_wtime();
+    double t_internal = omp_get_wtime();
     // TODO: I suspect that using pandya_lookup isn't all that beneficial. Check this, and if it's not, we can clean up ModelSpace a bit.
     const auto &pandya_lookup = Z.modelspace->GetPandyaLookup(Z.GetJRank(), Z.GetTRank(), Z.GetParity());
-    X.profiler.timer["PandyaLookup"] += omp_get_wtime() - t_start;
+    X.profiler.timer["_PandyaLookup"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
 
     std::vector<index_t> ybras;
     std::vector<index_t> ykets;
@@ -1116,9 +1117,9 @@ namespace Commutator
     }
     int counter = ybras.size();
 
-    X.profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
+    X.profiler.timer["_Allocate Z_bar_tensor"] += omp_get_wtime() - t_internal;
 
-    t_start = omp_get_wtime();
+    t_internal = omp_get_wtime();
 
     // BEGIN OLD WAY
     if (Z.GetJRank() > 0)
@@ -1263,9 +1264,9 @@ namespace Commutator
         }
       }
 
-      X.profiler.timer["DoTensorPandyaTransformationY"] += omp_get_wtime() - t_start;
+      X.profiler.timer["_DoTensorPandyaTransformationY"] += omp_get_wtime() - t_internal;
 
-      t_start = omp_get_wtime();
+      t_internal = omp_get_wtime();
 
 #ifndef OPENBLAS_NOUSEOMP
       //      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass[Z.GetJRank()*2+Z.GetParity()])
@@ -1360,14 +1361,14 @@ namespace Commutator
                     << YJ1J2 << std::endl;
         }
       }
-      X.profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
 
     } // else J=0
+    X.profiler.timer["_Build Z_bar_tensor"] += omp_get_wtime() - t_internal;
 
-    t_start = omp_get_wtime();
+    t_internal = omp_get_wtime();
     AddInverseTensorPandyaTransformation(Z, Z_bar);
 
-    X.profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t_start;
+    X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
 
 
