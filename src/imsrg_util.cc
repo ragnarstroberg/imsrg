@@ -2472,6 +2472,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
          }
       }
    }
+
+   QdotQ_op.OneBody = Qmat*Qmat;
    return QdotQ_op;
  }
 
