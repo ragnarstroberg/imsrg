@@ -1556,8 +1556,8 @@ namespace Commutator
     if (not(X.GetParity() == 0 and Y.GetParity() == 0 and Z.GetParity() == 0 and X.GetTRank() == 0 and Y.GetTRank() == 0 and Z.GetTRank() == 0))
 
     {
-      comm222_phss_slower(X, Y, Z);
-      //      comm222_phst( X, Y, Z);
+      //comm222_phss_slower(X, Y, Z);  // This is waaaay too slow...
+            comm222_phst( X, Y, Z);
       return;
     }
     int hy = Y.IsHermitian() ? 1 : -1;
