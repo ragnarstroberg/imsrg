@@ -41,7 +41,7 @@ namespace Commutator
       {"comm122ss", true},
       {"comm222_pp_hhss", true},
       {"comm222_phss", true},
-      {"comm222_pp_hh_221ss", true},
+//      {"comm222_pp_hh_221ss", true},
       ///////  by default IMSRG(3) terms are turned off.
       {"comm330ss", false},
       {"comm331ss", false},
@@ -226,11 +226,24 @@ namespace Commutator
       comm111ss(X, Y, Z);
     if (comm_term_on["comm121ss"])
       comm121ss(X, Y, Z);
-    if (comm_term_on["comm221ss"])
+    if (comm_term_on["comm122ss"])
       comm122ss(X, Y, Z);
 
-    if (comm_term_on["comm222_pp_hh_221ss"])
+    // The 222_pp_hh and 221ss terms can share a common intermediate
+    // so if we're computing both, we do them together
+    if (comm_term_on["comm222_pp_hh"] and comm_term_on["comm221ss"])
+    {
       comm222_pp_hh_221ss(X, Y, Z);
+    }
+    else  // otherwise, just do the one that is turned on.
+    {
+      if (comm_term_on["comm222_pp_hh"] )
+         comm222_pp_hhss(X, Y, Z);
+      if ( comm_term_on["comm221ss"])
+         comm221ss(X, Y, Z);
+    }
+//    if (comm_term_on["comm222_pp_hh_221ss"])
+//      comm222_pp_hh_221ss(X, Y, Z);
     if (comm_term_on["comm222_phss"])
       comm222_phss(X, Y, Z);
 
