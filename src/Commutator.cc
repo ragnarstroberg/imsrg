@@ -174,11 +174,61 @@ namespace Commutator
       }
       if (yrank == 0)
       {
-        return CommutatorScalarScalar(X, Y); // [S,S]
+        if ( (not X.IsReduced() ) and (not Y.IsReduced() ) )
+        {
+           return CommutatorScalarScalar(X, Y); // [S,S]
+        }
+        else
+        {
+           if ( not X.IsReduced() )
+           {
+              Operator Ynred = Y;
+              Ynred.MakeNotReduced();
+              Operator Z = CommutatorScalarScalar(X,Ynred);
+              Z.MakeReduced();
+              return Z;
+           }
+           if ( not Y.IsReduced() )
+           {
+              Operator Xnred = X;
+              Xnred.MakeNotReduced();
+              Operator Z = CommutatorScalarScalar(Xnred,Y);
+              Z.MakeReduced();
+              return Z;
+           }
+           else if ( X.GetTRank()==0 and Y.GetTRank()==0) // if X and Y are parity-changing, then Z is parity conserving
+           {
+              Operator Xnred = X;
+              Xnred.MakeNotReduced();
+              Operator Ynred = Y;
+              Ynred.MakeNotReduced();
+              Operator Z = CommutatorScalarScalar(Xnred,Ynred);
+              return Z;
+           }
+           else
+           {
+              std::cout << " TROUBLE IN " << __FILE__ << " line " << __LINE__ << " Calling scalar commutators with two reduced isospin changing operators..." << std::endl;
+              std::exit(EXIT_FAILURE);
+           }
+        }
       }
       else
       {
-        return CommutatorScalarTensor(X, Y); // [S,T]
+        if ( (not X.IsReduced() ) and (Y.IsReduced() ) )
+        {
+          return CommutatorScalarTensor(X, Y); // [S,T]
+        }
+        else if ( Y.IsReduced() )
+        {
+          Operator Xnred = X;
+          Xnred.MakeNotReduced();
+          return CommutatorScalarTensor(Xnred, Y);
+        }
+        else
+        {
+          std::cout << " TROUBLE IN " << __FILE__ << " line " << __LINE__ << " not sure what to do with this." << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
       }
     }
     else if (yrank == 0)
