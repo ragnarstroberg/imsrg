@@ -30,6 +30,7 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 
   random_seed ++;
 
+  arma::arma_rng::set_seed(random_seed);
 
   arma::mat symmetry_allowed = arma::zeros( arma::size( Rando.OneBody) );
   for ( auto i : modelspace.all_orbits)
@@ -397,7 +398,9 @@ bool UnitTest::TestCommutators()
   if ( Commutator::comm_term_on["comm122ss"] )             all_good &= Test_comm122ss( X, Y );
   if ( Commutator::comm_term_on["comm222_pp_hhss"] )       all_good &= Test_comm222_pp_hhss( X, Y );
   if ( Commutator::comm_term_on["comm222_phss"] )          all_good &= Test_comm222_phss( X, Y );
-  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+//  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hh"]
+      and Commutator::comm_term_on["comm221ss"]   )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
 
   if ( Commutator::comm_term_on["comm330ss"] )             all_good &= Test_comm330ss(X,Y);
   if ( Commutator::comm_term_on["comm331ss"] )             all_good &= Test_comm331ss(X,Y);
@@ -452,7 +455,10 @@ bool UnitTest::TestCommutators_IsospinChanging()
   if ( Commutator::comm_term_on["comm122ss"] )             all_good &= Test_comm122ss( X, Y );
   if ( Commutator::comm_term_on["comm222_pp_hhss"] )       all_good &= Test_comm222_pp_hhss( X, Y );
   if ( Commutator::comm_term_on["comm222_phss"] )          all_good &= Test_comm222_phss( X, Y );
-  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+//  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hh"]
+      and Commutator::comm_term_on["comm221ss"]   )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+
 
   if ( Commutator::comm_term_on["comm330ss"] )             all_good &= Test_comm330ss(X,Y);
   if ( Commutator::comm_term_on["comm331ss"] )             all_good &= Test_comm331ss(X,Y);
@@ -504,7 +510,10 @@ bool UnitTest::TestCommutators_ParityChanging()
   if ( Commutator::comm_term_on["comm122ss"] )             all_good &= Test_comm122ss( X, Y );
   if ( Commutator::comm_term_on["comm222_pp_hhss"] )       all_good &= Test_comm222_pp_hhss( X, Y );
   if ( Commutator::comm_term_on["comm222_phss"] )          all_good &= Test_comm222_phss( X, Y );
-  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+//  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+  if ( Commutator::comm_term_on["comm222_pp_hh"]
+      and Commutator::comm_term_on["comm221ss"]   )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
+
 
   if ( Commutator::comm_term_on["comm330ss"] )             all_good &= Test_comm330ss(X,Y);
   if ( Commutator::comm_term_on["comm331ss"] )             all_good &= Test_comm331ss(X,Y);
