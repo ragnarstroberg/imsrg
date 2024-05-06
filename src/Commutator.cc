@@ -42,6 +42,12 @@ namespace Commutator
       {"comm222_pp_hhss", true},
       {"comm222_phss", true},
 //      {"comm222_pp_hh_221ss", true},
+      {"comm111st", true},
+      {"comm121st", true},
+      {"comm221st", true},
+      {"comm122st", true},
+      {"comm222_pp_hhst", true},
+      {"comm222_phst", true},
       ///////  by default IMSRG(3) terms are turned off.
       {"comm330ss", false},
       {"comm331ss", false},
@@ -231,13 +237,13 @@ namespace Commutator
 
     // The 222_pp_hh and 221ss terms can share a common intermediate
     // so if we're computing both, we do them together
-    if (comm_term_on["comm222_pp_hh"] and comm_term_on["comm221ss"])
+    if (comm_term_on["comm222_pp_hhss"] and comm_term_on["comm221ss"])
     {
       comm222_pp_hh_221ss(X, Y, Z);
     }
     else  // otherwise, just do the one that is turned on.
     {
-      if (comm_term_on["comm222_pp_hh"] )
+      if (comm_term_on["comm222_pp_hhss"] )
          comm222_pp_hhss(X, Y, Z);
       if ( comm_term_on["comm221ss"])
          comm221ss(X, Y, Z);
@@ -365,12 +371,29 @@ namespace Commutator
     if (Z.modelspace->tensor_transform_first_pass[Z.GetJRank() * 4 + X.GetParity() + 2 * Y.GetParity()])
       SetSingleThread(true);
 
-    comm111st(X, Y, Z);
-    comm121st(X, Y, Z);
+    
+    if (comm_term_on["comm111st"])
+       comm111st(X, Y, Z);
+    if (comm_term_on["comm121st"])
+       comm121st(X, Y, Z);
 
-    comm122st(X, Y, Z);
-    comm222_pp_hh_221st(X, Y, Z);
-    comm222_phst(X, Y, Z);
+    if (comm_term_on["comm122st"])
+       comm122st(X, Y, Z);
+    // The 222_pp_hh and 221 terms can share a common intermediate
+    // so if we're computing both, we do them together
+    if (comm_term_on["comm222_pp_hhst"] and comm_term_on["comm221st"])
+    {
+      comm222_pp_hh_221st(X, Y, Z);
+    }
+//    else  // otherwise, just do the one that is turned on.
+//    {
+//      if (comm_term_on["comm222_pp_hhst"] )
+//         comm222_pp_hhst(X, Y, Z);
+//      if ( comm_term_on["comm221st"])
+//         comm221st(X, Y, Z);
+//    }
+    if (comm_term_on["comm222_phst"])
+       comm222_phst(X, Y, Z);
 
 //    // We shouldn't be here, because Commutator calls CommutatorScalar Scalar if Z had J Rank = 0.
 //    if (use_imsrg3 and X.GetJRank() == 0 and Y.GetJRank() == 0 and Z.GetJRank() == 0)
@@ -1566,13 +1589,49 @@ namespace Commutator
   {
     if (X.GetParticleRank() < 2 or Y.GetParticleRank() < 2)
       return;
-    if (not(X.GetParity() == 0 and Y.GetParity() == 0 and Z.GetParity() == 0 and X.GetTRank() == 0 and Y.GetTRank() == 0 and Z.GetTRank() == 0))
 
+    // We allow for the possibility that X or Y is a scalar under rotations, but changes parity or isospin.
+    // For the moment, we just call the scalar tensor routine anyway, but this means we need to be careful
+    // about when we're using reduced matrix elements. The scalar-tensor routines Z = [X,Y] assume that
+    // Z and Y are reduced, while X is not reduced.
+    if (not(X.GetParity() == 0 and Y.GetParity() == 0 and Z.GetParity() == 0 and X.GetTRank() == 0 and Y.GetTRank() == 0 and Z.GetTRank() == 0))
     {
-      //comm222_phss_slower(X, Y, Z);  // This is waaaay too slow...
-            comm222_phst( X, Y, Z);
+      if ( X.GetParity()==0 and X.GetTRank()==0)
+      {
+         Operator Yred = Y;
+         Yred.MakeReduced();
+         Z.MakeReduced();
+         comm222_phst(X,Yred,Z);
+      }
+      else if ( Y.GetParity()==0 and Y.GetTRank()==0 )
+      {
+         Operator Xred = -X; // because [X,Y] = -[Y,-X].
+         Xred.MakeReduced();
+         Z.MakeReduced();
+         comm222_phst(Y,Xred,Z);
+      }
+      else if ( X.GetTRank()==0 and Y.GetTRank()==0 ) // We can treat two parity-changing operators, but not two isospin-changing operators
+      {
+         Operator Xnred = X;
+         Operator Yred = Y;
+         if (Xnred.IsReduced() )
+             Xnred.MakeNotReduced();
+         Yred.MakeReduced();
+         Z.MakeReduced();
+         comm222_phst(Xnred,Yred,Z);
+      }
+      else
+      {
+          std::cout << " Uh Oh. " <<__func__ << " line " << __LINE__ << "  not supported with these two operators: "
+                    << "  parity " << X.GetParity() << " " << Y.GetParity()
+                    << "  isospin " << X.GetTRank() << " " << Y.GetTRank()
+                    << "  I quit." << std::endl;
+          std::exit(EXIT_FAILURE);
+      }
+      Z.MakeNotReduced();
       return;
     }
+
     int hy = Y.IsHermitian() ? 1 : -1;
     // Create Pandya-transformed hp and ph matrix elements
     double t_start = omp_get_wtime();

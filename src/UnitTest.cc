@@ -1753,8 +1753,13 @@ bool UnitTest::Mscheme_Test_comm222_pp_hhss( const Operator& X, const Operator& 
 bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
 {
 
-  Operator Z_J( Y );
-  Z_J.Erase();
+  int parityZ = (X.GetParity() + Y.GetParity())%2;
+  int TzZ = X.GetTRank() + Y.GetTRank() ;
+  int JrankZ = 0;
+
+  Operator Z_J( *(Y.modelspace),  JrankZ, TzZ, parityZ, 2 );
+//  Operator Z_J( Y );
+//  Z_J.Erase();
 
    std::cout << std::endl;
 //  Commutator::comm222_phss( X, Y, Z_J);
@@ -1772,22 +1777,25 @@ bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
    std::cout << std::endl;
   std::cout << "st went ok." << std::endl;
 
-  Operator Zsc(Y);
-  Zsc.Erase();
+  Operator Zsc( *(Y.modelspace),  JrankZ, TzZ, parityZ, 2 );
+//  Operator Zsc(Y);
+//  Zsc.Erase();
 
-  Commutator::comm222_phss( X, Y, Zsc);
+//  Commutator::comm222_phss( X, Y, Zsc);
+  Commutator::comm222_phss( X, Ycpy, Zsc);
+  Zsc.MakeNotReduced();
 //  ReferenceImplementations::comm222_phss( X, Y, Zsc);
-   std::cout << std::endl;
+//   std::cout << std::endl;
 
-  for (size_t ch=0; ch<5; ch++)
-  {
-     TwoBodyChannel& tbc = Y.modelspace->GetTwoBodyChannel(ch);
-     std::cout << " ch " << ch << "  JpT " << tbc.J << " " << tbc.parity << " " << tbc.Tz << std::endl;
-  }
+//  for (size_t ch=0; ch<5; ch++)
+//  {
+//     TwoBodyChannel& tbc = Y.modelspace->GetTwoBodyChannel(ch);
+//     std::cout << " ch " << ch << "  JpT " << tbc.J << " " << tbc.parity << " " << tbc.Tz << std::endl;
+//  }
 // (1,1) is ok.
 //  std::cout << "tensor ph  " << std::endl << Z_J.TwoBody.GetMatrix(1,1) << std::endl;
 //  std::cout << "scalar ph  " << std::endl << Zsc.TwoBody.GetMatrix(1,1) << std::endl;
-  std::cout << "Heres channel 4" << std::endl;
+//  std::cout << "Heres channel 4" << std::endl;
 //  std::cout << "tensor ph  " << std::endl << Z_J.TwoBody.GetMatrix(4,4) << std::endl;
 //  std::cout << "scalar ph  " << std::endl << Zsc.TwoBody.GetMatrix(4,4) << std::endl;
 
@@ -1798,6 +1806,8 @@ bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
 //     Z_J.Symmetrize();
 //  else if (Z_J.IsAntiHermitian() )
 //     Z_J.AntiSymmetrize();
+
+  std::cout << __func__ << "  two body norms " << X.TwoBodyNorm() << " " << Y.TwoBodyNorm() << std::endl;
 
   double summed_error = 0;
   double sum_m = 0;
@@ -1819,8 +1829,8 @@ bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
         {
           if (l<k) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
-          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
-          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+          if ( ( oi.l+oj.l+ok.l+ol.l+Zsc.GetParity() )%2>0) continue;
+          if ( std::abs( (oi.tz2+oj.tz2) - (ok.tz2+ol.tz2) ) != Zsc.GetTRank()*2 ) continue;
 
 
          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
@@ -1841,7 +1851,8 @@ bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
                 Orbit& ob = X.modelspace->GetOrbit(b);
                 double nb = ob.occ;
                 double Zsave = Zm_ijkl;
-                if ( std::abs(  na*(1-nb) - nb*(1-na) ) < 1e-6) continue;
+//                if ( std::abs(  na*(1-nb) - nb*(1-na) ) < 1e-6) continue;
+                if ( std::abs( na-nb ) < 1e-6) continue;
 
                 for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
                 {
@@ -1863,29 +1874,16 @@ bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
                    double Xajbl = GetMschemeMatrixElement_2b( X, a,ma, j,mj, b,mb, l,ml );
                    double Ybiak = GetMschemeMatrixElement_2b( Y, b,mb, i,mi, a,ma, k,mk );
     
-//                   Zm_ijkl += ( na*(1-nb) - nb*(1-na) ) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
                    Zm_ijkl += (na - nb) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
 
-//                   if ( i==0 and j==0 and k==0 and l==0  and mi==1 and mj==-1 and mk==1 and ml==-1  and ( (a==2 and b==4) or (a==4 and b==2)) )
-//                   {
-//                      std::cout << "   ab " << a << " " << b << "  ma mb " << ma << " " << mb << "   : "
-//                                << (na - nb) << " *  ( " << Xaibk << " * " << Ybjal << " - " << Xajbk << " * " << Ybial << "  -  " << Xaibl << " * " << Ybjak << " + " << Xajbl << " * " << Ybiak << ")"
-//                                << "  = " << (na - nb) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak )
-//                                << " => " << Zm_ijkl
-//                                << std::endl;
-//                   }
 
                  }// for mb
                 }// for ma
-//                if ( i==0 and j==0 and k==0 and l==0  and mi==1 and mj==-1 and mk==1 and ml==-1  and ( (a==2 and b==4) or (a==4 and b==2)) )
-//                {
-//                   std::cout << "Mscheme 000 Contribution from a,b = " << a << " , " << b << "   is " << Zm_ijkl-Zsave << std::endl;
-//                   std::cout << "    projections " << mi << " " << mj << " " << mk << " " << ml << std::endl;
-//                }
               }// for b
              }// for a
 
-             double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+//             double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+             double ZJ_ijkl = GetMschemeMatrixElement_2b( Zsc, i,mi, j,mj, k,mk, l,ml ) ;
              double err = Zm_ijkl - ZJ_ijkl;
              if (std::abs(err)>1e-6)
              {
