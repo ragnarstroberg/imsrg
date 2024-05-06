@@ -152,7 +152,7 @@ class Operator
 
   void MakeReduced();
   void MakeNotReduced();
-  bool IsReduced(){ return is_reduced;};
+  bool IsReduced()const { return is_reduced;};
   void ChangeNormalization(double coeff);
   void MakeNormalized();
   void MakeUnNormalized();
