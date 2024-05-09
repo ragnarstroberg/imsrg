@@ -606,6 +606,8 @@ PYBIND11_MODULE(pyIMSRG, m)
 
       py::module Commutator = m.def_submodule("Commutator", "Commutator namespace");
        Commutator.def("Commutator", &Commutator::Commutator);
+       Commutator.def("CommutatorScalarScalar", &Commutator::CommutatorScalarScalar);
+       Commutator.def("CommutatorScalarTensor", &Commutator::CommutatorScalarTensor);
        Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
        Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
        Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
@@ -634,6 +636,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("comm232ss", &Commutator::comm232ss);
        Commutator.def("comm332_ppph_hhhpss", &Commutator::comm332_ppph_hhhpss);
        Commutator.def("comm332_pphhss", &Commutator::comm332_pphhss);
+       Commutator.def("comm332ss", [](Operator& X,Operator& Y, Operator& Z){ Commutator::comm332_ppph_hhhpss(X,Y,Z); Commutator::comm332_pphhss(X,Y,Z);}  );
        Commutator.def("comm223ss", &Commutator::comm223ss);
        Commutator.def("comm133ss", &Commutator::comm133ss);
        Commutator.def("comm233_pp_hhss", &Commutator::comm233_pp_hhss);
@@ -664,9 +667,9 @@ PYBIND11_MODULE(pyIMSRG, m)
        py::module FactorizedDoubleCommutator = Commutator.def_submodule("FactorizedDoubleCommutator", "FactorizedDoubleCommutator namespace");
         FactorizedDoubleCommutator.def("comm223_231",      &Commutator::FactorizedDoubleCommutator::comm223_231);
         FactorizedDoubleCommutator.def("comm223_232",      &Commutator::FactorizedDoubleCommutator::comm223_232);
-        FactorizedDoubleCommutator.def("comm223_231_slow", &Commutator::FactorizedDoubleCommutator::comm223_231_slow);
-        FactorizedDoubleCommutator.def("comm223_232_slow", &Commutator::FactorizedDoubleCommutator::comm223_232_slow);
-        FactorizedDoubleCommutator.def("UseSlowVersion",   &Commutator::FactorizedDoubleCommutator::UseSlowVersion);
+//        FactorizedDoubleCommutator.def("comm223_231_slow", &Commutator::FactorizedDoubleCommutator::comm223_231_slow);
+//        FactorizedDoubleCommutator.def("comm223_232_slow", &Commutator::FactorizedDoubleCommutator::comm223_232_slow);
+//        FactorizedDoubleCommutator.def("UseSlowVersion",   &Commutator::FactorizedDoubleCommutator::UseSlowVersion);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_1b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_1b);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_2b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_2b);
         FactorizedDoubleCommutator.def("SetUse_1b_Intermediates",      &Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates);
@@ -723,6 +726,8 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("diagram_DIVb_intermediate", &ReferenceImplementations::diagram_DIVb_intermediate);
        ReferenceImplementations.def("comm223_231_BruteForce", &ReferenceImplementations::comm223_231_BruteForce);
        ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
+       ReferenceImplementations.def("comm223_231", &ReferenceImplementations::comm223_231);
+       ReferenceImplementations.def("comm223_232", &ReferenceImplementations::comm223_232);
 
 
 

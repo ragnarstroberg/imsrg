@@ -68,6 +68,8 @@ class Operator
   bool antihermitian;
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
 
+  bool is_reduced; ///< Are the matrix elements stored as reduced matrix elements?
+
 
 
   std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;  // a set makes more sense for this, because it only contains unique entries
@@ -150,6 +152,7 @@ class Operator
 
   void MakeReduced();
   void MakeNotReduced();
+  bool IsReduced()const { return is_reduced;};
   void ChangeNormalization(double coeff);
   void MakeNormalized();
   void MakeUnNormalized();
