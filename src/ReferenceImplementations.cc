@@ -3786,7 +3786,9 @@ namespace ReferenceImplementations
   {
     Z.modelspace->PreCalculateSixJ();
     bool EraseOB = false;
-    // EraseOB = true;
+     EraseOB = true;
+
+    int orbit_print = 2;
 
     // determine symmetry
     int hEta = Eta.IsHermitian() ? 1 : -1;
@@ -3847,6 +3849,14 @@ namespace ReferenceImplementations
                     continue;
                   // condition
 
+                  if ( (ob.l+od.l+oa.l+oc.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oa.l+oc.l+ob.l+oe.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oe.l+op.l+od.l+oq.l)%2 != Gamma.GetParity() ) continue;
+
+                  if ( std::abs(ob.tz2+od.tz2-oa.tz2-oc.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oa.tz2+oc.tz2-ob.tz2-oe.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oe.tz2+op.tz2-od.tz2-oq.tz2) != Gamma.GetTRank() ) continue;
+
                   int J0min = std::max({std::abs(oa.j2 - oc.j2), std::abs(ob.j2 - od.j2), std::abs(ob.j2 - oe.j2)}) / 2;
                   int J0max = std::min({oa.j2 + oc.j2, ob.j2 + od.j2, ob.j2 + oe.j2}) / 2;
 
@@ -3858,6 +3868,12 @@ namespace ReferenceImplementations
                     for (int J1 = J1min; J1 <= J1max; J1++)
                     {
                       zij += (2 * J0 + 1) * (2 * J1 + 1) / (od.j2 + 1.0) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J0, J0, a, c, b, e) * Gamma.TwoBody.GetTBME_J(J1, J1, e, p, d, q);
+                      if (p==orbit_print and q==orbit_print)
+                      {
+                         std::cout << " I " << a << " " << b << " " << c << " " << d << "  " << J0 << " " << J1 << "   "
+                                   << (2 * J0 + 1) * (2 * J1 + 1) / (od.j2 + 1.0) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J0, J0, a, c, b, e) * Gamma.TwoBody.GetTBME_J(J1, J1, e, p, d, q)
+                                   << std::endl;
+                      }
                     }
                   } // J0
                 }
@@ -3871,7 +3887,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram I  " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -3935,6 +3952,14 @@ namespace ReferenceImplementations
                   if (std::abs(occfactor) < 1e-6)
                     continue;
 
+                  if ( (ob.l+od.l+oa.l+oc.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oc.l+op.l+od.l+oe.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oa.l+oe.l+ob.l+oq.l)%2 != Gamma.GetParity() ) continue;
+
+                  if ( std::abs(ob.tz2+od.tz2-oa.tz2-oc.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oc.tz2+op.tz2-od.tz2-oe.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oa.tz2+oe.tz2-ob.tz2-oq.tz2) != Gamma.GetTRank() ) continue;
+
                   int J0min = std::max({std::abs(ob.j2 - od.j2), std::abs(oa.j2 - oc.j2)}) / 2;
                   int J0max = std::min({ob.j2 + od.j2, oa.j2 + oc.j2}) / 2;
 
@@ -3960,6 +3985,12 @@ namespace ReferenceImplementations
                           sixj *= Z.modelspace->GetSixJ(jp, je, J3, jd, jc, J1);
                           sixj *= Z.modelspace->GetSixJ(jb, jp, J2, je, ja, J3);
                           zij += phasefactor * (2 * J0 + 1) * (2 * J1 + 1) * (2 * J2 + 1) * (2 * J3 + 1) * sixj * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J1, J1, c, p, d, e) * Gamma.TwoBody.GetTBME_J(J2, J2, a, e, b, q);
+                      if (p==orbit_print and q==orbit_print)
+                      {
+                         std::cout << " IIa " << a << " " << b << " " << c << " " << d << "  " << J0 << " " << J1 << "   "
+                                   << phasefactor * (2 * J0 + 1) * (2 * J1 + 1) * (2 * J2 + 1) * (2 * J3 + 1) * sixj * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, d, a, c) * Eta.TwoBody.GetTBME_J(J1, J1, c, p, d, e) * Gamma.TwoBody.GetTBME_J(J2, J2, a, e, b, q)
+                                   << std::endl;
+                      }
                         }
                       }
                     }
@@ -3975,7 +4006,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram IIa " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram IIa " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -4035,6 +4067,13 @@ namespace ReferenceImplementations
                   double occfactor = (nbar_a * nbar_d * n_b * n_e - nbar_b * nbar_e * n_a * n_d);
                   if (std::abs(occfactor) < 1e-6)
                     continue;
+                  if ( (ob.l+oe.l+oa.l+od.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oc.l+op.l+ob.l+oe.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oa.l+od.l+oc.l+oq.l)%2 != Gamma.GetParity() ) continue;
+
+                  if ( std::abs(ob.tz2+oe.tz2-oa.tz2-od.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oc.tz2+op.tz2-ob.tz2-oe.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oa.tz2+od.tz2-oc.tz2-oq.tz2) != Gamma.GetTRank() ) continue;
 
                   int J0min = std::max({std::abs(oa.j2 - od.j2), std::abs(ob.j2 - oe.j2), std::abs(oc.j2 - op.j2)}) / 2;
                   int J0max = std::min({oa.j2 + od.j2, ob.j2 + oe.j2, op.j2 + oc.j2}) / 2;
@@ -4042,6 +4081,13 @@ namespace ReferenceImplementations
                   for (int J0 = J0min; J0 <= J0max; J0++)
                   {
                     zij += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, p, b, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, q);
+                      if (p==orbit_print and q==orbit_print)
+                      {
+                         std::cout << " IIb " << a << " " << b << " " << c << " " << d << "  " << e << " " << J0 << "   "
+                                   << (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, p, b, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, q)
+                                   << std::endl;
+                      }
+
                   } // J0
                 }
               }
@@ -4054,7 +4100,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram IIb " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram IIb " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -4118,6 +4165,14 @@ namespace ReferenceImplementations
                   if (std::abs(occfactor) < 1e-6)
                     continue;
 
+                  if ( (ob.l+oe.l+od.l+oa.l)%2 != Eta.GetParity() ) continue;
+                  if ( (oc.l+oa.l+ob.l+oq.l)%2 != Eta.GetParity() ) continue;
+                  if ( (od.l+op.l+oc.l+oe.l)%2 != Gamma.GetParity() ) continue;
+
+                  if ( std::abs(ob.tz2+oe.tz2-od.tz2-oa.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(oc.tz2+oa.tz2-ob.tz2-oq.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(od.tz2+op.tz2-oc.tz2-oe.tz2) != Gamma.GetTRank() ) continue;
+
                   int J0min = std::abs(oa.j2 - od.j2) / 2;
                   int J0max = (oa.j2 + od.j2) / 2;
 
@@ -4142,6 +4197,12 @@ namespace ReferenceImplementations
                           sixj *= Z.modelspace->GetSixJ(jc, jp, J3, jb, ja, J1);
                           sixj *= Z.modelspace->GetSixJ(je, jc, J2, jp, jd, J3);
                           zij += (2 * J0 + 1) * (2 * J1 + 1) * (2 * J2 + 1) * (2 * J3 + 1) * sixj * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, d, a) * Eta.TwoBody.GetTBME_J(J1, J1, c, a, b, q) * Gamma.TwoBody.GetTBME_J(J2, J2, d, p, c, e);
+                      if (p==orbit_print and q==orbit_print)
+                      {
+                         std::cout << " IIc " << a << " " << b << " " << c << " " << d << "  " << J0 << " " << J1 << "   "
+                                   << (2 * J0 + 1) * (2 * J1 + 1) * (2 * J2 + 1) * (2 * J3 + 1) * sixj * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, d, a) * Eta.TwoBody.GetTBME_J(J1, J1, c, a, b, q) * Gamma.TwoBody.GetTBME_J(J2, J2, d, p, c, e)
+                                   << std::endl;
+                      }
                         }
                       }
                     }
@@ -4157,7 +4218,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram IIc " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram IIc " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -4236,7 +4298,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram IId " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram IId " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -4324,7 +4387,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram IIIa " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram IIIa " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -4412,7 +4476,8 @@ namespace ReferenceImplementations
         //--------------------------------------------------
       } // for q
     }   // for p
-    std::cout << "diagram IIIb " << Z.OneBodyNorm() << std::endl;
+//    std::cout << "diagram IIIb " << Z.OneBodyNorm() << std::endl;
+//    std::cout << Z.OneBody << std::endl;
     if(EraseOB)
       Z.EraseOneBody();
 
@@ -4428,7 +4493,7 @@ namespace ReferenceImplementations
     std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
     auto &Z2 = Z.TwoBody;
     bool EraseTB = false;
-    // EraseTB = true;
+     EraseTB = true;
 
     // determine symmetry
     int hEta = Eta.IsHermitian() ? 1 : -1;
@@ -4516,6 +4581,11 @@ namespace ReferenceImplementations
                       // zpgqh += phase_pg * occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J2, a, c, b, d) * Gamma.TwoBody.GetTBME_J(J0, d, p, q, h);
                       zpgqh += occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J2, a, c, b, d) * Gamma.TwoBody.GetTBME_J(J0, p, d, q, h);
 //                    zpgqh -= occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J0, p, d, q, h) * Gamma.TwoBody.GetTBME_J(J2, a, c, b, d);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " Ia " << occfactor * (2 * J2 + 1) / denominator_g * Eta.TwoBody.GetTBME_J(J2, b, g, a, c) * Eta.TwoBody.GetTBME_J(J2, a, c, b, d) * Gamma.TwoBody.GetTBME_J(J0, p, d, q, h)
+                                    << std::endl;
+                       }
                     }
                 }
               }
@@ -4532,7 +4602,8 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram Ia " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram Ia   " << Z.TwoBodyNorm() << std::endl;
+    Z.TwoBody.PrintMatrix(0,0);
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -4616,6 +4687,11 @@ namespace ReferenceImplementations
                     {
                       // zpgqh += phase_qh * occfactor * (2 * J2 + 1) / denominator_h * Eta.TwoBody.GetTBME_J(J2, a, d, b, c) * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Gamma.TwoBody.GetTBME_J(J0, p, g, d, q);
                       zpgqh += occfactor * (2 * J2 + 1) / denominator_h * Eta.TwoBody.GetTBME_J(J2, a, d, b, c) * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Gamma.TwoBody.GetTBME_J(J0, p, g, q, d);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " Ib " << occfactor * (2 * J2 + 1) / denominator_h * Eta.TwoBody.GetTBME_J(J2, a, d, b, c) * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Gamma.TwoBody.GetTBME_J(J0, p, g, q, d)
+                                    << std::endl;
+                       }
                     }
                 }
               }
@@ -4632,7 +4708,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram Ib " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram Ib   " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -4717,6 +4793,11 @@ namespace ReferenceImplementations
                     {
                       // zpgqh -= phase_qh * occfactor * (2 * J2 + 1) / denominator_h * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Eta.TwoBody.GetTBME_J(J0, p, g, d, q) * Gamma.TwoBody.GetTBME_J(J2, a, d, b, c);
                       zpgqh -= occfactor * (2 * J2 + 1) / denominator_h * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Eta.TwoBody.GetTBME_J(J0, p, g, q, d) * Gamma.TwoBody.GetTBME_J(J2, a, d, b, c);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " IVa " << -occfactor * (2 * J2 + 1) / denominator_h * Eta.TwoBody.GetTBME_J(J2, b, c, a, h) * Eta.TwoBody.GetTBME_J(J0, p, g, q, d) * Gamma.TwoBody.GetTBME_J(J2, a, d, b, c)
+                                    << std::endl;
+                       }
                     }
 
                   // *****************************************
@@ -4735,7 +4816,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IVa " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IVa  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -4834,7 +4915,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IVb " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IVb  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -4910,6 +4991,15 @@ namespace ReferenceImplementations
                   double occfactor = (nbar_b * nbar_d * n_c + nbar_c * n_b * n_d);
                   if (fabs(occfactor) < 1.e-7)
                     continue;
+
+                  if ( (oc.l+og.l+od.l+ob.l)%2 != Eta.GetParity() ) continue;
+                  if ( (op.l+ob.l+oc.l+oa.l)%2 != Eta.GetParity() ) continue;
+                  if ( (od.l+oa.l+oq.l+oh.l)%2 != Gamma.GetParity() ) continue;
+
+                  if ( std::abs(oc.tz2+og.tz2-od.tz2-ob.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(op.tz2+ob.tz2-oc.tz2-oa.tz2) != Eta.GetTRank() ) continue;
+                  if ( std::abs(od.tz2+oa.tz2-oq.tz2-oh.tz2) != Gamma.GetTRank() ) continue;
+
                   /// direct term
                   int j2min = std::max(std::abs(oc.j2 - og.j2), std::abs(ob.j2 - od.j2)) / 2;
                   int j2max = std::min(oc.j2 + og.j2, ob.j2 + od.j2) / 2;
@@ -4964,6 +5054,11 @@ namespace ReferenceImplementations
                         double sixj3 = Z.modelspace->GetSixJ(jp, jg, J0, ja, jd, J4);
 
                         zpgqh -= phase_pg * occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, c, p, d, b) * Eta.TwoBody.GetTBME_J(J3, g, b, c, a) * Gamma.TwoBody.GetTBME_J(J0, d, a, q, h);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " IIa " << -phase_pg * occfactor * sixj1 * sixj2 * sixj3 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * Eta.TwoBody.GetTBME_J(J2, c, p, d, b) * Eta.TwoBody.GetTBME_J(J3, g, b, c, a) * Gamma.TwoBody.GetTBME_J(J0, d, a, q, h)
+                                    << std::endl;
+                       }
                       }
                     }
                   }
@@ -4983,7 +5078,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IIa " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IIa  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -5219,7 +5314,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IIb " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IIb  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -5367,7 +5462,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IIc " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IIc  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -5604,7 +5699,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IId " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IId  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -5811,7 +5906,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IIe " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IIe  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -6017,7 +6112,7 @@ namespace ReferenceImplementations
         } // iket
       }   // ibra
     }     // J0 channel
-    std::cout << "diagram IIf " << Z.TwoBodyNorm() << std::endl;
+    std::cout << "diagram IIf  " << Z.TwoBodyNorm() << std::endl;
     if (EraseTB)
       Z.EraseTwoBody();
 
@@ -6125,6 +6220,11 @@ namespace ReferenceImplementations
                           double sixj4 = Z.modelspace->GetSixJ(J3, J0, J5, jq, jd, jh);
 
                           zpgqh += occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, p, c, a) * Eta.TwoBody.GetTBME_J(J3, g, c, h, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, q);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " IIIa " << occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, p, c, a) * Eta.TwoBody.GetTBME_J(J3, g, c, h, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, q)
+                                    << std::endl;
+                       }
                         }
                       }
                     }
@@ -6162,6 +6262,11 @@ namespace ReferenceImplementations
                           double sixj4 = Z.modelspace->GetSixJ(J3, J0, J5, jh, jd, jq);
 
                           zpgqh += phase_qh * occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, p, c, a) * Eta.TwoBody.GetTBME_J(J3, g, c, q, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, h);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " IIIa " << phase_qh * occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, p, c, a) * Eta.TwoBody.GetTBME_J(J3, g, c, q, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, h)
+                                    << std::endl;
+                       }
                         }
                       }
                     }
@@ -6199,6 +6304,11 @@ namespace ReferenceImplementations
                           double sixj4 = Z.modelspace->GetSixJ(J3, J0, J5, jq, jd, jh);
 
                           zpgqh += phase_pg * occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, g, c, a) * Eta.TwoBody.GetTBME_J(J3, p, c, h, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, q);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " IIIa " << phase_pg * occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, g, c, a) * Eta.TwoBody.GetTBME_J(J3, p, c, h, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, q)
+                                    << std::endl;
+                       }
                         }
                       }
                     }
@@ -6236,6 +6346,11 @@ namespace ReferenceImplementations
                           double sixj4 = Z.modelspace->GetSixJ(J3, J0, J5, jh, jd, jq);
 
                           zpgqh += phase_pg * phase_qh * occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, g, c, a) * Eta.TwoBody.GetTBME_J(J3, p, c, q, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, h);
+                       if (ch==0 and ibra==2 and iket==4)
+                       {
+                          std::cout << " IIIa " << phase_pg * phase_qh * occfactor * sixj1 * sixj2 * sixj3 * sixj4 * (2 * J2 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * (2 * J5 + 1) * Eta.TwoBody.GetTBME_J(J2, b, g, c, a) * Eta.TwoBody.GetTBME_J(J3, p, c, q, d) * Gamma.TwoBody.GetTBME_J(J4, d, a, b, h)
+                                    << std::endl;
+                       }
                         }
                       }
                     }
