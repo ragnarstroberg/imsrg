@@ -154,7 +154,7 @@ class IMSRGSolver
 
 //  double GetPerturbativeTriples();
   double CalculatePerturbativeTriples();
-
+  double CalculatePerturbativeTriples(Operator &Op_0);
 
   // This is used to get flow info from odeint
   class ODE_Monitor

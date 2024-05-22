@@ -2385,6 +2385,122 @@ namespace ReferenceImplementations
     }     // for iter
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// scalar-tensor commutators with 3-body
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///
+  /// Expression:    Zij^\lamda = 1/12 sum_abcde sum_J1J2J (na nb n¯c n¯d n¯e + ¯na n¯b nc nd ne) (2J+1)/(2ji+1) 
+  ///                             * (-)^(j + lamda + J1 + j0)
+  ///                             * (X^J1,j0,J2,j0;0_abicde Y^J2,j0,J1,j1;lamda_cdeabj 
+  ///                             -  Y^J1,j0,J2,j1;lamda_abicde  X^J2,j1,J1,j0;0_cdeabj )
+  ///
+  ///
+  void comm331st(const Operator &X, const Operator &Y, Operator &Z)
+  {
+    Z.modelspace->PreCalculateSixJ();
+    auto &X3 = X.ThreeBody;
+    auto &Y3 = Y.ThreeBody;
+    auto &Z1 = Z.OneBody;
+
+    double tstart = omp_get_wtime();
+    int Lambda = Z.GetJRank();
+    int hZ = Z.IsHermitian() ? +1 : -1;
+
+
+    size_t norb = Z.modelspace->GetNumberOrbits();
+#pragma omp parallel for schedule(dynamic, 1)
+  for (size_t i = 0; i < norb; i++)
+    {
+      Orbit &oi = Z.modelspace->GetOrbit(i);
+      for (size_t j : Z.GetOneBodyChannel(oi.l, oi.j2, oi.tz2))
+      {
+        Orbit &oj = Z.modelspace->GetOrbit(j);
+       
+        if ( std::abs(oj.j2 - oi.j2)  > Lambda * 2 or   oj.j2 + oi.j2 < Lambda * 2  )
+          continue;
+       
+        double zij = 0;
+        for (size_t a : Z.modelspace->all_orbits)
+        {
+          Orbit &oa = Z.modelspace->GetOrbit(a);
+          for (size_t b : Z.modelspace->all_orbits)
+          {
+            Orbit &ob = Z.modelspace->GetOrbit(b);
+
+            int J1min = std::abs(oa.j2 - ob.j2) / 2;
+            int J1max = (oa.j2 + ob.j2) / 2;
+
+            for (size_t c : Z.modelspace->all_orbits)
+            {
+              Orbit &oc = Z.modelspace->GetOrbit(c);
+              for (size_t d : Z.modelspace->all_orbits)
+              {
+                Orbit &od = Z.modelspace->GetOrbit(d);
+                int J2min = std::abs(oc.j2 - od.j2) / 2;
+                int J2max = (oc.j2 + od.j2) / 2;
+
+                for (size_t e : Z.modelspace->all_orbits)
+                {
+                  Orbit &oe = Z.modelspace->GetOrbit(e);
+                  
+                  double occupation_factor = oa.occ * ob.occ * (1 - oc.occ) * (1 - od.occ) * (1 - oe.occ) // fixed mistake found by Matthias Heinz Oct 2022
+                                             + (1 - oa.occ) * (1 - ob.occ) * oc.occ * od.occ * oe.occ;
+                  if (std::abs(occupation_factor) < 1e-8)
+                    continue;
+
+                  for (int J1 = J1min; J1 <= J1max; J1++)
+                  {
+                    if (a == b and J1 % 2 > 0)
+                      continue;
+
+                    for (int J2 = J2min; J2 <= J2max; J2++)
+                    {
+                      if (c == d and J2 % 2 > 0)
+                        continue;
+
+                      int j0min = std::max(std::abs(2 * J1 - oi.j2), std::abs(2 * J2 - oe.j2));
+                      int j0max = std::min(2 * J1 + oi.j2, 2 * J2 + oe.j2);
+
+
+                      int j1min = std::max(std::abs(2 * J1 - oj.j2), std::abs(2 * J2 - oe.j2));
+                      int j1max = std::min(2 * J1 + oi.j2, 2 * J2 + oe.j2);
+
+                      for (int j0 = j0min; j0 <= j0max; j0 += 2)
+                      {
+                        for (int j1 = j1min; j1 <= j1max; j1 += 2)
+                        {
+                          if ( std::abs(j0 - j1)  > Lambda * 2 or  (j0 + j1) < Lambda * 2  )
+                            continue;
+                          
+                          double sixj1 = AngMom::SixJ(oj.j2, oi.j2, Lambda, j0, j1, J1);
+                          
+                          double xabicde = X3.GetME_pn(J1, J2, j0, a, b, i, c, d, e);      // scalar
+                          double yabicde = Y3.GetME_pn(J1, j0, J2, j1, a, b, i, c, d, e);  // tensor
+
+                          double xcdeabj = X3.GetME_pn(J2, J1, j1, c, d, e, a, b, j);      // sclar
+                          double ycdeabj = Y3.GetME_pn(J2, j0, J1, j1, c, d, e, a, b, j);  // tensor
+
+                          int phase = AngMom::phase((oj.j2 + j0) / 2 + J1 + Lambda);
+                          zij += 1. / 12 * phase * occupation_factor *  sqrt( j0 + 1)  / sqrt( j1 + 1) * sixj1 * (xabicde * ycdeabj - yabicde * xcdeabj);
+                        }
+                      }
+                    } // Jj
+                  }   // J1
+                }     // e
+              }       // d
+            }         // c
+          }           // b
+        }             // a
+        Z1(i, j) += zij;
+      } // j
+    }   // i
+  
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
+  }     // comm331st
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ////// Start double nested commutators
 
   //

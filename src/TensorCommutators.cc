@@ -1371,6 +1371,4 @@ namespace Commutator
     X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
 
-
-
 }// namespace Commutator

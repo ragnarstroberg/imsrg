@@ -239,17 +239,10 @@ namespace BCH
 //          else
 //          {
 
-            Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_DoubleNested);
-            Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_DoubleNested);
-            OpNested += Op_DoubleNested;
-//          }
-          /// Test
-//          if (i > 2 and use_factorized_correct_ZBterm)
-//          {
-//            Commutator::comm220ss(Omega, Op_2b1b, Op_2b1b);
-//            Commutator::comm110ss(Omega, Op_2b1b, Op_2b1b);
-//            OpNested.ZeroBody += Op_2b1b.ZeroBody / (i + 1.);
-//          }
+            Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_2b1b);
+            Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_2b1b);
+            OpNested += Op_2b1b;
+          }
         }
 //        if (i>=2 ) // THIS IS FOR TESTING. IT SHOULD BE REMOVED.
 //        {

@@ -92,6 +92,11 @@ class UnitTest
   bool Mscheme_Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y );  
   bool Mscheme_Test_comm333_pph_hhpss( const Operator& X, const Operator& Y );  
 
+  // scalar-tensor commutator with 3b
+  bool Mscheme_Test_comm331st( const Operator& X, const Operator& Y );
+
+
+
   bool Test_comm330ss( const Operator& X, const Operator& Y );
   bool Test_comm331ss( const Operator& X, const Operator& Y );
   bool Test_comm231ss( const Operator& X, const Operator& Y );

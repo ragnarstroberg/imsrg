@@ -5121,5 +5121,131 @@ bool UnitTest::SanityCheck()
 
 }
 
+/// M-Scheme Formula:
+//
+// Z_ij = 1/12 sum_abcde (nanb n`c n`dn`e + n`an`b ncndne) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
+//
+// this is very slow...
+bool UnitTest::Mscheme_Test_comm331st( const Operator& X, const Operator& Y )
+{
+
+  Operator Z_J( Y );
+  Z_J.Erase();
+
+  // Commutator::comm331st( X, Y, Z_J);
+  ReferenceImplementations::comm331st( X, Y, Z_J);
+  int Lambda = Y.GetJRank();
+//  if ( Z_J.IsHermitian() )
+//     Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian() )
+//     Z_J.AntiSymmetrize( );
+
+  std::cout << __func__ <<  "   Done with J-scheme commutator. Begin m-scheme version..." << std::endl;
+
+  double summed_error =  0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for ( auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for ( auto j : Z_J.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+//    Orbit& oj = X.modelspace->GetOrbit(j);
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      int mj = mi;
+      double Zm_ij = 0;
+      size_t norb = X.modelspace->GetNumberOrbits();
+//      for ( auto a : X.modelspace->all_orbits )
+      #pragma omp parallel for schedule(dynamic,1) reduction(+:Zm_ij)
+      for (size_t a=0; a<norb; a++)
+      {
+        Orbit& oa = X.modelspace->GetOrbit(a);
+        double na = oa.occ;
+//        if ( na<1e-6 ) continue;
+        for ( auto b : X.modelspace->all_orbits )
+        {
+          Orbit& ob = X.modelspace->GetOrbit(b);
+          double nb = ob.occ;
+//          if ( nb<1e-6 ) continue;
+          for ( auto c : X.modelspace->all_orbits )
+          {
+            Orbit& oc = X.modelspace->GetOrbit(c);
+            double nc = oc.occ;
+//            if ( (1-nc)<1e-6 ) continue;
+            for ( auto d : X.modelspace->all_orbits )
+            {
+              Orbit& od = X.modelspace->GetOrbit(d);
+              double nd = od.occ;
+//              if ( (1-nd)<1e-6 ) continue;
+              for ( auto e : X.modelspace->all_orbits )
+              {
+                Orbit& oe = X.modelspace->GetOrbit(e);
+//                if ( (oa.l+ob.l+oi.l + oc.l+od.l+oe.l)%2 > 0) continue;
+//                if ( (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+oe.tz2)) continue;
+
+
+                if ( ((oa.l+ob.l+oi.l+oc.l+od.l+oe.l + X.GetParity())%2 !=0) and ((oa.l+ob.l+oi.l+oc.l+od.l+oe.l + Y.GetParity())%2 !=0) ) continue;
+                if ( (std::abs(oa.tz2+ob.tz2+oi.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*X.GetTRank() ) and (std::abs(oa.tz2+ob.tz2+oi.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*Y.GetTRank() ) ) continue;
+                if ( ((oa.l+ob.l+oj.l+oc.l+od.l+oe.l + X.GetParity())%2 !=0) and ((oa.l+ob.l+oj.l+oc.l+od.l+oe.l + Y.GetParity())%2 !=0) ) continue;
+                if ( (std::abs(oa.tz2+ob.tz2+oj.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*X.GetTRank() ) and (std::abs(oa.tz2+ob.tz2+oj.tz2-oc.tz2 -od.tz2-oe.tz2) != 2*Y.GetTRank() ) ) continue;
+   
+                double ne = oe.occ;
+//                if ( (1-ne)<1e-6 ) continue;
+// Mistake found by Matthias Heinz Oct 14 2022                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne);
+                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne) + (1-na)*(1-nb)*nc*nd*ne;
+                if (std::abs(occfactor)<1e-7) continue;
+
+                for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
+                {
+                 for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
+                 {
+                  for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
+                  {
+                   for (int md=-od.j2; md<=od.j2; md+=2)
+                   {
+                    int me = ma+mb+mi - mc-md;
+                    if (std::abs(me) > oe.j2) continue;
+                    double xabicde = GetMschemeMatrixElement_3b( X, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
+                    double ycdeabj = GetMschemeMatrixElement_3b( Y, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
+                    double xcdeabj = GetMschemeMatrixElement_3b( X, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
+                    double yabicde = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
+                    Zm_ij += 1./12 * occfactor * ( xabicde * ycdeabj - yabicde * xcdeabj );
+                   }// for md
+                  }// for mc
+                 }// for mb
+                }// for ma
+              }// for e
+            } // for d
+          } // for c
+        } // for b
+      }// for a
+
+      double ZJ_ij = Z_J.OneBody(i,j);
+      double err = Zm_ij - ZJ_ij;
+      std::cout << "Print out " << __func__ << "  i,j = " << i << " " << j 
+                  << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << std::endl; 
+      if (std::abs(err)>1e-6)
+      {
+        std::cout << "Trouble in " << __func__ << "  i,j = " << i << " " << j 
+                  << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << std::endl; 
+      }
+      summed_error += err*err;
+      sum_m += Zm_ij*Zm_ij;
+      sum_J += ZJ_ij*ZJ_ij;
+
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
 
 

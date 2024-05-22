@@ -384,7 +384,21 @@ PYBIND11_MODULE(pyIMSRG, m)
               { return self.GetME_iso(Jab, Jde, twoJ, tab, tde, twoTabc, twoTdef, a, b, c, d, e, f); },
               py::arg("Jab"), py::arg("Jde"), py::arg("twoJ"), py::arg("tab"), py::arg("tde"), py::arg("twoTabc"), py::arg("twoTdef"), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f"))
           //      .def("SetME_pn", &ThreeBodyME::SetME_pn)
-          .def("GetME_pn", &ThreeBodyME::GetME_pn)
+          // .def("GetME_pn", &ThreeBodyME::GetME_pn)
+            .def(
+                "GetME_pn", 
+                [](ThreeBodyME &self, int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) {
+                    return self.GetME_pn(Jab_in, Jde_in, twoJ, a, b, c, d, e, f);
+                },
+                py::arg("Jab_in"), py::arg("Jde_in"), py::arg("twoJ"), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f")
+            )
+            .def(
+                "GetME_pn_tensor", 
+                [](ThreeBodyME &self, int Jab_in, int j0, int Jde_in, int j1, int a, int b, int c, int d, int e, int f) {
+                 return self.GetME_pn(Jab_in, j0, Jde_in, j1, a, b, c, d, e, f);
+              },
+              py::arg("Jab_in"), py::arg("j0"), py::arg("Jde_in"), py::arg("j1"), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f")
+           )
           .def("SetME_pn_ch", &ThreeBodyME::SetME_pn_ch) // Hopefully not a bad idea to expose this...
           .def("GetME_pn_no2b", &ThreeBodyME::GetME_pn_no2b)
           .def("RecouplingCoefficient", &ThreeBodyME::RecouplingCoefficient)
@@ -556,7 +570,9 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetHunterGatherer", &IMSRGSolver::SetHunterGatherer)
 //          .def("SetPerturbativeTriples", &IMSRGSolver::SetPerturbativeTriples)
 //          .def("GetPerturbativeTriples", &IMSRGSolver::GetPerturbativeTriples)
-          .def("CalculatePerturbativeTriples", &IMSRGSolver::CalculatePerturbativeTriples)
+//          .def("CalculatePerturbativeTriples", &IMSRGSolver::CalculatePerturbativeTriples)
+          .def("CalculatePerturbativeTriples", py::overload_cast<>(&IMSRGSolver::CalculatePerturbativeTriples))
+          .def("CalculatePerturbativeTriples", py::overload_cast<Operator&>(&IMSRGSolver::CalculatePerturbativeTriples))
           .def("AddOperator", &IMSRGSolver::AddOperator)
           .def("GetOperator", &IMSRGSolver::GetOperator)
           .def("EstimateBCHError", &IMSRGSolver::EstimateBCHError)
@@ -823,6 +839,10 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm333_ppp_hhhss", &UnitTest::Mscheme_Test_comm333_ppp_hhhss)
           .def("Mscheme_Test_comm333_pph_hhpss", &UnitTest::Mscheme_Test_comm333_pph_hhpss)
           //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
+
+          // Tensor commutator with 3b
+          .def("Mscheme_Test_comm331st", &UnitTest::Mscheme_Test_comm331st)
+
           .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) // Op, a,ma, b,mb...
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)                                                                          // Op, a,ma, b,mb...
           .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b)                                                                          // Op, a,ma, b,mb...

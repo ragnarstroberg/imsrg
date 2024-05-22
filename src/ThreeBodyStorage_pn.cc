@@ -130,15 +130,15 @@ void ThreeBodyStorage_pn::Allocate()
 //////   Interface methods
 ///////////////////////////////////////////////////////////////////////////////////
 
-ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f) const
+ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) const
 {
-  if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return 0.0;
+  if (!IsKetValid(Jab_in, twoJ, a, b, c) || !IsKetValid(Jde_in, twoJ, d, e, f)) return 0.0;
   std::vector<double> recouple_bra;
   std::vector<double> recouple_ket;
   std::vector<size_t> index_bra;
   std::vector<size_t> index_ket;
-  size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, index_bra, recouple_bra );
-  size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, index_ket, recouple_ket );
+  size_t ch_bra = GetKetIndex_withRecoupling( Jab_in, twoJ, a,b,c, index_bra, recouple_bra );
+  size_t ch_ket = GetKetIndex_withRecoupling( Jde_in, twoJ, d,e,f, index_ket, recouple_ket );
   if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
   if (ch_bra==-1 or ch_ket==-1) return 0;
   ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
@@ -148,6 +148,36 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab, int Jde, int 
   //TODO: Should we also throw an exception if twoJ is even?
 
 
+
+  double me_out = 0;
+  for ( size_t I=0; I<index_bra.size(); I++)
+  {
+    for (size_t J=0; J<index_ket.size(); J++)
+    {
+      me_out += recouple_bra[I] * recouple_ket[J] * GetME_pn_ch( ch_bra, ch_ket, index_bra[I], index_ket[J] );
+    }
+  }
+
+  return me_out;
+}
+
+// tensor getter
+ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int j0, int Jde_in, int j1, int a, int b, int c, int d, int e, int f) const
+{
+  if (!IsKetValid(Jab_in, j0, a, b, c) || !IsKetValid(Jde_in, j1, d, e, f)) return 0.0;
+  std::vector<double> recouple_bra;
+  std::vector<double> recouple_ket;
+  std::vector<size_t> index_bra;
+  std::vector<size_t> index_ket;
+  size_t ch_bra = GetKetIndex_withRecoupling( Jab_in, j0, a,b,c, index_bra, recouple_bra );
+  size_t ch_ket = GetKetIndex_withRecoupling( Jde_in, j1, d,e,f, index_ket, recouple_ket );
+  if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
+  if (ch_bra==-1 or ch_ket==-1) return 0;
+  ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
+  ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
+  if ( (Tbc_bra.parity + Tbc_ket.parity)%2 != parity) return 0;
+  if ( std::abs( Tbc_bra.twoTz - Tbc_ket.twoTz) != 2*rank_T ) return 0;
+  //TODO: Should we also throw an exception if j0 and j1 are even?
 
   double me_out = 0;
   for ( size_t I=0; I<index_bra.size(); I++)
