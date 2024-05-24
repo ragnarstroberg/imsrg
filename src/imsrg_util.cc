@@ -112,6 +112,7 @@ namespace imsrg_util
       else if (opname == "Sigma_n")       theop =  Sigma_Op_pn(modelspace,"neutron");
       else if (opname == "L2rel")         theop =  L2rel_Op(modelspace); // Untested...
       else if (opname == "QdotQ")         theop =  QdotQ_Op(modelspace); // Untested...
+      else if (opname == "VQQ")           theop =  VQQ_Op(modelspace); 
       else if (opname == "VCoul")         theop =  VCoulomb_Op(modelspace); // Untested...
       else if (opname == "hfsNMS")        theop =  atomic_hfs::NormalMassShift(modelspace, 1);
       else if (opname == "hfsSMS")        theop =  atomic_hfs::SpecificMassShift(modelspace, 1);
@@ -2414,6 +2415,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
 
  // < ij J || Q * Q || kl J > where Q is the quadrupole operator (possibly up to overall factors like square roots of pi, etc...)
+ // We use equation (A5) of Caurier et al Rev Mod Phys 2005
+ // S
  Operator QdotQ_Op(ModelSpace& modelspace)
  {
     
@@ -2421,6 +2424,83 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    Operator QdotQ_op(modelspace,0,0,0,2);
    Operator E2op = ElectricMultipoleOp(modelspace,2) + NeutronElectricMultipoleOp(modelspace,2);
    auto& Qmat = E2op.OneBody;
+
+   std::cout << "Oops! This operator is still under construction! " << __FILE__ << "  line " << __LINE__ << std::endl;
+
+   // The one-body piece should be
+   // < i | Q*Q | j > = sqrt(2*2+1)/(2*ji+1) * sum_k <k||Q||i><k||Q||j>
+//   QdotQ_op.OneBody =  Qmat*Qmat.t() / sqrt(2);
+//   for (auto i : modelspace.all_orbits)
+//   {
+//      Orbit& oi = modelspace.GetOrbit(i);
+//      QdotQ_op.OneBody.row(i) /= oi.j2+1;
+//   }
+
+//   // We subtract off the one-body piece acting in the two-body space
+//   Embed1BodyIn2Body( QdotQ_op, 2);
+//   QdotQ_op.TwoBody *= -1;
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+
+
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+      int nkets = tbc.GetNumberKets();
+      int J = tbc.J;
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+         Ket & bra = tbc.GetKet(ibra);
+         int a = bra.p;
+         int b = bra.q;
+         Orbit & oa = modelspace.GetOrbit(a);
+         Orbit & ob = modelspace.GetOrbit(b);
+         double ja = oa.j2*0.5;
+         double jb = ob.j2*0.5;
+
+         for (int iket=ibra;iket<nkets;++iket)
+         {
+            
+            Ket & ket = tbc.GetKet(iket);
+            int c = ket.p;
+            int d = ket.q;
+            Orbit & oc = modelspace.GetOrbit(c);
+            Orbit & od = modelspace.GetOrbit(d);
+            double jc = oc.j2*0.5;
+            double jd = od.j2*0.5 ;
+
+            // Suhonen (8.56)
+            double Aabcd = modelspace.phase(ja+jb+J) * modelspace.GetSixJ(ja,jb,J,jd,jc,2) * Qmat(c,a) * Qmat(b,d);
+            double Aabdc = modelspace.phase(ja+jb+J) * modelspace.GetSixJ(ja,jb,J,jc,jd,2) * Qmat(d,a) * Qmat(b,c);
+            // Suhonen (8.55),(8.57),(8.58)
+            double QdQ;
+            QdQ = Aabcd - modelspace.phase(jc+jd+J)*Aabdc;  // pppp or nnnn
+            if (a==b) QdQ /= sqrt(2.0);
+            if (c==d) QdQ /= sqrt(2.0);
+
+
+//            QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
+            QdotQ_op.TwoBody.AddToTBME(ch,ibra,iket,QdQ);
+         }
+
+      }
+   }
+
+   return QdotQ_op;
+ }
+
+
+
+ // Quadrupole-quadrupole interaction
+ // This is a pure two-body operator.
+ Operator VQQ_Op(ModelSpace& modelspace)
+ {
+   Operator VQQ = Operator(modelspace,0,0,0,2);
+   // temporarily store <i||Q||j> in a one-body operator.
+   Operator Q1b = Operator(modelspace,2,0,0,1);
+   Q1b.OneBody += ElectricMultipoleOp(modelspace,2).OneBody;
+   Q1b.OneBody += NeutronElectricMultipoleOp(modelspace,2).OneBody;
+   auto& Qmat = Q1b.OneBody;
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
 
@@ -2432,51 +2512,49 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
       for (int ibra=0;ibra<nkets;++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
-         int i = bra.p;
-         int j = bra.q;
-         Orbit & oi = modelspace.GetOrbit(i);
-         Orbit & oj = modelspace.GetOrbit(j);
-         double ji = oi.j2*0.5;
-         double jj = oj.j2*0.5;
+         int a = bra.p;
+         int b = bra.q;
+         Orbit & oa = modelspace.GetOrbit(a);
+         Orbit & ob = modelspace.GetOrbit(b);
+         double ja = oa.j2*0.5;
+         double jb = ob.j2*0.5;
 
          for (int iket=ibra;iket<nkets;++iket)
          {
             
             Ket & ket = tbc.GetKet(iket);
-            int k = ket.p;
-            int l = ket.q;
-            Orbit & ok = modelspace.GetOrbit(k);
-            Orbit & ol = modelspace.GetOrbit(l);
-            double jk = ok.j2*0.5;
-            double jl = ol.j2*0.5 ;
+            int c = ket.p;
+            int d = ket.q;
+            Orbit & oc = modelspace.GetOrbit(c);
+            Orbit & od = modelspace.GetOrbit(d);
+            double jc = oc.j2*0.5;
+            double jd = od.j2*0.5 ;
 
             // Suhonen (8.56)
-            double Aijkl = modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l);
-            double Aijlk = modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k);
-//            double Aijlk = modelspace.phase(jk+jl+J) * modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k);
+            double Aabcd = modelspace.phase(ja+jb+J) * modelspace.GetSixJ(ja,jb,J,jd,jc,2) * Qmat(c,a) * Qmat(b,d);
+            double Aabdc = modelspace.phase(ja+jb+J) * modelspace.GetSixJ(ja,jb,J,jc,jd,2) * Qmat(d,a) * Qmat(b,c);
             // Suhonen (8.55),(8.57),(8.58)
             double QdQ;
-            if ( tbc.Tz==0 ) // proton-neutron channel
-            {
-              if ( oi.tz2 == ok.tz2)   QdQ = Aijkl;  // pnpn
-              else                     QdQ = -modelspace.phase(jk+jl+J) * Aijlk;  // pnnp
-            }
-            else
-            {
-               QdQ = Aijkl - modelspace.phase(jk+jl+j)*Aijlk;  // pppp or nnnn
-               if (i==j) QdQ /= sqrt(2.0);
-               if (k==l) QdQ /= sqrt(2.0);
-            }
+            // I think that the pppp case can actually be applied to the pn case too...
+//            if ( tbc.Tz==0 ) // proton-neutron channel
+//            {
+//              if ( oa.tz2 == oc.tz2)   QdQ = Aabcd;  // pnpn, Suhonen (8.57)
+//              else                     QdQ = -modelspace.phase(jc+jd+J) * Aabdc;  // pnnp
+//            }
+//            else  // like-nucleon channel,  Suhonen (8.55)
+//            {
+               QdQ = Aabcd - modelspace.phase(jc+jd+J)*Aabdc;  // pppp or nnnn
+               if (a==b) QdQ /= sqrt(2.0);
+               if (c==d) QdQ /= sqrt(2.0);
+//            }
 
-            QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
+            VQQ.TwoBody.SetTBME(ch,ibra,iket,QdQ);
          }
       }
    }
 
-   QdotQ_op.OneBody = Qmat*Qmat;
-   return QdotQ_op;
+   return VQQ;
  }
-
 
 
 
