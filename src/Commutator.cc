@@ -69,6 +69,17 @@ namespace Commutator
   void TurnOffTerm(std::string term) { comm_term_on[term] = false; }
   void TurnOnTerm(std::string term) { comm_term_on[term] = true; }
 
+  void PrintSettings()
+  {
+     std::cout << "use_imsrg3 : " << use_imsrg3 << std::endl;
+     std::cout << "use_imsrg3_n7 : " << use_imsrg3_n7 << std::endl;
+     std::cout << "use_imsrg3_mp4 : " << use_imsrg3_mp4 << std::endl;
+     std::cout << "single_thread : " << single_thread << std::endl;
+     for (auto& it : comm_term_on )
+     {
+         std::cout << it.first << " : " << it.second << std::endl;
+     }
+  }
 
 
   void SetUseIMSRG3(bool tf)
