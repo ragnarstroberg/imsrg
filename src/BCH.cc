@@ -136,6 +136,21 @@ namespace BCH
     {
       //     Operator OpNested = OpIn;
       Operator OpNested = OpOut;
+      Operator OpNested_last = OpOut*0;
+      Operator OpNested_last_last = OpOut*0;
+      Operator OpNested_last_last_last = OpOut*0;
+
+//      //TODO Remove this  --v--
+//      Operator Extra233_last = Operator( *(OpNested.modelspace), 0,0,0,3);
+//      Extra233_last.ThreeBody.SetMode("pn");
+//      Extra233_last.SetParticleRank(3);
+//      Operator Extra233_this = Extra233_last;
+//
+//      Operator Extra223_this = Extra233_last;
+//      Operator Extra223_last = Extra233_last;
+//      Operator Extra223_last = Extra223_this;
+//      Operator Extra223_last_last = Extra223_last;
+//      std::cout << " == Before the loop norms are " << Extra233_this.ThreeBodyNorm() << "   " << Extra233_last.ThreeBodyNorm() << std::endl;
       //     if (use_imsrg3 and not OpNested.ThreeBody.IsAllocated() )
       //     {
       ////        OpNested.SetParticleRank(2); // Why was this like this???
@@ -170,36 +185,103 @@ namespace BCH
         }
 
 
+//        if ( i<3+-1)
+//        {
+//          Commutator::comm223ss(Omega,OpNested,Extra223_this);
+//        }
+
+        OpNested_last_last_last = OpNested_last_last;
+        OpNested_last_last = OpNested_last;
+        OpNested_last = OpNested;
 
         OpNested = Commutator::Commutator(Omega, OpNested); // the ith nested commutator
 
+//        if (  i<4+-1 )
+//        {
+////          Extra233_last *=0;
+//          Commutator::comm231ss(Omega,Extra223_last, Extra223_last );
+//          Commutator::comm232ss(Omega,Extra223_last, Extra223_last );
+//          OpNested.OneBody += Extra223_last.OneBody;
+//          OpNested.TwoBody += Extra223_last.TwoBody;
+//        }
+//        if ( i<3+10)
+//        {
+////          Commutator::comm233_phss(Omega,Extra223_last,Extra233_this);
+////          Commutator::comm233_pp_hhss(Omega,Extra223_last,Extra233_this);
+//        }
+//
+//        if ( i<4+10 )
+//        {
+////          Commutator::comm231ss(Omega,Extra233_last,Extra233_last);
+////          OpNested.OneBody += Extra233_last.OneBody;
+//
+////          Commutator::comm232ss(Omega,Extra233_last,Extra233_last);
+////          OpNested.TwoBody += Extra233_last.TwoBody;
+//
+//        }
+////        OpNested += Extra233;
+////          Extra223_last_last *=0;
+//          Extra233_last =Extra233_this;
+//          Extra223_last = Extra223_this;
+//          Extra233_this *= 0;
+//          Extra223_this *= 0;
+
         if (i > 1 and use_factorized_correction)
         {
-          Operator Op_2b1b = OpNested;
-          Op_2b1b.Erase();
-//          if (SlowVersionOfDoubleCommutator)
-          if (Commutator::FactorizedDoubleCommutator::SlowVersion)
-          {
-            Commutator::FactorizedDoubleCommutator::comm223_231_slow(Omega, chi2, Op_2b1b);
-            Commutator::FactorizedDoubleCommutator::comm223_232_slow(Omega, chi2, Op_2b1b);
-            OpNested += Op_2b1b;
-          }
-          else
-          {
+          Operator Op_DoubleNested = OpNested;
+          Op_DoubleNested.Erase();
+//          if (Commutator::FactorizedDoubleCommutator::SlowVersion)
+//          {
+//            Commutator::FactorizedDoubleCommutator::comm223_231_slow(Omega, chi2, Op_2b1b);
+//            Commutator::FactorizedDoubleCommutator::comm223_232_slow(Omega, chi2, Op_2b1b);
+//            OpNested += Op_2b1b;
+//          }
+//          else
+//          {
 
-            Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_2b1b);
-            Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_2b1b);
-            OpNested += Op_2b1b;
-          }
+            Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_DoubleNested);
+            Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_DoubleNested);
+            OpNested += Op_DoubleNested;
+//          }
           /// Test
-          if (i > 2 and use_factorized_correct_ZBterm)
-          {
-            Commutator::comm220ss(Omega, Op_2b1b, Op_2b1b);
-            Commutator::comm110ss(Omega, Op_2b1b, Op_2b1b);
-            OpNested.ZeroBody += Op_2b1b.ZeroBody / (i + 1.);
-          }
+//          if (i > 2 and use_factorized_correct_ZBterm)
+//          {
+//            Commutator::comm220ss(Omega, Op_2b1b, Op_2b1b);
+//            Commutator::comm110ss(Omega, Op_2b1b, Op_2b1b);
+//            OpNested.ZeroBody += Op_2b1b.ZeroBody / (i + 1.);
+//          }
         }
-        //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
+//        if (i>=2 ) // THIS IS FOR TESTING. IT SHOULD BE REMOVED.
+//        {
+//          Operator intermediate3b = Operator( *(OpNested.modelspace), 0,0,0,3);
+//          intermediate3b.ThreeBody.SetMode("pn");
+//          intermediate3b.SetParticleRank(3);
+//          Operator om = Omega;
+//          om.ThreeBody.SetMode("pn");
+//          Commutator::comm223ss(om, OpNested_last_last, intermediate3b);
+////          Commutator::comm223ss(om, OpIn, intermediate3b);
+//          Commutator::comm231ss(om,intermediate3b, OpNested);
+//          Commutator::comm232ss(om,intermediate3b, OpNested);
+//        }
+//        if (i>=3) // THIS IS FOR TESTING. IT SHOULD BE REMOVED.
+//        {
+//          Operator intermediate3b = Operator( *(OpNested.modelspace), 0,0,0,3);
+//          intermediate3b.ThreeBody.SetMode("pn");
+//          intermediate3b.SetParticleRank(3);
+//          Operator second_int_3b = intermediate3b;
+//          Operator om = Omega;
+//          om.ThreeBody.SetMode("pn");
+//          // FIrst we do [Omega,[Omega,[Omega,H]_2]_3]_1,2
+////          intermediate3b = Commutator::Commutator(Omega,OpIn);
+////          Commutator::comm223ss(om, intermediate3b, second_int_3b);
+////          intermediate3b.Erase();
+//          // Then we do [Omega,[Omega,[Omega,H]_3]_3]_1,2
+//          Commutator::comm223ss(om, OpNested_last_last_last, intermediate3b);
+//          Commutator::comm233_pp_hhss(om, intermediate3b, second_int_3b);
+//          Commutator::comm233_phss(om, intermediate3b, second_int_3b);
+//          Commutator::comm231ss(om,second_int_3b, OpNested);
+//          Commutator::comm232ss(om,second_int_3b, OpNested);
+//        }
 
         factorial_denom /= i;
 
