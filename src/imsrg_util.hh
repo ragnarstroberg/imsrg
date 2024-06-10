@@ -89,6 +89,7 @@ namespace imsrg_util
  Operator L2rel_Op(ModelSpace& modelspace);
  Operator LCM_Op(ModelSpace& modelspace);
  Operator QdotQ_Op(ModelSpace& modelspace);
+ Operator VQQ_Op(ModelSpace& modelspace);
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 

@@ -48,6 +48,7 @@ namespace Commutator
 
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);
+    void PrintSettings();
 
     Operator Commutator(const Operator &X, const Operator &Y);
     Operator CommutatorScalarScalar(const Operator &X, const Operator &Y);

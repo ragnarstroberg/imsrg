@@ -123,6 +123,8 @@ class UnitTest
 //  bool TestFactorizedDoubleCommutators(ModelSpace& ms);
   bool TestFactorizedDoubleCommutators();
 
+  bool TestPerturbativeTriples();
+
   bool SanityCheck();
 
 };

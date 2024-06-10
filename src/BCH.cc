@@ -86,8 +86,6 @@ namespace BCH
   /// with all commutators truncated at the two-body level.
   Operator Standard_BCH_Transform(const Operator &OpIn, const Operator &Omega)
   {
-    //   std::cout << "!!! " << __func__ << " !!!   particles ranks are " << OpIn.GetParticleRank() << "  and  " << Omega.GetParticleRank()
-    //             << "  PN mode is " << OpIn.ThreeBody.GetStorageMode() << "   and  " << Omega.ThreeBody.GetStorageMode()  << std::endl;
 
     double t_start = omp_get_wtime();
     int max_iter = 40;
@@ -111,13 +109,7 @@ namespace BCH
       OpOut.SetParticleRank(3);
     }
     double factorial_denom = 1.0;
-    //    Operator goosetank_chi; // auxiliary one-body operator used to recover 4th-order quadruples.
-    //    if (use_goose_tank_correction)
-    //    {
-    //      goosetank_chi = OpIn;
-    //      goosetank_chi.SetParticleRank(1);
-    //      goosetank_chi.Erase();
-    //    }
+
     Operator chi, chi2; // auxiliary one-body operator used to recover 4th-order quadruples.
     if (use_goose_tank_correction)
     {
@@ -125,23 +117,16 @@ namespace BCH
       chi.SetParticleRank(1);
       chi.Erase();
     }
-    //    if ( use_factorized_correction )
-    //    {
-    //      chi = OpIn;
-    //      chi.Erase();
-    //      chi2 = OpIn;
-    //      chi2.Erase();
-    //    }
+
     if (nx > bch_transform_threshold)
     {
       //     Operator OpNested = OpIn;
       Operator OpNested = OpOut;
-      //     if (use_imsrg3 and not OpNested.ThreeBody.IsAllocated() )
-      //     {
-      ////        OpNested.SetParticleRank(2); // Why was this like this???
-      //        OpNested.SetParticleRank(3);
-      //        OpNested.ThreeBody.SetMode("pn");
-      //     }
+      Operator OpNested_last = OpOut*0;
+      Operator OpNested_last_last = OpOut*0;
+      Operator OpNested_last_last_last = OpOut*0;
+
+
       double epsilon = nx * exp(-2 * ny) * bch_transform_threshold / (2 * ny); // this should probably be explained somewhere...
       for (int i = 1; i <= max_iter; ++i)
       {
@@ -161,45 +146,30 @@ namespace BCH
 
         if (use_goose_tank_correction)
         {
-          //          auto chi_last = goosetank_chi.OneBody;
-          //          goosetank_chi = GooseTankUpdate(Omega, OpNested);
           auto chi_last = chi.OneBody;
           chi = GooseTankUpdate(Omega, OpNested);
-          //          std::cout << "i = " << i << " goose_tank chi = " << chi.OneBody(0,0) << " , chi_last= " << chi_last(1,1)<< std::endl;
           OpNested.OneBody += chi_last; // add the chi from the previous step to OpNested.
         }
 
 
 
+        OpNested_last_last_last = OpNested_last_last;
+        OpNested_last_last = OpNested_last;
+        OpNested_last = OpNested;
+
         OpNested = Commutator::Commutator(Omega, OpNested); // the ith nested commutator
+
 
         if (i > 1 and use_factorized_correction)
         {
-          Operator Op_2b1b = OpNested;
-          Op_2b1b.Erase();
-////          if (SlowVersionOfDoubleCommutator)
-//          if (Commutator::FactorizedDoubleCommutator::SlowVersion)
-//          {
-//            Commutator::FactorizedDoubleCommutator::comm223_231_slow(Omega, chi2, Op_2b1b);
-//            Commutator::FactorizedDoubleCommutator::comm223_232_slow(Omega, chi2, Op_2b1b);
-//            OpNested += Op_2b1b;
-//          }
-//          else
-//          {
+          Operator Op_DoubleNested = OpNested;
+          Op_DoubleNested.Erase();
 
-            Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_2b1b);
-            Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_2b1b);
-            OpNested += Op_2b1b;
-//          }
-//          /// Test
-//          if (i > 2 and use_factorized_correct_ZBterm)
-//          {
-//            Commutator::comm220ss(Omega, Op_2b1b, Op_2b1b);
-//            Commutator::comm110ss(Omega, Op_2b1b, Op_2b1b);
-//            OpNested.ZeroBody += Op_2b1b.ZeroBody / (i + 1.);
-//          }
+            Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_DoubleNested);
+            Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_DoubleNested);
+            OpNested += Op_DoubleNested;
         }
-        //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
+
 
         factorial_denom /= i;
 
