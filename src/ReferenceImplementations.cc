@@ -2473,7 +2473,7 @@ namespace ReferenceImplementations
                           if ( std::abs(j0 - j1)  > Lambda * 2 or  (j0 + j1) < Lambda * 2  )
                             continue;
                           
-                          double sixj1 = AngMom::SixJ(oj.j2, oi.j2, Lambda, j0, j1, J1);
+                          double sixj1 = AngMom::SixJ(oj.j2 /2., oi.j2 /2., Lambda, j0 /2., j1 /2., J1);
                           
                           double xabicde = X3.GetME_pn(J1, J2, j0, a, b, i, c, d, e);      // scalar
                           double yabicde = Y3.GetME_pn(J1, j0, J2, j1, a, b, i, c, d, e);  // tensor
@@ -10004,10 +10004,6 @@ namespace ReferenceImplementations
     Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
     return;
   }
-
-
-
-
 
 
 } // namespace ReferenceImplementations

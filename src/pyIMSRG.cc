@@ -747,7 +747,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm223_231", &ReferenceImplementations::comm223_231);
        ReferenceImplementations.def("comm223_232", &ReferenceImplementations::comm223_232);
 
-
+       ReferenceImplementations.def("comm331st", &ReferenceImplementations::comm331st);
 
 
       py::class_<RPA>(m, "RPA")

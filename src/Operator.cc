@@ -260,6 +260,32 @@ void Operator::SetUpOneBodyChannels()
     Orbit& oi = modelspace->GetOrbit(i);
     if ( OneBodyChannels.find( {oi.l,oi.j2,oi.tz2} ) == OneBodyChannels.end() ) OneBodyChannels[{oi.l,oi.j2,oi.tz2}] = {};
     // The +-1 comes from the spin [LxS](J)
+    int lmin = std::max( std::abs(2*oi.l - 2*rank_J-1)/2, 0);
+    int lmax = std::min( (2*oi.l + 2*rank_J+1)/2, modelspace->GetEmax() );
+    for (int l=lmin; l<=lmax; l++)
+    {
+      if ((l + oi.l + parity)%2>0) continue;
+      int j2min = std::max(std::max(std::abs(oi.j2 - 2*rank_J), 2*l-1),1);
+      int j2max = std::min(oi.j2 + 2*rank_J, 2*l+1);
+      for (int j2=j2min; j2<=j2max; j2+=2)
+      {
+        for ( int tz2=-1; tz2<=1; tz2+=2)
+        {
+          if (std::abs(oi.tz2-tz2) == 2*rank_T)
+          {
+             OneBodyChannels[ {l, j2, tz2} ].insert(i);
+          }
+        }
+      }
+    }
+  }
+
+/*
+  for ( auto i : modelspace->all_orbits )
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    if ( OneBodyChannels.find( {oi.l,oi.j2,oi.tz2} ) == OneBodyChannels.end() ) OneBodyChannels[{oi.l,oi.j2,oi.tz2}] = {};
+    // The +-1 comes from the spin [LxS](J)
     int lmin = std::max( oi.l - rank_J-1, 0);
     int lmax = std::min( oi.l + rank_J+1, modelspace->GetEmax() );
     for (int l=lmin; l<=lmax; l++)
@@ -279,6 +305,8 @@ void Operator::SetUpOneBodyChannels()
       }
     }
   }
+*/
+
   OneBodyChannels_vec.resize( 4*(modelspace->Emax+1)+1, {} ) ;
   for ( auto& it : OneBodyChannels)
   {
