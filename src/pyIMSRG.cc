@@ -543,7 +543,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetDenominatorCutoff", &IMSRGSolver::SetDenominatorCutoff)
           .def("SetDenominatorDelta", &IMSRGSolver::SetDenominatorDelta)
           .def("SetDenominatorDeltaOrbit", &IMSRGSolver::SetDenominatorDeltaOrbit)
-          .def("SetDenominatorPartitioning", &IMSRGSolver::SetDenominatorPartitioning)
+          .def("SetDenominatorPartitioning", &IMSRGSolver::SetDenominatorPartitioning) // Can be Epstein_Nesbet (default) or Moller_Plesset
           .def("GetSystemDimension", &IMSRGSolver::GetSystemDimension)
           .def("GetOmega", &IMSRGSolver::GetOmega)
           .def("SetOmega", &IMSRGSolver::SetOmega)
@@ -695,6 +695,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        BCH.def("SetOnly2bOmega", &BCH::SetOnly2bOmega);
        BCH.def("Set_BCH_Transform_Threshold", &BCH::Set_BCH_Transform_Threshold);
        BCH.def("Set_BCH_Product_Threshold", &BCH::Set_BCH_Product_Threshold);
+       BCH.def("SetBCHSkipiEq1", &BCH::SetBCHSkipiEq1);
 
 
 
@@ -770,6 +771,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("TestRPAEffectiveCharge", &UnitTest::TestRPAEffectiveCharge, py::arg("H"), py::arg("OpIn"), py::arg("k"), py::arg("l"))
           .def("SanityCheck", &UnitTest::SanityCheck)
           .def("TestFactorizedDoubleCommutators", &UnitTest::TestFactorizedDoubleCommutators)
+          .def("TestPerturbativeTriples", &UnitTest::TestPerturbativeTriples)
           .def("Test_comm110ss", &UnitTest::Test_comm110ss)
           .def("Test_comm220ss", &UnitTest::Test_comm220ss)
           .def("Test_comm111ss", &UnitTest::Test_comm111ss)

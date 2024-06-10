@@ -250,6 +250,10 @@ test-factorized:
 	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestFactorizedDoubleCommutators(); \
                               print('passed? ',passed); "
 
+test-triples:
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestPerturbativeTriples(); \
+                              print('passed? ',passed); "
+
 install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \
 	  mkdir $(INSTDIR)/lib; \
