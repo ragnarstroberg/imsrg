@@ -177,27 +177,27 @@ namespace BCH
         {
           Operator Op_2b1b = OpNested;
           Op_2b1b.Erase();
-//          if (SlowVersionOfDoubleCommutator)
-          if (Commutator::FactorizedDoubleCommutator::SlowVersion)
-          {
-            Commutator::FactorizedDoubleCommutator::comm223_231_slow(Omega, chi2, Op_2b1b);
-            Commutator::FactorizedDoubleCommutator::comm223_232_slow(Omega, chi2, Op_2b1b);
-            OpNested += Op_2b1b;
-          }
-          else
-          {
+////          if (SlowVersionOfDoubleCommutator)
+//          if (Commutator::FactorizedDoubleCommutator::SlowVersion)
+//          {
+//            Commutator::FactorizedDoubleCommutator::comm223_231_slow(Omega, chi2, Op_2b1b);
+//            Commutator::FactorizedDoubleCommutator::comm223_232_slow(Omega, chi2, Op_2b1b);
+//            OpNested += Op_2b1b;
+//          }
+//          else
+//          {
 
             Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_2b1b);
             Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_2b1b);
             OpNested += Op_2b1b;
-          }
-          /// Test
-          if (i > 2 and use_factorized_correct_ZBterm)
-          {
-            Commutator::comm220ss(Omega, Op_2b1b, Op_2b1b);
-            Commutator::comm110ss(Omega, Op_2b1b, Op_2b1b);
-            OpNested.ZeroBody += Op_2b1b.ZeroBody / (i + 1.);
-          }
+//          }
+//          /// Test
+//          if (i > 2 and use_factorized_correct_ZBterm)
+//          {
+//            Commutator::comm220ss(Omega, Op_2b1b, Op_2b1b);
+//            Commutator::comm110ss(Omega, Op_2b1b, Op_2b1b);
+//            OpNested.ZeroBody += Op_2b1b.ZeroBody / (i + 1.);
+//          }
         }
         //        std::cout << "After " << i << " nested commutators, the 1b piece looks like " << std::endl << OpNested.OneBody << std::endl;
 
