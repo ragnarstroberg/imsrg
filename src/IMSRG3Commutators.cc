@@ -121,7 +121,7 @@ namespace Commutator
       double abc_symm = 6;
       if (bra.p == bra.q and bra.q == bra.r)
         abc_symm = 1;
-      else if (bra.p == bra.q or bra.q == bra.r)
+      else if (bra.p == bra.q or bra.q == bra.r or bra.p==bra.r)
         abc_symm = 3;
       if ((std::abs(ea - e_fermi[tza]) + std::abs(eb - e_fermi[tzb]) + std::abs(ec - e_fermi[tzc])) > Z.modelspace->GetdE3max())
         continue;
@@ -157,7 +157,7 @@ namespace Commutator
         double def_symm = 6;
         if (ket.p == ket.q and ket.q == ket.r)
           def_symm = 1;
-        else if (ket.p == ket.q or ket.q == ket.r)
+        else if (ket.p == ket.q or ket.q == ket.r or ket.p==ket.r)
           def_symm = 3;
 
         double xabcdef = X3.GetME_pn_ch(ch3bra, ch3ket, ibra, iket);
@@ -5231,12 +5231,12 @@ namespace Commutator
           double symm_ijk = 6;
           if (i == j and i == k)
             symm_ijk = 1;
-          else if (i == j or i == k)
+          else if (i == j or i == k or j == k)
             symm_ijk = 3;
           double symm_lmn = 6;
           if (l == m and l == n)
             symm_lmn = 1;
-          else if (l == m or l == n)
+          else if (l == m or l == n or m == n)
             symm_lmn = 3;
 
           double Eijk = Z.OneBody(i, i) + Z.OneBody(j, j) + Z.OneBody(k, k);

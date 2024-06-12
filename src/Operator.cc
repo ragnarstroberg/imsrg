@@ -265,8 +265,9 @@ void Operator::SetUpOneBodyChannels()
     for (int l=lmin; l<=lmax; l++)
     {
       if ((l + oi.l + parity)%2>0) continue;
-      int j2min = std::max(std::max(oi.j2 - 2*rank_J, 2*l-1),1);
-      int j2max = std::min(oi.j2 + 2*rank_J, 2*l+1);
+//      int j2min = std::max(std::max(oi.j2 - 2*rank_J, 2*l-1),1);
+      int j2min = std::max( std::abs(oi.j2 - 2*rank_J), 2*l-1);
+      int j2max = std::min(          oi.j2 + 2*rank_J,  2*l+1);
       for (int j2=j2min; j2<=j2max; j2+=2)
       {
         for ( int tz2=-1; tz2<=1; tz2+=2)
