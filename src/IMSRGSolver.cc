@@ -239,6 +239,14 @@ void IMSRGSolver::Solve_magnus_euler()
 
   generator.Update(FlowingOps[0], Eta);
 
+  // SRS noticed this on June 12 2024. If these two parameters are equal, and especially if we're using the hunter-gatherer mode, then we become sensitive to
+  // numerical precision when deciding if we should split omega, leading to machine-dependent behavior.
+  if ( std::abs( omega_norm_max - norm_domega)<1e-6 )
+  {
+     norm_domega += 1e-4;
+     std::cout << __func__ << ":  adjusting norm_domega to " << norm_domega << "  to avoid numerical trouble, since omega_norm_max = " << omega_norm_max << std::endl;
+  }
+
   Elast = H_0->ZeroBody;
   cumulative_error = 0;
   // Write details of the flow
@@ -275,8 +283,11 @@ void IMSRGSolver::Solve_magnus_euler()
       norm_omega = 0;
     }
     // ds should never be more than 1, as this is over-rotating
+    // Also, since we check if ||Omega|| < omega_norm_max, if we choose ds so that ||Omega|| = omega_norm_max, then we become sensitive
+    // to numerical precision details when evaluating the inequality and behavior becomes machine dependent. So we add 1e-5 to the omega_norm_max
+    // option to ensure that we're definitely on one side of the inequality.
     if (magnus_adaptive)
-      ds = std::min(std::min(std::min(norm_domega / norm_eta, norm_domega / norm_eta / (norm_omega + 1.0e-9)), omega_norm_max / norm_eta), ds_max);
+      ds = std::min( { norm_domega / norm_eta,   norm_domega / norm_eta / (norm_omega + 1.0e-9),    (omega_norm_max+1e-5) / norm_eta, ds_max   });
     ds = std::min(ds, smax - s);
 
     s += ds;
