@@ -37,6 +37,7 @@ IMSRGSolver::IMSRGSolver(Operator &H_in)
 {
   Eta.Erase();
   Eta.SetAntiHermitian();
+//  Eta.ThreeBody.SetMode("pn");  // DONT DO THIS, it allocates a 3N structure even if you don't want it.
   Omega.emplace_back(Eta);
 }
 
