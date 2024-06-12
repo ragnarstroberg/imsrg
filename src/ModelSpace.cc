@@ -2005,6 +2005,12 @@ void ModelSpace::Print()
     Orbit &oi = GetOrbit(i);
     std::cout << i << " : " << oi.n << " " << oi.l << " " << oi.j2 << " " << oi.tz2 << "  , " << oi.occ << " " << oi.cvq << std::endl;
   }
+  std::cout << "Valence orbits: " << std::endl;
+  for ( auto& v : valence )
+  {
+    std::cout << v << "  ";
+  }
+  std::cout << std::endl;
   std::cout << "Number of two body channels " << GetNumberTwoBodyChannels() << std::endl;
   for (size_t ch = 0; ch < GetNumberTwoBodyChannels(); ch++)
   {
