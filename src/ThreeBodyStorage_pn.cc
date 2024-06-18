@@ -173,6 +173,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int j0, in
   size_t ch_ket = GetKetIndex_withRecoupling( Jde_in, j1, d,e,f, index_ket, recouple_ket );
   if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
   if (ch_bra==-1 or ch_ket==-1) return 0;
+  if ( std::abs(j0 - j1)  > rank_J * 2 or  (j0 + j1) < rank_J * 2  ) return 0;
   ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
   ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
   if ( (Tbc_bra.parity + Tbc_ket.parity)%2 != parity) return 0;
@@ -280,7 +281,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn_ch(size_t ch_bra, size_t
   size_t index;
   int herm_flip;
   AccessME(ch_bra,ch_ket,ibra,iket,index,herm_flip);
-//  std::cout << "   got index = " << index << "   MatEl size is " << MatEl.size() << std::hex << "  address = " << &(MatEl[index]) << std::dec << "   ->  " << MatEl[index]  << "   herm_flip = " << herm_flip << "   because herm is " << herm << std::endl;
+  //  std::cout << "   got index = " << index << "   MatEl size is " << MatEl.size() << std::hex << "  address = " << &(MatEl[index]) << std::dec << "   ->  " << MatEl[index]  << "   herm_flip = " << herm_flip << "   because herm is " << herm << std::endl;
   return MatEl.at(index)*herm_flip;
 }
 
@@ -292,9 +293,9 @@ void ThreeBodyStorage_pn::SetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra,
   size_t index;
   int herm_flip;
   AccessME(ch_bra,ch_ket,ibra,iket,index,herm_flip);
-//  std::cout << "   got index = " << index << "   MatEl size is " << MatEl.size() << std::endl;
+  //  std::cout << "   got index = " << index << "   MatEl size is " << MatEl.size() << std::endl;
   MatEl.at(index) = herm_flip * V;
-//  std::cout << " all is well. " << std::endl;
+  //  std::cout << " all is well. " << std::endl;
 }
 
 
@@ -394,6 +395,15 @@ void ThreeBodyStorage_pn::AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, si
   else
   {
     index = (iter_ch_start->second) + ch_dim[ch_2]*iket_1 + iket_2;
+    // include phase factor for 3b tensor operator
+    // < i || T || j > = herm * (-)^(i-j) < j || T || i >*
+    if (ch_ket > ch_bra)  
+    {
+      ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
+      ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
+      herm_flip *= modelspace->phase((Tbc_bra.twoJ - Tbc_ket.twoJ)/2);
+    }
+    
   }
   // check for trouble
   if (index>=MatEl.size())

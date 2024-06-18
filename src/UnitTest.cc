@@ -93,7 +93,8 @@ Operator UnitTest::RandomOp(ModelSpace &modelspace, int jrank, int tz, int parit
       size_t ch_ket = iter_braket.first.ch_ket;
       ThreeBodyChannel &Tbc_bra = modelspace.GetThreeBodyChannel(ch_bra);
       ThreeBodyChannel &Tbc_ket = modelspace.GetThreeBodyChannel(ch_ket);
-      int twoJ = Tbc_bra.twoJ;
+      int twoj1 = Tbc_bra.twoJ;
+      int twoj2 = Tbc_ket.twoJ;
       size_t nbras = Tbc_bra.GetNumberKets();
 
       for (size_t i = 0; i < bufsize; i++)
@@ -151,8 +152,8 @@ Operator UnitTest::RandomOp(ModelSpace &modelspace, int jrank, int tz, int parit
               {
                 if ((a == b) and Jab % 2 != 0)
                   continue;
-                //                   double recouple_bra = Rando.ThreeBody.PermutationPhase(perm_abc)  * Rando.ThreeBody.RecouplingCoefficient( perm_abc, ja, jb, jc, Jab, bra.Jpq, twoJ);
-                double recouple_bra = Rando.ThreeBody.PermutationPhase(perm_abc) * Rando.ThreeBody.RecouplingCoefficient(perm_abc, ja, jb, jc, bra.Jpq, Jab, twoJ);
+                // double recouple_bra = Rando.ThreeBody.PermutationPhase(perm_abc)  * Rando.ThreeBody.RecouplingCoefficient( perm_abc, ja, jb, jc, Jab, bra.Jpq, twoJ);
+                double recouple_bra = Rando.ThreeBody.PermutationPhase(perm_abc) * Rando.ThreeBody.RecouplingCoefficient(perm_abc, ja, jb, jc, bra.Jpq, Jab, twoj1);
                 if (std::abs(recouple_bra) < 1e-9)
                   continue;
 
@@ -168,8 +169,8 @@ Operator UnitTest::RandomOp(ModelSpace &modelspace, int jrank, int tz, int parit
                   {
                     if ((d == e) and Jde % 2 != 0)
                       continue;
-                    //                         double recouple_ket = Rando.ThreeBody.PermutationPhase(perm_def) * Rando.ThreeBody.RecouplingCoefficient( perm_def, jd, je, jf, Jde, ket.Jpq, twoJ);
-                    double recouple_ket = Rando.ThreeBody.PermutationPhase(perm_def) * Rando.ThreeBody.RecouplingCoefficient(perm_def, jd, je, jf, ket.Jpq, Jde, twoJ);
+                    // double recouple_ket = Rando.ThreeBody.PermutationPhase(perm_def) * Rando.ThreeBody.RecouplingCoefficient( perm_def, jd, je, jf, Jde, ket.Jpq, twoJ);
+                    double recouple_ket = Rando.ThreeBody.PermutationPhase(perm_def) * Rando.ThreeBody.RecouplingCoefficient(perm_def, jd, je, jf, ket.Jpq, Jde, twoj2);
                     double fakematel = randbuf[(Jab + Jde) % bufsize];
                     if (ibra == iket and Jde > Jab)
                       fakematel *= herm;
@@ -828,7 +829,7 @@ double UnitTest::GetMschemeMatrixElement_1b(const Operator &Op, int a, int ma, i
   {
     Orbit &oa = Op.modelspace->GetOrbit(a);
     Orbit &ob = Op.modelspace->GetOrbit(b);
-    matel = AngMom::phase(2 * Jop) * AngMom::CG(Jop, 0.5 * (ma - mb), 0.5 * ob.j2, 0.5 * mb, 0.5 * oa.j2, 0.5 * ma) / sqrt(oa.j2 + 1.0) * Op.OneBody(a, b);
+    matel = AngMom::phase(2 * Jop) * AngMom::CG(0.5 * ob.j2, 0.5 * mb, Jop, 0.5 * (ma - mb), 0.5 * oa.j2, 0.5 * ma) / sqrt(oa.j2 + 1.0) * Op.OneBody(a, b);
   }
 
   return matel;
@@ -865,7 +866,7 @@ double UnitTest::GetMschemeMatrixElement_2b(const Operator &Op, int a, int ma, i
   }
   else
   {
-    if (abs(abs(ma + mb) - abs(mc + md)) > Jop)
+    if (abs(ma + mb - mc - md) <= 2 * Jop)
     {
       int Jmin = std::max(std::abs(oa.j2 - ob.j2), std::abs(oc.j2 - od.j2)) / 2;
       int Jmax = std::min(oa.j2 + ob.j2, oc.j2 + od.j2) / 2;
@@ -880,14 +881,19 @@ double UnitTest::GetMschemeMatrixElement_2b(const Operator &Op, int a, int ma, i
       int M2 = (mc + md) / 2;
       for (int J1 = J1_min; J1 <= J1_max; J1++)
       {
+        if (std::abs(M1) > J1)
+          continue;
         for (int J2 = J2_min; J2 <= J2_max; J2++)
         {
+          if (std::abs(M2) > J2)
+            continue;
+
           // We take the un-normalized TBME (the one with the tilde) so we don't
           // need to worry about normalization factors.
           double clebsch_ab = AngMom::CG(0.5 * oa.j2, 0.5 * ma, 0.5 * ob.j2, 0.5 * mb, J1, M1);
           double clebsch_cd = AngMom::CG(0.5 * oc.j2, 0.5 * mc, 0.5 * od.j2, 0.5 * md, J2, M2);
-          double clebsch_J1J2J = AngMom::CG(J1, M1, J2, M2, Jop, M1 - M2);
-          matel += clebsch_J1J2J * clebsch_ab * clebsch_cd * Op.TwoBody.GetTBME_J(J1, J2, a, b, c, d);
+          double clebsch_J1J2J = AngMom::CG(J2, M2, Jop, M1 - M2, J1, M1);
+          matel += clebsch_J1J2J * clebsch_ab * clebsch_cd / sqrt(2 * J1 + 1.0) * Op.TwoBody.GetTBME_J(J1, J2, a, b, c, d);
         }
       }
     }
@@ -925,12 +931,9 @@ double UnitTest::GetMschemeMatrixElement_3b(const Operator &Op, int a, int ma, i
     return 0;
   if (std::abs(oa.tz2 + ob.tz2 + oc.tz2 - od.tz2 - oe.tz2 - of.tz2) != 2 * Tzop)
     return 0;
-  //  if (a==b and a==c and oa.j2<2) return 0;
-  //  if (d==e and d==f and od.j2<2) return 0;
 
   if (Jop == 0)
   {
-std::cout << "   Testing1 " <<std::endl;
     if ((ma + mb + mc) != (md + me + mf))
       return 0;
 
@@ -943,33 +946,27 @@ std::cout << "   Testing1 " <<std::endl;
     int Jde_max = (od.j2 + oe.j2) / 2;
 
     if (a == b)
-      Jab_max = std::min(Jab_max, oa.j2 - 1);
+      Jab_max = std::min(Jab_max, oa.j2 - 1 );
     if (d == e)
-      Jde_max = std::min(Jde_max, od.j2 - 1);
+      Jde_max = std::min(Jde_max, od.j2 - 1 );
 
     for (int Jab = Jab_min; Jab <= Jab_max; Jab++)
     {
       if (a == b and (Jab % 2) > 0)
         continue;
-std::cout << "   Testing2 " <<std::endl;
 
       double clebsch_ab = AngMom::CG(0.5 * oa.j2, 0.5 * ma, 0.5 * ob.j2, 0.5 * mb, Jab, Mab);
       if (std::abs(clebsch_ab) < 1e-8)
         continue;
 
-std::cout << "   Testing3 " <<std::endl;
-
       for (int Jde = Jde_min; Jde <= Jde_max; Jde++)
       {
         if (d == e and (Jde % 2) > 0)
           continue;
-std::cout << "   Testing4 " <<std::endl;
 
         double clebsch_de = AngMom::CG(0.5 * od.j2, 0.5 * md, 0.5 * oe.j2, 0.5 * me, Jde, Mde);
         if (std::abs(clebsch_de) < 1e-8)
           continue;
-
-std::cout << "   Testing5 " <<std::endl;
 
         int twoJ_min = std::max({std::abs(twoM), std::abs(2 * Jab - oc.j2), std::abs(2 * Jde - of.j2)});
         int twoJ_max = std::min(2 * Jab + oc.j2, 2 * Jde + of.j2);
@@ -979,16 +976,8 @@ std::cout << "   Testing5 " <<std::endl;
           double clebsch_def = AngMom::CG(Jde, Mde, 0.5 * of.j2, 0.5 * mf, 0.5 * twoJ, 0.5 * twoM);
           if (std::abs(clebsch_abc) < 1e-8 or std::abs(clebsch_def) < 1e-8)
             continue; // avoid the look up, with possible 6js...
-
-std::cout << "   Testing6 " <<std::endl;
-
           double meJ = Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a, b, c, d, e, f);
           matel += clebsch_ab * clebsch_abc * clebsch_de * clebsch_def * meJ;
-
-
-          std::cout<< "ME:  "<< a<< " "<< b << " "<<  c << " "<< d<< " "<< e<< " "<< f<< " "<<     meJ  <<"    " <<  matel  <<std::endl;
-
-
           //        std::cout << __func__ << "  Jab, Jde, twoJ  " << Jab << " " << Jde << " " << twoJ
           //                  << "  cab cabc cde cdef " << clebsch_ab << " " << clebsch_abc << " " << clebsch_de << " " << clebsch_def
           //                  << "   meJ = " << meJ << "   ->  matel = " << matel << std::endl;
@@ -998,15 +987,8 @@ std::cout << "   Testing6 " <<std::endl;
   }
   else
   {
-    // reduced matrix element using Wigner-Eckart thm:   
-    // < j1 m1 | Op JM | j2 m2 > = (-1)^2J * <J M j2 m2 | j1 m1 > / sqrt(2j1+1) < j1 || Op J || j2 >
-
-    if (abs(ma + mb + mc) > Jop)
+    if (std::abs(ma + mb + mc - md - me - mf) > 2 * Jop)
       return 0;
-
-    if (abs(md + me + mf) > Jop)
-      return 0;
-    // if ( (ma+mb+mc) != (md+me+mf) ) return 0;
 
     int Mab = (ma + mb) / 2;
     int Mde = (md + me) / 2;
@@ -1017,7 +999,6 @@ std::cout << "   Testing6 " <<std::endl;
     int Jde_min = std::max(std::abs(Mde), std::abs(od.j2 - oe.j2) / 2);
     int Jde_max = (od.j2 + oe.j2) / 2;
     int twoTm = ma + mb + mc - md - me - mf;
-
 
     if (a == b)
       Jab_max = std::min(Jab_max, oa.j2 - 1);
@@ -1039,36 +1020,46 @@ std::cout << "   Testing6 " <<std::endl;
         if (std::abs(clebsch_de) < 1e-8)
           continue;
 
-        int j1_min = std::abs(2 * Jab - oc.j2);
+        int j1_min = std::max(std::abs(twoMabc), std::abs(2 * Jab - oc.j2));
         int j1_max = 2 * Jab + oc.j2;
+        if (a == b and b == c)
+          j1_max = std::min(j1_max, 3 * oa.j2 - 3 );
+        else if ( (c == a or c == b) and a != b )
+        {
+          j1_max = std::min(j1_max, oa.j2 + ob.j2 + oc.j2 - 1 );
+        }
 
-        int j2_min = std::abs(2 * Jde - of.j2);
+        int j2_min = std::max(std::abs(twoMdef), std::abs(2 * Jde - of.j2));;
         int j2_max = 2 * Jde + of.j2;
-
+        if (d == e and e == f)
+          j2_max = std::min(j2_max, 3 * od.j2 - 3 );
+        else if ( (f == d or f == e) and d != e )
+        {
+          j2_max = std::min(j2_max, od.j2 + oe.j2 + of.j2 - 1 );
+        }
 
         for (int twoj1 = j1_min; twoj1 <= j1_max; twoj1 += 2)
         {
 
           for (int twoj2 = j2_min; twoj2 <= j2_max; twoj2 += 2)
           {
+            if (  twoj1 + twoj2 < 2 * Jop  or std::abs(twoj1 - twoj2) > 2 * Jop  )
+            {
+              continue;
+            }
+            
             double clebsch_abc = AngMom::CG(Jab, Mab, 0.5 * oc.j2, 0.5 * mc, 0.5 * twoj1, 0.5 * twoMabc);
             double clebsch_def = AngMom::CG(Jde, Mde, 0.5 * of.j2, 0.5 * mf, 0.5 * twoj2, 0.5 * twoMdef);
+            double CG_WE = AngMom::CG(0.5 * twoj2, 0.5 * twoMdef, Jop, 0.5 * twoTm, 0.5 * twoj1, 0.5 * twoMabc);
 
-
-            double CG_WE = AngMom::CG(0.5 * twoj2, 0.5 * twoMdef, 0.5 * Jop, 0.5 * twoTm, 0.5 * twoj1, 0.5 * twoMabc);
-            
-            
             if (std::abs(clebsch_abc) < 1e-8 or std::abs(clebsch_def) < 1e-8 or std::abs(CG_WE) < 1e-8)
               continue; // avoid the look up, with possible 6js...
 
             double meJ = Op.ThreeBody.GetME_pn(Jab, twoj1, Jde, twoj2, a, b, c, d, e, f);
-            matel += CG_WE / sqrt( twoj1 + 1. ) * clebsch_ab * clebsch_abc * clebsch_de * clebsch_def * meJ;
-
-            std::cout<< "ME:  "<< a<< " "<< b << " "<<  c << " "<< d<< " "<< e<< " "<< f<< " "<<     meJ  <<"    " <<  matel  <<std::endl;
-
+            matel += CG_WE / sqrt( twoj1 + 1.) * clebsch_ab * clebsch_abc * clebsch_de * clebsch_def * meJ;
             //        std::cout << __func__ << "  Jab, Jde, twoJ  " << Jab << " " << Jde << " " << twoJ
-            //                  << "  cab cabc cde cdef " << clebsch_ab << " " << clebsch_abc << " " << clebsch_de << " " << clebsch_def
-            //                  << "   meJ = " << meJ << "   ->  matel = " << matel << std::endl;
+            //        << "  cab cabc cde cdef " << clebsch_ab << " " << clebsch_abc << " " << clebsch_de << " " << clebsch_def
+            //        << "   meJ = " << meJ << "   ->  matel = " << matel << std::endl;
           }
         }
       }
@@ -5204,20 +5195,30 @@ bool UnitTest::SanityCheck()
 //
 // Z_ij = 1/12 sum_abcde (nanb n`c n`dn`e + n`an`b ncndne) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
 //
-// this is very slow...
 bool UnitTest::Mscheme_Test_comm331st(const Operator &X, const Operator &Y)
 {
 
   Operator Z_J(Y);
   Z_J.Erase();
 
-  // Commutator::comm331st( X, Y, Z_J);
-  ReferenceImplementations::comm331st(X, Y, Z_J);
+
   int Lambda = Y.GetJRank();
-  //  if ( Z_J.IsHermitian() )
-  //     Z_J.Symmetrize();
-  //  else if (Z_J.IsAntiHermitian() )
-  //     Z_J.AntiSymmetrize( );
+
+  Operator Y_copy(Y);
+  if (Lambda == 0)
+  {
+    Y_copy.MakeReduced();
+    Z_J.MakeReduced();
+  }
+
+  // Commutator::comm331st( X, Y, Z_J);
+  ReferenceImplementations::comm331st(X, Y_copy, Z_J);
+  // ReferenceImplementations::comm331ss(X, Y, Z_J);
+  if (Lambda == 0)
+  {
+    // Y_copy.MakeNotReduced();
+    Z_J.MakeNotReduced();
+  }
 
   std::cout << __func__ << "   Done with J-scheme commutator. Begin m-scheme version..." << std::endl;
 
@@ -5229,64 +5230,71 @@ bool UnitTest::Mscheme_Test_comm331st(const Operator &X, const Operator &Y)
   {
     Orbit &oi = X.modelspace->GetOrbit(i);
     int mi = oi.j2;
+    mi = 1;
     for (auto j : Z_J.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}))
     {
-      //    Orbit& oj = X.modelspace->GetOrbit(j);
+
       // if (j < i)
       //   continue;
       Orbit &oj = X.modelspace->GetOrbit(j);
 
-      // std::cout<< oi.j2 << "  "<< oj.j2 << std::endl;
+      if ( std::abs(oj.j2 - oi.j2) > Lambda * 2 or (oi.j2 + oj.j2) < Lambda * 2  )
+        continue;
 
-      // change here if test other channel
-      int mj = mi;
-
+      // change here if test other third component
+      int mj = oj.j2;
+      
+      int twoTm = -2;    // mi - mj;
+      mj = mi - twoTm;
+      
       if (std::abs(mj) > oj.j2)
         continue;
-      
+
+      if (std::abs(twoTm) > 2 * Lambda)
+        continue;
+
       double Zm_ij = 0;
       size_t norb = X.modelspace->GetNumberOrbits();
-      //      for ( auto a : X.modelspace->all_orbits )
-#pragma omp parallel for schedule(dynamic, 1) reduction(+ : Zm_ij)
+
+//#pragma omp parallel for schedule(dynamic, 1) reduction(+ : Zm_ij)
       for (size_t a = 0; a < norb; a++)
       {
         Orbit &oa = X.modelspace->GetOrbit(a);
         double na = oa.occ;
-        //        if ( na<1e-6 ) continue;
+
         for (auto b : X.modelspace->all_orbits)
         {
           Orbit &ob = X.modelspace->GetOrbit(b);
           double nb = ob.occ;
-          //          if ( nb<1e-6 ) continue;
+
           for (auto c : X.modelspace->all_orbits)
           {
             Orbit &oc = X.modelspace->GetOrbit(c);
             double nc = oc.occ;
-            //            if ( (1-nc)<1e-6 ) continue;
+
             for (auto d : X.modelspace->all_orbits)
             {
               Orbit &od = X.modelspace->GetOrbit(d);
               double nd = od.occ;
-              //              if ( (1-nd)<1e-6 ) continue;
+
               for (auto e : X.modelspace->all_orbits)
               {
                 Orbit &oe = X.modelspace->GetOrbit(e);
-                //                if ( (oa.l+ob.l+oi.l + oc.l+od.l+oe.l)%2 > 0) continue;
-                //                if ( (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+oe.tz2)) continue;
-
-                if (((oa.l + ob.l + oi.l + oc.l + od.l + oe.l + X.GetParity()) % 2 != 0) and ((oa.l + ob.l + oi.l + oc.l + od.l + oe.l + Y.GetParity()) % 2 != 0))
-                  continue;
-                if ((std::abs(oa.tz2 + ob.tz2 + oi.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * X.GetTRank()) and (std::abs(oa.tz2 + ob.tz2 + oi.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * Y.GetTRank()))
-                  continue;
-                if (((oa.l + ob.l + oj.l + oc.l + od.l + oe.l + X.GetParity()) % 2 != 0) and ((oa.l + ob.l + oj.l + oc.l + od.l + oe.l + Y.GetParity()) % 2 != 0))
-                  continue;
-                if ((std::abs(oa.tz2 + ob.tz2 + oj.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * X.GetTRank()) and (std::abs(oa.tz2 + ob.tz2 + oj.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * Y.GetTRank()))
-                  continue;
-
                 double ne = oe.occ;
-                //                if ( (1-ne)<1e-6 ) continue;
-                // Mistake found by Matthias Heinz Oct 14 2022                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne);
-                double occfactor = na * nb * (1 - nc) * (1 - nd) * (1 - ne) + (1 - na) * (1 - nb) * nc * nd * ne;
+                
+                // Tensor operator may change parity. So orbit i and j may not have the same parity
+                if (
+                    ((oa.l + ob.l + oi.l + oc.l + od.l + oe.l + X.GetParity()) % 2 != 0) and ((oa.l + ob.l + oj.l + oc.l + od.l + oe.l + Y.GetParity()) % 2 != 0) and
+                    ((oa.l + ob.l + oi.l + oc.l + od.l + oe.l + Y.GetParity()) % 2 != 0) and ((oa.l + ob.l + oj.l + oc.l + od.l + oe.l + X.GetParity()) % 2 != 0))
+                  continue;
+
+                if (
+                    (std::abs(oa.tz2 + ob.tz2 + oi.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * X.GetTRank()) and (std::abs(oa.tz2 + ob.tz2 + oj.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * Y.GetTRank()) and
+                    (std::abs(oa.tz2 + ob.tz2 + oi.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * Y.GetTRank()) and (std::abs(oa.tz2 + ob.tz2 + oj.tz2 - oc.tz2 - od.tz2 - oe.tz2) != 2 * X.GetTRank()))
+                  continue;
+
+                double occfactor = na * nb * (1 - nc) * (1 - nd) * (1 - ne) 
+                                   + (1 - na) * (1 - nb) * nc * nd * ne;
                 if (std::abs(occfactor) < 1e-7)
                   continue;
 
@@ -5298,23 +5306,27 @@ bool UnitTest::Mscheme_Test_comm331st(const Operator &X, const Operator &Y)
                     {
                       for (int md = -od.j2; md <= od.j2; md += 2)
                       {
-                        int me = ma + mb + mi - mc - md - mj;
-                        if (std::abs(me) > oe.j2)
-                          continue;
-
-                        if ( ma + mb + mi != mc + md + me )
+                        for (int me = -oe.j2; me <= oe.j2; me += 2)
                         {
-                          continue;
-                        }
-                        
-                        double xabicde = GetMschemeMatrixElement_3b(X, a, ma, b, mb, i, mi, c, mc, d, md, e, me);
-                        double ycdeabj = GetMschemeMatrixElement_3b(Y, c, mc, d, md, e, me, a, ma, b, mb, j, mj);
-                        double xcdeabj = GetMschemeMatrixElement_3b(X, c, mc, d, md, e, me, a, ma, b, mb, j, mj);
-                        double yabicde = GetMschemeMatrixElement_3b(Y, a, ma, b, mb, i, mi, c, mc, d, md, e, me);
+                          if (std::abs(ma + mb + mi - mc - md - me) <= 2 * X.GetJRank() 
+                          and std::abs(ma + mb + mj - mc - md - me) <= 2 * Y.GetJRank() 
+                          and ( mc + md + me - ma - mb - mj ) == twoTm )
+                          {
+                            double xabicde = GetMschemeMatrixElement_3b(X, a, ma, b, mb, i, mi, c, mc, d, md, e, me);
+                            double ycdeabj = GetMschemeMatrixElement_3b(Y, c, mc, d, md, e, me, a, ma, b, mb, j, mj);
+                            Zm_ij += 1. / 12 * occfactor * ( xabicde * ycdeabj ); 
+                          }
 
-                        // std::cout<< xabicde << "  "<< xcdeabj  << "   " << ycdeabj <<  "   " << yabicde <<  std::endl;
+                          if (std::abs(ma + mb + mi - mc - md - me) <= 2 * Y.GetJRank() 
+                          and std::abs(ma + mb + mj - mc - md - me) <= 2 * X.GetJRank()
+                          and ma + mb + mi - mc - md - me == twoTm)
+                          {
+                            double xcdeabj = GetMschemeMatrixElement_3b(X, c, mc, d, md, e, me, a, ma, b, mb, j, mj);
+                            double yabicde = GetMschemeMatrixElement_3b(Y, a, ma, b, mb, i, mi, c, mc, d, md, e, me);
+                            Zm_ij -= 1. / 12 * occfactor * ( yabicde * xcdeabj ); 
+                          }
 
-                        Zm_ij += 1. / 12 * occfactor * (xabicde * ycdeabj - yabicde * xcdeabj);
+                        } // for me
                       } // for md
                     } // for mc
                   } // for mb
@@ -5324,16 +5336,20 @@ bool UnitTest::Mscheme_Test_comm331st(const Operator &X, const Operator &Y)
           } // for c
         } // for b
       } // for a
-      double clebsch_ZJ = AngMom::CG(0.5 * oj.j2, 0.5 * mj, 0.5 *Lambda, 0.5 * (mi - mj), 0.5 * oi.j2, 0.5 * mi);
-      double ZJ_ij = Z_J.OneBody(i, j) / sqrt(oi.j2 + 1) * clebsch_ZJ;
+      
+      double clebsch_ZJ = AngMom::CG(0.5 * oj.j2, 0.5 * mj, Lambda, 0.5 * twoTm, 0.5 * oi.j2, 0.5 * mi);
+      double ZJ_ij = Z_J.OneBody(i, j);
+      if (Lambda != 0)
+      {
+        ZJ_ij *= clebsch_ZJ / sqrt(oi.j2 + 1);
+      }
 
       double err = Zm_ij - ZJ_ij;
-      std::cout << "Print out " << __func__ << "  i,j = " << i << " " << j
-                << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << std::endl;
+
       if (std::abs(err) > 1e-6)
       {
-        std::cout << "Trouble in " << __func__ << "  i,j = " << i << " " << j
-                  << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << std::endl;
+        std::cout << "\033[31mTrouble in " << __func__ << "  i,j = " << i << " " << j
+                  << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << "\033[0m"<< std::endl;
       }
       summed_error += err * err;
       sum_m += Zm_ij * Zm_ij;
@@ -5343,8 +5359,16 @@ bool UnitTest::Mscheme_Test_comm331st(const Operator &X, const Operator &Y)
   } // for i
 
   bool passed = std::abs(summed_error) < 1e-6;
-  std::string passfail = passed ? "PASS " : "FAIL";
+  std::string passfail = passed ? "\033[32mPASS\033[0m" : "\033[31mFAIL\033[0m";
   std::cout << "   " << __func__ << "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
 }
+
+
+
+
+
+
+
+
