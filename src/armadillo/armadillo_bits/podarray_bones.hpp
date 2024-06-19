@@ -21,7 +21,7 @@
 
 struct podarray_prealloc_n_elem
   {
-  static const uword val = 16;
+  static constexpr uword val = 16;
   };
 
 
@@ -53,8 +53,8 @@ class podarray
   
   arma_inline explicit podarray(const eT* X, const uword new_N);
   
-  template<typename T1>
-  inline explicit podarray(const Proxy<T1>& P);
+  // template<typename T1>
+  // inline explicit podarray(const Proxy<T1>& P);
   
   arma_inline eT& operator[] (const uword i);
   arma_inline eT  operator[] (const uword i) const;
@@ -76,7 +76,7 @@ class podarray
   arma_inline       eT* memptr();
   arma_inline const eT* memptr() const;
   
-  arma_hot inline void copy_row(const Mat<eT>& A, const uword row);
+  inline void copy_row(const Mat<eT>& A, const uword row);
   
   
   protected:

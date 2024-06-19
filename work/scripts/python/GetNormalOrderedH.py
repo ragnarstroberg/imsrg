@@ -2,7 +2,7 @@
 
 ##################################################################
 #  GetNormalOrderedH.py
-#    Loads pyIMSRG.so library, whic is included in the
+#    Loads pyIMSRG.so library, which is included in the
 #    imsrg package: https://github.com/ragnarstroberg/imsrg
 #    It reads a NN+3N interaction, optionally does a spherical
 #    Hartree-Fock calculation, and outputs a normal-ordred
@@ -20,9 +20,9 @@ from os import path
 emax = 4
 E3max = 14
 hw = 20
-file2N = '../input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz'
-#file3N = '../input/chi2b3b_srg0800ho40C_eMax12_EMax12_hwHO020.me3j'
-file3N = 'none'
+file2N = '../input/me2j/vnn_hw16.00_kvnn10_lambda1.80_mesh_kmax_7.0_100_pc_R15.00_N15.dat_to_me2j.gz'
+file3N = '../input/me3j/jsTNF_Nmax_16_J12max_8_hbarOmega_16.00_Fit_cutoff_2.00_nexp_4_c1_1.00_c3_1.00_c4_1.00_cD_1.00_cE_1.00_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_new_E3_14_e_14_ant_EM1.8_2.0.h5_to_me3j.gz'
+#file3N = 'none'
 
 
 reference = 'O16'  # The reference for the normal ordering
@@ -97,6 +97,7 @@ def main():
     hf = HartreeFock(Hbare)
     hf.Solve()
     HNO = hf.GetNormalOrderedH()
+    threebody = hf.GetValence3B(E3max,2)  # Just to see how long it takes
 
   ## There are lots of solver parameters you can tweak, but they really shouldn't
   ## have much of an effect, so let's just go with some defaults.

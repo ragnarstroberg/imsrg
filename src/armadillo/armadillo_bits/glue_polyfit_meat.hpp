@@ -28,7 +28,7 @@ glue_polyfit::apply_noalias(Mat<eT>& out, const Col<eT>& X, const Col<eT>& Y, co
   
   // create Vandermonde matrix
   
-  Mat<eT> V(X.n_elem, N+1);
+  Mat<eT> V(X.n_elem, N+1, arma_nozeros_indicator());
   
   V.tail_cols(1).ones();
   
@@ -49,7 +49,7 @@ glue_polyfit::apply_noalias(Mat<eT>& out, const Col<eT>& X, const Col<eT>& Y, co
   
   if(status1 == false)  { return false; }
   
-  const bool status2 = auxlib::solve_tri(out, R, (Q.t() * Y), uword(0));
+  const bool status2 = auxlib::solve_trimat_fast(out, R, (Q.t() * Y), uword(0));
   
   if(status2 == false)  { return false; }
   
@@ -76,7 +76,7 @@ glue_polyfit::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename
   arma_debug_check
     (
     ( ((X.is_vec() == false) && (X.is_empty() == false)) || ((Y.is_vec() == false) && (Y.is_empty() == false)) ),
-    "polyfit(): given object is not a vector"
+    "polyfit(): given object must be a vector"
     );
   
   arma_debug_check( (X.n_elem != Y.n_elem), "polyfit(): given vectors must have the same number of elements" );
@@ -121,7 +121,7 @@ glue_polyfit::apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_poly
   
   if(status == false)
     {
-    out.reset();
+    out.soft_reset();
     arma_stop_runtime_error("polyfit(): failed");
     }
   }

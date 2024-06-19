@@ -34,7 +34,7 @@ internal_approx_equal_abs_diff(const eT& x, const eT& y, const typename get_pod_
       }
     else
       {
-      if( eop_aux::arma_abs( ( cond_rel< is_not_complex<eT>::value >::gt(x, y) ) ? (x-y) : (y-x) ) > tol )  { return false; }
+      if( eop_aux::arma_abs( ( cond_rel< is_cx<eT>::no >::gt(x, y) ) ? (x-y) : (y-x) ) > tol )  { return false; }
       }
     }
   
@@ -79,7 +79,7 @@ internal_approx_equal_rel_diff(const eT& a, const eT& b, const typename get_pod_
       
       const T max_c = (std::max)(abs_a,abs_b);
       
-      const T abs_d = eop_aux::arma_abs( ( cond_rel< is_not_complex<eT>::value >::gt(a, b) ) ? (a-b) : (b-a) );
+      const T abs_d = eop_aux::arma_abs( ( cond_rel< is_cx<eT>::no >::gt(a, b) ) ? (a-b) : (b-a) );
       
       if( abs_d > (tol * max_c) )  { return false; }
       }
@@ -287,7 +287,7 @@ internal_approx_equal_handler(const T1& A, const T2& B, const char* method, cons
   
   typedef typename T1::pod_type T;
   
-  const char sig = (method != NULL) ? method[0] : char(0);
+  const char sig = (method != nullptr) ? method[0] : char(0);
   
   arma_debug_check( ((sig != 'a') && (sig != 'r') && (sig != 'b')), "approx_equal(): argument 'method' must be \"absdiff\" or \"reldiff\" or \"both\"" );
   
@@ -322,7 +322,7 @@ internal_approx_equal_handler(const T1& A, const T2& B, const char* method, cons
   
   typedef typename T1::pod_type T;
   
-  const char sig = (method != NULL) ? method[0] : char(0);
+  const char sig = (method != nullptr) ? method[0] : char(0);
   
   arma_debug_check( ((sig != 'a') && (sig != 'r') && (sig != 'b')), "approx_equal(): argument 'method' must be \"absdiff\" or \"reldiff\" or \"both\"" );
   
@@ -408,7 +408,7 @@ approx_equal(const SpBase<typename T1::elem_type,T1>& A, const SpBase<typename T
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
-  const char sig = (method != NULL) ? method[0] : char(0);
+  const char sig = (method != nullptr) ? method[0] : char(0);
   
   arma_debug_check( ((sig != 'a') && (sig != 'r') && (sig != 'b')), "approx_equal(): argument 'method' must be \"absdiff\" or \"reldiff\" or \"both\"" );
   
@@ -452,7 +452,7 @@ approx_equal(const SpBase<typename T1::elem_type,T1>& A, const SpBase<typename T
   
   typedef typename T1::pod_type T;
   
-  const char sig = (method != NULL) ? method[0] : char(0);
+  const char sig = (method != nullptr) ? method[0] : char(0);
   
   arma_debug_check( ((sig != 'a') && (sig != 'r') && (sig != 'b')), "approx_equal(): argument 'method' must be \"absdiff\" or \"reldiff\" or \"both\"" );
   

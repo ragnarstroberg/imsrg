@@ -23,7 +23,15 @@
 class glue_conv
   {
   public:
-
+  
+  template<typename T1, typename T2>
+  struct traits
+    {
+    static constexpr bool is_row  = T1::is_row;
+    static constexpr bool is_col  = T1::is_col;
+    static constexpr bool is_xvec = T1::is_xvec;
+    };
+  
   template<typename eT> inline static void apply(Mat<eT>& out, const Mat<eT>& A, const Mat<eT>& B, const bool A_is_col);
   
   template<typename T1, typename T2> inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_conv>& X);
@@ -32,6 +40,7 @@ class glue_conv
 
 
 class glue_conv2
+  : public traits_glue_default
   {
   public:
   

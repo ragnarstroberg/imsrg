@@ -20,14 +20,22 @@
 
 
 template<typename eT>
-arma_hot
 arma_inline
 void
 arrayops::copy(eT* dest, const eT* src, const uword n_elem)
   {
-  if( (n_elem <= 9) && (is_cx<eT>::no) )
+  if( (dest == src) || (n_elem == 0) )  { return; }
+  
+  if(is_cx<eT>::no)
     {
-    arrayops::copy_small(dest, src, n_elem);
+    if(n_elem <= 9)
+      {
+      arrayops::copy_small(dest, src, n_elem);
+      }
+    else
+      {
+      std::memcpy(dest, src, n_elem*sizeof(eT));
+      }
     }
   else
     {
@@ -38,7 +46,7 @@ arrayops::copy(eT* dest, const eT* src, const uword n_elem)
 
 
 template<typename eT>
-arma_hot
+arma_cold
 inline
 void
 arrayops::copy_small(eT* dest, const eT* src, const uword n_elem)
@@ -46,14 +54,23 @@ arrayops::copy_small(eT* dest, const eT* src, const uword n_elem)
   switch(n_elem)
     {
     case  9:  dest[ 8] = src[ 8];
+    // fallthrough
     case  8:  dest[ 7] = src[ 7];
+    // fallthrough
     case  7:  dest[ 6] = src[ 6];
+    // fallthrough
     case  6:  dest[ 5] = src[ 5];
+    // fallthrough
     case  5:  dest[ 4] = src[ 4];
+    // fallthrough
     case  4:  dest[ 3] = src[ 3];
+    // fallthrough
     case  3:  dest[ 2] = src[ 2];
+    // fallthrough
     case  2:  dest[ 1] = src[ 1];
+    // fallthrough
     case  1:  dest[ 0] = src[ 0];
+    // fallthrough
     default:  ;
     }
   }
@@ -61,77 +78,22 @@ arrayops::copy_small(eT* dest, const eT* src, const uword n_elem)
 
 
 template<typename eT>
-arma_hot
-inline
-void
-arrayops::copy_forwards(eT* dest, const eT* src, const uword n_elem)
-  {
-  // can't use std::memcpy(), as we don't know how it copies data
-  uword j;
-  
-  for(j=1; j < n_elem; j+=2)
-    {
-    const eT tmp_i = (*src);  src++;
-    const eT tmp_j = (*src);  src++;
-    
-    (*dest) = tmp_i;  dest++;
-    (*dest) = tmp_j;  dest++;
-    }
-  
-  if((j-1) < n_elem)
-    {
-    (*dest) = (*src);
-    }
-  }
-
-
-
-template<typename eT>
-arma_hot
-inline
-void
-arrayops::copy_backwards(eT* dest, const eT* src, const uword n_elem)
-  {
-  // can't use std::memcpy(), as we don't know how it copies data
-  
-  // for(uword i=0; i < n_elem; ++i) 
-  //   {
-  //   const uword j = n_elem-i-1;
-  //   
-  //   dest[j] = src[j];
-  //   }
-  
-  if(n_elem > 0)
-    {
-          eT* dest_it = &(dest[n_elem-1]);
-    const eT*  src_it = &( src[n_elem-1]);
-    
-    uword j;
-    for(j=1; j < n_elem; j+=2) 
-      {
-      const eT tmp_i = (*src_it);  src_it--;
-      const eT tmp_j = (*src_it);  src_it--;
-      
-      (*dest_it) = tmp_i;  dest_it--;
-      (*dest_it) = tmp_j;  dest_it--;
-      }
-    
-    if((j-1) < n_elem)
-      {
-      (*dest_it) = (*src_it);
-      }
-    }
-  }
-
-
-
-template<typename eT>
-arma_hot
 inline
 void
 arrayops::fill_zeros(eT* dest, const uword n_elem)
   {
-  arrayops::inplace_set(dest, eT(0), n_elem);
+  typedef typename get_pod_type<eT>::result pod_type;
+  
+  if(n_elem == 0)  { return; }
+  
+  if(std::numeric_limits<eT>::is_integer || std::numeric_limits<pod_type>::is_iec559)
+    {
+    std::memset((void*)dest, 0, sizeof(eT)*n_elem);
+    }
+  else
+    {
+    arrayops::inplace_set_simple(dest, eT(0), n_elem);
+    }
   }
 
 
@@ -164,8 +126,102 @@ arrayops::replace(eT* mem, const uword n_elem, const eT old_val, const eT new_va
 
 
 
-template<typename out_eT, typename in_eT>
+template<typename eT>
 arma_hot
+inline
+void
+arrayops::clean(eT* mem, const uword n_elem, const eT abs_limit, const typename arma_not_cx<eT>::result* junk)
+  {
+  arma_ignore(junk);
+  
+  for(uword i=0; i<n_elem; ++i)
+    {
+    eT& val = mem[i];
+    
+    val = (eop_aux::arma_abs(val) <= abs_limit) ? eT(0) : val;
+    }
+  }
+
+
+
+template<typename T>
+arma_hot
+inline
+void
+arrayops::clean(std::complex<T>* mem, const uword n_elem, const T abs_limit)
+  {
+  typedef typename std::complex<T> eT;
+  
+  for(uword i=0; i<n_elem; ++i)
+    {
+    eT& val = mem[i];
+    
+    T val_real = std::real(val);
+    T val_imag = std::imag(val);
+    
+    if(std::abs(val_real) <= abs_limit)
+      {
+      val_imag = (std::abs(val_imag) <= abs_limit) ? T(0) : val_imag;
+      
+      val = std::complex<T>(T(0), val_imag);
+      }
+    else
+    if(std::abs(val_imag) <= abs_limit)
+      {
+      val = std::complex<T>(val_real, T(0));
+      }
+    }
+  }
+
+
+
+template<typename eT>
+inline
+void
+arrayops::clamp(eT* mem, const uword n_elem, const eT min_val, const eT max_val, const typename arma_not_cx<eT>::result* junk)
+  {
+  arma_ignore(junk);
+  
+  for(uword i=0; i<n_elem; ++i)
+    {
+    eT& val = mem[i];
+    
+    val = (val < min_val) ? min_val : ((val > max_val) ? max_val : val);
+    }
+  }
+
+
+
+template<typename T>
+inline
+void
+arrayops::clamp(std::complex<T>* mem, const uword n_elem, const std::complex<T>& min_val, const std::complex<T>& max_val)
+  {
+  typedef typename std::complex<T> eT;
+  
+  const T min_val_real = std::real(min_val);
+  const T min_val_imag = std::imag(min_val);
+  
+  const T max_val_real = std::real(max_val);
+  const T max_val_imag = std::imag(max_val);
+  
+  for(uword i=0; i<n_elem; ++i)
+    {
+    eT& val = mem[i];
+    
+    T val_real = std::real(val);
+    T val_imag = std::imag(val);
+    
+    val_real = (val_real < min_val_real) ? min_val_real : ((val_real > max_val_real) ? max_val_real : val_real);
+    val_imag = (val_imag < min_val_imag) ? min_val_imag : ((val_imag > max_val_imag) ? max_val_imag : val_imag);
+    
+    val = std::complex<T>(val_real,val_imag);
+    }
+  }
+
+
+
+template<typename out_eT, typename in_eT>
 arma_inline
 void
 arrayops::convert_cx_scalar
@@ -185,7 +241,6 @@ arrayops::convert_cx_scalar
 
 
 template<typename out_eT, typename in_T>
-arma_hot
 arma_inline
 void
 arrayops::convert_cx_scalar
@@ -197,13 +252,16 @@ arrayops::convert_cx_scalar
   {
   arma_ignore(junk);
   
-  out = out_eT( in.real() );
+  const in_T val = in.real();
+  
+  const bool conversion_ok = (std::is_integral<out_eT>::value && std::is_floating_point<in_T>::value) ? arma_isfinite(val) : true;
+  
+  out = conversion_ok ? out_eT(val) : out_eT(0);
   }
 
 
 
 template<typename out_T, typename in_T>
-arma_hot
 arma_inline
 void
 arrayops::convert_cx_scalar
@@ -234,6 +292,7 @@ arrayops::convert(out_eT* dest, const in_eT* src, const uword n_elem)
     return;
     }
   
+  const bool check_finite = (std::is_integral<out_eT>::value && std::is_floating_point<in_eT>::value);
   
   uword j;
   
@@ -245,15 +304,26 @@ arrayops::convert(out_eT* dest, const in_eT* src, const uword n_elem)
     // dest[i] = out_eT( tmp_i );
     // dest[j] = out_eT( tmp_j );
     
-    (*dest) = (is_signed<out_eT>::value)
-              ? out_eT( tmp_i )
-              : ( cond_rel< is_signed<in_eT>::value >::lt(tmp_i, in_eT(0)) ? out_eT(0) : out_eT(tmp_i) );
+    const bool ok_i = check_finite ? arma_isfinite(tmp_i) : true;
+    const bool ok_j = check_finite ? arma_isfinite(tmp_j) : true;
+    
+    (*dest) = ok_i
+              ? (
+                (is_signed<out_eT>::value)
+                ? out_eT( tmp_i )
+                : ( cond_rel< is_signed<in_eT>::value >::lt(tmp_i, in_eT(0)) ? out_eT(0) : out_eT(tmp_i) )
+                )
+              : out_eT(0);
     
     dest++;
     
-    (*dest) = (is_signed<out_eT>::value)
-              ? out_eT( tmp_j )
-              : ( cond_rel< is_signed<in_eT>::value >::lt(tmp_j, in_eT(0)) ? out_eT(0) : out_eT(tmp_j) );
+    (*dest) = ok_j
+              ? (
+                (is_signed<out_eT>::value)
+                ? out_eT( tmp_j )
+                : ( cond_rel< is_signed<in_eT>::value >::lt(tmp_j, in_eT(0)) ? out_eT(0) : out_eT(tmp_j) )
+                )
+              : out_eT(0);
     dest++;
     }
   
@@ -263,9 +333,15 @@ arrayops::convert(out_eT* dest, const in_eT* src, const uword n_elem)
     
     // dest[i] = out_eT( tmp_i );
     
-    (*dest) = (is_signed<out_eT>::value)
-              ? out_eT( tmp_i )
-              : ( cond_rel< is_signed<in_eT>::value >::lt(tmp_i, in_eT(0)) ? out_eT(0) : out_eT(tmp_i) );
+    const bool ok_i = check_finite ? arma_isfinite(tmp_i) : true;
+    
+    (*dest) = ok_i
+              ? (
+                (is_signed<out_eT>::value)
+                ? out_eT( tmp_i )
+                : ( cond_rel< is_signed<in_eT>::value >::lt(tmp_i, in_eT(0)) ? out_eT(0) : out_eT(tmp_i) )
+                )
+              : out_eT(0);
     }
   }
 
@@ -595,31 +671,40 @@ inline
 void
 arrayops::inplace_set(eT* dest, const eT val, const uword n_elem)
   {
-  typedef typename get_pod_type<eT>::result pod_type;
-  
-  if( (n_elem <= 9) && (is_cx<eT>::no) )
+  if(val == eT(0))
     {
-    arrayops::inplace_set_small(dest, val, n_elem);
+    arrayops::fill_zeros(dest, n_elem);
     }
   else
     {
-    if( (val == eT(0)) && (std::numeric_limits<eT>::is_integer || (std::numeric_limits<pod_type>::is_iec559 && is_real<pod_type>::value)) )
+    if( (n_elem <= 9) && (is_cx<eT>::no) )
       {
-      std::memset(dest, 0, sizeof(eT)*n_elem);
+      arrayops::inplace_set_small(dest, val, n_elem);
       }
     else
       {
-      if(memory::is_aligned(dest))
-        {
-        memory::mark_as_aligned(dest);
-        
-        arrayops::inplace_set_base(dest, val, n_elem);
-        }
-      else
-        {
-        arrayops::inplace_set_base(dest, val, n_elem);
-        }
+      arrayops::inplace_set_simple(dest, val, n_elem);
       }
+    }
+  }
+
+
+
+template<typename eT>
+arma_hot
+inline
+void
+arrayops::inplace_set_simple(eT* dest, const eT val, const uword n_elem)
+  {
+  if(memory::is_aligned(dest))
+    {
+    memory::mark_as_aligned(dest);
+    
+    arrayops::inplace_set_base(dest, val, n_elem);
+    }
+  else
+    {
+    arrayops::inplace_set_base(dest, val, n_elem);
     }
   }
 
@@ -659,7 +744,7 @@ arrayops::inplace_set_base(eT* dest, const eT val, const uword n_elem)
 
 
 template<typename eT>
-arma_hot
+arma_cold
 inline
 void
 arrayops::inplace_set_small(eT* dest, const eT val, const uword n_elem)
@@ -667,14 +752,23 @@ arrayops::inplace_set_small(eT* dest, const eT val, const uword n_elem)
   switch(n_elem)
     {
     case  9: dest[ 8] = val;
+    // fallthrough
     case  8: dest[ 7] = val;
+    // fallthrough
     case  7: dest[ 6] = val;
+    // fallthrough
     case  6: dest[ 5] = val;
+    // fallthrough
     case  5: dest[ 4] = val;
+    // fallthrough
     case  4: dest[ 3] = val;
+    // fallthrough
     case  3: dest[ 2] = val;
+    // fallthrough
     case  2: dest[ 1] = val;
+    // fallthrough
     case  1: dest[ 0] = val;
+    // fallthrough
     default:;
     }
   }
@@ -977,6 +1071,72 @@ arrayops::product(const eT* src, const uword n_elem)
     }
   
   return val1 * val2;
+  }
+
+
+
+template<typename eT>
+arma_hot
+inline
+bool
+arrayops::is_zero(const eT* mem, const uword n_elem, const eT abs_limit, const typename arma_not_cx<eT>::result* junk)
+  {
+  arma_ignore(junk);
+  
+  if(n_elem == 0)  { return false; }
+  
+  if(abs_limit == eT(0))
+    {
+    for(uword i=0; i<n_elem; ++i)
+      {
+      if(mem[i] != eT(0))  { return false; }
+      }
+    }
+  else
+    {
+    for(uword i=0; i<n_elem; ++i)
+      {
+      if(eop_aux::arma_abs(mem[i]) > abs_limit)  { return false; }
+      }
+    }
+  
+  return true;
+  }
+
+
+
+template<typename T>
+arma_hot
+inline
+bool
+arrayops::is_zero(const std::complex<T>* mem, const uword n_elem, const T abs_limit)
+  {
+  typedef typename std::complex<T> eT;
+  
+  if(n_elem == 0)  { return false; }
+  
+  if(abs_limit == T(0))
+    {
+    for(uword i=0; i<n_elem; ++i)
+      {
+      const eT& val = mem[i];
+      
+      if(std::real(val) != T(0))  { return false; }
+      if(std::imag(val) != T(0))  { return false; }
+      }
+    }
+  else
+    {
+    for(uword i=0; i<n_elem; ++i)
+      {
+      const eT& val = mem[i];
+      
+      if(std::abs(std::real(val)) > abs_limit)  { return false; }
+      if(std::abs(std::imag(val)) > abs_limit)  { return false; }
+      }
+    }
+  
+  return true;
   }
 
 

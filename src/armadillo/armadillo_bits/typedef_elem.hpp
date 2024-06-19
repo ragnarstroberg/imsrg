@@ -60,28 +60,18 @@
 #endif
 
 
-#if defined(ARMA_USE_U64S64)
-  #if   ULLONG_MAX >= 0xffffffffffffffff
-    typedef unsigned long long u64;
-    typedef          long long s64;
-  #elif ULONG_MAX  >= 0xffffffffffffffff
-    typedef unsigned long      u64;
-    typedef          long      s64;
-    #define ARMA_U64_IS_LONG
-  #elif defined(UINT64_MAX)
-    typedef          uint64_t  u64;
-    typedef           int64_t  s64;
-  #else
-      #error "don't know how to typedef 'u64' on this system; please disable ARMA_64BIT_WORD"
-  #endif
+#if   ULLONG_MAX >= 0xffffffffffffffff
+  typedef unsigned long long u64;
+  typedef          long long s64;
+#elif defined(UINT64_MAX)
+  typedef          uint64_t  u64;
+  typedef           int64_t  s64;
+#else
+    #error "don't know how to typedef 'u64' on this system"
 #endif
 
 
-#if !defined(ARMA_USE_U64S64) || (defined(ARMA_USE_U64S64) && !defined(ARMA_U64_IS_LONG))
-  #define ARMA_ALLOW_LONG
-#endif
-
-
+// for compatibility with earlier versions of Armadillo
 typedef unsigned long ulng_t;
 typedef          long slng_t;
 
@@ -107,6 +97,15 @@ typedef          long slng_t;
 #endif
 
 
+typedef std::complex<float>  cx_float;
+typedef std::complex<double> cx_double;
+
+typedef void* void_ptr;
+
+
+//
+
+
 #if   defined(ARMA_BLAS_LONG_LONG)
   typedef long long blas_int;
   #define ARMA_MAX_BLAS_INT 0x7fffffffffffffffULL
@@ -119,10 +118,57 @@ typedef          long slng_t;
 #endif
 
 
-typedef std::complex<float>  cx_float;
-typedef std::complex<double> cx_double;
+//
 
-typedef void* void_ptr;
+
+#ifdef ARMA_USE_MKL_TYPES
+  // for compatibility with MKL
+  typedef MKL_Complex8  blas_cxf;
+  typedef MKL_Complex16 blas_cxd;
+#else
+  // standard BLAS and LAPACK prototypes use "void*" pointers for complex arrays
+  typedef void blas_cxf;
+  typedef void blas_cxd;
+#endif
+
+
+//
+
+
+// NOTE: blas_len is the fortran type for "hidden" arguments that specify the length of character arguments;
+// NOTE: it varies across compilers, compiler versions and systems (eg. 32 bit vs 64 bit);
+// NOTE: the default setting of "size_t" is an educated guess.
+// NOTE: ---
+// NOTE: for gcc / gfortran:  https://gcc.gnu.org/onlinedocs/gfortran/Argument-passing-conventions.html
+// NOTE: gcc 7 and earlier: int
+// NOTE: gcc 8 and 9:       size_t
+// NOTE: ---
+// NOTE: for ifort (intel fortran compiler): 
+// NOTE: "Intel Fortran Compiler User and Reference Guides", Document Number: 304970-006US, 2009, p. 301
+// NOTE: http://www.complexfluids.ethz.ch/MK/ifort.pdf
+// NOTE: the type is unsigned 4-byte integer on 32 bit systems
+// NOTE: the type is unsigned 8-byte integer on 64 bit systems
+// NOTE: ---
+// NOTE: for NAG fortran: https://www.nag.co.uk/nagware/np/r62_doc/manual/compiler_11_1.html#AUTOTOC_11_1
+// NOTE: Chrlen = usually int, or long long on 64-bit Windows
+// NOTE: ---
+// TODO: flang:  https://github.com/flang-compiler/flang/wiki
+// TODO: other compilers: http://fortranwiki.org/fortran/show/Compilers
+
+#if !defined(ARMA_FORTRAN_CHARLEN_TYPE)
+  #if defined(__GNUC__) && !defined(__clang__)
+    #if (__GNUC__ <= 7)
+      #define ARMA_FORTRAN_CHARLEN_TYPE int
+    #else
+      #define ARMA_FORTRAN_CHARLEN_TYPE size_t
+    #endif
+  #else
+    // TODO: determine the type for other compilers
+    #define ARMA_FORTRAN_CHARLEN_TYPE size_t
+  #endif
+#endif
+
+typedef ARMA_FORTRAN_CHARLEN_TYPE blas_len;
 
 
 //! @}

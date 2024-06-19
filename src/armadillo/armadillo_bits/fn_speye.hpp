@@ -24,17 +24,17 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-speye(const uword n_rows, const uword n_cols, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = NULL)
+speye(const uword n_rows, const uword n_cols, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  if(is_SpCol<obj_type>::value == true)
+  if(is_SpCol<obj_type>::value)
     {
     arma_debug_check( (n_cols != 1), "speye(): incompatible size" );
     }
   else
-  if(is_SpRow<obj_type>::value == true)
+  if(is_SpRow<obj_type>::value)
     {
     arma_debug_check( (n_rows != 1), "speye(): incompatible size" );
     }
@@ -52,7 +52,7 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-speye(const SizeMat& s, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = NULL)
+speye(const SizeMat& s, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);

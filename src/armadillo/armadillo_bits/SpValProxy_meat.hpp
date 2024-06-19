@@ -58,30 +58,31 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator=(const eT rhs)
   {
-  if (rhs != eT(0)) // A nonzero element is being assigned.
+  if(rhs != eT(0)) // A nonzero element is being assigned.
     {
 
-    if (val_ptr)
+    if(val_ptr)
       {
       // The value exists and merely needs to be updated.
       *val_ptr = rhs;
+      parent.invalidate_cache();
       }
 
     else
       {
-      // The value is nonzero and must be added.
-      val_ptr = &parent.add_element(row, col, rhs);
+      // The value is nonzero and must be inserted.
+      val_ptr = &parent.insert_element(row, col, rhs);
       }
 
     }
   else // A zero is being assigned.~
     {
 
-    if (val_ptr)
+    if(val_ptr)
       {
       // The element exists, but we need to remove it, because it is being set to 0.
       parent.delete_element(row, col);
-      val_ptr = NULL;
+      val_ptr = nullptr;
       }
 
     // If the element does not exist, we do not need to do anything at all.
@@ -98,18 +99,19 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator+=(const eT rhs)
   {
-  if (val_ptr)
+  if(val_ptr)
     {
     // The value already exists and merely needs to be updated.
     *val_ptr += rhs;
+    parent.invalidate_cache();
     check_zero();
     }
   else
     {
-    if (rhs != eT(0))
+    if(rhs != eT(0))
       {
-      // The value does not exist and must be added.
-      val_ptr = &parent.add_element(row, col, rhs);
+      // The value does not exist and must be inserted.
+      val_ptr = &parent.insert_element(row, col, rhs);
       }
     }
   
@@ -123,18 +125,19 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator-=(const eT rhs)
   {
-  if (val_ptr)
+  if(val_ptr)
     {
     // The value already exists and merely needs to be updated.
     *val_ptr -= rhs;
+    parent.invalidate_cache();
     check_zero();
     }
   else
     {
-    if (rhs != eT(0))
+    if(rhs != eT(0))
       {
-      // The value does not exist and must be added.
-      val_ptr = &parent.add_element(row, col, -rhs);
+      // The value does not exist and must be inserted.
+      val_ptr = &parent.insert_element(row, col, -rhs);
       }
     }
 
@@ -148,13 +151,14 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator*=(const eT rhs)
   {
-  if (rhs != eT(0))
+  if(rhs != eT(0))
     {
 
-    if (val_ptr)
+    if(val_ptr)
       {
       // The value already exists and merely needs to be updated.
       *val_ptr *= rhs;
+      parent.invalidate_cache();
       check_zero();
       }
 
@@ -162,11 +166,11 @@ SpValProxy<T1>::operator*=(const eT rhs)
   else
     {
 
-    if (val_ptr)
+    if(val_ptr)
       {
       // Since we are multiplying by zero, the value can be deleted.
       parent.delete_element(row, col);
-      val_ptr = NULL;
+      val_ptr = nullptr;
       }
 
     }
@@ -181,12 +185,13 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator/=(const eT rhs)
   {
-  if (rhs != eT(0)) // I hope this is true!
+  if(rhs != eT(0)) // I hope this is true!
     {
 
-    if (val_ptr)
+    if(val_ptr)
       {
       *val_ptr /= rhs;
+      parent.invalidate_cache();
       check_zero();
       }
 
@@ -194,14 +199,14 @@ SpValProxy<T1>::operator/=(const eT rhs)
   else
     {
 
-    if (val_ptr)
+    if(val_ptr)
       {
       *val_ptr /= rhs; // That is where it gets ugly.
       // Now check if it's 0.
-      if (*val_ptr == eT(0))
+      if(*val_ptr == eT(0))
         {
         parent.delete_element(row, col);
-        val_ptr = NULL;
+        val_ptr = nullptr;
         }
       }
 
@@ -209,10 +214,10 @@ SpValProxy<T1>::operator/=(const eT rhs)
       {
       eT val = eT(0) / rhs; // This may vary depending on type and implementation.
 
-      if (val != eT(0))
+      if(val != eT(0))
         {
-        // Ok, now we have to add it.
-        val_ptr = &parent.add_element(row, col, val);
+        // Ok, now we have to insert it.
+        val_ptr = &parent.insert_element(row, col, val);
         }
 
       }
@@ -228,15 +233,16 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator++()
   {
-  if (val_ptr)
+  if(val_ptr)
     {
     (*val_ptr) += eT(1);
+    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.add_element(row, col, eT(1));
+    val_ptr = &parent.insert_element(row, col, eT(1));
     }
 
   return *this;
@@ -249,15 +255,16 @@ arma_inline
 SpValProxy<T1>&
 SpValProxy<T1>::operator--()
   {
-  if (val_ptr)
+  if(val_ptr)
     {
     (*val_ptr) -= eT(1);
+    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.add_element(row, col, eT(-1));
+    val_ptr = &parent.insert_element(row, col, eT(-1));
     }
 
   return *this;
@@ -270,18 +277,19 @@ arma_inline
 typename T1::elem_type
 SpValProxy<T1>::operator++(const int)
   {
-  if (val_ptr)
+  if(val_ptr)
     {
     (*val_ptr) += eT(1);
+    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.add_element(row, col, eT(1));
+    val_ptr = &parent.insert_element(row, col, eT(1));
     }
 
-  if (val_ptr) // It may have changed to now be 0.
+  if(val_ptr) // It may have changed to now be 0.
     {
     return *(val_ptr) - eT(1);
     }
@@ -298,18 +306,19 @@ arma_inline
 typename T1::elem_type
 SpValProxy<T1>::operator--(const int)
   {
-  if (val_ptr)
+  if(val_ptr)
     {
     (*val_ptr) -= eT(1);
+    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.add_element(row, col, eT(-1));
+    val_ptr = &parent.insert_element(row, col, eT(-1));
     }
 
-  if (val_ptr) // It may have changed to now be 0.
+  if(val_ptr) // It may have changed to now be 0.
     {
     return *(val_ptr) + eT(1);
     }
@@ -325,28 +334,44 @@ template<typename T1>
 arma_inline
 SpValProxy<T1>::operator eT() const
   {
-  if (val_ptr)
-    {
-    return *val_ptr;
-    }
-  else
-    {
-    return eT(0);
-    }
+  return (val_ptr) ? eT(*val_ptr) : eT(0);
   }
 
 
 
 template<typename T1>
 arma_inline
-arma_hot
+typename get_pod_type<typename SpValProxy<T1>::eT>::result
+SpValProxy<T1>::real() const
+  {
+  typedef typename get_pod_type<eT>::result T;
+  
+  return T( access::tmp_real( (val_ptr) ? eT(*val_ptr) : eT(0) ) );
+  }
+
+
+
+template<typename T1>
+arma_inline
+typename get_pod_type<typename SpValProxy<T1>::eT>::result
+SpValProxy<T1>::imag() const
+  {
+  typedef typename get_pod_type<eT>::result T;
+  
+  return T( access::tmp_imag( (val_ptr) ? eT(*val_ptr) : eT(0) ) );
+  }
+
+
+
+template<typename T1>
+arma_inline
 void
 SpValProxy<T1>::check_zero()
   {
-  if (*val_ptr == eT(0))
+  if(*val_ptr == eT(0))
     {
     parent.delete_element(row, col);
-    val_ptr = NULL;
+    val_ptr = nullptr;
     }
   }
 

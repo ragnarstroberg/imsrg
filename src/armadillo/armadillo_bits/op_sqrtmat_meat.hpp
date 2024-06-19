@@ -38,7 +38,7 @@ op_sqrtmat::apply(Mat< std::complex<typename T1::elem_type> >& out, const mtOp<s
   
   if(status == false)
     {
-    arma_debug_warn("sqrtmat(): given matrix seems singular; may not have a square root");
+    arma_debug_warn_level(3, "sqrtmat(): given matrix is singular; may not have a square root");
     }
   }
 
@@ -94,28 +94,102 @@ op_sqrtmat::apply_direct(Mat< std::complex<typename T1::elem_type> >& out, const
   typedef typename T1::elem_type       in_T;
   typedef typename std::complex<in_T> out_T;
   
-  const Proxy<T1> P(expr.get_ref());
+  const quasi_unwrap<T1> expr_unwrap(expr.get_ref());
+  const Mat<in_T>& A   = expr_unwrap.M;
   
-  arma_debug_check( (P.get_n_rows() != P.get_n_cols()), "sqrtmat(): given matrix must be square sized" );
+  arma_debug_check( (A.is_square() == false), "sqrtmat(): given matrix must be square sized" );
   
-  if(P.get_n_elem() == 0)
+  if(A.n_elem == 0)
     {
     out.reset();
     return true;
     }
+  else
+  if(A.n_elem == 1)
+    {
+    out.set_size(1,1);
+    out[0] = std::sqrt( std::complex<in_T>( A[0] ) );
+    return true;
+    }
   
-  typename Proxy<T1>::ea_type Pea = P.get_ea();
+  if(A.is_diagmat())
+    {
+    const uword N = A.n_rows;
+    
+    out.zeros(N,N);  // aliasing can't happen as op_sqrtmat is defined as cx_mat = op(mat)
+    
+    for(uword i=0; i<N; ++i)
+      {
+      const in_T val = A.at(i,i);
+      
+      if(val >= in_T(0))
+        {
+        out.at(i,i) = std::sqrt(val);
+        }
+      else
+        {
+        out.at(i,i) = std::sqrt( out_T(val) );
+        }
+      }
+    
+    return true;
+    }
+  
+  #if defined(ARMA_OPTIMISE_SYMPD)
+    const bool try_sympd = sympd_helper::guess_sympd_anysize(A);
+  #else
+    const bool try_sympd = false;
+  #endif
+  
+  if(try_sympd)
+    {
+    arma_extra_debug_print("op_sqrtmat: attempting sympd optimisation");
+    
+    // if matrix A is sympd, all its eigenvalues are positive
+    
+    Col<in_T> eigval;
+    Mat<in_T> eigvec;
+    
+    const bool eig_status = eig_sym_helper(eigval, eigvec, A, 'd', "sqrtmat()");
+    
+    if(eig_status)
+      {
+      // ensure each eigenvalue is > 0
+      
+      const uword N          = eigval.n_elem;
+      const in_T* eigval_mem = eigval.memptr();
+      
+      bool all_pos = true;
+      
+      for(uword i=0; i<N; ++i)  { all_pos = (eigval_mem[i] <= in_T(0)) ? false : all_pos; }
+      
+      if(all_pos)
+        {
+        eigval = sqrt(eigval);
+        
+        out = conv_to< Mat<out_T> >::from( eigvec * diagmat(eigval) * eigvec.t() );
+        
+        return true;
+        }
+      }
+    
+    arma_extra_debug_print("op_sqrtmat: sympd optimisation failed");
+    
+    // fallthrough if eigen decomposition failed or an eigenvalue is zero
+    }
+  
   
   Mat<out_T> U;
-  Mat<out_T> S(P.get_n_rows(), P.get_n_cols());
+  Mat<out_T> S(A.n_rows, A.n_cols, arma_nozeros_indicator());
   
-  out_T* Smem = S.memptr();
+  const  in_T* Amem = A.memptr();
+        out_T* Smem = S.memptr();
   
-  const uword N = P.get_n_elem();
+  const uword n_elem = A.n_elem;
   
-  for(uword i=0; i<N; ++i)
+  for(uword i=0; i<n_elem; ++i)
     {
-    Smem[i] = std::complex<in_T>( Pea[i] );
+    Smem[i] = std::complex<in_T>( Amem[i] );
     }
   
   const bool schur_ok = auxlib::schur(U,S);
@@ -123,7 +197,7 @@ op_sqrtmat::apply_direct(Mat< std::complex<typename T1::elem_type> >& out, const
   if(schur_ok == false)
     {
     arma_extra_debug_print("sqrtmat(): schur decomposition failed");
-    out.reset();
+    out.soft_reset();
     return false;
     }
   
@@ -151,7 +225,7 @@ op_sqrtmat_cx::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sqrtmat_cx
   
   if(status == false)
     {
-    arma_debug_warn("sqrtmat(): given matrix seems singular; may not have a square root");
+    arma_debug_warn_level(3, "sqrtmat(): given matrix is singular; may not have a square root");
     }
   }
 
@@ -228,25 +302,87 @@ op_sqrtmat_cx::apply_direct(Mat<typename T1::elem_type>& out, const Base<typenam
   {
   arma_extra_debug_sigprint();
   
+  typedef typename T1::pod_type   T;
   typedef typename T1::elem_type eT;
   
   Mat<eT> U;
   Mat<eT> S = expr.get_ref();
   
-  if(S.is_empty())
+  arma_debug_check( (S.n_rows != S.n_cols), "sqrtmat(): given matrix must be square sized" );
+  
+  if(S.n_elem == 0)
     {
     out.reset();
     return true;
     }
+  else
+  if(S.n_elem == 1)
+    {
+    out.set_size(1,1);
+    out[0] = std::sqrt(S[0]);
+    return true;
+    }
   
-  arma_debug_check( (S.n_rows != S.n_cols), "sqrtmat(): given matrix must be square sized" );
+  if(S.is_diagmat())
+    {
+    const uword N = S.n_rows;
+    
+    out.zeros(N,N);  // aliasing can't happen as S is generated
+    
+    for(uword i=0; i<N; ++i)  { out.at(i,i) = std::sqrt( S.at(i,i) ); }
+    
+    return true;
+    }
+  
+  #if defined(ARMA_OPTIMISE_SYMPD)
+    const bool try_sympd = sympd_helper::guess_sympd_anysize(S);
+  #else
+    const bool try_sympd = false;
+  #endif
+  
+  if(try_sympd)
+    {
+    arma_extra_debug_print("op_sqrtmat_cx: attempting sympd optimisation");
+    
+    // if matrix S is sympd, all its eigenvalues are positive
+    
+    Col< T> eigval;
+    Mat<eT> eigvec;
+    
+    const bool eig_status = eig_sym_helper(eigval, eigvec, S, 'd', "sqrtmat()");
+    
+    if(eig_status)
+      {
+      // ensure each eigenvalue is > 0
+      
+      const uword N          = eigval.n_elem;
+      const T*    eigval_mem = eigval.memptr();
+      
+      bool all_pos = true;
+      
+      for(uword i=0; i<N; ++i)  { all_pos = (eigval_mem[i] <= T(0)) ? false : all_pos; }
+      
+      if(all_pos)
+        {
+        eigval = sqrt(eigval);
+        
+        out = eigvec * diagmat(eigval) * eigvec.t();
+        
+        return true;
+        }
+      }
+    
+    arma_extra_debug_print("op_sqrtmat_cx: sympd optimisation failed");
+    
+    // fallthrough if eigen decomposition failed or an eigenvalue is zero
+    }
   
   const bool schur_ok = auxlib::schur(U, S);
   
   if(schur_ok == false)
     {
     arma_extra_debug_print("sqrtmat(): schur decomposition failed");
-    out.reset();
+    out.soft_reset();
     return false;
     }
   
@@ -324,7 +460,7 @@ op_sqrtmat_sympd::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sqrtmat
   
   if(status == false)
     {
-    out.reset();
+    out.soft_reset();
     arma_stop_runtime_error("sqrtmat_sympd(): transformation failed");
     }
   }
@@ -351,7 +487,7 @@ op_sqrtmat_sympd::apply_direct(Mat<typename T1::elem_type>& out, const Base<type
     Col< T> eigval;
     Mat<eT> eigvec;
     
-    const bool status = auxlib::eig_sym_dc(eigval, eigvec, X);
+    const bool status = eig_sym_helper(eigval, eigvec, X, 'd', "sqrtmat_sympd()");
     
     if(status == false)  { return false; }
     

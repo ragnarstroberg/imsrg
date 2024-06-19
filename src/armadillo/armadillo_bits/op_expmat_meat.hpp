@@ -37,7 +37,7 @@ op_expmat::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_expmat>& expr
   
   if(status == false)
     {
-    out.reset();
+    out.soft_reset();
     arma_stop_runtime_error("expmat(): given matrix appears ill-conditioned");
     }
   }
@@ -62,16 +62,55 @@ op_expmat::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1
     
     const uword N = (std::min)(out.n_rows, out.n_cols);
     
-    for(uword i=0; i<N; ++i)
-      {
-      out.at(i,i) = std::exp( out.at(i,i) );
-      }
+    for(uword i=0; i<N; ++i)  { out.at(i,i) = std::exp( out.at(i,i) ); }
     }
   else
     {
     Mat<eT> A = expr.get_ref();
     
     arma_debug_check( (A.is_square() == false), "expmat(): given matrix must be square sized" );
+    
+    if(A.is_diagmat())
+      {
+      const uword N = (std::min)(A.n_rows, A.n_cols);
+      
+      out.zeros(N,N);
+      
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = std::exp( A.at(i,i) ); }
+      
+      return true;
+      }
+    
+    #if defined(ARMA_OPTIMISE_SYMPD)
+      const bool try_sympd = sympd_helper::guess_sympd_anysize(A);
+    #else
+      const bool try_sympd = false;
+    #endif
+    
+    if(try_sympd)
+      {
+      arma_extra_debug_print("op_expmat: attempting sympd optimisation");
+      
+      // if matrix A is sympd, all its eigenvalues are positive
+      
+      Col< T> eigval;
+      Mat<eT> eigvec;
+      
+      const bool eig_status = eig_sym_helper(eigval, eigvec, A, 'd', "expmat()");
+      
+      if(eig_status)
+        {
+        eigval = exp(eigval);
+        
+        out = eigvec * diagmat(eigval) * eigvec.t();
+        
+        return true;
+        }
+      
+      arma_extra_debug_print("op_expmat: sympd optimisation failed");
+      
+      // fallthrough if eigen decomposition failed
+      }
     
     const T norm_val = arma::norm(A, "inf");
     
@@ -109,7 +148,7 @@ op_expmat::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1
     
     if( (D.is_finite() == false) || (E.is_finite() == false) )  { return false; }
     
-    const bool status = solve(out, D, E);
+    const bool status = solve(out, D, E, solve_opts::no_approx);
     
     if(status == false)  { return false; }
     
@@ -132,7 +171,7 @@ op_expmat_sym::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_expmat_sym
   
   if(status == false)
     {
-    out.reset();
+    out.soft_reset();
     arma_stop_runtime_error("expmat_sym(): transformation failed");
     }
   }
@@ -159,7 +198,7 @@ op_expmat_sym::apply_direct(Mat<typename T1::elem_type>& out, const Base<typenam
     Col< T> eigval;
     Mat<eT> eigvec;
     
-    const bool status = auxlib::eig_sym_dc(eigval, eigvec, X);
+    const bool status = eig_sym_helper(eigval, eigvec, X, 'd', "expmat_sym()");
     
     if(status == false)  { return false; }
     

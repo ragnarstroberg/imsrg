@@ -58,7 +58,7 @@ op_sum::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P, cons
   {
   arma_extra_debug_sigprint();
   
-  if(is_Mat<typename Proxy<T1>::stored_type>::value)
+  if(is_Mat<typename Proxy<T1>::stored_type>::value || (arma_config::openmp && Proxy<T1>::use_mp))
     {
     op_sum::apply_noalias_unwrap(out, P, dim);
     }
@@ -214,7 +214,7 @@ op_sum::apply_noalias(Cube<typename T1::elem_type>& out, const ProxyCube<T1>& P,
   {
   arma_extra_debug_sigprint();
   
-  if(is_Cube<typename ProxyCube<T1>::stored_type>::value)
+  if(is_Cube<typename ProxyCube<T1>::stored_type>::value || (arma_config::openmp && ProxyCube<T1>::use_mp))
     {
     op_sum::apply_noalias_unwrap(out, P, dim);
     }

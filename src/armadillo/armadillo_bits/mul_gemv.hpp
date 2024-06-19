@@ -29,15 +29,14 @@ class gemv_emul_tinysq
   template<const uword row, const uword col>
   struct pos
     {
-    static const uword n2 = (do_trans_A == false) ? (row + col*2) : (col + row*2);
-    static const uword n3 = (do_trans_A == false) ? (row + col*3) : (col + row*3);
-    static const uword n4 = (do_trans_A == false) ? (row + col*4) : (col + row*4);
+    static constexpr uword n2 = (do_trans_A == false) ? (row + col*2) : (col + row*2);
+    static constexpr uword n3 = (do_trans_A == false) ? (row + col*3) : (col + row*3);
+    static constexpr uword n4 = (do_trans_A == false) ? (row + col*4) : (col + row*4);
     };
   
   
   
   template<typename eT, const uword i>
-  arma_hot
   arma_inline
   static
   void
@@ -58,7 +57,7 @@ class gemv_emul_tinysq
   
 
   template<typename eT, typename TA>
-  arma_hot
+  arma_cold
   inline
   static
   void

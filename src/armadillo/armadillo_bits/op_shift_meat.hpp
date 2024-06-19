@@ -23,7 +23,7 @@
 template<typename T1>
 inline
 void
-op_shift_default::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_shift_default>& in)
+op_shift_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_shift_vec>& in)
   {
   arma_extra_debug_sigprint();
   
@@ -31,7 +31,8 @@ op_shift_default::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_shift_d
   
   const uword len = in.aux_uword_a;
   const uword neg = in.aux_uword_b;
-  const uword dim = (T1::is_row) ? 1 : 0;
+  
+  const uword dim = (T1::is_xvec) ? uword(U.M.is_rowvec() ? 1 : 0) : uword((T1::is_row) ? 1 : 0);
   
   op_shift::apply_direct(out, U.M, len, neg, dim);
   }
@@ -65,8 +66,8 @@ op_shift::apply_direct(Mat<eT>& out, const Mat<eT>& X, const uword len, const uw
   {
   arma_extra_debug_sigprint();
   
-  arma_debug_check( ((dim == 0) && (len >= X.n_rows)), "shift(): shift amount out of bounds" );
-  arma_debug_check( ((dim == 1) && (len >= X.n_cols)), "shift(): shift amount out of bounds" );
+  arma_debug_check_bounds( ((dim == 0) && (len >= X.n_rows)), "shift(): shift amount out of bounds" );
+  arma_debug_check_bounds( ((dim == 1) && (len >= X.n_cols)), "shift(): shift amount out of bounds" );
   
   if(&out == &X)
     {

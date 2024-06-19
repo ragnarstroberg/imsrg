@@ -47,20 +47,27 @@ spop_sum::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sum>& in)
   
   if(dim == 0) // find the sum in each column
     {
-    Row<eT> acc(p_n_cols, fill::zeros);
+    Row<eT> acc(p_n_cols, arma_zeros_indicator());
+    
+    eT* acc_mem = acc.memptr();
     
     if(SpProxy<T1>::use_iterator)
       {
-      typename SpProxy<T1>::const_iterator_type it     = p.begin();
-      typename SpProxy<T1>::const_iterator_type it_end = p.end();
+      typename SpProxy<T1>::const_iterator_type it = p.begin();
       
-      while(it != it_end)  { acc[it.col()] += (*it);  ++it; }
+      const uword N = p.get_n_nonzero();
+
+      for(uword i=0; i < N; ++i)
+        {
+        acc_mem[it.col()] += (*it);
+        ++it;
+        }
       }
     else
       {
       for(uword col = 0; col < p_n_cols; ++col)
         {
-        acc[col] = arrayops::accumulate
+        acc_mem[col] = arrayops::accumulate
           (
           &p.get_values()[p.get_col_ptrs()[col]],
           p.get_col_ptrs()[col + 1] - p.get_col_ptrs()[col]
@@ -73,12 +80,19 @@ spop_sum::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sum>& in)
   else
   if(dim == 1)  // find the sum in each row
     {
-    Col<eT> acc(p_n_rows, fill::zeros);
+    Col<eT> acc(p_n_rows, arma_zeros_indicator());
     
-    typename SpProxy<T1>::const_iterator_type it     = p.begin();
-    typename SpProxy<T1>::const_iterator_type it_end = p.end();
+    eT* acc_mem = acc.memptr();
     
-    while(it != it_end)  { acc[it.row()] += (*it);  ++it; }
+    typename SpProxy<T1>::const_iterator_type it = p.begin();
+    
+    const uword N = p.get_n_nonzero();
+    
+    for(uword i=0; i < N; ++i)
+      {
+      acc_mem[it.row()] += (*it);
+      ++it;
+      }
     
     out = acc;
     }

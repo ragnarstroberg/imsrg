@@ -81,7 +81,7 @@ glue_times_redirect2_helper<true>::apply(Mat<typename T1::elem_type>& out, const
   
   typedef typename T1::elem_type eT;
   
-  if(strip_inv<T1>::do_inv == true)
+  if(strip_inv<T1>::do_inv)
     {
     // replace inv(A)*B with solve(A,B)
     
@@ -93,21 +93,98 @@ glue_times_redirect2_helper<true>::apply(Mat<typename T1::elem_type>& out, const
     
     arma_debug_check( (A.is_square() == false), "inv(): given matrix must be square sized" );
     
+    if(strip_inv<T1>::do_inv_sympd)
+      {
+      // if(auxlib::rudimentary_sym_check(A) == false)
+      //   {
+      //   if(is_cx<eT>::no )  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not symmetric"); }
+      //   if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not hermitian"); }
+      //   
+      //   out.soft_reset();
+      //   arma_stop_runtime_error("matrix multiplication: problem with matrix inverse; suggest to use solve() instead");
+      //   
+      //   return;
+      //   }
+      
+      if( (arma_config::debug) && (auxlib::rudimentary_sym_check(A) == false) )
+        {
+        if(is_cx<eT>::no )  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not symmetric"); }
+        if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not hermitian"); }
+        }
+      }
+    
     const unwrap_check<T2> B_tmp(X.B, out);
     const Mat<eT>& B = B_tmp.M;
     
     arma_debug_assert_mul_size(A, B, "matrix multiplication");
     
-    const bool status = auxlib::solve_square_fast(out, A, B);
+    // TODO: detect sympd via sympd_helper::guess_sympd(A) ?
+    
+    #if defined(ARMA_OPTIMISE_SYMPD)
+      const bool status = (strip_inv<T1>::do_inv_sympd) ? auxlib::solve_sympd_fast(out, A, B) : auxlib::solve_square_fast(out, A, B);
+    #else
+      const bool status = auxlib::solve_square_fast(out, A, B);
+    #endif
     
     if(status == false)
       {
-      out.reset();
-      arma_stop_runtime_error("matrix multiplication: inverse of singular matrix; suggest to use solve() instead");
+      out.soft_reset();
+      arma_stop_runtime_error("matrix multiplication: problem with matrix inverse; suggest to use solve() instead");
       }
     
     return;
     }
+  
+  #if defined(ARMA_OPTIMISE_SYMPD)
+    {
+    if(strip_inv<T2>::do_inv_sympd)
+      {
+      // replace A*inv_sympd(B) with trans( solve(trans(B),trans(A)) )
+      // transpose of B is avoided as B is explicitly marked as symmetric
+      
+      arma_extra_debug_print("glue_times_redirect<2>::apply(): detected A*inv_sympd(B)");
+      
+      const Mat<eT> At = trans(X.A);
+      
+      const strip_inv<T2> B_strip(X.B);
+      
+      Mat<eT> B = B_strip.M;
+      
+      arma_debug_check( (B.is_square() == false), "inv_sympd(): given matrix must be square sized" );
+      
+      // if(auxlib::rudimentary_sym_check(B) == false)
+      //   {
+      //   if(is_cx<eT>::no )  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not symmetric"); }
+      //   if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not hermitian"); }
+      //   
+      //   out.soft_reset();
+      //   arma_stop_runtime_error("matrix multiplication: problem with matrix inverse; suggest to use solve() instead");
+      //   
+      //   return;
+      //   }
+      
+      if( (arma_config::debug) && (auxlib::rudimentary_sym_check(B) == false) )
+        {
+        if(is_cx<eT>::no )  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not symmetric"); }
+        if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "inv_sympd(): given matrix is not hermitian"); }
+        }
+      
+      arma_debug_assert_mul_size(At.n_cols, At.n_rows, B.n_rows, B.n_cols, "matrix multiplication");
+      
+      const bool status = auxlib::solve_sympd_fast(out, B, At);
+      
+      if(status == false)
+        {
+        out.soft_reset();
+        arma_stop_runtime_error("matrix multiplication: problem with matrix inverse; suggest to use solve() instead");
+        }
+      
+      out = trans(out);
+      
+      return;
+      }
+    }
+  #endif
   
   glue_times_redirect2_helper<false>::apply(out, X);
   }
@@ -183,7 +260,7 @@ glue_times_redirect3_helper<true>::apply(Mat<typename T1::elem_type>& out, const
   
   typedef typename T1::elem_type eT;
   
-  if(strip_inv<T1>::do_inv == true)
+  if(strip_inv<T1>::do_inv)
     {
     // replace inv(A)*B*C with solve(A,B*C);
     
@@ -217,19 +294,25 @@ glue_times_redirect3_helper<true>::apply(Mat<typename T1::elem_type>& out, const
     
     arma_debug_assert_mul_size(A, BC, "matrix multiplication");
     
-    const bool status = auxlib::solve_square_fast(out, A, BC);
+    // TODO: detect sympd via sympd_helper::guess_sympd(A) ?
+    
+    #if defined(ARMA_OPTIMISE_SYMPD)
+      const bool status = (strip_inv<T1>::do_inv_sympd) ? auxlib::solve_sympd_fast(out, A, BC) : auxlib::solve_square_fast(out, A, BC);
+    #else
+      const bool status = auxlib::solve_square_fast(out, A, BC);
+    #endif
     
     if(status == false)
       {
-      out.reset();
-      arma_stop_runtime_error("matrix multiplication: inverse of singular matrix; suggest to use solve() instead");
+      out.soft_reset();
+      arma_stop_runtime_error("matrix multiplication: problem with matrix inverse; suggest to use solve() instead");
       }
     
     return;
     }
   
   
-  if(strip_inv<T2>::do_inv == true)
+  if(strip_inv<T2>::do_inv)
     {
     // replace A*inv(B)*C with A*solve(B,C)
     
@@ -248,12 +331,16 @@ glue_times_redirect3_helper<true>::apply(Mat<typename T1::elem_type>& out, const
     
     Mat<eT> solve_result;
     
-    const bool status = auxlib::solve_square_fast(solve_result, B, C);
+    #if defined(ARMA_OPTIMISE_SYMPD)
+      const bool status = (strip_inv<T2>::do_inv_sympd) ? auxlib::solve_sympd_fast(solve_result, B, C) : auxlib::solve_square_fast(solve_result, B, C);
+    #else
+      const bool status = auxlib::solve_square_fast(solve_result, B, C);
+    #endif
     
     if(status == false)
       {
-      out.reset();
-      arma_stop_runtime_error("matrix multiplication: inverse of singular matrix; suggest to use solve() instead");
+      out.soft_reset();
+      arma_stop_runtime_error("matrix multiplication: problem with matrix inverse; suggest to use solve() instead");
       return;
       }
     
@@ -434,9 +521,9 @@ glue_times::apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_times>
   {
   arma_extra_debug_sigprint();
   
-  const sword N_mat = 1 + depth_lhs< glue_times, Glue<T1,T2,glue_times> >::num;
+  constexpr uword N_mat = 1 + depth_lhs< glue_times, Glue<T1,T2,glue_times> >::num;
   
-  arma_extra_debug_print(arma_str::format("N_mat = %d") % N_mat);
+  arma_extra_debug_print(arma_str::format("N_mat = %u") % N_mat);
   
   glue_times_redirect<N_mat>::apply(out, X);
   }
@@ -467,7 +554,7 @@ glue_times::apply_inplace_plus(Mat<typename T1::elem_type>& out, const Glue<T1, 
   typedef typename T1::elem_type            eT;
   typedef typename get_pod_type<eT>::result  T;
   
-  if( (is_outer_product<T1>::value) || (has_op_inv<T1>::value) || (has_op_inv<T2>::value) )
+  if( (is_outer_product<T1>::value) || (has_op_inv<T1>::value) || (has_op_inv<T2>::value) || (has_op_inv_sympd<T1>::value) || (has_op_inv_sympd<T2>::value) )
     {
     // partial workaround for corner cases
     

@@ -71,7 +71,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const eT val)
     arma_debug_check
       (
       ( ((ri.is_vec() == false) && (ri.is_empty() == false)) || ((ci.is_vec() == false) && (ci.is_empty() == false)) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ri_mem    = ri.memptr();
@@ -84,13 +84,13 @@ subview_elem2<eT,T1,T2>::inplace_op(const eT val)
       {
       const uword col = ci_mem[ci_count];
       
-      arma_debug_check( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
       
       for(uword ri_count=0; ri_count < ri_n_elem; ++ri_count)
         {
         const uword row = ri_mem[ri_count];
         
-        arma_debug_check( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
+        arma_debug_check_bounds( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
         
         if(is_same_type<op_type, op_internal_equ  >::yes) { m_local.at(row,col)  = val; }
         if(is_same_type<op_type, op_internal_plus >::yes) { m_local.at(row,col) += val; }
@@ -110,7 +110,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const eT val)
     arma_debug_check
       (
       ( (ci.is_vec() == false) && (ci.is_empty() == false) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ci_mem    = ci.memptr();
@@ -120,7 +120,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const eT val)
       {
       const uword col = ci_mem[ci_count];
       
-      arma_debug_check( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
       
       eT* colptr = m_local.colptr(col);
       
@@ -141,7 +141,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const eT val)
     arma_debug_check
       (
       ( (ri.is_vec() == false) && (ri.is_empty() == false) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ri_mem    = ri.memptr();
@@ -153,7 +153,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const eT val)
         {
         const uword row = ri_mem[ri_count];
         
-        arma_debug_check( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
+        arma_debug_check_bounds( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
       
         if(is_same_type<op_type, op_internal_equ  >::yes) { m_local.at(row,col)  = val; }
         if(is_same_type<op_type, op_internal_plus >::yes) { m_local.at(row,col) += val; }
@@ -194,7 +194,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
     arma_debug_check
       (
       ( ((ri.is_vec() == false) && (ri.is_empty() == false)) || ((ci.is_vec() == false) && (ci.is_empty() == false)) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ri_mem    = ri.memptr();
@@ -209,13 +209,13 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
       {
       const uword col = ci_mem[ci_count];
       
-      arma_debug_check( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
       
       for(uword ri_count=0; ri_count < ri_n_elem; ++ri_count)
         {
         const uword row = ri_mem[ri_count];
         
-        arma_debug_check( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
+        arma_debug_check_bounds( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
         
         if(is_same_type<op_type, op_internal_equ  >::yes) { m_local.at(row,col)  = X.at(ri_count, ci_count); }
         if(is_same_type<op_type, op_internal_plus >::yes) { m_local.at(row,col) += X.at(ri_count, ci_count); }
@@ -235,7 +235,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
     arma_debug_check
       (
       ( (ci.is_vec() == false) && (ci.is_empty() == false) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ci_mem    = ci.memptr();
@@ -247,7 +247,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
       {
       const uword col = ci_mem[ci_count];
       
-      arma_debug_check( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
       
             eT* m_colptr = m_local.colptr(col);
       const eT* X_colptr = X.colptr(ci_count);
@@ -269,7 +269,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
     arma_debug_check
       (
       ( (ri.is_vec() == false) && (ri.is_empty() == false) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ri_mem    = ri.memptr();
@@ -283,7 +283,7 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
         {
         const uword row = ri_mem[ri_count];
         
-        arma_debug_check( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
+        arma_debug_check_bounds( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
       
         if(is_same_type<op_type, op_internal_equ  >::yes) { m_local.at(row,col)  = X.at(ri_count, col); }
         if(is_same_type<op_type, op_internal_plus >::yes) { m_local.at(row,col) += X.at(ri_count, col); }
@@ -299,6 +299,54 @@ subview_elem2<eT,T1,T2>::inplace_op(const Base<eT,expr>& x)
 
 //
 //
+
+
+
+template<typename eT, typename T1, typename T2>
+inline
+void
+subview_elem2<eT,T1,T2>::replace(const eT old_val, const eT new_val)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.replace(old_val, new_val);
+  
+  (*this).operator=(tmp);
+  }
+
+
+
+template<typename eT, typename T1, typename T2>
+inline
+void
+subview_elem2<eT,T1,T2>::clean(const pod_type threshold)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.clean(threshold);
+  
+  (*this).operator=(tmp);
+  }
+
+
+
+template<typename eT, typename T1, typename T2>
+inline
+void
+subview_elem2<eT,T1,T2>::clamp(const eT min_val, const eT max_val)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.clamp(min_val, max_val);
+  
+  (*this).operator=(tmp);
+  }
 
 
 
@@ -554,6 +602,86 @@ subview_elem2<eT,T1,T2>::operator/= (const Base<eT,expr>& x)
 
 
 template<typename eT, typename T1, typename T2>
+template<typename expr>
+inline
+void
+subview_elem2<eT,T1,T2>::operator= (const SpBase<eT,expr>& x)
+  {
+  arma_extra_debug_sigprint();
+  
+  const Mat<eT> tmp(x);
+  
+  inplace_op<op_internal_equ>(tmp);
+  }
+
+
+
+template<typename eT, typename T1, typename T2>
+template<typename expr>
+inline
+void
+subview_elem2<eT,T1,T2>::operator+= (const SpBase<eT,expr>& x)
+  {
+  arma_extra_debug_sigprint();
+  
+  const Mat<eT> tmp(x);
+  
+  inplace_op<op_internal_plus>(tmp);
+  }
+
+
+
+template<typename eT, typename T1, typename T2>
+template<typename expr>
+inline
+void
+subview_elem2<eT,T1,T2>::operator-= (const SpBase<eT,expr>& x)
+  {
+  arma_extra_debug_sigprint();
+  
+  const Mat<eT> tmp(x);
+  
+  inplace_op<op_internal_minus>(tmp);
+  }
+
+
+
+template<typename eT, typename T1, typename T2>
+template<typename expr>
+inline
+void
+subview_elem2<eT,T1,T2>::operator%= (const SpBase<eT,expr>& x)
+  {
+  arma_extra_debug_sigprint();
+  
+  const Mat<eT> tmp(x);
+  
+  inplace_op<op_internal_schur>(tmp);
+  }
+
+
+
+template<typename eT, typename T1, typename T2>
+template<typename expr>
+inline
+void
+subview_elem2<eT,T1,T2>::operator/= (const SpBase<eT,expr>& x)
+  {
+  arma_extra_debug_sigprint();
+  
+  const Mat<eT> tmp(x);
+  
+  inplace_op<op_internal_div>(tmp);
+  }
+
+
+
+//
+//
+
+
+
+template<typename eT, typename T1, typename T2>
 inline
 void
 subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,T2>& in)
@@ -583,7 +711,7 @@ subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,
     arma_debug_check
       (
       ( ((ri.is_vec() == false) && (ri.is_empty() == false)) || ((ci.is_vec() == false) && (ci.is_empty() == false)) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ri_mem    = ri.memptr();
@@ -601,13 +729,13 @@ subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,
       {
       const uword col = ci_mem[ci_count];
       
-      arma_debug_check( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
       
       for(uword ri_count=0; ri_count < ri_n_elem; ++ri_count)
         {
         const uword row = ri_mem[ri_count];
         
-        arma_debug_check( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
+        arma_debug_check_bounds( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
         
         out_mem[out_count] = m_local.at(row,col);
         ++out_count;
@@ -624,7 +752,7 @@ subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,
     arma_debug_check
       (
       ( (ci.is_vec() == false) && (ci.is_empty() == false) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ci_mem    = ci.memptr();
@@ -636,7 +764,7 @@ subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,
       {
       const uword col = ci_mem[ci_count];
       
-      arma_debug_check( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (col >= m_n_cols), "Mat::elem(): index out of bounds" );
       
       arrayops::copy( out.colptr(ci_count), m_local.colptr(col), m_n_rows );
       }
@@ -651,7 +779,7 @@ subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,
     arma_debug_check
       (
       ( (ri.is_vec() == false) && (ri.is_empty() == false) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* ri_mem    = ri.memptr();
@@ -665,7 +793,7 @@ subview_elem2<eT,T1,T2>::extract(Mat<eT>& actual_out, const subview_elem2<eT,T1,
         {
         const uword row = ri_mem[ri_count];
         
-        arma_debug_check( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
+        arma_debug_check_bounds( (row >= m_n_rows), "Mat::elem(): index out of bounds" );
         
         out.at(ri_count,col) = m_local.at(row,col);
         }

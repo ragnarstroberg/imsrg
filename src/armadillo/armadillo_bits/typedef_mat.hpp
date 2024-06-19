@@ -36,19 +36,17 @@ typedef Col <s32> s32_colvec;
 typedef Row <s32> s32_rowvec;
 typedef Cube<s32> s32_cube;
 
-#if defined(ARMA_USE_U64S64)
-  typedef Mat <u64> u64_mat;
-  typedef Col <u64> u64_vec;
-  typedef Col <u64> u64_colvec;
-  typedef Row <u64> u64_rowvec;
-  typedef Cube<u64> u64_cube;
+typedef Mat <u64> u64_mat;
+typedef Col <u64> u64_vec;
+typedef Col <u64> u64_colvec;
+typedef Row <u64> u64_rowvec;
+typedef Cube<u64> u64_cube;
 
-  typedef Mat <s64> s64_mat;
-  typedef Col <s64> s64_vec;
-  typedef Col <s64> s64_colvec;
-  typedef Row <s64> s64_rowvec;
-  typedef Cube<s64> s64_cube;
-#endif
+typedef Mat <s64> s64_mat;
+typedef Col <s64> s64_vec;
+typedef Col <s64> s64_colvec;
+typedef Row <s64> s64_rowvec;
+typedef Cube<s64> s64_cube;
 
 typedef Mat <uword> umat;
 typedef Col <uword> uvec;
@@ -68,6 +66,12 @@ typedef Col <float> fcolvec;
 typedef Row <float> frowvec;
 typedef Cube<float> fcube;
 
+typedef Mat <double> dmat;
+typedef Col <double> dvec;
+typedef Col <double> dcolvec;
+typedef Row <double> drowvec;
+typedef Cube<double> dcube;
+
 typedef Mat <double> mat;
 typedef Col <double> vec;
 typedef Col <double> colvec;
@@ -79,6 +83,12 @@ typedef Col <cx_float> cx_fvec;
 typedef Col <cx_float> cx_fcolvec;
 typedef Row <cx_float> cx_frowvec;
 typedef Cube<cx_float> cx_fcube;
+
+typedef Mat <cx_double> cx_dmat;
+typedef Col <cx_double> cx_dvec;
+typedef Col <cx_double> cx_dcolvec;
+typedef Row <cx_double> cx_drowvec;
+typedef Cube<cx_double> cx_dcube;
 
 typedef Mat <cx_double> cx_mat;
 typedef Col <cx_double> cx_vec;
@@ -103,6 +113,11 @@ typedef SpCol <float> sp_fvec;
 typedef SpCol <float> sp_fcolvec;
 typedef SpRow <float> sp_frowvec;
 
+typedef SpMat <double> sp_dmat;
+typedef SpCol <double> sp_dvec;
+typedef SpCol <double> sp_dcolvec;
+typedef SpRow <double> sp_drowvec;
+
 typedef SpMat <double> sp_mat;
 typedef SpCol <double> sp_vec;
 typedef SpCol <double> sp_colvec;
@@ -112,6 +127,11 @@ typedef SpMat <cx_float> sp_cx_fmat;
 typedef SpCol <cx_float> sp_cx_fvec;
 typedef SpCol <cx_float> sp_cx_fcolvec;
 typedef SpRow <cx_float> sp_cx_frowvec;
+
+typedef SpMat <cx_double> sp_cx_dmat;
+typedef SpCol <cx_double> sp_cx_dvec;
+typedef SpCol <cx_double> sp_cx_dcolvec;
+typedef SpRow <cx_double> sp_cx_drowvec;
 
 typedef SpMat <cx_double> sp_cx_mat;
 typedef SpCol <cx_double> sp_cx_vec;

@@ -39,7 +39,7 @@ eig_pair
   
   if(status == false)
     {
-    eigvals.reset();
+    eigvals.soft_reset();
     arma_stop_runtime_error("eig_pair(): decomposition failed");
     }
   
@@ -68,8 +68,8 @@ eig_pair
   
   if(status == false)
     {
-    eigvals.reset();
-    arma_debug_warn("eig_pair(): decomposition failed");
+    eigvals.soft_reset();
+    arma_debug_warn_level(3, "eig_pair(): decomposition failed");
     }
   
   return status;
@@ -96,13 +96,47 @@ eig_pair
   
   if(status == false)
     {
-    eigvals.reset();
-    eigvecs.reset();
-    arma_debug_warn("eig_pair(): decomposition failed");
+    eigvals.soft_reset();
+    eigvecs.soft_reset();
+    arma_debug_warn_level(3, "eig_pair(): decomposition failed");
     }
   
   return status;
   }
+
+
+
+template<typename T1, typename T2>
+inline
+typename enable_if2< is_supported_blas_type<typename T1::pod_type>::value, bool >::result
+eig_pair
+  (
+         Col< std::complex<typename T1::pod_type> >&  eigvals,
+         Mat< std::complex<typename T1::pod_type> >& leigvecs,
+         Mat< std::complex<typename T1::pod_type> >& reigvecs,
+  const Base< typename T1::elem_type, T1 >&          A_expr,
+  const Base< typename T1::elem_type, T2 >&          B_expr
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (void_ptr(&eigvals)  == void_ptr(&leigvecs)), "eig_pair(): parameter 'eigval' is an alias of parameter 'leigvec'" );
+  arma_debug_check( (void_ptr(&eigvals)  == void_ptr(&reigvecs)), "eig_pair(): parameter 'eigval' is an alias of parameter 'reigvec'" );
+  arma_debug_check( (void_ptr(&leigvecs) == void_ptr(&reigvecs)), "eig_pair(): parameter 'leigvec' is an alias of parameter 'reigvec'" );
+  
+  const bool status = auxlib::eig_pair_twosided(eigvals, leigvecs, reigvecs, A_expr.get_ref(), B_expr.get_ref());
+  
+  if(status == false)
+    {
+     eigvals.soft_reset();
+    leigvecs.soft_reset();
+    reigvecs.soft_reset();
+    arma_debug_warn_level(3, "eig_pair(): decomposition failed");
+    }
+  
+  return status;
+  }
+
 
 
 //! @}

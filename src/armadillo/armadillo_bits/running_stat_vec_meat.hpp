@@ -58,7 +58,7 @@ running_stat_vec<obj_type>::running_stat_vec(const running_stat_vec<obj_type>& i
 
 template<typename obj_type>
 inline
-const running_stat_vec<obj_type>&
+running_stat_vec<obj_type>&
 running_stat_vec<obj_type>::operator=(const running_stat_vec<obj_type>& in_rsv)
   {
   arma_extra_debug_sigprint();
@@ -99,7 +99,7 @@ running_stat_vec<obj_type>::operator() (const Base<typename running_stat_vec<obj
   
   if( sample.is_finite() == false )
     {
-    arma_debug_warn("running_stat_vec: sample ignored as it has non-finite elements");
+    arma_debug_warn_level(3, "running_stat_vec: sample ignored as it has non-finite elements");
     return;
     }
   
@@ -128,7 +128,7 @@ running_stat_vec<obj_type>::operator() (const Base< std::complex<typename runnin
   
   if( sample.is_finite() == false )
     {
-    arma_debug_warn("running_stat_vec: sample ignored as it has non-finite elements");
+    arma_debug_warn_level(3, "running_stat_vec: sample ignored as it has non-finite elements");
     return;
     }
   
@@ -255,7 +255,7 @@ running_stat_vec<obj_type>::cov(const uword norm_type)
   {
   arma_extra_debug_sigprint();
   
-  if(calc_cov == true)
+  if(calc_cov)
     {
     const T N = counter.value();
     
@@ -382,7 +382,7 @@ running_stat_vec_aux::update_stats
     const T  N_plus_1   = x.counter.value_plus_1();
     const T  N_minus_1  = x.counter.value_minus_1();
     
-    if(x.calc_cov == true)
+    if(x.calc_cov)
       {
       Mat<eT>& tmp1 = x.tmp1;
       Mat<eT>& tmp2 = x.tmp2;
@@ -427,13 +427,13 @@ running_stat_vec_aux::update_stats
     }
   else
     {
-    arma_debug_check( (sample.is_vec() == false), "running_stat_vec(): given sample is not a vector");
+    arma_debug_check( (sample.is_vec() == false), "running_stat_vec(): given sample must be a vector" );
     
     x.r_mean.set_size(sample.n_rows, sample.n_cols);
     
     x.r_var.zeros(sample.n_rows, sample.n_cols);
     
-    if(x.calc_cov == true)
+    if(x.calc_cov)
       {
       x.r_cov.zeros(sample.n_elem, sample.n_elem);
       }
@@ -541,7 +541,7 @@ running_stat_vec_aux::update_stats
     const T  N_plus_1   = x.counter.value_plus_1();
     const T  N_minus_1  = x.counter.value_minus_1();
     
-    if(x.calc_cov == true)
+    if(x.calc_cov)
       {
       Mat<eT>& tmp1 = x.tmp1;
       Mat<eT>& tmp2 = x.tmp2;
@@ -588,13 +588,13 @@ running_stat_vec_aux::update_stats
     }
   else
     {
-    arma_debug_check( (sample.is_vec() == false), "running_stat_vec(): given sample is not a vector");
+    arma_debug_check( (sample.is_vec() == false), "running_stat_vec(): given sample must be a vector" );
     
     x.r_mean.set_size(sample.n_rows, sample.n_cols);
     
     x.r_var.zeros(sample.n_rows, sample.n_cols);
     
-    if(x.calc_cov == true)
+    if(x.calc_cov)
       {
       x.r_cov.zeros(sample.n_elem, sample.n_elem);
       }

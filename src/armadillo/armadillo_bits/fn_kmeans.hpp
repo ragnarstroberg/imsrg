@@ -40,13 +40,13 @@ kmeans
   
   const bool status = model.kmeans_wrapper(means, data.get_ref(), k, seed_mode, n_iter, print_mode);
   
-  if(status == true)
+  if(status)
     {
     means = model.means;
     }
   else
     {
-    means.reset();
+    means.soft_reset();
     }
   
   return status;

@@ -30,18 +30,18 @@ sprandu
   const uword  n_rows,
   const uword  n_cols,
   const double density,
-  const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = 0
+  const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = nullptr
   )
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  if(is_SpCol<obj_type>::value == true)
+  if(is_SpCol<obj_type>::value)
     {
     arma_debug_check( (n_cols != 1), "sprandu(): incompatible size" );
     }
   else
-  if(is_SpRow<obj_type>::value == true)
+  if(is_SpRow<obj_type>::value)
     {
     arma_debug_check( (n_rows != 1), "sprandu(): incompatible size" );
     }
@@ -59,7 +59,7 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-sprandu(const SizeMat& s, const double density, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = 0)
+sprandu(const SizeMat& s, const double density, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);

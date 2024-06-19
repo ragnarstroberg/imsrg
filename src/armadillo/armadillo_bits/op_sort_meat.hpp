@@ -28,13 +28,13 @@ op_sort::direct_sort(eT* X, const uword n_elem, const uword sort_type)
   
   if(sort_type == 0)
     {
-    arma_ascend_sort_helper<eT> comparator;
+    arma_lt_comparator<eT> comparator;
     
     std::sort(&X[0], &X[n_elem], comparator);
     }
   else
     {
-    arma_descend_sort_helper<eT> comparator;
+    arma_gt_comparator<eT> comparator;
     
     std::sort(&X[0], &X[n_elem], comparator);
     }
@@ -49,7 +49,7 @@ op_sort::direct_sort_ascending(eT* X, const uword n_elem)
   {
   arma_extra_debug_sigprint();
   
-  arma_ascend_sort_helper<eT> comparator;
+  arma_lt_comparator<eT> comparator;
     
   std::sort(&X[0], &X[n_elem], comparator);
   }
@@ -109,14 +109,7 @@ op_sort::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword sort_type, co
   {
   arma_extra_debug_sigprint();
   
-  if( (X.n_rows * X.n_cols) <= 1 )
-    {
-    out = X;
-    return;
-    }
-  
-  arma_debug_check( (sort_type > 1), "sort(): parameter 'sort_type' must be 0 or 1" );
-  arma_debug_check( (X.has_nan()),   "sort(): detected NaN"                         );
+  if((X.n_rows * X.n_cols) <= 1)  { out = X; return; }
   
   if(dim == 0)  // sort the contents of each column
     {
@@ -177,11 +170,14 @@ op_sort::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort>& in)
   typedef typename T1::elem_type eT;
   
   const quasi_unwrap<T1> U(in.m);
-  
-  const Mat<eT>& X = U.M;
+  const Mat<eT>&     X = U.M;
   
   const uword sort_type = in.aux_uword_a;
   const uword dim       = in.aux_uword_b;
+  
+  arma_debug_check( (sort_type > 1), "sort(): parameter 'sort_type' must be 0 or 1" );
+  arma_debug_check( (dim > 1),       "sort(): parameter 'dim' must be 0 or 1"       );
+  arma_debug_check( (X.has_nan()),   "sort(): detected NaN"                         );
   
   if(U.is_alias(out))
     {
@@ -202,30 +198,40 @@ op_sort::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort>& in)
 template<typename T1>
 inline
 void
-op_sort_default::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_default>& in)
+op_sort_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_vec>& in)
   {
   arma_extra_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const quasi_unwrap<T1> U(in.m);
-  
+  const unwrap<T1>   U(in.m);  // not using quasi_unwrap, to ensure there is no aliasing with subviews
   const Mat<eT>& X = U.M;
   
   const uword sort_type = in.aux_uword_a;
-  const uword dim       = (T1::is_row) ? 1 : 0;
   
-  if(U.is_alias(out))
+  arma_debug_check( (sort_type > 1), "sort(): parameter 'sort_type' must be 0 or 1" );
+  arma_debug_check( (X.has_nan()),   "sort(): detected NaN"                         );
+  
+  out = X;  // not checking for aliasing, to allow inplace sorting of vectors
+  
+  if(out.n_elem <= 1)  { return; }
+  
+  eT* out_mem = out.memptr();
+  
+  eT* start_ptr =  out_mem;
+  eT* endp1_ptr = &out_mem[out.n_elem];
+  
+  if(sort_type == 0)
     {
-    Mat<eT> tmp;
+    arma_lt_comparator<eT> comparator;
     
-    op_sort::apply_noalias(tmp, X, sort_type, dim);
-    
-    out.steal_mem(tmp);
+    std::sort(start_ptr, endp1_ptr, comparator);
     }
   else
     {
-    op_sort::apply_noalias(out, X, sort_type, dim);
+    arma_gt_comparator<eT> comparator;
+    
+    std::sort(start_ptr, endp1_ptr, comparator);
     }
   }
 

@@ -27,7 +27,7 @@ class gemm_emul_tinysq
   
   
   template<typename eT, typename TA, typename TB>
-  arma_hot
+  arma_cold
   inline
   static
   void
@@ -45,9 +45,13 @@ class gemm_emul_tinysq
     switch(A.n_rows)
       {
       case  4:  gemv_emul_tinysq<do_trans_A, use_alpha, use_beta>::apply( C.colptr(3), A, B.colptr(3), alpha, beta );
+      // fallthrough
       case  3:  gemv_emul_tinysq<do_trans_A, use_alpha, use_beta>::apply( C.colptr(2), A, B.colptr(2), alpha, beta );
+      // fallthrough
       case  2:  gemv_emul_tinysq<do_trans_A, use_alpha, use_beta>::apply( C.colptr(1), A, B.colptr(1), alpha, beta );
+      // fallthrough
       case  1:  gemv_emul_tinysq<do_trans_A, use_alpha, use_beta>::apply( C.colptr(0), A, B.colptr(0), alpha, beta );
+      // fallthrough
       default:  ;
       }
     }
@@ -185,7 +189,7 @@ class gemm_emul
     const TB&      B,
     const eT       alpha = eT(1),
     const eT       beta  = eT(0),
-    const typename arma_not_cx<eT>::result* junk = 0
+    const typename arma_not_cx<eT>::result* junk = nullptr
     )
     {
     arma_extra_debug_sigprint();
@@ -208,7 +212,7 @@ class gemm_emul
     const Mat<eT>& B,
     const eT       alpha = eT(1),
     const eT       beta  = eT(0),
-    const typename arma_cx_only<eT>::result* junk = 0
+    const typename arma_cx_only<eT>::result* junk = nullptr
     )
     {
     arma_extra_debug_sigprint();
@@ -257,7 +261,7 @@ class gemm
         }
       else
         {
-        Mat<eT> BB(B.n_rows, B.n_rows);
+        Mat<eT> BB(B.n_rows, B.n_rows, arma_nozeros_indicator());
         
         op_strans::apply_mat_noalias_tinysq(BB, B);
         

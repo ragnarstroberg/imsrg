@@ -22,10 +22,7 @@ class memory
   {
   public:
   
-  arma_inline static uword enlarge_to_mult_of_chunksize(const uword n_elem);
-  
-  template<typename eT> inline arma_malloc static eT*         acquire(const uword n_elem);
-  template<typename eT> inline arma_malloc static eT* acquire_chunked(const uword n_elem);
+  template<typename eT> inline arma_malloc static eT* acquire(const uword n_elem);
   
   template<typename eT> arma_inline static void release(eT* mem);
   
@@ -36,26 +33,14 @@ class memory
 
 
 
-arma_inline
-uword
-memory::enlarge_to_mult_of_chunksize(const uword n_elem)
-  {
-  const uword chunksize = arma_config::spmat_chunksize;
-  
-  // this relies on integer division
-  const uword n_elem_mod = (n_elem > 0) ? (((n_elem-1) / chunksize) + 1) * chunksize : uword(0);
-  
-  return n_elem_mod;
-  }
-
-
-
 template<typename eT>
 inline
 arma_malloc
 eT*
 memory::acquire(const uword n_elem)
   {
+  if(n_elem == 0)  { return nullptr; }
+  
   arma_debug_check
     (
     ( size_t(n_elem) > (std::numeric_limits<size_t>::max() / sizeof(eT)) ),
@@ -64,28 +49,39 @@ memory::acquire(const uword n_elem)
   
   eT* out_memptr;
   
-  #if   defined(ARMA_USE_TBB_ALLOC)
+  #if   defined(ARMA_ALIEN_MEM_ALLOC_FUNCTION)
+    {
+    out_memptr = (eT *) ARMA_ALIEN_MEM_ALLOC_FUNCTION(sizeof(eT)*n_elem);
+    }
+  #elif defined(ARMA_USE_TBB_ALLOC)
     {
     out_memptr = (eT *) scalable_malloc(sizeof(eT)*n_elem);
     }
   #elif defined(ARMA_USE_MKL_ALLOC)
     {
-    out_memptr = (eT *) mkl_malloc( sizeof(eT)*n_elem, 128 );
+    out_memptr = (eT *) mkl_malloc( sizeof(eT)*n_elem, 32 );
     }
   #elif defined(ARMA_HAVE_POSIX_MEMALIGN)
     {
-    eT* memptr;
+    eT* memptr = nullptr;
     
-    const size_t alignment = 16;  // change the 16 to 64 if you wish to align to the cache line
+    const size_t n_bytes   = sizeof(eT)*size_t(n_elem);
+    const size_t alignment = (n_bytes >= size_t(1024)) ? size_t(32) : size_t(16);
     
-    int status = posix_memalign((void **)&memptr, ( (alignment >= sizeof(void*)) ? alignment : sizeof(void*) ), sizeof(eT)*n_elem);
+    // TODO: investigate apparent memory leak when using alignment >= 64 (as shown on Fedora 28, glibc 2.27)
+    int status = posix_memalign((void **)&memptr, ( (alignment >= sizeof(void*)) ? alignment : sizeof(void*) ), n_bytes);
     
-    out_memptr = (status == 0) ? memptr : NULL;
+    out_memptr = (status == 0) ? memptr : nullptr;
     }
   #elif defined(_MSC_VER)
     {
     //out_memptr = (eT *) malloc(sizeof(eT)*n_elem);
-    out_memptr = (eT *) _aligned_malloc( sizeof(eT)*n_elem, 16 );  // lives in malloc.h
+    //out_memptr = (eT *) _aligned_malloc( sizeof(eT)*n_elem, 16 );  // lives in malloc.h
+    
+    const size_t n_bytes   = sizeof(eT)*size_t(n_elem);
+    const size_t alignment = (n_bytes >= size_t(1024)) ? size_t(32) : size_t(16);
+    
+    out_memptr = (eT *) _aligned_malloc( n_bytes, alignment );
     }
   #else
     {
@@ -96,26 +92,9 @@ memory::acquire(const uword n_elem)
   
   // TODO: for mingw, use __mingw_aligned_malloc
   
-  if(n_elem > 0)
-    {
-    arma_check_bad_alloc( (out_memptr == NULL), "arma::memory::acquire(): out of memory" );
-    }
+  arma_check_bad_alloc( (out_memptr == nullptr), "arma::memory::acquire(): out of memory" );
   
   return out_memptr;
-  }
-
-
-
-//! get memory in multiples of chunks, holding at least n_elem
-template<typename eT>
-inline
-arma_malloc
-eT*
-memory::acquire_chunked(const uword n_elem)
-  {
-  const uword n_elem_mod = memory::enlarge_to_mult_of_chunksize(n_elem);
-  
-  return memory::acquire<eT>(n_elem_mod);
   }
 
 
@@ -125,7 +104,13 @@ arma_inline
 void
 memory::release(eT* mem)
   {
-  #if   defined(ARMA_USE_TBB_ALLOC)
+  if(mem == nullptr)  { return; }
+  
+  #if   defined(ARMA_ALIEN_MEM_FREE_FUNCTION)
+    {
+    ARMA_ALIEN_MEM_FREE_FUNCTION( (void *)(mem) );
+    }
+  #elif defined(ARMA_USE_TBB_ALLOC)
     {
     scalable_free( (void *)(mem) );
     }

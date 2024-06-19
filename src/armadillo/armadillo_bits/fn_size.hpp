@@ -34,14 +34,88 @@ size(const uword n_rows, const uword n_cols)
 template<typename T1>
 arma_warn_unused
 inline
-typename enable_if2< is_arma_type<T1>::value, const SizeMat >::result
-size(const T1& X)
+const SizeMat
+size(const Base<typename T1::elem_type,T1>& X)
   {
   arma_extra_debug_sigprint();
   
-  const Proxy<T1> P(X);
+  const Proxy<T1> P(X.get_ref());
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() );
+  }
+
+
+
+// explicit overload to workround ADL issues with C++17 std::size()
+template<typename eT>
+arma_warn_unused
+inline
+const SizeMat
+size(const Mat<eT>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SizeMat( X.n_rows, X.n_cols );
+  }
+
+
+
+// explicit overload to workround ADL issues with C++17 std::size()
+template<typename eT>
+arma_warn_unused
+inline
+const SizeMat
+size(const Row<eT>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SizeMat( X.n_rows, X.n_cols );
+  }
+
+
+
+// explicit overload to workround ADL issues with C++17 std::size()
+template<typename eT>
+arma_warn_unused
+inline
+const SizeMat
+size(const Col<eT>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SizeMat( X.n_rows, X.n_cols );
+  }
+
+
+
+arma_warn_unused
+inline
+const SizeMat
+size(const arma::span& row_span, const arma::span& col_span)
+  {
+  arma_extra_debug_sigprint();
+  
+  uword n_rows = 0;
+  uword n_cols = 0;
+  
+  if(row_span.whole || col_span.whole)
+    {
+    arma_debug_check(true, "size(): span::all not supported");
+    }
+  else
+    {
+    if((row_span.a > row_span.b) || (col_span.a > col_span.b))
+      {
+      arma_debug_check_bounds(true, "size(): span indices incorrectly used");
+      }
+    else
+      {
+      n_rows = row_span.b - row_span.a + 1;
+      n_cols = col_span.b - col_span.a + 1;
+      }
+    }
+  
+  return SizeMat(n_rows, n_cols);
   }
 
 
@@ -49,12 +123,12 @@ size(const T1& X)
 template<typename T1>
 arma_warn_unused
 inline
-typename enable_if2< is_arma_type<T1>::value, uword >::result
-size(const T1& X, const uword dim)
+uword
+size(const Base<typename T1::elem_type,T1>& X, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  const Proxy<T1> P(X);
+  const Proxy<T1> P(X.get_ref());
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() )( dim );
   }
@@ -76,44 +150,77 @@ size(const uword n_rows, const uword n_cols, const uword n_slices)
 template<typename T1>
 arma_warn_unused
 inline
-typename enable_if2< is_arma_cube_type<T1>::value, const SizeCube >::result
-size(const T1& X)
+const SizeCube
+size(const BaseCube<typename T1::elem_type, T1>& X)
   {
   arma_extra_debug_sigprint();
   
-  const ProxyCube<T1> P(X);
+  const ProxyCube<T1> P(X.get_ref());
   
   return SizeCube( P.get_n_rows(), P.get_n_cols(), P.get_n_slices() );
   }
 
 
 
-template<typename T1>
+// explicit overload to workround ADL issues with C++17 std::size()
+template<typename eT>
 arma_warn_unused
 inline
-typename enable_if2< is_arma_cube_type<T1>::value, uword >::result
-size(const T1& X, const uword dim)
+const SizeCube
+size(const Cube<eT>& X)
   {
   arma_extra_debug_sigprint();
   
-  const ProxyCube<T1> P(X);
+  return SizeCube( X.n_rows, X.n_cols, X.n_slices );
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+uword
+size(const BaseCube<typename T1::elem_type, T1>& X, const uword dim)
+  {
+  arma_extra_debug_sigprint();
+  
+  const ProxyCube<T1> P(X.get_ref());
   
   return SizeCube( P.get_n_rows(), P.get_n_cols(), P.get_n_slices() )( dim );
   }
 
 
 
-template<typename T1>
 arma_warn_unused
 inline
-typename enable_if2< is_arma_sparse_type<T1>::value, const SizeMat >::result
-size(const T1& X)
+const SizeCube
+size(const arma::span& row_span, const arma::span& col_span, const arma::span& slice_span)
   {
   arma_extra_debug_sigprint();
   
-  const SpProxy<T1> P(X);
+  uword n_rows   = 0;
+  uword n_cols   = 0;
+  uword n_slices = 0;
   
-  return SizeMat( P.get_n_rows(), P.get_n_cols() );
+  if(row_span.whole || col_span.whole || slice_span.whole)
+    {
+    arma_debug_check(true, "size(): span::all not supported");
+    }
+  else
+    {
+    if((row_span.a > row_span.b) || (col_span.a > col_span.b) || (slice_span.a > slice_span.b))
+      {
+      arma_debug_check_bounds(true, "size(): span indices incorrectly used");
+      }
+    else
+      {
+      n_rows   =   row_span.b -   row_span.a + 1;
+      n_cols   =   col_span.b -   col_span.a + 1;
+      n_slices = slice_span.b - slice_span.a + 1;
+      }
+    }
+  
+  return SizeCube(n_rows, n_cols, n_slices);
   }
 
 
@@ -121,12 +228,41 @@ size(const T1& X)
 template<typename T1>
 arma_warn_unused
 inline
-typename enable_if2< is_arma_sparse_type<T1>::value, uword >::result
-size(const T1& X, const uword dim)
+const SizeMat
+size(const SpBase<typename T1::elem_type,T1>& X)
   {
   arma_extra_debug_sigprint();
   
-  const SpProxy<T1> P(X);
+  const SpProxy<T1> P(X.get_ref());
+  
+  return SizeMat( P.get_n_rows(), P.get_n_cols() );
+  }
+
+
+
+// explicit overload to workround ADL issues with C++17 std::size()
+template<typename eT>
+arma_warn_unused
+inline
+const SizeMat
+size(const SpMat<eT>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SizeMat( X.n_rows, X.n_cols );
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+uword
+size(const SpBase<typename T1::elem_type,T1>& X, const uword dim)
+  {
+  arma_extra_debug_sigprint();
+  
+  const SpProxy<T1> P(X.get_ref());
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() )( dim );
   }

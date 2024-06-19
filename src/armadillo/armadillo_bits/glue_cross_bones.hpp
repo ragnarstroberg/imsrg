@@ -23,11 +23,18 @@
 class glue_cross
   {
   public:
-
+  
+  template<typename T1, typename T2>
+  struct traits
+    {
+    static constexpr bool is_row  = T1::is_row;
+    static constexpr bool is_col  = T1::is_col;
+    static constexpr bool is_xvec = true;
+    };
+  
   template<typename T1, typename T2> inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_cross>& X);
   };
 
 
 
 //! @}
-

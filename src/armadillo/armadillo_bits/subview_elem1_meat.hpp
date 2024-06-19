@@ -33,8 +33,6 @@ subview_elem1<eT,T1>::subview_elem1(const Mat<eT>& in_m, const Base<uword,T1>& i
   , a(in_a)
   {
   arma_extra_debug_sigprint();
-  
-  // TODO: refactor to unwrap 'in_a' instead of storing a ref to it; this will allow removal of carrying T1 around and repetition of size checks
   }
 
 
@@ -70,7 +68,7 @@ subview_elem1<eT,T1>::inplace_op(const eT val)
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -82,7 +80,7 @@ subview_elem1<eT,T1>::inplace_op(const eT val)
     const uword ii = aa_mem[iq];
     const uword jj = aa_mem[jq];
     
-    arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
     
     if(is_same_type<op_type, op_internal_equ  >::yes) { m_mem[ii] =  val; m_mem[jj] =  val; }
     if(is_same_type<op_type, op_internal_plus >::yes) { m_mem[ii] += val; m_mem[jj] += val; }
@@ -95,7 +93,7 @@ subview_elem1<eT,T1>::inplace_op(const eT val)
     {
     const uword ii = aa_mem[iq];
     
-    arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" ); 
+    arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" ); 
     
     if(is_same_type<op_type, op_internal_equ  >::yes) { m_mem[ii] =  val; }
     if(is_same_type<op_type, op_internal_plus >::yes) { m_mem[ii] += val; }
@@ -143,7 +141,7 @@ subview_elem1<eT,T1>::inplace_op(const subview_elem1<eT,T2>& x)
     arma_debug_check
       (
       ( ((s_aa.is_vec() == false) && (s_aa.is_empty() == false)) || ((x_aa.is_vec() == false) && (x_aa.is_empty() == false)) ),
-      "Mat::elem(): given object is not a vector"
+      "Mat::elem(): given object must be a vector"
       );
     
     const uword* s_aa_mem = s_aa.memptr();
@@ -169,7 +167,7 @@ subview_elem1<eT,T1>::inplace_op(const subview_elem1<eT,T2>& x)
       const uword x_ii = x_aa_mem[iq];
       const uword x_jj = x_aa_mem[jq];
       
-      arma_debug_check
+      arma_debug_check_bounds
         (
         (s_ii >= s_m_n_elem) || (s_jj >= s_m_n_elem) || (x_ii >= x_m_n_elem) || (x_jj >= x_m_n_elem),
         "Mat::elem(): index out of bounds"
@@ -187,7 +185,7 @@ subview_elem1<eT,T1>::inplace_op(const subview_elem1<eT,T2>& x)
       const uword s_ii = s_aa_mem[iq];
       const uword x_ii = x_aa_mem[iq];
       
-      arma_debug_check
+      arma_debug_check_bounds
         (
         ( (s_ii >= s_m_n_elem) || (x_ii >= x_m_n_elem) ),
         "Mat::elem(): index out of bounds"
@@ -223,7 +221,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -245,7 +243,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
       const uword ii = aa_mem[iq];
       const uword jj = aa_mem[jq];
       
-      arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
       
       if(is_same_type<op_type, op_internal_equ  >::yes) { m_mem[ii] =  X[iq]; m_mem[jj]  = X[jq]; }
       if(is_same_type<op_type, op_internal_plus >::yes) { m_mem[ii] += X[iq]; m_mem[jj] += X[jq]; }
@@ -258,7 +256,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
       {
       const uword ii = aa_mem[iq];
       
-      arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
       
       if(is_same_type<op_type, op_internal_equ  >::yes) { m_mem[ii] =  X[iq]; }
       if(is_same_type<op_type, op_internal_plus >::yes) { m_mem[ii] += X[iq]; }
@@ -282,7 +280,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
       const uword ii = aa_mem[iq];
       const uword jj = aa_mem[jq];
       
-      arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
       
       if(is_same_type<op_type, op_internal_equ  >::yes) { m_mem[ii] =  X[iq]; m_mem[jj]  = X[jq]; }
       if(is_same_type<op_type, op_internal_plus >::yes) { m_mem[ii] += X[iq]; m_mem[jj] += X[jq]; }
@@ -295,7 +293,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
       {
       const uword ii = aa_mem[iq];
       
-      arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
       
       if(is_same_type<op_type, op_internal_equ  >::yes) { m_mem[ii] =  X[iq]; }
       if(is_same_type<op_type, op_internal_plus >::yes) { m_mem[ii] += X[iq]; }
@@ -361,7 +359,7 @@ subview_elem1<eT,T1>::replace(const eT old_val, const eT new_val)
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -373,7 +371,7 @@ subview_elem1<eT,T1>::replace(const eT old_val, const eT new_val)
       {
       const uword ii = aa_mem[iq];
       
-      arma_debug_check( (ii >= m_n_elem), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (ii >= m_n_elem), "Mat::elem(): index out of bounds" );
       
       eT& val = m_mem[ii];
       
@@ -386,13 +384,45 @@ subview_elem1<eT,T1>::replace(const eT old_val, const eT new_val)
       {
       const uword ii = aa_mem[iq];
       
-      arma_debug_check( (ii >= m_n_elem), "Mat::elem(): index out of bounds" );
+      arma_debug_check_bounds( (ii >= m_n_elem), "Mat::elem(): index out of bounds" );
       
       eT& val = m_mem[ii];
       
       val = (val == old_val) ? new_val : val;
       }
     }
+  }
+
+
+
+template<typename eT, typename T1>
+inline
+void
+subview_elem1<eT,T1>::clean(const pod_type threshold)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.clean(threshold);
+  
+  (*this).operator=(tmp);
+  }
+
+
+
+template<typename eT, typename T1>
+inline
+void
+subview_elem1<eT,T1>::clamp(const eT min_val, const eT max_val)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.clamp(min_val, max_val);
+  
+  (*this).operator=(tmp);
   }
 
 
@@ -451,7 +481,7 @@ subview_elem1<eT,T1>::randu()
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -463,7 +493,7 @@ subview_elem1<eT,T1>::randu()
     const uword ii = aa_mem[iq];
     const uword jj = aa_mem[jq];
     
-    arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
     
     const eT val1 = eT(arma_rng::randu<eT>());
     const eT val2 = eT(arma_rng::randu<eT>());
@@ -476,7 +506,7 @@ subview_elem1<eT,T1>::randu()
     {
     const uword ii = aa_mem[iq];
     
-    arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" ); 
+    arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" ); 
     
     m_mem[ii] = eT(arma_rng::randu<eT>());
     }
@@ -502,7 +532,7 @@ subview_elem1<eT,T1>::randn()
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -514,7 +544,7 @@ subview_elem1<eT,T1>::randn()
     const uword ii = aa_mem[iq];
     const uword jj = aa_mem[jq];
     
-    arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
     
     arma_rng::randn<eT>::dual_val( m_mem[ii], m_mem[jj] );
     }
@@ -523,7 +553,7 @@ subview_elem1<eT,T1>::randn()
     {
     const uword ii = aa_mem[iq];
     
-    arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" ); 
+    arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" ); 
     
     m_mem[ii] = eT(arma_rng::randn<eT>());
     }
@@ -759,7 +789,7 @@ subview_elem1<eT,T1>::extract(Mat<eT>& actual_out, const subview_elem1<eT,T1>& i
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -787,7 +817,7 @@ subview_elem1<eT,T1>::extract(Mat<eT>& actual_out, const subview_elem1<eT,T1>& i
     const uword ii = aa_mem[i];
     const uword jj = aa_mem[j];
     
-    arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
     
     out_mem[i] = m_mem[ii];
     out_mem[j] = m_mem[jj];
@@ -797,12 +827,12 @@ subview_elem1<eT,T1>::extract(Mat<eT>& actual_out, const subview_elem1<eT,T1>& i
     {
     const uword ii = aa_mem[i];
     
-    arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
     
     out_mem[i] = m_mem[ii];
     }
   
-  if(alias == true)
+  if(alias)
     {
     actual_out.steal_mem(out);
     delete tmp_out;
@@ -825,7 +855,7 @@ subview_elem1<eT,T1>::mat_inplace_op(Mat<eT>& out, const subview_elem1& in)
   arma_debug_check
     (
     ( (aa.is_vec() == false) && (aa.is_empty() == false) ),
-    "Mat::elem(): given object is not a vector"
+    "Mat::elem(): given object must be a vector"
     );
   
   const uword* aa_mem    = aa.memptr();
@@ -847,7 +877,7 @@ subview_elem1<eT,T1>::mat_inplace_op(Mat<eT>& out, const subview_elem1& in)
     const uword ii = aa_mem[i];
     const uword jj = aa_mem[j];
     
-    arma_debug_check( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( ( (ii >= m_n_elem) || (jj >= m_n_elem) ), "Mat::elem(): index out of bounds" );
     
     if(is_same_type<op_type, op_internal_plus >::yes) { out_mem[i] += m_mem[ii]; out_mem[j] += m_mem[jj]; }
     if(is_same_type<op_type, op_internal_minus>::yes) { out_mem[i] -= m_mem[ii]; out_mem[j] -= m_mem[jj]; }
@@ -859,7 +889,7 @@ subview_elem1<eT,T1>::mat_inplace_op(Mat<eT>& out, const subview_elem1& in)
     {
     const uword ii = aa_mem[i];
     
-    arma_debug_check( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
+    arma_debug_check_bounds( (ii >= m_n_elem) , "Mat::elem(): index out of bounds" );
     
     if(is_same_type<op_type, op_internal_plus >::yes) { out_mem[i] += m_mem[ii]; }
     if(is_same_type<op_type, op_internal_minus>::yes) { out_mem[i] -= m_mem[ii]; }

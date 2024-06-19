@@ -1,16 +1,17 @@
 
 #include "TwoBodyME.hh"
 #include "AngMom.hh"
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
-#endif
+#include "PhysicalConstants.hh" // for SQRT2
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488
+//#endif
 
 // destructor defined for debugging purposes
 TwoBodyME::~TwoBodyME()
 {}
 
 TwoBodyME::TwoBodyME()
-: modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),
+: modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),allocated(false),
   rank_J(0), rank_T(0), parity(0)
 {
 //  cout << "Default TwoBodyME constructor" << endl;
@@ -19,7 +20,7 @@ TwoBodyME::TwoBodyME()
 
 TwoBodyME::TwoBodyME(ModelSpace* ms)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
-  hermitian(true), antihermitian(false), rank_J(0), rank_T(0), parity(0)
+  hermitian(true), antihermitian(false),allocated(false), rank_J(0), rank_T(0), parity(0)
 {
   Allocate();
 }
@@ -27,7 +28,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms)
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
-  hermitian(true), antihermitian(false), rank_J(rJ), rank_T(rT), parity(p)
+  hermitian(true), antihermitian(false), allocated(false), rank_J(rJ), rank_T(rT), parity(p)
 {
   Allocate();
 }
@@ -42,12 +43,19 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
    return *this;
  }
 
+ TwoBodyME TwoBodyME::operator*(const double rhs) const
+ {
+   TwoBodyME out(*this);
+   out *=rhs;
+   return out;
+ }
+
  TwoBodyME& TwoBodyME::operator+=(const TwoBodyME& rhs)
  {
    for ( auto& itmat : MatEl )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
+      auto ch_bra = itmat.first[0];
+      auto ch_ket = itmat.first[1];
       itmat.second += rhs.GetMatrix(ch_bra,ch_ket);
    }
    return *this;
@@ -57,8 +65,8 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
  {
    for ( auto& itmat : rhs.MatEl )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
+      auto ch_bra = itmat.first[0];
+      auto ch_ket = itmat.first[1];
       GetMatrix(ch_bra,ch_ket) -= itmat.second;
    }
    return *this;
@@ -68,11 +76,12 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 
 void TwoBodyME::Allocate()
 {
+  nChannels = modelspace->GetNumberTwoBodyChannels();
   MatEl.clear();
-  for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
+  for (size_t ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-     for (int ch_ket=ch_bra; ch_ket<nChannels;++ch_ket)
+     for (size_t ch_ket=ch_bra; ch_ket<nChannels;++ch_ket)
      {
         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
         if ( std::abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
@@ -82,6 +91,12 @@ void TwoBodyME::Allocate()
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
      }
   }
+  allocated = true;
+}
+
+void TwoBodyME::Deallocate()
+{
+  MatEl.clear();
 }
 
 void TwoBodyME::SetHermitian()
@@ -108,18 +123,19 @@ void TwoBodyME::SetNonHermitian()
 double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
   double norm = 1;
-   if (a==b) norm *= SQRT2;
-   if (c==d) norm *= SQRT2;
+   if (a==b) norm *= PhysConst::SQRT2;
+   if (c==d) norm *= PhysConst::SQRT2;
    return norm * GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
 }
 
 /// This returns the normalized matrix element 
 double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
+   if (not allocated) return 0;
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
-   int bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
-   int ket_ind = tbc_ket.GetLocalIndex(std::min(c,d),std::max(c,d));
+   auto bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
+   auto ket_ind = tbc_ket.GetLocalIndex(std::min(c,d),std::max(c,d));
    if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc_bra.GetNumberKets() or ket_ind > tbc_ket.GetNumberKets() )
      return 0;
    Ket & bra = tbc_bra.GetKet(bra_ind);
@@ -130,13 +146,15 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int 
    if (c>d) phase *= ket.Phase(tbc_ket.J);
    if (ch_bra > ch_ket)
    {
-     return phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind);
+     return hermitian ?   phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind)
+                      : - phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind);
    }
    return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
 }
 
 void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
 {
+   if (not allocated)  return;
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
    int bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
@@ -146,8 +164,8 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doub
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) = phase * tbme;
    if (ch_ket != ch_bra) return;
-   if (hermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;
-   if (antihermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = - phase * tbme;
+   if (hermitian and ch_bra==ch_ket) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;
+   if (antihermitian and ch_bra==ch_ket) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = - phase * tbme;
 }
 
 
@@ -175,8 +193,27 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
    if (ch_bra!=ch_ket or ket_ind==bra_ind) return;
 //   if (ch_ket != ch_bra) return;
-   if (hermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
-   if (antihermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
+   if (hermitian and ch_bra==ch_ket) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
+   if (antihermitian and ch_bra==ch_ket) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
+}
+
+void TwoBodyME::AddToTBMENonHermNonNormalized(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
+{
+   TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
+   TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
+//   cout << "Tzbra = " << tbc_bra.Tz << "   Tzket = " << tbc_ket.Tz << "  rank_T = " << rank_T << endl;
+   int bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
+   int ket_ind = tbc_ket.GetLocalIndex(std::min(c,d),std::max(c,d));
+//   cout << "bra_ind = " << bra_ind << " = local index of " << min(a,b) << " " << max(a,b) << " from channel " << ch_bra << endl;
+//   cout << "ket_ind = " << ket_ind << " = local index of " << min(c,d) << " " << max(c,d) << " from channel " << ch_ket << endl;
+   double phase = 1;
+   if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
+   if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
+   if (a==b) phase *= 1.0 / PhysConst::SQRT2;
+   if (c==d) phase *= 1.0 / PhysConst::SQRT2;
+//   cout << "Getting Matrix " << ch_bra << "," << ch_ket << "(" << bra_ind << "," << ket_ind
+//        << "), dimension = " << GetMatrix(ch_bra,ch_ket).n_rows << "x" << GetMatrix(ch_bra,ch_ket).n_cols << endl;
+   GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
 }
 
 double TwoBodyME::GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const
@@ -200,10 +237,10 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int ibra, int iket) const
 void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
    GetMatrix(ch_bra,ch_ket)(ibra,iket) = tbme;
-   if (IsHermitian())
-      GetMatrix(ch_bra,ch_ket)(iket,ibra) = tbme;
-   else if(IsAntiHermitian())
-      GetMatrix(ch_bra,ch_ket)(iket,ibra) = -tbme;
+   if (IsHermitian() and ch_bra==ch_ket)
+      GetMatrix(ch_ket,ch_bra)(iket,ibra) = tbme;
+   else if(IsAntiHermitian() and ch_bra==ch_ket)
+      GetMatrix(ch_ket,ch_bra)(iket,ibra) = -tbme;
 }
 void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
@@ -217,11 +254,16 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbm
 
    if (ch_bra==ch_ket and ibra!=iket)
    {
-     if (IsHermitian())
+     if (IsHermitian() and ch_bra==ch_ket)
        GetMatrix(ch_bra,ch_ket)(iket,ibra) += tbme;
-     else if(IsAntiHermitian())
+     else if(IsAntiHermitian() and ch_bra==ch_ket)
        GetMatrix(ch_bra,ch_ket)(iket,ibra) -= tbme;
    }
+}
+
+void TwoBodyME::AddToTBMENonHerm(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
+{
+   GetMatrix(ch_bra,ch_ket)(ibra,iket) += tbme;
 }
 
 double TwoBodyME::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const
@@ -319,10 +361,53 @@ double TwoBodyME::GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int 
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
    return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
-//   if (ch_bra <= ch_ket)
-//     return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
-//   return modelspace->phase(j_bra - j_ket) * GetTBME_norm(ch_ket,ch_bra,c,d,a,b);
 }
+
+// This is intended for use in the Pandya transformation needed for the 222 ph commutator, but it might be useful in other cases.
+// The idea is that we want to access the same element from two different operators, so we do all the phases and index lookup only once.
+void TwoBodyME::GetTBME_J_norm_twoOps(const TwoBodyME& OtherTBME, int j_bra, int j_ket, int a, int b, int c, int d, double& tbme_this, double& tbme_other) const
+{
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   int parity_bra = (oa.l+ob.l)%2;
+   int parity_ket = (oc.l+od.l)%2;
+   int Tz_bra = (oa.tz2+ob.tz2)/2;
+   int Tz_ket = (oc.tz2+od.tz2)/2;
+   tbme_this  =0;
+   tbme_other =0;
+   if ( (parity+parity_bra+parity_ket)%2 > 0) return;
+   if ( std::abs(Tz_bra-Tz_ket)!=rank_T) return;
+   if ( std::abs(j_bra-j_ket) > rank_J) return;
+   if ( j_bra + j_ket < rank_J) return;
+   int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
+   int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
+
+   TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
+   TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
+   auto bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
+   auto ket_ind = tbc_ket.GetLocalIndex(std::min(c,d),std::max(c,d));
+   if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc_bra.GetNumberKets() or ket_ind > tbc_ket.GetNumberKets() )
+   {
+     return;
+   }
+   Ket & bra = tbc_bra.GetKet(bra_ind);
+   Ket & ket = tbc_ket.GetKet(ket_ind);
+
+   double phase = 1;
+   if (a>b) phase *= bra.Phase(tbc_bra.J);
+   if (c>d) phase *= ket.Phase(tbc_ket.J);
+   if (ch_bra > ch_ket) // Phase for conjugating a reduced matrix element.
+   {
+     phase *=  modelspace->phase(tbc_bra.J-tbc_ket.J) ;
+     std::swap(ch_bra,ch_ket);
+     std::swap(bra_ind,ket_ind);
+   }
+   tbme_this =  phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
+   tbme_other =  phase * OtherTBME.GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
+}
+
 
 // for backwards compatibility...
 double TwoBodyME::GetTBME(int ch, int a, int b, int c, int d) const
@@ -459,8 +544,8 @@ void TwoBodyME::Set_pn_TBME_from_iso(int j, int T, int tz, int a, int b, int c, 
    int parity = (modelspace->GetOrbit(a).l + modelspace->GetOrbit(b).l)%2;
    int isospin_phase = 2*T-1;
    tbme *= 0.5;
-   if (a==b) tbme *= SQRT2;
-   if (c==d) tbme *= SQRT2;
+   if (a==b) tbme *= PhysConst::SQRT2;
+   if (c==d) tbme *= PhysConst::SQRT2;
    AddToTBME(j,parity,tz,a,b+1,c  ,d+1,tbme);
    if (c!=d)
      AddToTBME(j,parity,tz,a,b+1,c+1,d  ,tbme*isospin_phase);
@@ -482,39 +567,89 @@ double TwoBodyME::Get_iso_TBME_from_pn(int j, int T, int tz, int a, int b, int c
    int isospin_phase = 2*T-1;
    double tbme = GetTBME(j,parity,tz,a,b+1,c,d+1) + GetTBME(j,parity,tz,a+1,b,c+1,d) + isospin_phase * ( GetTBME(j,parity,tz,a,b+1,c+1,d) + GetTBME(j,parity,tz,a+1,b,c,d+1) );
    tbme *= 0.5;
-   if (a==b) tbme /= SQRT2;
-   if (c==d) tbme /= SQRT2;
+   if (a==b) tbme /= PhysConst::SQRT2;
+   if (c==d) tbme /= PhysConst::SQRT2;
    return tbme;
 }
 
-
+/*
 /// Returns an unnormalized monopole-like (angle-averaged) term
 /// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \frac{\sum_{J}(2J+1) V_{ijkl}^J}{(2j_i+1)(2j_j+1)} \f]
 double TwoBodyME::GetTBMEmonopole(int a, int b, int c, int d) const
 {
-   double mon = 0;
-   Orbit &oa = modelspace->GetOrbit(a);
-   Orbit &ob = modelspace->GetOrbit(b);
-   Orbit &oc = modelspace->GetOrbit(c);
-   Orbit &od = modelspace->GetOrbit(d);
-   int Tzab = (oa.tz2 + ob.tz2)/2;
-   int parityab = (oa.l + ob.l)%2;
-   int Tzcd = (oc.tz2 + od.tz2)/2;
-   int paritycd = (oc.l + od.l)%2;
+  double norm = 1;
+   if (a==b) norm *= PhysConst::SQRT2;
+   if (c==d) norm *= PhysConst::SQRT2;
+   return norm * GetTBMEmonopole_norm(a,b,c,d);
 
-   if (Tzab != Tzcd or parityab != paritycd) return 0;
 
-   int jmin = std::abs(oa.j2 - ob.j2)/2;
-   int jmax = (oa.j2 + ob.j2)/2;
-   
-   for (int J=jmin;J<=jmax;++J)
-   {
 
-      mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
-   }
-   mon /= (oa.j2 +1)*(ob.j2+1);
-   return mon;
+//   double mon = 0;
+//   Orbit &oa = modelspace->GetOrbit(a);
+//   Orbit &ob = modelspace->GetOrbit(b);
+//   Orbit &oc = modelspace->GetOrbit(c);
+//   Orbit &od = modelspace->GetOrbit(d);
+//   int Tzab = (oa.tz2 + ob.tz2)/2;
+//   int parityab = (oa.l + ob.l)%2;
+//   int Tzcd = (oc.tz2 + od.tz2)/2;
+//   int paritycd = (oc.l + od.l)%2;
+//
+////   if (Tzab != Tzcd or parityab != paritycd) return 0;
+//
+//   int jmin = std::abs(oa.j2 - ob.j2)/2;
+//   int jmax = (oa.j2 + ob.j2)/2;
+//   
+//   for (int J=jmin;J<=jmax;++J)
+//   {
+//      size_t chab = modelspace->GetTwoBodyChannelIndex(J,parityab,Tzab);
+//      size_t chcd = modelspace->GetTwoBodyChannelIndex(J,paritycd,Tzcd);
+//      mon += (2*J+1) * GetTBME(chab,chcd,a,b,c,d);
+////      mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
+//   }
+//   mon /= (oa.j2 +1)*(ob.j2+1);
+//   return mon;
 }
+*/
+
+/// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \frac{\sum_{J}(2J+1) V_{ijkl}^J}{(2j_i+1)(2j_j+1)} \f]
+double TwoBodyME::GetTBMEmonopole(int a, int b, int c, int d) const
+{
+
+  double norm = 1;
+  if (a==b) norm *= PhysConst::SQRT2;
+  if (c==d) norm *= PhysConst::SQRT2;
+  return norm * GetTBMEmonopole_norm( a,b,c,d);
+//   double mon = 0;
+//   Orbit &oa = modelspace->GetOrbit(a);
+//   Orbit &ob = modelspace->GetOrbit(b);
+//   Orbit &oc = modelspace->GetOrbit(c);
+//   Orbit &od = modelspace->GetOrbit(d);
+//   int Tzab = (oa.tz2 + ob.tz2)/2;
+//   int parityab = (oa.l + ob.l)%2;
+//   int Tzcd = (oc.tz2 + od.tz2)/2;
+//   int paritycd = (oc.l + od.l)%2;
+//
+////   if (Tzab != Tzcd or parityab != paritycd) return 0;
+//
+//
+//   int jmin = std::abs(oa.j2 - ob.j2)/2;
+//   int jmax = (oa.j2 + ob.j2)/2;
+//   
+//   for (int J=jmin;J<=jmax;++J)
+//   {
+//      size_t chab = modelspace->GetTwoBodyChannelIndex(J,parityab,Tzab);
+//      size_t chcd = modelspace->GetTwoBodyChannelIndex(J,paritycd,Tzcd);
+////      mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
+//      mon += (2*J+1) * GetTBME(chab,chcd,a,b,c,d);
+////      mon += (2*J+1) * GetTBME_norm(chab,chcd,a,b,c,d);
+////      std::cout << " :::::  J= " << J << " " << GetTBME(chab,chcd,a,b,c,d) << "  =>    mon = " << mon << std::endl;
+//   }
+//   mon /= (oa.j2 +1)*(ob.j2+1);
+////   std::cout << " ;;;;;  mon /= " << (oa.j2 +1)*(ob.j2+1) << "   => " << mon << std::endl;
+//   return mon;
+}
+
+
 
 double TwoBodyME::GetTBMEmonopole_norm(int a, int b, int c, int d) const
 {
@@ -528,15 +663,19 @@ double TwoBodyME::GetTBMEmonopole_norm(int a, int b, int c, int d) const
    int Tzcd = (oc.tz2 + od.tz2)/2;
    int paritycd = (oc.l + od.l)%2;
 
-   if (Tzab != Tzcd or parityab != paritycd) return 0;
+//   if (Tzab != Tzcd or parityab != paritycd) return 0;
+   if (  (parityab + paritycd + parity)%2 !=0 ) return 0;
+   if ( std::abs( Tzab - Tzcd) > rank_T ) return 0;
 
    int jmin = std::abs(oa.j2 - ob.j2)/2;
    int jmax = (oa.j2 + ob.j2)/2;
    
    for (int J=jmin;J<=jmax;++J)
    {
-
-      mon += (2*J+1) * GetTBME_norm(J,parityab,Tzab,a,b,c,d);
+      size_t chab = modelspace->GetTwoBodyChannelIndex(J,parityab,Tzab);
+      size_t chcd = modelspace->GetTwoBodyChannelIndex(J,paritycd,Tzcd);
+      mon += (2*J+1) * GetTBME_norm(chab,chcd,a,b,c,d);
+//      mon += (2*J+1) * GetTBME_norm(J,parityab,Tzab,a,b,c,d);
    }
    mon /= (oa.j2 +1)*(ob.j2+1);
    return mon;
@@ -548,123 +687,6 @@ double TwoBodyME::GetTBMEmonopole(Ket & bra, Ket & ket) const
    return GetTBMEmonopole(bra.p,bra.q,ket.p,ket.q);
 }
 
-
-
-/// Take a matrix element expressed in relative/CM frame, and add it to the lab frame TBME.
-//void TwoBodyME::AddToTBME_RelCM(int n_bra, int lam_bra, int N_bra, int LAM_bra, int L_bra, int S_bra, int J_bra, int T_bra, int Tz_bra,
-//                                 int n_ket, int lam_ket, int N_ket, int LAM_ket, int L_ket, int S_ket, int J_ket, int T_ket, int Tz_ket, double Vrel, double Vcm)
-//{
-//  index_t ch_bra = modelspace->GetTwoBodyChannelIndex( J_bra, (lam_bra+LAM_bra)%2, Tz_bra);
-//  index_t ch_ket = modelspace->GetTwoBodyChannelIndex( J_ket, (lam_ket+LAM_ket)%2, Tz_ket);
-//
-//  TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel( ch_bra );
-//  TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel( ch_ket );
-//
-//  if ( MatEl.find({ min(ch_bra,ch_ket),max(ch_bra,ch_ket)}) == MatEl.end() )
-//  {
-////    cout << "AAAHHH!!!! There appears to be a mismatch in the rank of the operator read in by AddToTBME_RelCM !!" << endl;
-// //   cout << "Couldn't find " << ch_bra << " " << ch_ket << endl;
-//    return;
-//  }
-//
-//  cout << "ch_bra = " << ch_bra << "  ch_ket = " << ch_ket << endl;
-//
-//  if (n_bra+lam_bra+N_bra+LAM_bra+n_ket+lam_ket+N_ket+LAM_ket==0)
-//  {
-//    cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl
-//         << "HERE!!!" << endl  << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
-//  }
-//
-////  for (auto& me : MatEl)
-////  {
-////    cout << me.first[0] << " " << me.first[1] << endl;
-////  }
-//
-//  cout << "BRAS:" << endl;
-//  auto LabBras = GetLabFrameKets(n_bra,lam_bra,N_bra,LAM_bra,L_bra,S_bra,J_bra,T_bra,Tz_bra);
-//  for (auto& labbra : LabBras) cout << labbra.first << " " << labbra.second << endl;
-//  cout << "KETS:" << endl;
-//  auto LabKets = GetLabFrameKets(n_ket,lam_ket,N_ket,LAM_ket,L_ket,S_ket,J_ket,T_ket,Tz_ket);
-//  for (auto& labket : LabKets) cout << labket.first << " " << labket.second << endl;
-//
-//  for (auto& labbra : LabBras)
-//  {
-//    index_t ibra = tbc_bra.GetLocalIndex(labbra.first);
-//    for (auto& labket : LabKets)
-//    {
-//      index_t iket = tbc_ket.GetLocalIndex(labket.first);
-//      cout << "ibra = " << ibra << " (from " << labbra.first << ")  iket = " << iket << " (from " << labket.first << ") " << ch_bra << "," << ch_ket << endl;
-//      cout << " matrix size = " << MatEl.at({min(ch_bra,ch_ket),max(ch_bra,ch_ket)}).size() << endl;
-//      if ( (N_bra==N_ket) and (LAM_bra==LAM_ket) )
-//      {
-//        AddToTBME(ch_bra, ch_ket, ibra, iket, labket.second*labbra.second*Vrel);
-//        if (n_bra+lam_bra+N_bra+LAM_bra+n_ket+lam_ket+N_ket+LAM_ket==0)
-//        {
-//          cout << "Adding to TBME " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << " " << labket.second << " * " << labbra.second << " * " << Vrel
-//               << "  ->  " << GetTBME(ch_bra,ch_ket,tbc_bra.GetKet(ibra),tbc_ket.GetKet(iket)) << endl;
-//        }
-//      }
-//      if ( (n_bra==n_ket) and (lam_bra==lam_ket) )
-//      {
-//        AddToTBME(ch_bra, ch_ket, ibra, iket, labket.second*labbra.second*Vcm);
-//      }
-//    }
-//  }
-//}
-
-
-/// For a given ket expressed in relative/CM coordinates, return the indices of all the lab frame kets with non-zero overlap, as well as the overlap
-//vector<pair<int,double>> TwoBodyME::GetLabFrameKets(int n, int lam, int N, int LAM, int L, int S, int J, int T, int Tz)
-//{
-//  vector<pair<int,double>> LabKets;
-//  int e12 = 2*(n+N)+lam+LAM;
-//  for (int l1=0; l1<=e12;++l1)
-//  {
-//    for (int l2=std::abs(L-l1)+(lam+LAM+L)%2; l2<=min(e12-l1,l1+L); l2+=2) // triangle condition and parity
-//    {
-//      for (int twoj1=2*l1-1; twoj1<=2*l1+1; twoj1+=2)
-//      {
-//        for (int twoj2=2*l2-1; twoj2<=2*l2+1; twoj2+=2)
-//        {
-//          if ( std::abs(twoj1-twoj2)>2*J or (twoj1+twoj2)<2*J) continue; // triangle condition
-//          double normninej = sqrt( (twoj1+1)*(twoj2+1)*(2*L+1)*(2*S+1) ) *modelspace->GetNineJ(l1,0.5,twoj1*0.5, l2,0.5,twoj1*0.5, L, S, J);
-////          cout << "{ " << l1 << " " << "1/2" << " " << twoj1 << "/2 " << "}" << endl; 
-////          cout << "{ " << l2 << " " << "1/2" << " " << twoj2 << "/2 " << "}" << endl; 
-////          cout << "{ " <<  L << "  " <<  S    << "   "<<   J  << "  }" << " = " << modelspace->GetNineJ(l1,0.5,twoj1*0.5, l2,0.5,twoj1*0.5, L, S, J)  << endl; 
-////          cout << "normninej = " << (twoj1+1) << " * " << (twoj2+1)<< " * " << (2*L+1) << " * " << (2*S+1) << " * --^  = " << normninej << endl;
-//          for (int n1=0; n1<=(e12-l1-l2)/2; n1++)
-//          {
-//            int n2 = (e12-l1-l2)/2-n1;
-//            double moshinsky = modelspace->GetMoshinsky( N, LAM, n, lam, n1, l1, n2, l2, L);
-//            for (int twotz1=(Tz<1?-1:1); twotz1<=(Tz<0?-1:1); twotz1+=2)
-//            {
-//              int twotz2 = 2*Tz-twotz1;
-////              double IsospinCG = AngMom::CG(0.5,0.5*twotz1,0.5,0.5*twotz2,T,Tz);
-//              double IsospinCG = AngMom::CG(0.5,0.5*twotz1,0.5,0.5*twotz2,T,Tz);
-//              index_t p = modelspace->GetOrbitIndex(n1,l1,twoj1,twotz1);
-//              index_t q = modelspace->GetOrbitIndex(n2,l2,twoj2,twotz2);
-//              double overlap = normninej*moshinsky*IsospinCG;
-//              if ( std::abs(overlap)<1e-7 ) continue;
-//              int ketindex = modelspace->GetKetIndex( p, q );
-//              if (p>q)
-//              {
-//                continue;
-//                ketindex = modelspace->GetKetIndex( q , p );
-//                overlap *= -modelspace->phase( (twoj1+twoj2)/2 + J + 1 + T );
-//                cout << "swapped p and q" << endl;
-//              }
-//              cout << " " << n1 << " " << l1 << " " << twoj1 << " " << twotz1 << " " << p << " ,  "
-//                   << " " << n2 << " " << l2 << " " << twoj2 << " " << twotz2 << " " << q << " ,    L = "  << L << " S = " << S << " J = " << J  << "  =>  "
-//                   << " " << ketindex << "  " << normninej << " * " << moshinsky << " * " << IsospinCG << " = " << overlap << endl;
-//              LabKets.push_back( make_pair(ketindex, overlap) );
-//            }
-//          }
-//        }
-//      }
-//    }
-//  }
-//  return LabKets;
-//}
 
 
 
@@ -681,6 +703,7 @@ void TwoBodyME::Erase()
 double TwoBodyME::Norm() const
 {
    double nrm = 0;
+   if (not allocated) return 0;
    for ( auto& itmat : MatEl )
    {
       const arma::mat& matrix = itmat.second;
@@ -701,6 +724,8 @@ double TwoBodyME::Norm() const
 }
 
 
+// arma::symmatu reflects the upper triangle to the lower triangle
+// the upper triangle are the elements Mat(ibra,iket) with ibra<=iket
 void TwoBodyME::Symmetrize()
 {
   if (rank_J>0 or rank_T>0 or parity>0) return;
@@ -711,6 +736,8 @@ void TwoBodyME::Symmetrize()
   }
 }
 
+// arma::trimatu takes the upper triangle of a matrix
+// we then set the lower triangle to the negtive of the upper triangle
 void TwoBodyME::AntiSymmetrize()
 {
   if (rank_J>0) return;
@@ -742,6 +769,23 @@ void TwoBodyME::Eye()
       matrix.eye();
    }
 }
+
+
+void TwoBodyME::PrintAllMatrices() const
+{
+  for ( auto& itmat : MatEl )
+  {
+    
+    arma::uvec subscript = itmat.second.is_empty()  ?  arma::uvec({0,0}) 
+                           :   arma::ind2sub( arma::size(itmat.second),  arma::abs(itmat.second).index_max() ) ; // get row,column of maximum entry
+    std::cout << "ch_bra, ch_ket : " << itmat.first[0] << " " << itmat.first[1] << "     norm = " << arma::norm( itmat.second, "fro")
+              << "  max entry at ( " << subscript(0) << " , " << subscript(1) << " ) ";
+    if ( not itmat.second.is_empty() )  std::cout << "     " << itmat.second(subscript(0),subscript(1));
+    std::cout << std::endl  << itmat.second << std::endl << std::endl;
+
+  }
+}
+
 
 
 int TwoBodyME::Dimension()
@@ -813,3 +857,7 @@ TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs)
 }
 
 
+TwoBodyME operator*(const double lhs, const TwoBodyME& rhs)
+{
+  return rhs * lhs;
+}

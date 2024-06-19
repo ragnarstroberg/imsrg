@@ -52,10 +52,11 @@ class TwoBodyME
 {
  public:
   ModelSpace*  modelspace;
-  std::map<std::array<int,2>,arma::mat> MatEl;
-  int nChannels;
+  std::map<std::array<size_t,2>,arma::mat> MatEl;
+  size_t nChannels;
   bool hermitian;
   bool antihermitian;
+  bool allocated;
   int rank_J;
   int rank_T;
   int parity;
@@ -67,11 +68,13 @@ class TwoBodyME
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);
 
   TwoBodyME& operator*=(const double);
+  TwoBodyME operator*(const double) const;
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
 
 //  void Copy(const TwoBodyME&);
   void Allocate();
+  void Deallocate();
   bool IsHermitian(){return hermitian;};
   bool IsAntiHermitian(){return antihermitian;};
   bool IsNonHermitian(){return not (hermitian or antihermitian);};
@@ -79,23 +82,29 @@ class TwoBodyME
   void SetAntiHermitian();
   void SetNonHermitian();
 
-  arma::mat& GetMatrix(int chbra, int chket){return MatEl.at({chbra,chket});};
-  arma::mat& GetMatrix(int ch){return GetMatrix(ch,ch);};
-  arma::mat& GetMatrix(std::array<int,2> a){return GetMatrix(a[0],a[1]);};
-  const arma::mat& GetMatrix(int chbra, int chket)const {return  MatEl.at({chbra,chket});};
-  const arma::mat& GetMatrix(int ch)const {return  GetMatrix(ch,ch);};
+  arma::mat& GetMatrix(size_t chbra, size_t chket){return MatEl.at({chbra,chket});};
+  arma::mat& GetMatrix(size_t ch){return GetMatrix(ch,ch);};
+  arma::mat& GetMatrix(std::array<size_t,2> a){return GetMatrix(a[0],a[1]);};
+  const arma::mat& GetMatrix(size_t chbra, size_t chket)const {return  MatEl.at({chbra,chket});};
+  const arma::mat& GetMatrix(size_t ch)const {return  GetMatrix(ch,ch);};
 
  //TwoBody setter/getters
   double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
   double GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
   void   SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
+  // This violates hermiticity in a single update by updating a matrix element, but not its conjugate.
+  // Use only when you are certain you are also going to update the hermitian conjugate accordingly.
+  void   AddToTBMENonHermNonNormalized(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
   double GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const;
   void   SetTBME(int ch_bra, int ch_ket, Ket &bra, Ket& ket, double tbme);
   void   AddToTBME(int ch_bra, int ch_ket, Ket &bra, Ket& ket, double tbme);
   double GetTBME_norm(int ch_bra, int ch_ket, int ibra, int iket) const;
   void   SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
   void   AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
+  // This violates hermiticity in a single update by updating a matrix element, but not its conjugate.
+  // Use only when you are certain you are also going to update the hermitian conjugate accordingly.
+  void   AddToTBMENonHerm(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
   double GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket) const;
   void   SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme);
   void   AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme);
@@ -106,6 +115,7 @@ class TwoBodyME
   void   SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme);
   void   AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme);
   double GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int d) const;
+  void GetTBME_J_norm_twoOps(const TwoBodyME& OtherTBME, int j_bra, int j_ket, int a, int b, int c, int d, double& tbme_this, double& tbme_other) const;
 
   // Scalar setters/getters for backwards compatibility
   double GetTBME(int ch, int a, int b, int c, int d) const;
@@ -150,7 +160,8 @@ class TwoBodyME
   void Symmetrize();
   void AntiSymmetrize();
   void Eye();
-  void PrintMatrix(int chbra,int chket) const { MatEl.at({chbra,chket}).print();};
+  void PrintAllMatrices() const;
+  void PrintMatrix(size_t chbra,size_t chket) const { MatEl.at({chbra,chket}).print();};
   int Dimension();
   int size();
 
@@ -162,6 +173,7 @@ class TwoBodyME
 
 TwoBodyME operator+(const TwoBodyME& lhs, const TwoBodyME& rhs);
 TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs);
+TwoBodyME operator*(const double lhs, const TwoBodyME& rhs);
 
 
 #endif

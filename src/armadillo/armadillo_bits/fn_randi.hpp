@@ -23,24 +23,24 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-randi(const uword n_rows, const uword n_cols, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
+randi(const uword n_rows, const uword n_cols, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename obj_type::elem_type eT;
   
-  if(is_Col<obj_type>::value == true)
+  if(is_Col<obj_type>::value)
     {
     arma_debug_check( (n_cols != 1), "randi(): incompatible size" );
     }
   else
-  if(is_Row<obj_type>::value == true)
+  if(is_Row<obj_type>::value)
     {
     arma_debug_check( (n_rows != 1), "randi(): incompatible size" );
     }
   
-  obj_type out(n_rows, n_cols);
+  obj_type out(n_rows, n_cols, arma_nozeros_indicator());
   
   int a;
   int b;
@@ -75,7 +75,7 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-randi(const SizeMat& s, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
+randi(const SizeMat& s, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
@@ -89,13 +89,13 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-randi(const uword n_elem, const distr_param& param = distr_param(), const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = 0)
+randi(const uword n_elem, const distr_param& param = distr_param(), const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk1);
   arma_ignore(junk2);
   
-  if(is_Row<obj_type>::value == true)
+  if(is_Row<obj_type>::value)
     {
     return randi<obj_type>(1, n_elem, param);
     }
@@ -138,7 +138,49 @@ randi(const uword n_elem, const distr_param& param = distr_param())
   {
   arma_extra_debug_sigprint();
   
-  return randi<ivec>(n_elem, param);
+  return randi<ivec>(n_elem, uword(1), param);
+  }
+
+
+
+arma_warn_unused
+inline
+sword
+randi(const distr_param& param)
+  {
+  return as_scalar( randi<ivec>(uword(1), uword(1), param) );
+  }
+
+
+
+template<typename eT>
+arma_warn_unused
+inline
+typename arma_scalar_only<eT>::result
+randi(const distr_param& param)
+  {
+  return eT( as_scalar( randi< Col<eT> >(uword(1), uword(1), param) ) );
+  }
+
+
+
+arma_warn_unused
+inline
+sword
+randi()
+  {
+  return sword( arma_rng::randi<sword>() );
+  }
+
+
+
+template<typename eT>
+arma_warn_unused
+inline
+typename arma_scalar_only<eT>::result
+randi()
+  {
+  return eT( arma_rng::randi<eT>() );
   }
 
 
@@ -147,14 +189,14 @@ template<typename cube_type>
 arma_warn_unused
 inline
 cube_type
-randi(const uword n_rows, const uword n_cols, const uword n_slices, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = 0)
+randi(const uword n_rows, const uword n_cols, const uword n_slices, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename cube_type::elem_type eT;
   
-  cube_type out(n_rows, n_cols, n_slices);
+  cube_type out(n_rows, n_cols, n_slices, arma_nozeros_indicator());
   
   int a;
   int b;
@@ -189,7 +231,7 @@ template<typename cube_type>
 arma_warn_unused
 inline
 cube_type
-randi(const SizeCube& s, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = 0)
+randi(const SizeCube& s, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);

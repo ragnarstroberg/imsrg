@@ -60,7 +60,7 @@ class running_stat_vec
   
   inline running_stat_vec(const running_stat_vec& in_rsv);
   
-  inline const running_stat_vec& operator=(const running_stat_vec& in_rsv);
+  inline running_stat_vec& operator=(const running_stat_vec& in_rsv);
   
   template<typename T1> arma_hot inline void operator() (const Base<              T, T1>& X);
   template<typename T1> arma_hot inline void operator() (const Base<std::complex<T>, T1>& X);
@@ -119,7 +119,7 @@ class running_stat_vec_aux
     (
     running_stat_vec<obj_type>& x,
     const                  Mat<typename running_stat_vec<obj_type>::eT>& sample,
-    const typename arma_not_cx<typename running_stat_vec<obj_type>::eT>::result* junk = 0
+    const typename arma_not_cx<typename running_stat_vec<obj_type>::eT>::result* junk = nullptr
     );
   
   template<typename obj_type>
@@ -128,7 +128,7 @@ class running_stat_vec_aux
     (
     running_stat_vec<obj_type>& x,
     const          Mat<std::complex< typename running_stat_vec<obj_type>::T > >& sample,
-    const typename       arma_not_cx<typename running_stat_vec<obj_type>::eT>::result* junk = 0
+    const typename       arma_not_cx<typename running_stat_vec<obj_type>::eT>::result* junk = nullptr
     );
   
   template<typename obj_type>
@@ -137,7 +137,7 @@ class running_stat_vec_aux
     (
     running_stat_vec<obj_type>& x,
     const                  Mat< typename running_stat_vec<obj_type>::T >& sample,
-    const typename arma_cx_only<typename running_stat_vec<obj_type>::eT>::result* junk = 0
+    const typename arma_cx_only<typename running_stat_vec<obj_type>::eT>::result* junk = nullptr
     );
   
   template<typename obj_type>
@@ -146,7 +146,7 @@ class running_stat_vec_aux
     (
     running_stat_vec<obj_type>& x,
     const                   Mat<typename running_stat_vec<obj_type>::eT>& sample,
-    const typename arma_cx_only<typename running_stat_vec<obj_type>::eT>::result* junk = 0
+    const typename arma_cx_only<typename running_stat_vec<obj_type>::eT>::result* junk = nullptr
     );
   };
 

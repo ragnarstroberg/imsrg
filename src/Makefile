@@ -1,67 +1,116 @@
-CC = g++
-#CC = clang++
+CXX = g++
+#CXX = clang++
+#CXXSTD = c++11
+CXXSTD = c++17
 
 # Compiler flags:
 #  -DNO_ODE compiles without boost/ode package used for flow equation solver
 #  -DNO_HDF5 compiles without boost/ode package used for flow equation solver
 #  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
 #                        to be used if OpenBlas was compiled without the USE_OMP flag
-
-ALL = libIMSRG.so imsrg++
+.PHONY: version
+ALL = version libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC 
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
+#FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
+FLAGS     = -O3  -std=$(CXXSTD) -fopenmp -fPIC  # -march=native
+FLAGS    += $(WARNFLAGS)
 LIBS = -lopenblas -lgsl -lz
+LDFLAGS = -L$(PWD) 
+INCLUDE += -I./half/include
+SOFLAGS = -shared $(FLAGS)
+#LIBS = -lblas -lgsl -lz
+LD_DIR=$(HOME)/lib
 
 # I assume we're running on linux
 OS = LINUX
 # But in case we're crazy enough to run on MacOS, might as well check...
-ifneq (,$(findstring arwin,$(shell uname))) 
+ifneq (,$(findstring arwin,$(shell uname)))
   OS = MACOS
 endif
 
 
 # Tag the build with the current version from git, so we know where all the awesome answers came from.
+# VERSIONCOMMAND = 
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
 ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
+# OLDBUILD = $(shell awk '{print $$3}' version.hh)
+
+# ifneq ($(OLDBUILD),"$(BUILDVERSION)")
+#   VERSIONCOMMAND = echo "\#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
+# endif
+
+#FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 ifeq ($(DEBUG),on)
- FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g 
+# FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
+ FLAGS     =  -std=$(CXXSTD) -fopenmp -fPIC -g  # -march=native
 endif
 
-FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
+#WITHHALF = 1
 
-WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
-FLAGS    += $(WARNFLAGS)
+#ifeq (1,$(WITHHALF))
+#  FLAGS += -DWITHHALF=1
+#endif
 
-SOFLAGS = $(FLAGS)
 
-#PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
-PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
-PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags) 
 
-#THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; else echo other; fi)
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; else echo other; fi)
+PYTHON_MAJOR_VERSION = $(shell python -c "import sys; sys.stdout.write('{}'.format(sys.version_info.major))")
+ifneq (,$(shell which python3)) # If it's there, default to python3
+  PYTHON_MAJOR_VERSION = 3
+endif
+PYTHON_CONFIG = python$(PYTHON_MAJOR_VERSION)-config
+ifeq (,$(shell which $(PYTHON_CONFIG) 2> /dev/null))
+  PYTHON_CONFIG = python-config
+endif
+PYTHON_CFLAGS = $(shell $(PYTHON_CONFIG) --cflags )
+PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags )
+PYTHON_INCLUDE = -I./pybind11/include
+PYTHONFLAGS =  $(PYTHON_CFLAGS) -Wl,--no-as-needed
+PYTHON_COMMAND = python$(PYTHON_MAJOR_VERSION)
+
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; elif [ `hostname|grep mox` ]; then echo mox; elif [ `hostname|grep bebop` ]; then echo bebop; elif [ `hostname|grep crc` ]; then echo crc; else echo other; fi)
 
 
 
 ifeq ($(OS),MACOS)
-#  FLAGS     = -Xpreprocessor -fopenmp -O3 -march=native -std=c++11 -fPIC 
-  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC 
+#  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
+  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=$(CXXSTD) -fPIC
   LIBS += -lomp
-  PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags | sed -e 's/-arch i386//')
+  FLAGS += -DNO_x86  # don't load x86intrin.h header. I don't pretent to fully understand why this breaks things.
+  SOFLAGS = -dynamiclib  -install_name $(LD_DIR)/libIMSRG.so  $(FLAGS)
+  PYTHONFLAGS =  $(shell $(PYTHON_CONFIG) --cflags | sed -e 's/-arch i386//')
+  PYTHON_LDFLAGS += -undefined dynamic_lookup # This avoids trouble with missing symbols (see pybind11.readthedocs.io/en/stable/compiling.html )
+  PYTHONFLAGS += -Wno-unused-value # suppress annoying warnings about stuff in the pybind11 library
+  PYTHONFLAGS += -Wno-deprecated-declarations
 endif
 
 
 ifeq ($(HDF5),on)
- LIBS += -lhdf5_cpp -lhdf5
+ LIBS += -lhdf5_cpp
+ NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
+ ifeq ($(NEWHDF5LOC),yes)
+   INCLUDE += -I/usr/include/hdf5/serial
+   LIBS += -lhdf5_serial
+ else
+  LIBS += -lhdf5
+ endif
 else
  FLAGS += -DNO_HDF5   # By default, don't bother building with HDF5, since it's not used very often and can make building a pain
 endif
 
 
+
+ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
+ LIBS += -llapack
+# FLAGS += -DOPENBLAS_NOUSEOMP=1
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+# endif
+endif
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
@@ -72,60 +121,138 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  PYTHONFLAGS := $(filter-out source,$(PYTHONFLAGS))
  PYTHONFLAGS := $(filter-out -xHost,$(PYTHONFLAGS))
 endif
+
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
-# PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
-  PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
+ PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
 endif
+
 ifeq ($(THEHOST),cronos)
- FLAGS += -DOLD_BOOST=1
+ FLAGS   += -DOLD_BOOST=1
  SOFLAGS += -DOLD_BOOST=1
  INCLUDE += -I$(HOME)/include
- LIBS += -L$(HOME)/lib
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
-  endif
-endif
-ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
- LIBS += -llapack
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
- endif
+ LIBS    += -L$(HOME)/lib
+
 endif
 
 ifeq ($(THEHOST),oak)
-#  FLAGS += -DOLD_BOOST
-#  FLAGS += -DOPENBLAS_NOUSEOMP=1
-  NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
   LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
-  endif
+  LIBS +=  -lmkl_avx2  -lmkl_def
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+#  endif
 endif
+
+ifeq ($(THEHOST),mox)
+  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+endif
+
+
 
 ifeq ($(THEHOST),cedar)
 #  NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+#  NEWLIBS := $(filter-out -lblas,$(LIBS))
+#  LIBS = $(NEWLIBS) -lopenblas
 #  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
- LIBS += -lmkl -lmkl_gnu_thread -lmkl_core -lpthread -lgomp -liomp5
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
-  endif
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+#  endif
+endif
+
+ifeq ($(THEHOST),bebop)
+  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+  LIBS +=  -lmkl_avx2  -lmkl_def
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+#  endif
+endif
+
+ifeq ($(THEHOST),crc)
+  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+  LIBS +=  -lmkl_avx2  -lmkl_def
 endif
 
 
 
-ifeq ($(HDF5),on)
-# The new version of Ubuntu puts the hdf5 libraries in a different location
- NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
- ifeq ($(NEWHDF5LOC),yes)
-   INCLUDE += -I/usr/include/hdf5/serial
-   NEWLIBS := $(filter-out -lhdf5,$(LIBS))
-   LIBS = $(NEWLIBS) -lhdf5_serial
+
+
+ifneq ($(PYTHON),off)
+ ALL += pyIMSRG.so
  endif
-endif
+
 
 all: $(ALL)
 	@echo Building with build version $(BUILDVERSION)
+
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o AngMomCache.o\
+      IMSRGProfiler.o \
+	  BCH.o Commutator.o TensorCommutators.o IMSRG3Commutators.o DaggerCommutators.o FactorizedDoubleCommutator.o\
+	  HFMBPT.o  RPA.o\
+      M0nu.o DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
+      TwoBodyChannel.o ThreeBodyChannel.o \
+      ThreeBodyStorage.o ThreeBodyStorage_pn.o ThreeBodyStorage_iso.o \
+      ThreeBodyStorage_no2b.o ThreeBodyStorage_mono.o ThreeLegME.o  \
+      boost_src/gzip.o boost_src/zlib.o   version.o  \
+      ReferenceImplementations.o
+#      ThreeBodyStorage_no2b.o ThreeLegME.o ThreeBodyMENO2B.o \
+#      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
+
+
+boost_src/%.o: boost_src/%.cpp
+	$(CXX) -c $^ -o $@ $(INCLUDE) $(FLAGS)
+
+
+%.o: %.cc %.hh
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) -DBUILDVERSION=\"$(BUILDVERSION)\"
+
+%.o: %.cc
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) -DBUILDVERSION=\"$(BUILDVERSION)\"
+
+
+libIMSRG.so: $(OBJ)
+	$(CXX) $^ $(SOFLAGS) -o $@  $(LIBS)
+#	$(CXX) $^ -dynamiclib -install_name $(LD_DIR)/$@ -o $@ $(SOFLAGS) $(LIBS)
+#	$(CXX) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
+
+python: pyIMSRG.so
+
+pyIMSRG.so: $(OBJ)  pyIMSRG.o version.hh
+	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHON_LDFLAGS) $(LIBS) -shared  $(OBJ) pyIMSRG.o -o $@
+
+pyIMSRG.o: pyIMSRG.cc
+	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@
+
+imsrg++: imsrg++.cc libIMSRG.so Parameters.hh version.hh
+	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
+
+version.cc:
+	$(VERSIONCOMMAND)
+
+version:
+	touch version.cc
+# $(VERSIONCOMMAND)
+#	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
+#
+clean:
+	rm -f *.o *.so boost_src/*.o
+
+test:
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.SanityCheck(); \
+                              pyIMSRG.Commutator.SetUseIMSRG3N7(True); passed &=ut.TestCommutators(); \
+                            ms=pyIMSRG.ModelSpace(1,'He4','He4'); ut=pyIMSRG.UnitTest(ms); pyIMSRG.Commutator.SetUseIMSRG3(True); passed &=ut.TestCommutators();\
+                              print('passed? ',passed); "
+test-factorized:
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestFactorizedDoubleCommutators(); \
+                              print('passed? ',passed); "
+
+test-triples:
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.TestPerturbativeTriples(); \
+                              print('passed? ',passed); "
 
 install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \
@@ -133,12 +260,11 @@ install: splashscreen
 	fi
 	@if [ ! -d $(INSTDIR)/include ] ; then \
 	  mkdir $(INSTDIR)/include; \
-	fi 
+	fi
 	@if [ ! -d $(INSTDIR)/bin ] ; then \
 	  mkdir $(INSTDIR)/bin; \
 	fi
 	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
-	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@if [ -f pyIMSRG.so ] ; then\
 	  ln -sf $(PWD)/pyIMSRG.so $(INSTDIR)/lib/pyIMSRG.so;\
 	fi
@@ -150,69 +276,28 @@ install: splashscreen
 	  echo linking $(PWD)/imsrg++  '=>' $(INSTRDIR)/bin/imsrg++;\
 	  ln -sf $(PWD)/imsrg++ $(INSTDIR)/bin/imsrg++;\
 	fi
+	ln -nsf $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@printf "\n\nDone installing.\n\n"
 	@echo '*********************************************************************'
 	@echo '* Make sure libIMSRG.so is in your LIBRARY_PATH and LD_LIBRARY_PATH *'
 	@echo '*********************************************************************'
-	 
-
-OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
-      IMSRGProfiler.o \
-      boost_src/gzip.o boost_src/zlib.o  
-
-mysrg: main.cc $(OBJ)
-	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
-
-boost_src/gzip.o: boost_src/gzip.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
-
-boost_src/zlib.o: boost_src/zlib.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
-
-
-%.o: %.cc %.hh
-	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
-
-
-
-libIMSRG.so: $(OBJ)
-	$(CC) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
-
-python: pyIMSRG.so
-
-pyIMSRG.so: $(OBJ)  pyIMSRG.o
-	$(CC) $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(PYTHONLIBS) $(LIBS) -shared  $^ -o $@
-
-pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS)  $^ -o $@
-#	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS)  $^ -o $@
-
-imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
-	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
-
-clean:
-	rm -f *.o *.so boost_src/*.o
 
 
 
 splashscreen:
-	@printf "                                                      ____                                     \n"   
-	@printf "             _________________          _____________/   /\               _________________    \n"   
-	@printf "           /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|   \n"  
-	@printf "          /____/_____/__G_ /||        /____/_____/|/   /\  /\           /____/_____/____ /||   \n"  
-	@printf "         /____/_____/__+__/|||       /____/_____/|/ G /  \/  \         /____/_____/_____/|||   \n"  
-	@printf "        |     |     |     ||||      |     |     |/___/   /\  /\       |     |     |     ||||   \n"  
-	@printf "        |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|   \n"  
-	@printf "        |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||   \n"  
-	@printf "        |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||   \n"  
-	@printf "        |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|   \n"  
-	@printf "        |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||   \n"  
-	@printf "        |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||   \n"  
-	@printf "        |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/    \n"  
-	@printf "        |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/     \n"  
-	@printf "                                                   \___\/                                      \n"  
-	@printf "                                                                                               \n"  
+	@printf "                                                      ____                                     \n"
+	@printf "            _________________           _____________/   /\               _________________    \n"
+	@printf "           /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|   \n"
+	@printf "          /____/_____/__G_ /||        /____/_____/|/   /\  /\           /____/_____/____ /||   \n"
+	@printf "         /____/_____/__+__/|||       /____/_____/|/ G /  \/  \         /____/_____/_____/|||   \n"
+	@printf "        |     |     |     ||||      |     |     |/___/   /\  /\       |     |     |     ||||   \n"
+	@printf "        |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|   \n"
+	@printf "        |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||   \n"
+	@printf "        |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||   \n"
+	@printf "        |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|   \n"
+	@printf "        |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||   \n"
+	@printf "        |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||   \n"
+	@printf "        |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/    \n"
+	@printf "        |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/     \n"
+	@printf "                                                   \___\/                                      \n"
+	@printf "                                                                                               \n"

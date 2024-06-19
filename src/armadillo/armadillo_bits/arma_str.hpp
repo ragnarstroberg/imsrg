@@ -21,37 +21,6 @@
 namespace arma_str
   {
   
-  #if ( defined(ARMA_USE_CXX11) || defined(ARMA_HAVE_SNPRINTF) )
-    
-    #define arma_snprintf std::snprintf
-    
-  #else
-    
-    // better-than-nothing emulation of C99 snprintf(),
-    // with correct return value and null-terminated output string.
-    // note that _snprintf() provided by MS is not a good substitute for snprintf()
-    
-    inline
-    int
-    arma_snprintf(char* out, size_t size, const char* fmt, ...)
-      {
-      size_t i;
-      
-      for(i=0; i<size; ++i)
-        {
-        out[i] = fmt[i];
-        if(fmt[i] == char(0))
-          break;
-        }
-      
-      if(size > 0)
-        out[size-1] = char(0);
-      
-      return int(i);
-      }
-    
-  #endif
-  
   class format
     {
     public:
@@ -66,6 +35,7 @@ namespace arma_str
       {
       }
     
+    // TODO: constructor to handle std::string&& ?
     
     const std::string A;
     
@@ -134,10 +104,12 @@ namespace arma_str
       {
       if(using_local_buffer == false)
         {
-        buffer = new char[buffer_size];
+        buffer = new char[size_t(buffer_size)];
         }
       
-      required_size = arma_snprintf(buffer, size_t(buffer_size), X.A.A.c_str(), X.B);
+      required_size = std::snprintf(buffer, size_t(buffer_size), X.A.A.c_str(), X.B);
+      
+      if(required_size < 0)  { break; }
       
       if(required_size < buffer_size)
         {
@@ -186,10 +158,12 @@ namespace arma_str
       {
       if(using_local_buffer == false)
         {
-        buffer = new char[buffer_size];
+        buffer = new char[size_t(buffer_size)];
         }
       
-      required_size = arma_snprintf(buffer, size_t(buffer_size), X.A.A.A.c_str(), X.A.B, X.B);
+      required_size = std::snprintf(buffer, size_t(buffer_size), X.A.A.A.c_str(), X.A.B, X.B);
+      
+      if(required_size < 0)  { break; }
       
       if(required_size < buffer_size)
         {
@@ -238,10 +212,12 @@ namespace arma_str
       {
       if(using_local_buffer == false)
         {
-        buffer = new char[buffer_size];
+        buffer = new char[size_t(buffer_size)];
         }
       
-      required_size = arma_snprintf(buffer, size_t(buffer_size), X.A.A.A.A.c_str(), X.A.A.B, X.A.B, X.B);
+      required_size = std::snprintf(buffer, size_t(buffer_size), X.A.A.A.A.c_str(), X.A.A.B, X.A.B, X.B);
+      
+      if(required_size < 0)  { break; }
       
       if(required_size < buffer_size)
         {
@@ -290,10 +266,12 @@ namespace arma_str
       {
       if(using_local_buffer == false)
         {
-        buffer = new char[buffer_size];
+        buffer = new char[size_t(buffer_size)];
         }
       
-      required_size = arma_snprintf(buffer, size_t(buffer_size), X.A.A.A.A.A.c_str(), X.A.A.A.B, X.A.A.B, X.A.B, X.B);
+      required_size = std::snprintf(buffer, size_t(buffer_size), X.A.A.A.A.A.c_str(), X.A.A.A.B, X.A.A.B, X.A.B, X.B);
+      
+      if(required_size < 0)  { break; }
       
       if(required_size < buffer_size)
         {
@@ -342,10 +320,12 @@ namespace arma_str
       {
       if(using_local_buffer == false)
         {
-        buffer = new char[buffer_size];
+        buffer = new char[size_t(buffer_size)];
         }
       
-      required_size = arma_snprintf(buffer, size_t(buffer_size), X.A.A.A.A.A.A.c_str(), X.A.A.A.A.B, X.A.A.A.B, X.A.A.B, X.A.B, X.B);
+      required_size = std::snprintf(buffer, size_t(buffer_size), X.A.A.A.A.A.A.c_str(), X.A.A.A.A.B, X.A.A.A.B, X.A.A.B, X.A.B, X.B);
+      
+      if(required_size < 0)  { break; }
       
       if(required_size < buffer_size)
         {
@@ -394,10 +374,12 @@ namespace arma_str
       {
       if(using_local_buffer == false)
         {
-        buffer = new char[buffer_size];
+        buffer = new char[size_t(buffer_size)];
         }
       
-      required_size = arma_snprintf(buffer, size_t(buffer_size), X.A.A.A.A.A.A.A.c_str(), X.A.A.A.A.A.B, X.A.A.A.A.B, X.A.A.A.B, X.A.A.B, X.A.B, X.B);
+      required_size = std::snprintf(buffer, size_t(buffer_size), X.A.A.A.A.A.A.A.c_str(), X.A.A.A.A.A.B, X.A.A.A.A.B, X.A.A.A.B, X.A.A.B, X.A.B, X.B);
+      
+      if(required_size < 0)  { break; }
       
       if(required_size < buffer_size)
         {
@@ -430,7 +412,7 @@ namespace arma_str
   template<typename T1>
   struct format_metaprog
     {
-    static const uword depth = 0;
+    static constexpr uword depth = 0;
     
     inline
     static  
@@ -447,7 +429,7 @@ namespace arma_str
   template<typename T1, typename T2>
   struct format_metaprog< basic_format<T1,T2> >
     {
-    static const uword depth = 1 + format_metaprog<T1>::depth;
+    static constexpr uword depth = 1 + format_metaprog<T1>::depth;
     
     inline
     static
@@ -499,7 +481,7 @@ namespace arma_str
   inline
   static
   const T1&
-  str_wrapper(const T1& x, const typename string_only<T1>::result* junk = 0)
+  str_wrapper(const T1& x, const typename string_only<T1>::result* junk = nullptr)
     {
     arma_ignore(junk);
     
@@ -512,7 +494,7 @@ namespace arma_str
   inline
   static
   const T1*
-  str_wrapper(const T1* x, const typename char_only<T1>::result* junk = 0)
+  str_wrapper(const T1* x, const typename char_only<T1>::result* junk = nullptr)
     {
     arma_ignore(junk);
     
@@ -525,7 +507,7 @@ namespace arma_str
   inline
   static
   std::string
-  str_wrapper(const T1& x, const typename basic_format_only<T1>::result* junk = 0)
+  str_wrapper(const T1& x, const typename basic_format_only<T1>::result* junk = nullptr)
     {
     arma_ignore(junk);
     

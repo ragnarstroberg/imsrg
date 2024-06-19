@@ -41,7 +41,7 @@ qz
   {
   arma_extra_debug_sigprint();
   
-  const char sig = (select != NULL) ? select[0] : char(0);
+  const char sig = (select != nullptr) ? select[0] : char(0);
   
   arma_debug_check( ( (sig != 'n') && (sig != 'l') && (sig != 'r') && (sig != 'i') && (sig != 'o') ), "qz(): unknown select form" );
   
@@ -49,11 +49,11 @@ qz
   
   if(status == false)
     {
-    AA.reset();
-    BB.reset();
-    Q.reset();
-    Z.reset();
-    arma_debug_warn("qz(): decomposition failed");
+    AA.soft_reset();
+    BB.soft_reset();
+    Q.soft_reset();
+    Z.soft_reset();
+    arma_debug_warn_level(3, "qz(): decomposition failed");
     }
   
   return status;

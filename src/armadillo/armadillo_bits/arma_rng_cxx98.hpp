@@ -57,6 +57,9 @@ arma_rng_cxx98::randi_val()
   {
   #if (RAND_MAX == 32767)
     {
+    // NOTE: this is a better-than-nothing solution
+    // NOTE: see also arma_rng_cxx98::randi_max_val()
+    
     u32 val1 = u32(std::rand());
     u32 val2 = u32(std::rand());
     
@@ -90,9 +93,9 @@ arma_rng_cxx98::randn_val()
   // http://en.wikipedia.org/wiki/Box-Muller_transformation
   // http://en.wikipedia.org/wiki/Marsaglia_polar_method
   
-  double tmp1;
-  double tmp2;
-  double w;
+  double tmp1 = double(0);
+  double tmp2 = double(0);
+  double w    = double(0);
   
   do
     {
@@ -101,7 +104,7 @@ arma_rng_cxx98::randn_val()
     
     w = tmp1*tmp1 + tmp2*tmp2;
     }
-  while ( w >= double(1) );
+  while( w >= double(1) );
   
   return double( tmp1 * std::sqrt( (double(-2) * std::log(w)) / w) );
   }
@@ -116,9 +119,9 @@ arma_rng_cxx98::randn_dual_val(eT& out1, eT& out2)
   // make sure we are internally using at least floats
   typedef typename promote_type<eT,float>::result eTp;
   
-  eTp tmp1;
-  eTp tmp2;
-  eTp w;
+  eTp tmp1 = eTp(0);
+  eTp tmp2 = eTp(0);
+  eTp w    = eTp(0);
   
   do
     {
@@ -127,7 +130,7 @@ arma_rng_cxx98::randn_dual_val(eT& out1, eT& out2)
     
     w = tmp1*tmp1 + tmp2*tmp2;
     }
-  while ( w >= eTp(1) );
+  while( w >= eTp(1) );
   
   const eTp k = std::sqrt( (eTp(-2) * std::log(w)) / w);
   

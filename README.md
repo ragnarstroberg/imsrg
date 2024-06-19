@@ -1,7 +1,8 @@
-# ragnar_imsrg
+# imsrg++
 In-Medium Similarity Renormalization Group software for nuclear structure calculations. Written in C++, with Python bindings.
 It is capable of performing Hartree-Fock, single-reference IM-SRG, and valence-space IM-SRG calculations.
 If you don't know what these things are, you should check out
+https://www.annualreviews.org/doi/10.1146/annurev-nucl-101917-021120
 http://link.aps.org/doi/10.1103/PhysRevLett.106.222502
 http://www.sciencedirect.com/science/article/pii/S0370157315005414
 
@@ -11,5 +12,6 @@ This code also uses the Armadillo library, which is covered under the Mozilla Pu
 
 Credits:
 	* Most of this code was written by Ragnar Stroberg, who benefitted greatly from the codes of Koshiroh Tsukiyama, Heiko Hergert, and Nathan Parzuchowski.
-	* Implementation of operators for neutrinoless double beta decay was done by Charlie Payne.
+	* A substantial amount of additional machinery was added by Takayuki Miyagi, including the HFMBPT and ThreeBodyMENO2B classes.
+	* Implementation of operators for neutrinoless double beta decay was done by Charlie Payne, and these were ported back to the main fork by Antoine Belley.
 	* Some tweaks to the 3rd order MBPT code were contributed by Johannes Simonis.

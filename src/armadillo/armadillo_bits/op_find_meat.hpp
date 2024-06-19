@@ -79,8 +79,8 @@ op_find::helper
   (
   Mat<uword>& indices,
   const mtOp<uword, T1, op_type>& X,
-  const typename arma_op_rel_only<op_type>::result           junk1,
-  const typename arma_not_cx<typename T1::elem_type>::result junk2
+  const typename arma_op_rel_only<op_type>::result*           junk1,
+  const typename arma_not_cx<typename T1::elem_type>::result* junk2
   )
   {
   arma_extra_debug_sigprint();
@@ -137,8 +137,8 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero_j = (tpj != val); }
       else { not_zero_j = false; }
       
-      if(not_zero_i == true)  { indices_mem[n_nz] = i;  ++n_nz; }
-      if(not_zero_j == true)  { indices_mem[n_nz] = j;  ++n_nz; }
+      if(not_zero_i)  { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero_j)  { indices_mem[n_nz] = j;  ++n_nz; }
       }
     
     if(i < n_elem)
@@ -159,7 +159,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero = (tmp != val); }
       else { not_zero = false; }
       
-      if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero)  { indices_mem[n_nz] = i;  ++n_nz; }
       }
     }
   else
@@ -188,7 +188,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero = (tmp != val); }
       else { not_zero = false; }
       
-      if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero)  { indices_mem[n_nz] = i;  ++n_nz; }
       
       ++i;
       }
@@ -206,8 +206,8 @@ op_find::helper
   (
   Mat<uword>& indices,
   const mtOp<uword, T1, op_type>& X,
-  const typename arma_op_rel_only<op_type>::result            junk1,
-  const typename arma_cx_only<typename T1::elem_type>::result junk2
+  const typename arma_op_rel_only<op_type>::result*            junk1,
+  const typename arma_cx_only<typename T1::elem_type>::result* junk2
   )
   {
   arma_extra_debug_sigprint();
@@ -242,7 +242,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_noteq>::yes)  { not_zero = (tmp != val); }
       else { not_zero = false; }
       
-      if(not_zero == true) { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero) { indices_mem[n_nz] = i;  ++n_nz; }
       }
     }
   else
@@ -263,7 +263,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_noteq>::yes)  { not_zero = (tmp != val); }
       else { not_zero = false; }
       
-      if(not_zero == true) { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero) { indices_mem[n_nz] = i;  ++n_nz; }
       
       i++;
       }
@@ -281,9 +281,9 @@ op_find::helper
   (
   Mat<uword>& indices,
   const mtGlue<uword, T1, T2, glue_type>& X,
-  const typename arma_glue_rel_only<glue_type>::result       junk1,
-  const typename arma_not_cx<typename T1::elem_type>::result junk2,
-  const typename arma_not_cx<typename T2::elem_type>::result junk3
+  const typename arma_glue_rel_only<glue_type>::result*       junk1,
+  const typename arma_not_cx<typename T1::elem_type>::result* junk2,
+  const typename arma_not_cx<typename T2::elem_type>::result* junk3
   )
   {
   arma_extra_debug_sigprint();
@@ -329,7 +329,7 @@ op_find::helper
     else if(is_same_type<glue_type, glue_rel_or    >::yes)  { not_zero = (tmp1 || tmp2); }
     else { not_zero = false; }
     
-    if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
+    if(not_zero)  { indices_mem[n_nz] = i;  ++n_nz; }
     }
   
   return n_nz;
@@ -344,9 +344,9 @@ op_find::helper
   (
   Mat<uword>& indices,
   const mtGlue<uword, T1, T2, glue_type>& X,
-  const typename arma_glue_rel_only<glue_type>::result        junk1,
-  const typename arma_cx_only<typename T1::elem_type>::result junk2,
-  const typename arma_cx_only<typename T2::elem_type>::result junk3
+  const typename arma_glue_rel_only<glue_type>::result*        junk1,
+  const typename arma_cx_only<typename T1::elem_type>::result* junk2,
+  const typename arma_cx_only<typename T2::elem_type>::result* junk3
   )
   {
   arma_extra_debug_sigprint();
@@ -383,7 +383,7 @@ op_find::helper
       else if(is_same_type<glue_type, glue_rel_noteq >::yes)  { not_zero = (PA[i] != PB[i]); }
       else { not_zero = false; }
       
-      if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero)  { indices_mem[n_nz] = i;  ++n_nz; }
       }
     }
   else
@@ -402,7 +402,7 @@ op_find::helper
       else if(is_same_type<glue_type, glue_rel_noteq >::yes)  { not_zero = (A.at(row,col) != B.at(row,col)); }
       else { not_zero = false; }
       
-      if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
+      if(not_zero)  { indices_mem[n_nz] = i;  ++n_nz; }
       
       i++;
       }
@@ -479,7 +479,7 @@ op_find_finite::apply(Mat<uword>& out, const mtOp<uword, T1, op_find_finite>& X)
   
   const uword n_elem = P.get_n_elem();
   
-  Mat<uword> indices(n_elem,1);
+  Mat<uword> indices(n_elem, 1, arma_nozeros_indicator());
   
   uword* indices_mem = indices.memptr();
   uword  count       = 0;
@@ -525,7 +525,7 @@ op_find_nonfinite::apply(Mat<uword>& out, const mtOp<uword, T1, op_find_nonfinit
   
   const uword n_elem = P.get_n_elem();
   
-  Mat<uword> indices(n_elem,1);
+  Mat<uword> indices(n_elem, 1, arma_nozeros_indicator());
   
   uword* indices_mem = indices.memptr();
   uword  count       = 0;

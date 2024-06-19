@@ -20,24 +20,36 @@
 
 
 class op_flipud
+  : public traits_op_passthru
   {
   public:
   
   template<typename T1>
   inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_flipud>& in);
-
+  
+  template<typename eT>
+  inline static void apply_direct(Mat<eT>& out, const Mat<eT>& X);
+  
+  template<typename T1>
+  inline static void apply_proxy_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P);
   };
 
 
 
 
 class op_fliplr
+  : public traits_op_passthru
   {
   public:
   
   template<typename T1>
   inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_fliplr>& in);
-
+  
+  template<typename eT>
+  inline static void apply_direct(Mat<eT>& out, const Mat<eT>& X);
+  
+  template<typename T1>
+  inline static void apply_proxy_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P);
   };
 
 

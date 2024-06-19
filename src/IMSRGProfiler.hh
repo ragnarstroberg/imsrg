@@ -41,7 +41,7 @@ class IMSRGProfiler
   // timer and counter are declaired as static so that there's only one copy of each of them
   static std::map<std::string, double> timer; ///< For keeping timing information for various method calls
   static std::map<std::string, int> counter;
-  static float start_time;
+  static double start_time;
 
   IMSRGProfiler();
   std::map<std::string,size_t> CheckMem(); // Kbytes  RSS  DIRTY
@@ -51,6 +51,7 @@ class IMSRGProfiler
   void PrintMemory();
   void PrintAll();
   size_t MaxMemUsage();
+  void Clear();
 };
 
 #endif

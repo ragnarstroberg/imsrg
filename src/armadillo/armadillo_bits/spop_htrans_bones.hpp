@@ -25,10 +25,18 @@ class spop_htrans
   public:
   
   template<typename T1>
-  arma_hot inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk = 0);
+  struct traits
+    {
+    static constexpr bool is_row  = T1::is_col;  // deliberately swapped
+    static constexpr bool is_col  = T1::is_row;
+    static constexpr bool is_xvec = T1::is_xvec;
+    };
   
   template<typename T1>
-  arma_hot inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk = 0);
+  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk = nullptr);
+  
+  template<typename T1>
+  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk = nullptr);
   };
 
 

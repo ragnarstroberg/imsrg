@@ -15,6 +15,10 @@
 
 
 #if defined(ARMA_USE_HDF5)
+  
+  #undef  H5_USE_110_API
+  #define H5_USE_110_API
+  
   #if !defined(ARMA_HDF5_INCLUDE_DIR)
     #include <hdf5.h>
   #else
@@ -33,5 +37,6 @@
   #if defined(H5_USE_16_API_DEFAULT) || defined(H5_USE_16_API)
     #pragma message ("WARNING: disabling use of HDF5 due to its incompatible configuration")
     #undef ARMA_USE_HDF5
+    #undef ARMA_USE_HDF5_ALT
   #endif
 #endif

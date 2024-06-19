@@ -25,7 +25,7 @@ schur
   (
          Mat<typename T1::elem_type>&    S,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0
+  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
   arma_extra_debug_sigprint();
@@ -39,8 +39,8 @@ schur
   
   if(status == false)
     {
-    S.reset();
-    arma_debug_warn("schur(): decomposition failed");
+    S.soft_reset();
+    arma_debug_warn_level(3, "schur(): decomposition failed");
     }
   
   return status;
@@ -55,7 +55,7 @@ Mat<typename T1::elem_type>
 schur
   (
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0
+  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
   arma_extra_debug_sigprint();
@@ -70,7 +70,7 @@ schur
   
   if(status == false)
     {
-    S.reset();
+    S.soft_reset();
     arma_stop_runtime_error("schur(): decomposition failed");
     }
   
@@ -87,7 +87,7 @@ schur
          Mat<typename T1::elem_type>&    U,
          Mat<typename T1::elem_type>&    S,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0
+  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
   arma_extra_debug_sigprint();
@@ -99,9 +99,9 @@ schur
   
   if(status == false)
     {
-    U.reset();
-    S.reset();
-    arma_debug_warn("schur(): decomposition failed");
+    U.soft_reset();
+    S.soft_reset();
+    arma_debug_warn_level(3, "schur(): decomposition failed");
     }
   
   return status;
