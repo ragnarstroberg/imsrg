@@ -160,7 +160,8 @@ namespace BCH
         OpNested = Commutator::Commutator(Omega, OpNested); // the ith nested commutator
 
 
-        if (i > 1 and use_factorized_correction)
+        int i_min_factorized = bch_skip_ieq1 ? 2 : 1;
+        if (i > i_min_factorized and use_factorized_correction)
         {
           Operator Op_DoubleNested = OpNested;
           Op_DoubleNested.Erase();
