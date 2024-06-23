@@ -746,10 +746,12 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
        ReferenceImplementations.def("comm223_231", &ReferenceImplementations::comm223_231);
        ReferenceImplementations.def("comm223_232", &ReferenceImplementations::comm223_232);
-
-       ReferenceImplementations.def("comm331st", &ReferenceImplementations::comm331st);
        ReferenceImplementations.def("comm331ss", &ReferenceImplementations::comm331ss);
 
+       ReferenceImplementations.def("comm331st", &ReferenceImplementations::comm331st);
+       ReferenceImplementations.def("comm223st", &ReferenceImplementations::comm223st);
+       ReferenceImplementations.def("comm231st", &ReferenceImplementations::comm231st);
+       ReferenceImplementations.def("comm232st", &ReferenceImplementations::comm232st);
 
       py::class_<RPA>(m, "RPA")
           .def(py::init<Operator &>())
@@ -788,7 +790,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("TestRPAEffectiveCharge", &UnitTest::TestRPAEffectiveCharge, py::arg("H"), py::arg("OpIn"), py::arg("k"), py::arg("l"))
           .def("SanityCheck", &UnitTest::SanityCheck)
           .def("TestFactorizedDoubleCommutators", &UnitTest::TestFactorizedDoubleCommutators)
-          .def("TestPerturbativeTriples", &UnitTest::TestPerturbativeTriples)
           .def("Test_comm110ss", &UnitTest::Test_comm110ss)
           .def("Test_comm220ss", &UnitTest::Test_comm220ss)
           .def("Test_comm111ss", &UnitTest::Test_comm111ss)
@@ -843,6 +844,9 @@ PYBIND11_MODULE(pyIMSRG, m)
 
           // Tensor commutator with 3b
           .def("Mscheme_Test_comm331st", &UnitTest::Mscheme_Test_comm331st)
+          .def("Mscheme_Test_comm223st", &UnitTest::Mscheme_Test_comm223st)
+          .def("Mscheme_Test_comm231st", &UnitTest::Mscheme_Test_comm231st)
+          .def("Mscheme_Test_comm232st", &UnitTest::Mscheme_Test_comm232st)
 
           .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) // Op, a,ma, b,mb...
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)                                                                          // Op, a,ma, b,mb...

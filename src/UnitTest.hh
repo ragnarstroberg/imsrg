@@ -95,7 +95,9 @@ class UnitTest
 
   // scalar-tensor commutator with 3b
   bool Mscheme_Test_comm331st( const Operator& X, const Operator& Y );
-
+  bool Mscheme_Test_comm223st( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm231st( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm232st( const Operator& X, const Operator& Y );
 
 
   bool Test_comm330ss( const Operator& X, const Operator& Y );

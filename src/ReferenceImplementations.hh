@@ -56,9 +56,11 @@ namespace ReferenceImplementations
   // scalar-tensor commutators
   void comm222_phst(const Operator &X, const Operator &Y, Operator &Z);
 
-  // scalar-tensor with 3b operator
-  void comm331st(const Operator &X, const Operator &Y, Operator &Z);
-
+  // scalar-tensor with a 3b operator
+  void comm331st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm223st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm231st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm232st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
 
   /// Two-nested-commutator expressions Z = [X,[X,Y]_3]  where X and Y are 2-body.
 

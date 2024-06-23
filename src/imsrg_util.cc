@@ -1772,7 +1772,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   {
     Operator EL(modelspace, L,0,L%2,2);
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
-    // double bL = pow( 1.005* pow(modelspace.GetTargetMass(), 1./6.), L); // b^L where b = 1.005 A^1/6
     for (int i : modelspace.proton_orbits)
     {
       Orbit& oi = modelspace.GetOrbit(i);
@@ -2536,50 +2535,25 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
             double Aabdc = modelspace.phase(ja+jb+J) * modelspace.GetSixJ(ja,jb,J,jc,jd,2) * Qmat(d,a) * Qmat(b,c);
             // Suhonen (8.55),(8.57),(8.58)
             double QdQ;
-            if ( tbc.Tz==0 ) // proton-neutron channel
-            {
-              if ( oi.tz2 == ok.tz2)   QdQ = Aijkl;  // pnpn
-              else                     QdQ = -modelspace.phase(jk+jl+J) * Aijlk;  // pnnp
-            }
-            else
-            {
-               QdQ = Aijkl - modelspace.phase(jk+jl+j)*Aijlk;  // pppp or nnnn
-               if (i==j) QdQ /= sqrt(2.0);
-               if (k==l) QdQ /= sqrt(2.0);
-            }
-            QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
+            // I think that the pppp case can actually be applied to the pn case too...
+//            if ( tbc.Tz==0 ) // proton-neutron channel
+//            {
+//              if ( oa.tz2 == oc.tz2)   QdQ = Aabcd;  // pnpn, Suhonen (8.57)
+//              else                     QdQ = -modelspace.phase(jc+jd+J) * Aabdc;  // pnnp
+//            }
+//            else  // like-nucleon channel,  Suhonen (8.55)
+//            {
+               QdQ = Aabcd - modelspace.phase(jc+jd+J)*Aabdc;  // pppp or nnnn
+               if (a==b) QdQ /= sqrt(2.0);
+               if (c==d) QdQ /= sqrt(2.0);
+//            }
+
+            VQQ.TwoBody.SetTBME(ch,ibra,iket,QdQ);
          }
       }
    }
 
-   //QdotQ_op.OneBody = Qmat*Qmat;
-
-
-  ///  
-   for (auto i : modelspace.all_orbits)
-   {
-     Orbit& oi = modelspace.GetOrbit(i);
-     double ji = oi.j2*0.5;
-     for (auto j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
-     {
-       if (j<i) continue;
-       // Orbit& oj = modelspace.GetOrbit(j);
-       double OBME = 0.;
-       
-       for ( auto k : modelspace.all_orbits )
-       {
-          Orbit& ok = modelspace.GetOrbit(k);
-          double jk = ok.j2*0.5;
-          OBME += modelspace.phase(ji-jk) * Qmat(i,k) * Qmat(k,j) * sqrt(2 * 2 + 1)/ sqrt(2 * jk + 1);
-       }
-       QdotQ_op.OneBody(i,j) = OBME;
-       QdotQ_op.OneBody(j,i) = OBME;
-     }
-   }
-  
-
-
-   return QdotQ_op;
+   return VQQ;
  }
 
 
@@ -5144,4 +5118,3 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  
 
 }// namespace imsrg_util
-
