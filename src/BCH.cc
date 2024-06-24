@@ -122,9 +122,9 @@ namespace BCH
     {
       //     Operator OpNested = OpIn;
       Operator OpNested = OpOut;
-      Operator OpNested_last = OpOut*0;
-      Operator OpNested_last_last = OpOut*0;
-      Operator OpNested_last_last_last = OpOut*0;
+//      Operator OpNested_last = OpOut*0;
+//      Operator OpNested_last_last = OpOut*0;
+//      Operator OpNested_last_last_last = OpOut*0;
 
 
       double epsilon = nx * exp(-2 * ny) * bch_transform_threshold / (2 * ny); // this should probably be explained somewhere...
@@ -153,17 +153,18 @@ namespace BCH
 
 
 
-        OpNested_last_last_last = OpNested_last_last;
-        OpNested_last_last = OpNested_last;
-        OpNested_last = OpNested;
+//        OpNested_last_last_last = OpNested_last_last;
+//        OpNested_last_last = OpNested_last;
+//        OpNested_last = OpNested;
 
         OpNested = Commutator::Commutator(Omega, OpNested); // the ith nested commutator
 
 
-        if (i > 1 and use_factorized_correction)
+        int i_min_factorized = bch_skip_ieq1 ? 2 : 1;
+        if (i > i_min_factorized and use_factorized_correction)
         {
-          Operator Op_DoubleNested = OpNested;
-          Op_DoubleNested.Erase();
+            Operator Op_DoubleNested = OpNested;
+            Op_DoubleNested.Erase();
 
             Commutator::FactorizedDoubleCommutator::comm223_231(Omega, chi2, Op_DoubleNested);
             Commutator::FactorizedDoubleCommutator::comm223_232(Omega, chi2, Op_DoubleNested);
