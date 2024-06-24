@@ -105,6 +105,7 @@ namespace imsrg_util
       else if (opname == "Trel")          theop =  Trel_Op(modelspace) ;
       else if (opname == "TCM")           theop =  TCM_Op(modelspace) ;
       else if (opname == "Tlab")          theop =  KineticEnergy_Op(modelspace) ;
+      else if (opname == "TrelMassCorrection")          theop =  Trel_Masscorrection_Op(modelspace) ;
       else if (opname == "Rso")           theop =  RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") theop =  RadialOverlap(modelspace); // Untested...
       else if (opname == "Sigma")         theop =  Sigma_Op(modelspace);
