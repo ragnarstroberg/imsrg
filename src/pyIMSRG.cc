@@ -747,11 +747,14 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm223_231", &ReferenceImplementations::comm223_231);
        ReferenceImplementations.def("comm223_232", &ReferenceImplementations::comm223_232);
        ReferenceImplementations.def("comm331ss", &ReferenceImplementations::comm331ss);
+       ReferenceImplementations.def("comm133ss", &ReferenceImplementations::comm133ss);
 
        ReferenceImplementations.def("comm331st", &ReferenceImplementations::comm331st);
        ReferenceImplementations.def("comm223st", &ReferenceImplementations::comm223st);
        ReferenceImplementations.def("comm231st", &ReferenceImplementations::comm231st);
        ReferenceImplementations.def("comm232st", &ReferenceImplementations::comm232st);
+       ReferenceImplementations.def("comm133st", &ReferenceImplementations::comm133st);
+       ReferenceImplementations.def("comm132st", &ReferenceImplementations::comm132st);      
 
       py::class_<RPA>(m, "RPA")
           .def(py::init<Operator &>())
@@ -847,6 +850,8 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm223st", &UnitTest::Mscheme_Test_comm223st)
           .def("Mscheme_Test_comm231st", &UnitTest::Mscheme_Test_comm231st)
           .def("Mscheme_Test_comm232st", &UnitTest::Mscheme_Test_comm232st)
+          .def("Mscheme_Test_comm133st", &UnitTest::Mscheme_Test_comm133st)
+          .def("Mscheme_Test_comm132st", &UnitTest::Mscheme_Test_comm132st)
 
           .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) // Op, a,ma, b,mb...
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)                                                                          // Op, a,ma, b,mb...

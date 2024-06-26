@@ -930,15 +930,18 @@ void Operator::MakeReduced()
   {
     for (auto &it : ThreeBody.Get_ch_start())
     {
-      size_t ThCH = it.first.ch_bra;
-      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH);
+      size_t ThCH_bra = it.first.ch_bra;
+      size_t ThCH_ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
+      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
       size_t nbras3 = Tbc_bra.GetNumberKets();
       for (size_t ibra = 0; ibra < nbras3; ibra++)
       {
-        for (size_t iket = ibra; iket < nbras3; iket++)
+        size_t nket3 = Tbc_bra.GetNumberKets();
+        for (size_t iket = ibra; iket < nket3; iket++)
         {
-          double ME3b = ThreeBody.GetME_pn_ch(ThCH, ThCH, ibra, iket);
-          ThreeBody.SetME_pn_ch(ThCH, ThCH, ibra, iket, ME3b * sqrt(Tbc_bra.twoJ + 1) );
+          double ME3b = ThreeBody.GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
+          ThreeBody.SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b * sqrt(Tbc_bra.twoJ + 1) );
         }
       }
     }
@@ -978,15 +981,18 @@ void Operator::MakeNotReduced()
   {
     for (auto &it : ThreeBody.Get_ch_start())
     {
-      size_t ThCH = it.first.ch_bra;
-      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH);
+      size_t ThCH_bra = it.first.ch_bra;
+      size_t ThCH_ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
+      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
       size_t nbras3 = Tbc_bra.GetNumberKets();
       for (size_t ibra = 0; ibra < nbras3; ibra++)
       {
-        for (size_t iket = ibra; iket < nbras3; iket++)
+        size_t nket3 = Tbc_bra.GetNumberKets();
+        for (size_t iket = ibra; iket < nket3; iket++)
         {
-          double ME3b = ThreeBody.GetME_pn_ch(ThCH, ThCH, ibra, iket);
-          ThreeBody.SetME_pn_ch(ThCH, ThCH, ibra, iket, ME3b / sqrt(Tbc_bra.twoJ + 1) );
+          double ME3b = ThreeBody.GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
+          ThreeBody.SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b / sqrt(Tbc_bra.twoJ + 1) );
         }
       }
     }

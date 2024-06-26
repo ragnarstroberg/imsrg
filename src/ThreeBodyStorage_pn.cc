@@ -371,7 +371,7 @@ void ThreeBodyStorage_pn::ReadBinary(std::ifstream& f)
 //  which will happen with row-major ordering.
 void ThreeBodyStorage_pn::AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, size_t& index, int& herm_flip) const
 {
-  herm_flip = (  (ch_ket > ch_bra) or ((ch_ket==ch_bra) and (ibra>=iket))) ? 1 : herm; // we store bra < ket
+  herm_flip = (  (ch_bra < ch_ket ) or ((ch_ket==ch_bra) and (ibra>=iket))) ? 1 : herm; // we store bra < ket
   size_t ch_1 = std::min(ch_bra,ch_ket);
   size_t ch_2 = std::max(ch_bra,ch_ket);
   size_t iket_1 = (ch_bra==ch_ket) ? std::min(ibra,iket) : (  (ch_bra<ch_ket) ? ibra : iket   );
@@ -394,16 +394,15 @@ void ThreeBodyStorage_pn::AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, si
   }
   else
   {
-    index = (iter_ch_start->second) + ch_dim[ch_2]*iket_1 + iket_2;
+    index = (iter_ch_start->second) + ch_dim[ch_2] * iket_1 + iket_2;
     // include phase factor for 3b tensor operator
     // < i || T || j > = herm * (-)^(i-j) < j || T || i >*
-    if (ch_ket > ch_bra)  
+    if ( ch_bra > ch_ket )  
     {
       ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
       ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
       herm_flip *= modelspace->phase((Tbc_bra.twoJ - Tbc_ket.twoJ)/2);
     }
-    
   }
   // check for trouble
   if (index>=MatEl.size())

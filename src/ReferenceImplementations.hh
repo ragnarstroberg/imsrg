@@ -61,6 +61,8 @@ namespace ReferenceImplementations
   void comm223st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
   void comm231st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
   void comm232st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm133st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm132st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
 
   /// Two-nested-commutator expressions Z = [X,[X,Y]_3]  where X and Y are 2-body.
 
