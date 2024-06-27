@@ -435,6 +435,12 @@ namespace Commutator
       Z.SetHermitian();
     else
       Z.SetNonHermitian();
+    
+    if (Z.GetParticleRank() > 2)
+    {
+      Z.ThreeBody.SwitchToPN_and_discard();
+    }
+
 
     // If it's the first time we're calling this, then we go single-threaded because there will be some sixj/ninej symbols
     // that we need to compute and store. After the first pass, they're all stored so we can go parallel.

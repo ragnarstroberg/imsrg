@@ -179,6 +179,7 @@ namespace BCH
         {
           std::cout << "Tensor BCH, i=" << i << "  Norm = " << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.OneBodyNorm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.TwoBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.ThreeBody.Norm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.Norm() << std::endl;
         }
         epsilon *= i + 1;
