@@ -46,6 +46,8 @@ namespace Commutator
     void SetUseIMSRG3N7(bool tf);
     void SetUseIMSRG3_MP4(bool tf);
 
+    void SetUseIMSRG3N7_Tensor(bool tf);
+
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);
     void PrintSettings();
