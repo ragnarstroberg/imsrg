@@ -157,6 +157,7 @@ class Operator
   void MakeNormalized();
   void MakeUnNormalized();
 
+
   void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
   void ScaleTwoBody(double x);
@@ -189,6 +190,7 @@ class Operator
 
   Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
+  Operator DoIsospinAveraging() const;
 
   // In principle, these methods should probably be factorized out, but I don't know where to put them...
   double GetMP2_Energy();
