@@ -31,6 +31,7 @@ namespace Commutator
   bool use_imsrg3_mp4 = false;
 
   bool single_thread = false;
+  bool verbose = false;
 
   std::map<std::string, bool> comm_term_on = {
       {"comm110ss", true},
@@ -154,6 +155,10 @@ namespace Commutator
   }
 
 
+  void SetVerbose(bool tf)
+  {
+    verbose = tf;
+  }
 
 
 
@@ -1196,13 +1201,21 @@ namespace Commutator
 
     ConstructScalarMpp_Mhh(X, Y, Z, Mpp, Mhh);
 
-    X.profiler.timer["_ConstructScalarMpp_Mhh"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       X.profiler.timer["_ConstructScalarMpp_Mhh"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
+
     Z.TwoBody += Mpp;
     Z.TwoBody -= Mhh;
-    X.profiler.timer["_pphh TwoBody bit"] += omp_get_wtime() - t_internal;
 
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       X.profiler.timer["_pphh TwoBody bit"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
+
     //   int norbits = Z.modelspace->GetNumberOrbits();
     int norbits = Z.modelspace->all_orbits.size();
     // The one body part
@@ -1253,7 +1266,10 @@ namespace Commutator
       } // for j
     }   // for i
 
-    X.profiler.timer["_pphh One Body bit"] += omp_get_wtime() - t_internal;
+    if (Commutator::verbose)
+    {
+       X.profiler.timer["_pphh One Body bit"] += omp_get_wtime() - t_internal;
+    }
     X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
 
