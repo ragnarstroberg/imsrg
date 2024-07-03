@@ -63,9 +63,10 @@ namespace ReferenceImplementations
   void comm232st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
   void comm133st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
   void comm132st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm332_ppph_hhhpst(const Operator &X, const Operator &Y, Operator &Z);
+
 
   /// Two-nested-commutator expressions Z = [X,[X,Y]_3]  where X and Y are 2-body.
-
   void diagram_CIa(const Operator &X, const Operator &Y, Operator &Z);
   void diagram_CIb(const Operator &X, const Operator &Y, Operator &Z);
   void diagram_CIIa(const Operator &X, const Operator &Y, Operator &Z);

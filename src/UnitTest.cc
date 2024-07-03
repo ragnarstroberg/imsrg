@@ -6290,3 +6290,182 @@ bool UnitTest::Mscheme_Test_comm132st(const Operator &X, const Operator &Y)
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
 }
+
+/// M-Scheme Formula:
+//
+// Z_ijkl = 1/6 * sum_abcd (n_a*n_b*n_c*nbar_d - nbar_a*nbar_b*nbar_c*n_d) * [  Xijdabc*Yabckld - Yijdabc*Xabckld  ]
+//
+bool UnitTest::Mscheme_Test_comm332_ppph_hhhpst(const Operator &X, const Operator &Y) 
+{
+  std::cout << __func__ << std::endl;
+  int Lambda = Y.GetJRank();
+  Operator Z_J(Y);
+  Z_J.SetHermitian();
+  Z_J.SetParticleRank(2);
+  Z_J.Erase();
+
+  Operator Y_copy(Y);
+  if (Lambda == 0)
+  {
+    Y_copy.MakeReduced();
+    Z_J.MakeReduced();
+  }
+
+  ReferenceImplementations::comm332_ppph_hhhpst(X, Y_copy, Z_J);
+  if (Lambda == 0)
+  {
+    // Y_copy.MakeNotReduced();
+    Z_J.MakeNotReduced();
+  }
+  std::cout << __func__ << "   Done with J-scheme commutator. Begin m-scheme version..." << std::endl;
+  if (Z_J.IsHermitian())
+    Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian())
+    Z_J.AntiSymmetrize();
+
+  int parityX = X.GetParity();
+  int parityY = Y.GetParity();
+  int parityZ = (parityX + parityY) % 2;
+  int TzX = X.GetTRank();
+  int TzY = Y.GetTRank();
+  int TzZ = TzX + TzY;
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits)
+  {
+    Orbit &oi = X.modelspace->GetOrbit(i);
+    for (auto j : X.modelspace->all_orbits)
+    {
+      if (j < i)
+        continue;
+      Orbit &oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits)
+      {
+        Orbit &ok = X.modelspace->GetOrbit(k);
+        if (k < i)
+          continue;
+        for (auto l : X.modelspace->all_orbits)
+        {
+          if (l < k)
+            continue;
+          Orbit &ol = X.modelspace->GetOrbit(l);
+          if ((oi.l + oj.l + ok.l + ol.l + parityY) % 2 > 0)
+            continue; // check parity
+          if ((oi.tz2 + oj.tz2 - ok.tz2 - ol.tz2) != TzZ * 2)
+            continue; // check isospin projection
+
+          for (int mi = -oi.j2; mi <= oi.j2; mi += 2) 
+          {
+            for (int mj = -oj.j2; mj <= oj.j2; mj += 2)
+            {
+              for (int mk = -ok.j2; mk <= ok.j2; mk += 2)
+              {
+                for (int ml = -ol.j2; ml <= ol.j2; ml += 2)
+                {
+
+                  if (  mi + mk < 0 or mk +ml < 0) // save some cpu time
+                    continue;
+                  
+                  double Zm_ijkl = 0;
+                  size_t norb = X.modelspace->GetNumberOrbits();
+  #pragma omp parallel for schedule(dynamic, 1) reduction(+ : Zm_ijkl)
+                  for (size_t a = 0; a < norb; a++)
+                  {
+                    Orbit &oa = X.modelspace->GetOrbit(a);
+                    double na = oa.occ;
+                    for (auto b : X.modelspace->all_orbits)
+                    {
+                      Orbit &ob = X.modelspace->GetOrbit(b);
+                      double nb = ob.occ;
+
+                      for (auto c : X.modelspace->all_orbits)
+                      {
+                        Orbit &oc = X.modelspace->GetOrbit(c);
+                        double nc = oc.occ;
+
+                        for (auto d : X.modelspace->all_orbits)
+                        {
+                          Orbit &od = X.modelspace->GetOrbit(d);
+                          double nd = od.occ;
+                          double occfactor = na * nb * nc * (1 - nd) - (1 - na) * (1 - nb) * (1 - nc) * nd;
+
+                          // These make the contribution trivially zero, so I skip them in the name of efficiently
+                          // testing the more complicated part. Commenting them out allows to check that the trivial stuff is right.
+                          if ((oi.l + oj.l + od.l + oa.l + ob.l + oc.l) % 2 > 0)
+                             continue;
+                          // if ((oi.tz2 + oj.tz2 + od.tz2) != (oa.tz2 + ob.tz2 + oc.tz2))
+                          //  continue;
+                          if (std::abs(occfactor) < 1e-7)
+                            continue;
+
+                          for (int ma = -oa.j2; ma <= oa.j2; ma += 2)
+                          {
+                            for (int mb = -ob.j2; mb <= ob.j2; mb += 2)
+                            {
+                              for (int mc = -oc.j2; mc <= oc.j2; mc += 2)
+                              {
+                                for (int md = -od.j2; md <= od.j2; md += 2)
+                                {
+                                  double xijdabc = GetMschemeMatrixElement_3b(X, i, mi, j, mj, d, md, a, ma, b, mb, c, mc);
+                                  double yijdabc = GetMschemeMatrixElement_3b(Y, i, mi, j, mj, d, md, a, ma, b, mb, c, mc);
+                                  double xabckld = GetMschemeMatrixElement_3b(X, a, ma, b, mb, c, mc, k, mk, l, ml, d, md);
+                                  double yabckld = GetMschemeMatrixElement_3b(Y, a, ma, b, mb, c, mc, k, mk, l, ml, d, md);
+                                  Zm_ijkl += 1. / 6 * occfactor * (xijdabc * yabckld - yijdabc * xabckld);
+                                } // for md
+                              } // for mc
+                            } // for mb
+                          } // for ma
+                        } // for d
+                      } // for c
+                    } // for b
+                  } // for a
+
+                  double ZJ_ijkl = GetMschemeMatrixElement_2b(Z_J, i, mi, j, mj, k, mk, l, ml);
+                  double err = Zm_ijkl - ZJ_ijkl;
+                  if (std::abs(err) > 1e-6)
+                  {
+                    std::cout << "\033[31mTrouble\033[0m in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
+                              << " {m} = " << mi << " " << mj << " " << mk << " " << ml
+                              << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl;
+                  }
+                  summed_error += err * err;
+                  sum_m += Zm_ijkl * Zm_ijkl;
+                  sum_J += ZJ_ijkl * ZJ_ijkl;
+                } // for ml
+              } // for mk
+            } // for mj
+          } // for mi
+        } // for l
+      } // for k
+    } // for j
+  } // for i
+
+  bool passed = std::abs(summed_error) < 1e-6;
+  std::string passfail = passed ? "\033[32mPASS\033[0m" : "\033[31mFAIL\033[0m";
+  if (Z_J.TwoBodyNorm() < 1e-6)
+    std::cout << "\033[31mWARNING\033[0m " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ << "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

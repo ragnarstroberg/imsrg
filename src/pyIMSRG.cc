@@ -559,7 +559,11 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetDenominatorDeltaOrbit", &IMSRGSolver::SetDenominatorDeltaOrbit)
           .def("SetDenominatorPartitioning", &IMSRGSolver::SetDenominatorPartitioning) // Can be Epstein_Nesbet (default) or Moller_Plesset
           .def("GetSystemDimension", &IMSRGSolver::GetSystemDimension)
-          .def("GetOmega", &IMSRGSolver::GetOmega)
+          // .def("GetOmega", &IMSRGSolver::GetOmega)
+          .def("GetOmega", py::overload_cast<int>(&IMSRGSolver::GetOmega),
+               "Get an Operator at a specific index")
+          .def("GetOmega", py::overload_cast<>(&IMSRGSolver::GetOmega),
+               "Get the entire deque of Operators")
           .def("SetOmega", &IMSRGSolver::SetOmega)
           //      .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
           .def("GetH_s", &IMSRGSolver::GetH_s)
@@ -672,6 +676,12 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("Discard0bFrom3b", &Commutator::Discard0bFrom3b);
        Commutator.def("Discard1bFrom3b", &Commutator::Discard1bFrom3b);
        Commutator.def("Discard2bFrom3b", &Commutator::Discard2bFrom3b);
+       Commutator.def("comm331st", &Commutator::comm331st);
+       Commutator.def("comm223st", &Commutator::comm223st);
+       Commutator.def("comm231st", &Commutator::comm231st);
+       Commutator.def("comm232st", &Commutator::comm232st);
+       Commutator.def("comm133st", &Commutator::comm133st);
+       Commutator.def("comm132st", &Commutator::comm132st);
 
 //      Commutator.def("comm223_231_Factorization", &Commutator::comm223_231_Factorization);
 //      Commutator.def("comm223_232_Factorization", &Commutator::comm223_232_Factorization);
@@ -755,7 +765,9 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm231st", &ReferenceImplementations::comm231st);
        ReferenceImplementations.def("comm232st", &ReferenceImplementations::comm232st);
        ReferenceImplementations.def("comm133st", &ReferenceImplementations::comm133st);
-       ReferenceImplementations.def("comm132st", &ReferenceImplementations::comm132st);      
+       ReferenceImplementations.def("comm132st", &ReferenceImplementations::comm132st);    
+       ReferenceImplementations.def("comm332_ppph_hhhpst", &ReferenceImplementations::comm332_ppph_hhhpst);  
+
 
       py::class_<RPA>(m, "RPA")
           .def(py::init<Operator &>())
@@ -853,6 +865,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm232st", &UnitTest::Mscheme_Test_comm232st)
           .def("Mscheme_Test_comm133st", &UnitTest::Mscheme_Test_comm133st)
           .def("Mscheme_Test_comm132st", &UnitTest::Mscheme_Test_comm132st)
+          .def("Mscheme_Test_comm332_ppph_hhhpst", &UnitTest::Mscheme_Test_comm332_ppph_hhhpst)
 
           .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) // Op, a,ma, b,mb...
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)                                                                          // Op, a,ma, b,mb...

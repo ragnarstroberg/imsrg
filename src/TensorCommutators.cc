@@ -1374,9 +1374,8 @@ namespace Commutator
 
 
 
- //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// scalar-tensor commutators with 3-body
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///
   /// Expression:    Zij^\lamda = 1/12 sum_abcde sum_J1J2J (na nb n¯c n¯d n¯e + ¯na n¯b nc nd ne) (2J+1)/(2ji+1)
@@ -1474,8 +1473,9 @@ namespace Commutator
                         {
                           if (std::abs(j0 - j1) > Lambda * 2 or (j0 + j1) < Lambda * 2)
                             continue;
+                          //double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          double sixj1 = Z.modelspace->GetSixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
 
-                          double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
                           if (std::abs(sixj1) < 1.e-6)
                             continue;
                           double xabicde = X3.GetME_pn(J1, J2, j0, a, b, i, c, d, e);     // scalar
@@ -1499,7 +1499,8 @@ namespace Commutator
                           if (std::abs(j0 - j1) > Lambda * 2 or (j0 + j1) < Lambda * 2)
                             continue;
 
-                          double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          //double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          double sixj1 = Z.modelspace->GetSixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
                           if (std::abs(sixj1) < 1.e-6)
                             continue;
 
@@ -1682,8 +1683,7 @@ namespace Commutator
                     sixj_1 = AngMom::SixJ(o3.j2 / 2., j2a / 2.,      J3,
                                           o6.j2 / 2., twoj1 / 2.,    J1p);
                     sixj_2 = AngMom::SixJ(J3,         J2p,           Lambda,
-                                          twoj2 / 2., twoj1 / 2.,    o6.j2 / 2.);
-
+                                          twoj2 / 2., twoj1 / 2.,    o6.j2 / 2.);  
                     int phase = AngMom::phase((o6.j2 + twoj2) / 2 + J3 + Lambda);
                     double facotrs = sqrt((2 * J1p + 1) * (2 * J3 + 1) * (twoj1 + 1) * (twoj2 + 1)); 
                     double x_126a = X2.GetTBME_J(J1p, J1p, I1, I2, I6, a);
