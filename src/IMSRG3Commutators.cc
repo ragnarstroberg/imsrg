@@ -13,13 +13,13 @@ namespace Commutator
   bool discard_0b_from_3b = false;
   bool discard_1b_from_3b = false;
   bool discard_2b_from_3b = false;
-  bool imsrg3_verbose = false;
+//  bool Commutator::verbose = false;
   bool perturbative_triples = false;
 
   double imsrg3_dE6max = 1e20;
   double threebody_threshold = 0;
 
-  void SetIMSRG3Verbose(bool tf) { imsrg3_verbose = tf; };
+//  void SetIMSRG3Verbose(bool tf) { Commutator::verbose = tf; };
 
   void Discard0bFrom3b(bool tf) { discard_0b_from_3b = tf; };
   void Discard1bFrom3b(bool tf) { discard_1b_from_3b = tf; };
@@ -460,6 +460,7 @@ namespace Commutator
       {
         auto &OP2 = xy_iter == 0 ? X : Y;
         auto &OP3 = xy_iter == 0 ? Y : X;
+        if (OP3.ThreeBodyNorm()<1e-8 ) continue; // no use if there isn't a 3body piece
         int itersign = xy_iter == 0 ? +1 : -1;
 
         // Do the loop over 2b channel blocks
@@ -612,10 +613,22 @@ namespace Commutator
     //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
     //  for (size_t ch=0; ch<nch; ch++)
     //  {
+    std::vector<size_t> ch_bra_list;
+    std::vector<size_t> ch_ket_list;
     for (auto &it_ch : Z.TwoBody.MatEl)
     {
-      size_t ch_bra = it_ch.first[0];
-      size_t ch_ket = it_ch.first[1];
+      ch_bra_list.push_back(it_ch.first[0]);
+      ch_ket_list.push_back(it_ch.first[1]);
+    }
+    size_t nbraket = ch_bra_list.size();
+//    for (auto &it_ch : Z.TwoBody.MatEl)
+//#pragma omp parallel for schedule(dynamic, 1)
+    for (size_t ibraket=0; ibraket<nbraket; ibraket++)
+    {
+//      size_t ch_bra = it_ch.first[0];
+//      size_t ch_ket = it_ch.first[1];
+      size_t ch_bra = ch_bra_list[ibraket];
+      size_t ch_ket = ch_ket_list[ibraket];
       auto &tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
       auto &tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
       int J = tbc_bra.J;
@@ -681,6 +694,10 @@ namespace Commutator
             {
               if (x_channel_diag and y_channel_diag and b_loop > 0)
                 continue;
+              if ( b_loop ==0 and Y.ThreeBodyNorm()<1e-8)
+                 continue;
+              if ( b_loop ==1 and X.ThreeBodyNorm()<1e-8)
+                 continue;
               std::set<size_t> blist;
               //             std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
               //             for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
@@ -1018,6 +1035,10 @@ namespace Commutator
       {
         size_t dim_abc = XY_case == 0 ? dim_abc_X : dim_abc_Y;
         size_t obc_hash = XY_case == 0 ? obc_hash_iX : obc_hash_iY;
+        if ( XY_case==0 and Y.ThreeBodyNorm()<1e-8)
+           continue;
+        if ( XY_case==1 and X.ThreeBodyNorm()<1e-8)
+           continue;
         // fill <i|X|abc>
         for (size_t index_abc = 0; index_abc < dim_abc; index_abc++)
         {
@@ -1224,7 +1245,7 @@ namespace Commutator
     } // for ch
 
     //  if (Z.modelspace->scalar3b_transform_first_pass)   Z.profiler.timer["comm232_first_pass"] += omp_get_wtime() - tstart;
-    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+//    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
   // This optimized implementation is originally by Ragnar.
@@ -4426,7 +4447,7 @@ namespace Commutator
   void comm133ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
@@ -4590,14 +4611,17 @@ namespace Commutator
         {
           std::size_t iket = kets_kept[local_ket_index];
           size_t iyx = yx_kept[local_yx_index];
-          X3MAT_ket(local_yx_index, local_ket_index) = X3.GetME_pn_ch(ch_internal_yx, ch_ket, iyx, iket);
-          if (x_channel_diag and y_channel_diag)
+          if (x3_allocated)
+             X3MAT_ket(local_yx_index, local_ket_index) = X3.GetME_pn_ch(ch_internal_yx, ch_ket, iyx, iket);
+          if (x_channel_diag and y_channel_diag and y3_allocated)
             Y3MAT_ket(local_yx_index, local_ket_index) = Y3.GetME_pn_ch(ch_internal_yx, ch_ket, iyx, iket);
         }
       }
 
       // if we're not channel diagonal, we need to deal with various cases explicitly.
       if (not(x_channel_diag and y_channel_diag))
+      {
+      if (y3_allocated)
       {
 #pragma omp parallel for schedule(guided) collapse(2)
         for (std::size_t local_ket_index = 0; local_ket_index < kets_kept.size(); local_ket_index += 1)
@@ -4609,7 +4633,10 @@ namespace Commutator
             Y3MAT_ket(local_xy_index, local_ket_index) = Y3.GetME_pn_ch(ch_internal_xy, ch_ket, ixy, iket);
           }
         }
+      }
 
+      if (x3_allocated)
+      {
 #pragma omp parallel for schedule(guided) collapse(2)
         for (std::size_t local_bra_index = 0; local_bra_index < bras_kept.size(); local_bra_index += 1)
         {
@@ -4620,7 +4647,10 @@ namespace Commutator
             X3MAT_bra(local_bra_index, local_xy_index) = X3.GetME_pn_ch(ch_bra, ch_internal_xy, ibra, ixy);
           }
         }
+      }
 
+      if (y3_allocated)
+      {
 #pragma omp parallel for schedule(guided) collapse(2)
         for (std::size_t local_bra_index = 0; local_bra_index < bras_kept.size(); local_bra_index += 1)
         {
@@ -4631,6 +4661,7 @@ namespace Commutator
             Y3MAT_bra(local_bra_index, local_yx_index) = Y3.GetME_pn_ch(ch_bra, ch_internal_yx, ibra, iyx);
           }
         }
+      }
       }
 
       Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
@@ -4889,7 +4920,7 @@ namespace Commutator
   void comm223ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     auto &Z3 = Z.ThreeBody;
     auto &X2 = X.TwoBody;
@@ -5269,7 +5300,7 @@ namespace Commutator
   {
     //  std::cout << "ENTER " <<__func__ << std::endl;
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
@@ -5846,7 +5877,7 @@ namespace Commutator
   {
 
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     double t_internal = omp_get_wtime();
     auto &X2 = X.TwoBody;
@@ -6344,7 +6375,7 @@ namespace Commutator
   {
 
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     auto &X2 = X.TwoBody;
     auto &Y2 = Y.TwoBody;
@@ -6783,7 +6814,7 @@ namespace Commutator
   {
 
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
@@ -6908,7 +6939,7 @@ namespace Commutator
   {
 
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
     double t_internal = omp_get_wtime();
 
@@ -7571,7 +7602,7 @@ namespace Commutator
   {
 
     double tstart = omp_get_wtime();
-    if (imsrg3_verbose)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
 
     auto &X3 = X.ThreeBody;

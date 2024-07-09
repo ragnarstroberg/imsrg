@@ -41,6 +41,9 @@ ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max , int rJ, int rT, i
 //ThreeBodyStorage::ME_type ThreeBodyStorage::NotImplemented() const
 ThreeBodyStorage::ME_type ThreeBodyStorage::NotImplemented(std::string funcname) const
 {
+  if ( not is_allocated ) // if we're not allocated, then just return zero. No harm, no foul.
+  return 0;
+
   std::cout << "ERROR: " << funcname << " is not yet implemented for ThreeBodyStorage mode [" << GetStorageMode()  << "]. Dying now." << std::endl;
   std::exit(EXIT_FAILURE);
   return 0;

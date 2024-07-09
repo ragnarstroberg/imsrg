@@ -18,7 +18,7 @@ std::function<double(double,double)> Generator::imaginarytime_func = [] (double 
 std::function<double(double,double)> Generator::qtransferatan1_func = [](double Hod, double denom){return pow(std::abs(denom)*M_NUCLEON/HBARC/HBARC, 0.5*1) * atan_func(Hod, denom);};
 
 Generator::Generator()
-  : generator_type("white"),/* modelspace(NULL),*/ denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), denominator_partitioning(Epstein_Nesbet),  only_2b_eta(false)
+  : generator_type("white"),/* modelspace(NULL),*/ denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), denominator_partitioning(Epstein_Nesbet),  only_2b_eta(false), use_isospin_averaging(false)
 {}
 
 
@@ -34,6 +34,10 @@ void Generator::Update(Operator& H_s, Operator& Eta_s)
 {
    Eta_s.Erase();
    AddToEta(H_s,Eta_s);
+   if (use_isospin_averaging)
+   {
+      Eta_s = Eta_s.DoIsospinAveraging();
+   }
 }
 
 
@@ -636,8 +640,35 @@ Operator  Generator::GetHod_SingleRef(Operator& H )
       }
     }
 
+   // Three body --- ppp hhh bits.
+    size_t nch3 = H.modelspace->GetNumberThreeBodyChannels();
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t ch3=0; ch3<nch3; ch3++)
+    {
+      ThreeBodyChannel& Tbc = H.modelspace->GetThreeBodyChannel(ch3);
+      size_t nkets3 = Tbc.GetNumberKets();
+      for (size_t ibra=0; ibra<nkets3; ibra++)
+      {
+        Ket3& bra = Tbc.GetKet(ibra);
+        // bra should be ppp where p is eiher v or q
+        if ( (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+        
+        for (size_t iket=0; iket<nkets3; iket++)
+        {
+           Ket3& ket = Tbc.GetKet(iket);
+           // ket should be ccc
+           if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+
+           double h_abcijk = H.ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
+
+           Hod.ThreeBody.SetME_pn_ch( ch3,ch3,ibra,iket,  h_abcijk); // hermitian conjugate automatically gets added
+           
+        }// for iket
+      }// for ibra
+
+    }// for ch3
+
    return Hod;
-   // Skip the 3b part for now...
 }
 
 
@@ -692,13 +723,11 @@ Operator Generator::GetHod_ShellModel(Operator& H)
 
     }
 
-   if (Hod.GetParticleRank() == 3)
-   {
-     std::vector<size_t> corevec;
-     for (auto a : H.modelspace->core) corevec.push_back(a);
-     std::map<int,double> e_fermi = H.modelspace->GetEFermi();
-//     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
-     size_t nch3 = H.modelspace->GetNumberThreeBodyChannels();
+
+ 
+    // off-diagonal:   <ppp|ccc>, <ppp|vcc>, <ppp|vvc>, <qpp|vvv>  where p is v or q
+    //                 
+    size_t nch3 = H.modelspace->GetNumberThreeBodyChannels();
     #pragma omp parallel for schedule(dynamic,1)
     for (size_t ch3=0; ch3<nch3; ch3++)
     {
@@ -708,17 +737,7 @@ Operator Generator::GetHod_ShellModel(Operator& H)
       {
         Ket3& bra = Tbc.GetKet(ibra);
         if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
-        double d_ei = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
-        double d_ej = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
-        double d_ek = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
-        double occnat_i = bra.op->occ_nat;
-        double occnat_j = bra.oq->occ_nat;
-        double occnat_k = bra.oR->occ_nat;
-        if ( d_ei + d_ej + d_ek > H.modelspace->GetdE3max() ) continue;
-        if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H.modelspace->GetOccNat3Cut() ) continue ;
-        size_t i = bra.p;
-        size_t j = bra.q;
-        size_t k = bra.r;
+
         
         for (size_t iket=0; iket<nkets3; iket++)
         {
@@ -726,28 +745,18 @@ Operator Generator::GetHod_ShellModel(Operator& H)
            if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
            if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
 
-           double d_ea = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
-           double d_eb = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
-           double d_ec = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
-           double occnat_a = ket.op->occ_nat;
-           double occnat_b = ket.oq->occ_nat;
-           double occnat_c = ket.oR->occ_nat;
-           if ( d_ea + d_eb + d_ec > H.modelspace->GetdE3max() ) continue;
-           if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H.modelspace->GetOccNat3Cut() ) continue ;
-           size_t a = ket.p;
-           size_t b = ket.q;
-           size_t c = ket.r;
 
            double ME_od = H.ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
-           Hod.ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket, ME_od); // hermitian conjugate automatically gets added
+
+           Hod.ThreeBody.SetME_pn_ch( ch3,ch3,ibra,iket,  ME_od); // hermitian conjugate automatically gets added
+
            
         }// for iket
       }// for ibra
 
     }// for ch3
 
-   }
-   
+
 
     return Hod;
 }

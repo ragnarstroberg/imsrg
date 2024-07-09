@@ -257,8 +257,10 @@ void Operator::SetUpOneBodyChannels()
     for (int l=lmin; l<=lmax; l++)
     {
       if ((l + oi.l + parity)%2>0) continue;
-      int j2min = std::max(std::abs(oi.j2 - 2*rank_J), 2*l-1);
-      int j2max = std::min(oi.j2 + 2*rank_J, 2*l+1);
+
+      int j2min = std::max( std::abs(oi.j2 - 2*rank_J), 2*l-1);
+      int j2max = std::min(          oi.j2 + 2*rank_J,  2*l+1);
+
       for (int j2=j2min; j2<=j2max; j2+=2)
       {
         for ( int tz2=-1; tz2<=1; tz2+=2)
@@ -810,7 +812,91 @@ Operator Operator::Truncate(ModelSpace &ms_new)
   return OpNew;
 }
 
-ModelSpace *Operator::GetModelSpace() const
+
+Operator Operator::DoIsospinAveraging() const
+{
+   Operator OpIso = 0*(*this);
+   OpIso.ZeroBody = this->ZeroBody;
+
+   for (auto p : modelspace->proton_orbits )
+   {
+      Orbit& op = modelspace->GetOrbit(p);
+      int n = modelspace->GetOrbitIndex( op.n, op.l, op.j2, -op.tz2 );
+      for ( auto pp : modelspace->proton_orbits )
+      {
+         Orbit& opp = modelspace->GetOrbit(pp);
+         int nn = modelspace->GetOrbitIndex( opp.n, opp.l, opp.j2, -opp.tz2 );
+         double vavg = (this->OneBody(p,pp) + this->OneBody(n,nn) )/2;
+         OpIso.OneBody(p,pp) = vavg;
+         OpIso.OneBody(n,nn) = vavg;
+      }
+   }
+
+
+   // We loop over only the Tz=0 (proton-neutron) channel
+   // and then work out the pp and nn terms
+   int nch = modelspace->GetNumberTwoBodyChannels();
+   for ( int ch=0; ch<nch; ch++)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      if ( tbc.Tz != 0 ) continue;
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets; ibra++)
+      {
+        Ket& bra = tbc.GetKet( ibra );
+        int ap = bra.p;
+        int bp = bra.q;
+        int an = modelspace->GetOrbitIndex( bra.op->n, bra.op->l, bra.op->j2, -bra.op->tz2 );
+        int bn = modelspace->GetOrbitIndex( bra.oq->n, bra.oq->l, bra.oq->j2, -bra.oq->tz2 );
+        if ( bra.op->tz2==1 )  std::swap(ap,an);
+        if ( bra.oq->tz2==1 )  std::swap(bp,bn);
+//        for (int iket=0;iket<nkets; iket++)
+        for (int iket=ibra;iket<nkets; iket++)
+        {
+           Ket& ket = tbc.GetKet( iket );
+           int cp = ket.p;
+           int dp = ket.q;
+           int cn = modelspace->GetOrbitIndex( ket.op->n, ket.op->l, ket.op->j2, -ket.op->tz2 );
+           int dn = modelspace->GetOrbitIndex( ket.oq->n, ket.oq->l, ket.oq->j2, -ket.oq->tz2 );
+           if ( ket.op->tz2==1 )  std::swap(cp,cn);
+           if ( ket.oq->tz2==1 )  std::swap(dp,dn);
+//           double Vpppp = this->TwoBody.GetTBME(ch,ch,ibra,iket);
+           double Vpppp = this->TwoBody.GetTBME_J(tbc.J,tbc.J, ap,bp,cp,dp);
+           double Vnnnn = this->TwoBody.GetTBME_J(tbc.J,tbc.J, an,bn,cn,dn);
+           double Vpnpn = this->TwoBody.GetTBME_J(tbc.J,tbc.J, ap,bn,cp,dn);
+           double Vpnnp = this->TwoBody.GetTBME_J(tbc.J,tbc.J, ap,bn,cn,dp);
+           double Vnpnp = this->TwoBody.GetTBME_J(tbc.J,tbc.J, an,bp,cn,dp);
+           double Vnppn = this->TwoBody.GetTBME_J(tbc.J,tbc.J, an,bp,cp,dn);
+           double VT1 = ( Vpppp + Vnnnn + 0.5*(Vpnpn + Vnpnp + Vpnnp + Vnppn) ) / 3;
+           double VT0 = 0.5*(Vpnpn + Vnpnp - Vpnnp - Vnppn);
+         
+           if ( not ( (ap==bp or cp==dp) and tbc.J%2==1 )  ) // Only set these if T=1 channel exists
+           {
+             double Norm_pp = 1.0;
+             if ( ap==bp) Norm_pp /= PhysConst::SQRT2;
+             if ( cp==dp) Norm_pp /= PhysConst::SQRT2;
+             OpIso.TwoBody.SetTBME_J( tbc.J,tbc.J,  ap,bp,cp,dp,  VT1*Norm_pp); // pppp
+             OpIso.TwoBody.SetTBME_J( tbc.J,tbc.J,  an,bn,cn,dn,  VT1*Norm_pp); // nnnn
+           }
+           OpIso.TwoBody.SetTBME_J( tbc.J,tbc.J,  ap,bn,cp,dn,  0.5*(VT1+VT0) ); // pnpn
+           OpIso.TwoBody.SetTBME_J( tbc.J,tbc.J,  an,bp,cn,dp,  0.5*(VT1+VT0) ); // npnp
+           OpIso.TwoBody.SetTBME_J( tbc.J,tbc.J,  an,bp,cp,dn,  0.5*(VT1-VT0) ); // nppn
+           OpIso.TwoBody.SetTBME_J( tbc.J,tbc.J,  ap,bn,cn,dp,  0.5*(VT1-VT0) ); // pnnp
+           
+        }
+      }
+   }
+   return OpIso;
+}
+
+
+
+
+
+
+
+
+ModelSpace* Operator::GetModelSpace() const
 {
   return modelspace;
 }

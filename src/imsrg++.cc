@@ -626,7 +626,7 @@ int main(int argc, char** argv)
      {
         Orbit& oi_old = modelspace.GetOrbit(i_old);
         index_t i_new = modelspace_imsrg.GetOrbitIndex( oi_old.n, oi_old.l, oi_old.j2, oi_old.tz2 );
-        Orbit& oi_new = modelspace.GetOrbit(i_new);
+//        Orbit& oi_new = modelspace.GetOrbit(i_new); // this isn't used.
         if ( oi_old.occ < 1e-8 and oi_old.cvq!=1 )  // a hole with such a small occupation is hopefully in the valence space.
         {
            std::cout << "WARNING. " << __FILE__ << "  line  " << __LINE__ << "  orbit " << i_old << "  has occupation " << oi_old.occ << "  but cvq = " << oi_old.cvq << std::endl;

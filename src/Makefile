@@ -11,17 +11,20 @@ CXXSTD = c++17
 .PHONY: version
 ALL = version libIMSRG.so imsrg++
 INSTDIR = $(HOME)
-INCLUDE   = -I./armadillo
+EXTERN = ../extern
+INCLUDE   = -I$(EXTERN)/armadillo
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
 #FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
 FLAGS     = -O3  -std=$(CXXSTD) -fopenmp -fPIC  # -march=native
 FLAGS    += $(WARNFLAGS)
 LIBS = -lopenblas -lgsl -lz
 LDFLAGS = -L$(PWD) 
-INCLUDE += -I./half/include
+INCLUDE += -I$(EXTERN)/half/include
 SOFLAGS = -shared $(FLAGS)
 #LIBS = -lblas -lgsl -lz
 LD_DIR=$(HOME)/lib
+
+BOOST_SRC = $(EXTERN)/boost_src
 
 # I assume we're running on linux
 OS = LINUX
@@ -68,7 +71,8 @@ ifeq (,$(shell which $(PYTHON_CONFIG) 2> /dev/null))
 endif
 PYTHON_CFLAGS = $(shell $(PYTHON_CONFIG) --cflags )
 PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags )
-PYTHON_INCLUDE = -I./pybind11/include
+#PYTHON_INCLUDE = -I./pybind11/include
+PYTHON_INCLUDE = -I$(EXTERN)/pybind11/include
 PYTHONFLAGS =  $(PYTHON_CFLAGS) -Wl,--no-as-needed
 PYTHON_COMMAND = python$(PYTHON_MAJOR_VERSION)
 
@@ -197,13 +201,13 @@ OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       TwoBodyChannel.o ThreeBodyChannel.o \
       ThreeBodyStorage.o ThreeBodyStorage_pn.o ThreeBodyStorage_iso.o \
       ThreeBodyStorage_no2b.o ThreeBodyStorage_mono.o ThreeLegME.o  \
-      boost_src/gzip.o boost_src/zlib.o   version.o  \
+      $(BOOST_SRC)/gzip.o $(BOOST_SRC)/zlib.o   version.o  \
       ReferenceImplementations.o
 #      ThreeBodyStorage_no2b.o ThreeLegME.o ThreeBodyMENO2B.o \
 #      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
 
 
-boost_src/%.o: boost_src/%.cpp
+$(BOOST_SRC)/%.o: $(BOOST_SRC)/%.cpp
 	$(CXX) -c $^ -o $@ $(INCLUDE) $(FLAGS)
 
 
@@ -239,7 +243,7 @@ version:
 #	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
 #
 clean:
-	rm -f *.o *.so boost_src/*.o
+	rm -f *.o *.so $(BOOST_SRC)/*.o
 
 test:
 	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He8','He8'); ut=pyIMSRG.UnitTest(ms); passed=ut.SanityCheck(); \

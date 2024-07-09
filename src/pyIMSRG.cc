@@ -200,6 +200,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("UndoNormalOrdering", &Operator::UndoNormalOrdering)
           .def("SetModelSpace", &Operator::SetModelSpace)
           .def("Truncate", &Operator::Truncate)
+          .def("DoIsospinAveraging", &Operator::DoIsospinAveraging)
           .def("Norm", &Operator::Norm)
           .def("OneBodyNorm", &Operator::OneBodyNorm)
           .def("TwoBodyNorm", &Operator::TwoBodyNorm)
@@ -445,6 +446,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("ReadOperator", &ReadWrite::ReadOperator)
           .def("ReadOperatorHuman", &ReadWrite::ReadOperatorHuman)
           .def("CompareOperators", &ReadWrite::CompareOperators)
+          .def("WriteOneBody_Simple", &ReadWrite::WriteOneBody_Simple)
           .def("ReadOneBody_Takayuki", &ReadWrite::ReadOneBody_Takayuki)
           .def("ReadTwoBody_Takayuki", &ReadWrite::ReadTwoBody_Takayuki)
           .def("WriteOneBody_Takayuki", &ReadWrite::WriteOneBody_Takayuki)
@@ -597,6 +599,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def(py::init<>())
           .def("SetType", &Generator::SetType, py::arg("gen_type"))
           .def("SetDenominatorPartitioning", &Generator::SetDenominatorPartitioning, py::arg("Moller_Plessett or Epstein_Nesbet"))
+          .def("SetUseIsospinAveraging", &Generator::SetUseIsospinAveraging, py::arg("tf"))
           .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
           .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
           .def("GetHod", &Generator::GetHod, py::arg("H"));
@@ -634,7 +637,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
        Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
        Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
-       Commutator.def("SetIMSRG3Verbose", &Commutator::SetIMSRG3Verbose, py::arg("tf"));
+       Commutator.def("SetVerbose", &Commutator::SetVerbose, py::arg("tf"));
        Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
        Commutator.def("PrintSettings", &Commutator::PrintSettings );
 
@@ -794,7 +797,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           //      .def(py::init<>())
           .def(py::init<ModelSpace &>())
           .def("SetRandomSeed", &UnitTest::SetRandomSeed)
-          .def("RandomOp", &UnitTest::RandomOp)
+          .def("RandomOp", &UnitTest::RandomOp, py::arg("modelspace"),py::arg("jrank"),py::arg("tz"),py::arg("parity"),py::arg("particle_rank"),py::arg("hermitian"))
           .def("TestCommutators", &UnitTest::TestCommutators)
           .def("TestCommutators_IsospinChanging", &UnitTest::TestCommutators_IsospinChanging)
           .def("TestCommutators_ParityChanging", &UnitTest::TestCommutators_ParityChanging)
