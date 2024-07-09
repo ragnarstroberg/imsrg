@@ -1,5 +1,6 @@
 
 #include "FactorizedDoubleCommutator.hh"
+#include "Commutator.hh"
 #include "PhysicalConstants.hh"
 
 
@@ -190,8 +191,11 @@ namespace Commutator
     }// for ch
 
 
-    Z.profiler.timer["_231_F_intermediateTB"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_intermediateTB"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
 #pragma omp parallel for schedule(dynamic,1)
@@ -229,8 +233,11 @@ namespace Commutator
         } // e
       }   // d
 
-    Z.profiler.timer["_231_F_indexd"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_indexd"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
 
@@ -270,8 +277,11 @@ namespace Commutator
         } // for q
       }   // for p
     
-    Z.profiler.timer["_231_F_indexp"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_indexp"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     if (use_goose_tank_only_1b)
     {
@@ -481,8 +491,11 @@ namespace Commutator
 
     }// for ch
 
-    Z.profiler.timer["_231_F_chi2_pp_fill_chi"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_chi2_pp_fill_chi"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
     // ###########################################################
@@ -537,9 +550,11 @@ namespace Commutator
     }   // for p
 
 
-    Z.profiler.timer["_231_F_chi2_pp_fill1b"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
-
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_chi2_pp_fill1b"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
     // *********************************************************************************** //
@@ -695,8 +710,12 @@ namespace Commutator
       IntermediateTwobody[ch_cc] = (2*J_cc+1) * Eta_bar * Eta_bar_nnnn * Gamma_bar;
     }// for ch_cc
 
-    Z.profiler.timer["_231_F_chi2_ph_fill_chi"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_chi2_ph_fill_chi"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
+
     // The two body operator
     //  Chi_222_a :
     //            eta |
@@ -779,8 +798,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_231_F_chi2_ph_fill1b"] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if ( Commutator::verbose )
+    {
+       Z.profiler.timer["_231_F_chi2_ph_fill1b"] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
     Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
@@ -1182,8 +1204,11 @@ namespace Commutator
     }
 
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+      Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+      t_internal = omp_get_wtime();
+    }
 
     //-------------------------------------------------------------------------------
  
@@ -1303,8 +1328,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+      Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+      t_internal = omp_get_wtime();
+    }
 
     // BUILD CHI_VI
     // Inverse Pandya transformation
@@ -1414,8 +1442,11 @@ namespace Commutator
     }
     // Todo End ###########################################
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+      Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+      t_internal = omp_get_wtime();
+    }
 
 
 
@@ -1448,8 +1479,11 @@ namespace Commutator
 
     }     // J0 channel
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+      Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+      t_internal = omp_get_wtime();
+    }
 
 
 
@@ -1467,9 +1501,11 @@ namespace Commutator
     }
 
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
-
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     // this loop appears to be broken.
     // full matrix
@@ -1572,9 +1608,11 @@ namespace Commutator
 
 
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
-
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
     std::deque<arma::mat> barCHI_III_RC(n_nonzero); // released Recoupled bar CHI_III
@@ -1706,8 +1744,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     /// release memory
     for (size_t ch_cc = 0; ch_cc < n_nonzero; ch_cc++)
@@ -1817,9 +1858,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
-
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
 
     /// release memory    
@@ -1854,9 +1897,11 @@ namespace Commutator
     }
     barCHI_III_RC.clear();
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
-
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
     //  Inverse Pandya transformation
     //  X^J_ijkl  = - ( 1- P_ij ) ( 1- P_kl ) (-)^{J + ji + jj}  sum_J' (2J'+1)
     //                (-)^{J' + ji + jk}  { j i J }  \bar{X}^J'_jl`ki`
@@ -1980,8 +2025,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
     
     for (int ch = 0; ch < nch; ++ch)
     {
@@ -2011,9 +2059,11 @@ namespace Commutator
     }
     bar_CHI_V_RC.clear();
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
-
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
     //  Inverse Pandya transformation
     //  X^J_ijkl  = - ( 1- P_ij ) ( 1- P_kl ) (-)^{J + ji + jj}  sum_J' (2J'+1)
     //                (-)^{J' + ji + jk}  { j i J }  \bar{X}^J'_jl`ki`
@@ -2134,8 +2184,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     for (int ch = 0; ch < nch; ++ch)
     {
@@ -2171,8 +2224,11 @@ namespace Commutator
     bar_CHI_IV.clear();
     bar_Gamma.clear();
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     //  Inverse Pandya transformation
     //  X^J_ijkl  = - ( 1- P_ij ) ( 1- P_kl ) (-)^{J + ji + jj}  sum_J' (2J'+1)
@@ -2297,8 +2353,11 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
 
@@ -2331,8 +2390,12 @@ namespace Commutator
       bar_CHI_VII_CC_ef[ch_cc] = Multi_matirx + hZ * Multi_matirx.t();
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     // release bar_Eta
     // release bar_CHI_VII_CC
@@ -2467,8 +2530,12 @@ namespace Commutator
       }
     }
 
-    Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
-    t_internal = omp_get_wtime();
+
+    if (Commutator::verbose)
+    {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+    }
 
     for (int ch_cc = 0; ch_cc < n_nonzero; ++ch_cc)
     {
