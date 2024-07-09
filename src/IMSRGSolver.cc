@@ -1149,6 +1149,10 @@ double IMSRGSolver::CalculatePerturbativeTriples()
   Operator Htilde = Transform(*H_0);
   BCH::SetBCHSkipiEq1(false);
 
+  // We double the first commutator account for [O,[O,H]_3]_3 diagrams which produce identical Wod and which we would otherwise miss
+  // Leave this off for now.
+//  Htilde.TwoBody  += 0.5*Commutator::Commutator(omega,*H_0).TwoBody ;
+
   // Need to put the one-body part of H into Wbar so we can get the denominators. I'm not sure this is the best way to do that...
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
