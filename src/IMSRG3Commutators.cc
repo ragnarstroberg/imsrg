@@ -8103,6 +8103,4 @@ namespace Commutator
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
-
-
 }// namespace Commutator

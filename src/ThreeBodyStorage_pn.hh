@@ -36,6 +36,11 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   ME_type GetME_pn(  int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) const override;
   ME_type GetME_iso( int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f) const override;
 
+  // tensor getters
+  ME_type GetME_pn(  int Jab, int j0, int Jde, int j1, int a, int b, int c, int d, int e, int f) const override;
+
+
+
 //  void SetME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, pnME_type V) override;
 //  void AddToME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ME_type V) override;
 
