@@ -1148,6 +1148,8 @@ double IMSRGSolver::CalculatePerturbativeTriples()
   BCH::SetBCHSkipiEq1(true);
   Operator Htilde = Transform(*H_0);
   BCH::SetBCHSkipiEq1(false);
+  // We double all the commutators beyond the first, because they account for [O,[O,H]_3]_3 diagrams which we would otherwise miss
+  Htilde.TwoBody  += 0.5*Commutator::Commutator(omega,*H_0).TwoBody ;
 
   // Need to put the one-body part of H into Wbar so we can get the denominators. I'm not sure this is the best way to do that...
   Wbar.OneBody = Hs.OneBody;
