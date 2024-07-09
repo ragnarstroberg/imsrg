@@ -193,7 +193,7 @@ all: $(ALL)
 	@echo Building with build version $(BUILDVERSION)
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o AngMomCache.o\
+      HartreeFock.o imsrg_util.o Generator.o GeneratorPV.o IMSRGSolver.o IMSRGSolverPV.o AngMom.o AngMomCache.o\
       IMSRGProfiler.o \
 	  BCH.o Commutator.o TensorCommutators.o IMSRG3Commutators.o DaggerCommutators.o FactorizedDoubleCommutator.o\
 	  HFMBPT.o  RPA.o\
