@@ -107,6 +107,9 @@ class ThreeBodyME
   ThreeBME_type GetME_iso( int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f) const;
   ThreeBME_type GetME_iso( int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int a, int b, int c, int d, int e, int f) const;
 
+  // tensor geteters
+  ThreeBME_type GetME_pn(  int Jab_in, int j0, int Jde_in, int j1, int a, int b, int c, int d, int e, int f) const;
+
   // The setters are only safe when setting in the appropriate formalism.
   // If we're storing in isospin and want to set a pn matrix element, things get messy. Likewise for adding.
   void SetME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ThreeBME_type V);

@@ -122,9 +122,11 @@ namespace BCH
     {
       //     Operator OpNested = OpIn;
       Operator OpNested = OpOut;
+
 //      Operator OpNested_last = OpOut*0;
 //      Operator OpNested_last_last = OpOut*0;
 //      Operator OpNested_last_last_last = OpOut*0;
+
 
 
       double epsilon = nx * exp(-2 * ny) * bch_transform_threshold / (2 * ny); // this should probably be explained somewhere...
@@ -160,6 +162,7 @@ namespace BCH
         OpNested = Commutator::Commutator(Omega, OpNested); // the ith nested commutator
 
 
+
         int i_min_factorized = bch_skip_ieq1 ? 2 : 1;
         if (i > i_min_factorized and use_factorized_correction)
         {
@@ -180,6 +183,7 @@ namespace BCH
         {
           std::cout << "Tensor BCH, i=" << i << "  Norm = " << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.OneBodyNorm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.TwoBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.ThreeBody.Norm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.Norm() << std::endl;
         }
         epsilon *= i + 1;

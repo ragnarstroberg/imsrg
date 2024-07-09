@@ -39,6 +39,14 @@ namespace Commutator
     void comm222_pp_hh_221st(const Operator &X, const Operator &Y, Operator &Z);
     void comm222_phst(const Operator &X, const Operator &Y, Operator &Z);
 
+    // scalar-tensor with a 3b operator
+    void comm331st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+    void comm223st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+    void comm231st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+    void comm232st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+    void comm133st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+    void comm132st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+
 }// namespace Commutator
 
 #endif

@@ -38,6 +38,7 @@ namespace Commutator
 {
 
     extern bool single_thread;
+    extern bool verbose;
 
     extern std::map<std::string, bool> comm_term_on; // This allows turning on/off individual IMSRG(3) commutator terms for testing.
 
@@ -45,6 +46,9 @@ namespace Commutator
     void SetUseIMSRG3(bool tf);
     void SetUseIMSRG3N7(bool tf);
     void SetUseIMSRG3_MP4(bool tf);
+    void SetVerbose(bool tf); //Controls if we print out more timing info, useful for optimization work.
+
+    void SetUseIMSRG3N7_Tensor(bool tf);
 
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);
