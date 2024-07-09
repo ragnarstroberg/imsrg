@@ -5119,4 +5119,3 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  
 
 }// namespace imsrg_util
-
