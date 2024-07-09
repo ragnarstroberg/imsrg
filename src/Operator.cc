@@ -455,6 +455,17 @@ Operator Operator::DoNormalOrderingCore() const
 }
 
 
+Operator Operator::DoNormalOrderingFilledValence() const
+{
+  std::cout << " IN " << __func__ << "   legs = " << legs << std::endl;
+   if (legs%2>0)
+      return DoNormalOrderingDagger(+1, modelspace->valence);
+   if (legs>5)
+      return DoNormalOrdering3(+1, modelspace->valence);
+   else
+      return DoNormalOrdering2(+1, modelspace->valence);
+}
+
 //*************************************************************
 ///  Normal ordering of a 2body operator
 ///  set up for scalar or tensor operators, but
