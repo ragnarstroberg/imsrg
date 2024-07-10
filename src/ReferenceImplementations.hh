@@ -57,13 +57,18 @@ namespace ReferenceImplementations
   void comm222_phst(const Operator &X, const Operator &Y, Operator &Z);
 
   // scalar-tensor with a 3b operator
-  void comm331st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-  void comm223st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-  void comm231st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-  void comm232st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-  void comm133st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-  void comm132st(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
-  void comm332_ppph_hhhpst(const Operator &X, const Operator &Y, Operator &Z);
+  void comm331st(const Operator &X, const Operator &Y, Operator &Z);            // PASS the unit test
+  void comm223st(const Operator &X, const Operator &Y, Operator &Z);            // PASS the unit test
+  void comm231st(const Operator &X, const Operator &Y, Operator &Z);            // PASS the unit test
+  void comm232st(const Operator &X, const Operator &Y, Operator &Z);            // PASS the unit test
+  void comm133st(const Operator &X, const Operator &Y, Operator &Z);            // PASS the unit test
+  void comm132st(const Operator &X, const Operator &Y, Operator &Z);            // PASS the unit test
+  void comm332_pphhst(const Operator &X, const Operator &Y, Operator &Z);       // PASS the unit test
+  void comm332_ppph_hhhpst(const Operator &X, const Operator &Y, Operator &Z);  // PASS the unit test
+  void comm233_pp_hhst(const Operator &X, const Operator &Y, Operator &Z);      // PASS the unit test
+  void comm233_phst(const Operator &X, const Operator &Y, Operator &Z);         // PASS the unit test
+  void comm333_ppp_hhhst(const Operator &X, const Operator &Y, Operator &Z);    // PASS the unit test
+  void comm333_pph_hhpst(const Operator &X, const Operator &Y, Operator &Z);
 
 
   /// Two-nested-commutator expressions Z = [X,[X,Y]_3]  where X and Y are 2-body.
