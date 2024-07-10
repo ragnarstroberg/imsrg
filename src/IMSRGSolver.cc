@@ -1148,8 +1148,9 @@ double IMSRGSolver::CalculatePerturbativeTriples()
   BCH::SetBCHSkipiEq1(true);
   Operator Htilde = Transform(*H_0);
   BCH::SetBCHSkipiEq1(false);
-  // We double all the commutators beyond the first, because they account for [O,[O,H]_3]_3 diagrams which we would otherwise miss
-  Htilde.TwoBody  += 0.5*Commutator::Commutator(omega,*H_0).TwoBody ;
+//  // We double all the commutators beyond the first, because they account for [O,[O,H]_3]_3 diagrams which we would otherwise miss
+//  Dont do this for now.
+//  Htilde.TwoBody  += 0.5*Commutator::Commutator(omega,*H_0).TwoBody ;
 
   // We double the first commutator account for [O,[O,H]_3]_3 diagrams which produce identical Wod and which we would otherwise miss
   // Leave this off for now.

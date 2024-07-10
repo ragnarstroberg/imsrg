@@ -122,12 +122,9 @@ namespace BCH
     {
       //     Operator OpNested = OpIn;
       Operator OpNested = OpOut;
-
 //      Operator OpNested_last = OpOut*0;
 //      Operator OpNested_last_last = OpOut*0;
 //      Operator OpNested_last_last_last = OpOut*0;
-
-
 
       double epsilon = nx * exp(-2 * ny) * bch_transform_threshold / (2 * ny); // this should probably be explained somewhere...
       for (int i = 1; i <= max_iter; ++i)
