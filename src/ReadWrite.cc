@@ -5003,6 +5003,8 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
     orbits_remap[iorb] = io;
   }
 
+   std::getline( infile, line );
+
 
 //  skip_comments(infile);
 //  getline(infile, line);
@@ -5403,12 +5405,15 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
 void ReadWrite::skip_comments(std::ifstream& in)
 {
   size_t pos1, pos2, size_check=8;
+  pos1 = size_check+1;
+  pos2 = size_check+1;
   std::streampos oldpos=in.tellg();
   for( std::string line; getline(in, line);)
   {
     std::string com=line.substr(0,size_check);
     pos1=com.find('#');
     pos2=com.find('!');
+//    std::cout << " " << __func__ << "  line = " << line << "  pos1 , pos2 = " << pos1 << " " << pos2 << std::endl;
     if(pos1 > size_check and pos2 > size_check)
     {
       in.seekg (oldpos);
