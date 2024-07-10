@@ -5053,6 +5053,10 @@ bool UnitTest::TestPerturbativeTriples()
               << " , but calculating directly with commutators I get " << W.ZeroBody << "     diff = " << diff
               << std::endl;
   }
+  else
+  {
+    std::cout << "W0 = " << W.ZeroBody << "  triples = " << triples << " difference = " << diff << std::endl;
+  }
 
   return passed;
 }
