@@ -5139,6 +5139,58 @@ bool UnitTest::TestFactorizedDoubleCommutators()
   return passed;
 }
 
+
+
+bool UnitTest::TestPerturbativeTriples()
+{
+  bool passed = true;
+
+  Operator H = RandomOp( *modelspace, 0,0,0, 2, +1);
+  Operator Omega = RandomOp( *modelspace, 0,0,0, 2, -1);
+  H /= H.Norm();
+  Omega /= Omega.Norm();
+
+  IMSRGSolver imsrgsolver( H );
+  imsrgsolver.SetOmega(0, Omega);
+  double triples = imsrgsolver.CalculatePerturbativeTriples();
+
+  /// Now we do it out explicitly as a cross check.
+  Operator W = H;
+  W.ThreeBody.SetMode("pn");
+  W.SetParticleRank(3);
+
+  BCH::SetBCHSkipiEq1(true);
+  Operator Htilde = imsrgsolver.Transform(H);
+  BCH::SetBCHSkipiEq1(false);
+
+  Operator Eta = W;
+  Eta.SetAntiHermitian();
+  Commutator::comm223ss( Omega, Htilde, W);
+  imsrgsolver.SetGenerator("white");
+  imsrgsolver.SetDenominatorPartitioning("Moller_Plesset");
+  imsrgsolver.generator.Update(W,Eta);
+  Eta.EraseOneBody();
+  Eta.EraseTwoBody();
+  Operator Wtmp = 0.5*W;
+  Commutator::comm133ss(Eta,Wtmp,W);
+  W.ZeroBody =0;
+  Commutator::comm330ss(Eta,W,W);
+  double diff = W.ZeroBody - triples;
+  passed = std::abs( diff ) < 1e-6;
+  if (not passed)
+  {
+    std::cout << __func__ << " Uh oh. Using IMSRGSolver.CalculatePerturbativeTriples() I get " << triples
+              << " , but calculating directly with commutators I get " << W.ZeroBody << "     diff = " << diff
+              << std::endl;
+  }
+  else
+  {
+    std::cout << "W0 = " << W.ZeroBody << "  triples = " << triples << " difference = " << diff << std::endl;
+  }
+
+  return passed;
+}
+
 bool UnitTest::SanityCheck()
 {
 
