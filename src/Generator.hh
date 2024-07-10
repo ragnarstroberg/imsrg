@@ -63,8 +63,8 @@ class Generator
   void Update(Operator& H_s, Operator& Eta_s);
   void AddToEta(Operator& H_s, Operator& Eta_s);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
-  void SetDenominatorDelta(double d){denominator_delta=d;};
-  void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
+  void SetDenominatorDelta(double d){denominator_delta=d;};         // call SetDenominatorDeltaIndex(-12345) to use it
+  void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};  
   void SetDenominatorDeltaOrbit(std::string orb);
   void SetUseIsospinAveraging( bool tf ){use_isospin_averaging=tf;};
 

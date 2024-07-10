@@ -723,6 +723,7 @@ Operator Generator::GetHod_ShellModel(Operator& H)
 
     }
 
+
  
     // off-diagonal:   <ppp|ccc>, <ppp|vcc>, <ppp|vvc>, <qpp|vvv>  where p is v or q
     //                 
@@ -736,6 +737,7 @@ Operator Generator::GetHod_ShellModel(Operator& H)
       {
         Ket3& bra = Tbc.GetKet(ibra);
         if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
+
         
         for (size_t iket=0; iket<nkets3; iket++)
         {
@@ -743,9 +745,11 @@ Operator Generator::GetHod_ShellModel(Operator& H)
            if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
            if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
 
+
            double ME_od = H.ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
 
            Hod.ThreeBody.SetME_pn_ch( ch3,ch3,ibra,iket,  ME_od); // hermitian conjugate automatically gets added
+
            
         }// for iket
       }// for ibra

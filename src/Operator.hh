@@ -176,6 +176,7 @@ class Operator
   Operator DoNormalOrdering2(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered three-body operator
   Operator DoNormalOrderingCore() const; ///< Normal order with respect to core
+  Operator DoNormalOrderingFilledValence() const; ///< Normal order with respect to a filled valence space
 //  Operator DoNormalOrdering2(int sign=+1) const; ///< Returns the normal ordered two-body operator
 //  Operator DoNormalOrdering3(int sign=+1) const; ///< Returns the normal ordered three-body operator
   Operator DoNormalOrderingDagger(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered dagger operator
