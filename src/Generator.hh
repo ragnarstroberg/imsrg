@@ -28,7 +28,7 @@
 
 class Generator
 {
- private:
+ protected: //DK: Was private. Changed to inherit into GeneratorPV 
   Operator * H;
   Operator * Eta;
 

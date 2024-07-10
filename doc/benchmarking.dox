@@ -1,0 +1,41 @@
+
+/*! \page benchmarking Benchmarking
+  \tableofcontents
+
+  \section bm_nscm Comparison to No-core Shell Model
+
+  Calculation performed with Entem & Machleidt N\f$^{3}\f$LO NN and
+  N\f$^{2}\f$LO 3N chiral interaction, free-space SRG evolved in with
+  a \f$ T_{rel} \f$ generator to \f$\alpha=0.0625\f$ fm\f$^{4}\f$,
+  which corresponds to \f$\Lambda_{SRG}=2.0\f$ fm\f$^{-1}\f$.
+  NCSM values are taken from
+  <a href=http://journals.aps.org/prl/abstract/10.1103/PhysRevLett.109.052501>
+     Roth et. al. PRL 109 052501 (2012)</a>.
+  Here, NCSM NO indicates the normal-ordered approximation of the three-body
+  interaction.
+  @image latex Benchmark_NCSM.pdf "Comparison with NCSM" width=15cm
+  @image html Benchmark_NCSM.png
+
+
+
+  \section bm_li6 6Li
+   
+
+
+  \section bm_o22 Oxygen 22
+  @image latex O22NO.pdf "O22NO" width=15cm
+  @image html O22NO.png
+  More text.
+
+  \section bm_timing Performance
+  @image latex timing2.pdf "Scaling with threads" width=15cm
+  @image html timing2.png
+  The above plot shows timing of the most time-intensive function calls as a function of the number of threads used.
+  The y axis is presented as the inverse of the time per commutator call (so higher numbers mean better performance),
+  so that perfect scaling has a slope of 1, while no benefit has a slope of zero. Clearly, the parallelization is nearly
+  ideal for all functions shown except for the file reading, which has not been parallelized. Note that the curves at the
+  bottom are the slowest ones and so are the primary target for improvement.
+
+
+
+ */

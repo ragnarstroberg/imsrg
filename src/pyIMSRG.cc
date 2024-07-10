@@ -595,6 +595,16 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def_readwrite("n_omega_written", &IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
           ;
 
+   py::class_<IMSRGSolverPV,IMSRGSolver>(m,"IMSRGSolverPV")
+      .def(py::init<Operator&,Operator&,Operator&,Operator&>())
+      .def("Solve_RK4",&IMSRGSolverPV::Solve_flow_RK4_PV)
+      .def("GetH_s",&IMSRGSolverPV::GetH_s)
+      .def("GetVPT_s",&IMSRGSolverPV::GetVPT_s)
+      .def("GetSchiff_s",&IMSRGSolverPV::GetSchiff_s)
+      .def("GetSchiffpp_s",&IMSRGSolverPV::GetSchiffpp_s)
+      .def("SetGeneratorPV",&IMSRGSolverPV::SetGeneratorPV)
+   ;      
+
 
       py::class_<Generator>(m, "Generator")
           .def(py::init<>())
@@ -604,6 +614,14 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
           .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
           .def("GetHod", &Generator::GetHod, py::arg("H"));
+
+    py::class_<GeneratorPV,Generator>(m,"GeneratorPV")
+        .def(py::init<>())
+        .def("SetType", &Generator::SetType, py::arg("gen_type"))
+        .def("Update", &GeneratorPV::Update, py::arg("H"), py::arg("V"), py::arg("Eta"), py::arg("Etapv"))
+         ;
+
+
 
       py::class_<IMSRGProfiler>(m, "IMSRGProfiler")
           .def(py::init<>())
@@ -900,6 +918,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       m.def("AllowedGamowTeller_Op", imsrg_util::AllowedGamowTeller_Op);
       m.def("ElectricMultipoleOp", imsrg_util::ElectricMultipoleOp);
       m.def("MagneticMultipoleOp", imsrg_util::MagneticMultipoleOp);
+      m.def("SchiffOp",imsrg_util::SchiffOp);
       m.def("Sigma_Op", imsrg_util::Sigma_Op);
       m.def("Isospin2_Op", imsrg_util::Isospin2_Op);
       m.def("LdotS_Op", imsrg_util::LdotS_Op);

@@ -851,7 +851,6 @@ int main(int argc, char** argv)
 
 
 
-
   if (method == "FCI")
   {
    if ( valence_file_format == "tokyo" )
