@@ -404,6 +404,7 @@ class ModelSpace
    std::vector<index_t> String2Index( std::vector<std::string> vs );
    std::string Index2String(index_t ind);
    void Get0hwSpace(int Aref, int Zref, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list);
+   void GetjjSpace(int Aref, int Zref, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list);
 //   void Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list);
    void ParseCommaSeparatedValenceSpace(std::string valence, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list);
 //   void ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list);
