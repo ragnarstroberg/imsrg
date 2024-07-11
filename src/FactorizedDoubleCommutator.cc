@@ -979,6 +979,12 @@ namespace Commutator
         } // for q
       }   // for p
 
+    if (Commutator::verbose)
+    {
+      Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+      t_internal = omp_get_wtime();
+    }
+
 /// Now use the intermediate to form the double commutator
 #pragma omp parallel for schedule(dynamic, 1)
       for (int ich = 0; ich < nch; ich++)
@@ -1038,6 +1044,12 @@ namespace Commutator
         }   // for ibra
 
       } // for itmat
+
+     if (Commutator::verbose)
+     {
+       Z.profiler.timer["_"+std::string(__func__) + "_" + std::to_string(__LINE__)] += omp_get_wtime() - t_internal;
+       t_internal = omp_get_wtime();
+     }
 
       CHI_I.clear();
       CHI_II.clear();
