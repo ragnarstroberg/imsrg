@@ -65,13 +65,20 @@ namespace Commutator
       {"comm333_pph_hhpss", false},
       ////////  tensor commutators in IMSRG(3)
       ////////  by default IMSRG(3) terms are turned off.
+      /// 3n7
       {"comm331st", false},
       {"comm231st", false},
       {"comm232st", false},
       {"comm132st", false},
       {"comm223st", false},
       {"comm133st", false},
-
+      /// above 3n7
+      {"comm332_pphhst", false},
+      {"comm332_ppph_hhhpst", false},
+      {"comm233_pp_hhst", false},
+      {"comm233_phst", false},
+      {"comm333_ppp_hhhst", false},
+      {"comm333_pph_hhpst", false},
   };
 
   void TurnOffTerm(std::string term) { comm_term_on[term] = false; }
@@ -128,6 +135,27 @@ namespace Commutator
     for (std::string term : {
             "comm331st", "comm231st", "comm132st", "comm232st",
             "comm133st", "comm223st"})
+    {
+      comm_term_on[term] = tf;
+    }
+
+    for (std::string term : {
+            "comm332_pphhst", "comm332_ppph_hhhpst", "comm233_pp_hhst", 
+            "comm233_phst", "comm333_ppp_hhhst", "comm333_pph_hhpst"})
+    {
+      comm_term_on[term] = false;
+    }
+
+  }
+
+  void SetUseIMSRG3_Tensor(bool tf)
+  {
+    use_imsrg3 = tf;
+    for (std::string term : {
+            "comm331st", "comm231st", "comm132st", "comm232st",
+            "comm133st", "comm223st", 
+            "comm332_pphhst", "comm332_ppph_hhhpst", "comm233_pp_hhst", 
+            "comm233_phst", "comm333_ppp_hhhst", "comm333_pph_hhpst"})
     {
       comm_term_on[term] = tf;
     }
@@ -510,6 +538,33 @@ namespace Commutator
         comm133st(X, Y, Z);
       if (comm_term_on["comm223st"])
         comm223st(X, Y, Z);
+
+      // Not too bad, though naively n^8
+      if (comm_term_on["comm233_pp_hhst"])
+        comm233_pp_hhst(X, Y, Z);
+
+      // This one is super slow too. It involves 9js
+      // mat mult makes everything better!
+      if (comm_term_on["comm233_phst"])
+        comm233_phst(X, Y, Z);
+
+      // not too bad, though naively n^8
+      if (comm_term_on["comm332_ppph_hhhpst"])
+        comm332_ppph_hhhpst(X, Y, Z);
+
+      // naively n^8, but reasonably fast when implemented as a mat mult
+      if (comm_term_on["comm332_pphhst"])
+        comm332_pphhst(X, Y, Z);
+
+      // naively n^9 but pretty fast as a mat mult
+      if (comm_term_on["comm333_ppp_hhhst"])
+        comm333_ppp_hhhst(X, Y, Z);
+
+      // This one works, but it's incredibly slow.  naively n^9.
+      // Much improvement by going to mat mult
+      if (comm_term_on["comm333_pph_hhpst"])
+        comm333_pph_hhpst(X, Y, Z);
+
     } // if imsrg3 and above threshold
 
     // This is a better place to put this.

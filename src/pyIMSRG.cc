@@ -653,14 +653,13 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
        Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
        Commutator.def("SetUseIMSRG3N7_Tensor", &Commutator::SetUseIMSRG3N7_Tensor);
+       Commutator.def("SetUseIMSRG3_Tensor", &Commutator::SetUseIMSRG3_Tensor);
        Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
        Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
        Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
        Commutator.def("SetVerbose", &Commutator::SetVerbose, py::arg("tf"));
        Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
        Commutator.def("PrintSettings", &Commutator::PrintSettings );
-
-
 
        // IMSRG(2) commutators
        Commutator.def("comm110ss", &Commutator::comm110ss);
