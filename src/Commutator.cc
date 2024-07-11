@@ -571,11 +571,13 @@ namespace Commutator
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
 
-    arma::mat xyyx = X.OneBody * Y.OneBody - Y.OneBody * X.OneBody;
+//    arma::mat xyyx = X.OneBody * Y.OneBody - Y.OneBody * X.OneBody;
+    arma::vec xyyx = arma::diagvec(X.OneBody * Y.OneBody - Y.OneBody * X.OneBody);
     for (auto &a : Z.modelspace->holes)
     {
       Orbit &oa = Z.modelspace->GetOrbit(a);
-      Z.ZeroBody += (oa.j2 + 1) * oa.occ * xyyx(a, a);
+//      Z.ZeroBody += (oa.j2 + 1) * oa.occ * xyyx(a, a);
+      Z.ZeroBody += (oa.j2 + 1) * oa.occ * xyyx(a);
     }
     X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
