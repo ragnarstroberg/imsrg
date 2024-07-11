@@ -49,6 +49,7 @@ namespace Commutator
     void SetVerbose(bool tf); //Controls if we print out more timing info, useful for optimization work.
 
     void SetUseIMSRG3N7_Tensor(bool tf);
+    void SetUseIMSRG3_Tensor(bool tf);
 
     void TurnOffTerm(std::string term);
     void TurnOnTerm(std::string term);

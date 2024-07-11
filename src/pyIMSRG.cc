@@ -653,14 +653,13 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
        Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
        Commutator.def("SetUseIMSRG3N7_Tensor", &Commutator::SetUseIMSRG3N7_Tensor);
+       Commutator.def("SetUseIMSRG3_Tensor", &Commutator::SetUseIMSRG3_Tensor);
        Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
        Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
        Commutator.def("SetThreebodyThreshold", &Commutator::SetThreebodyThreshold);
        Commutator.def("SetVerbose", &Commutator::SetVerbose, py::arg("tf"));
        Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
        Commutator.def("PrintSettings", &Commutator::PrintSettings );
-
-
 
        // IMSRG(2) commutators
        Commutator.def("comm110ss", &Commutator::comm110ss);
@@ -761,6 +760,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm223ss", &ReferenceImplementations::comm223ss);
        ReferenceImplementations.def("comm232ss", &ReferenceImplementations::comm232ss);
        ReferenceImplementations.def("comm231ss", &ReferenceImplementations::comm231ss);
+       ReferenceImplementations.def("comm332_pphhss", &ReferenceImplementations::comm332_pphhss);
        //
        ReferenceImplementations.def("diagram_CIa", &ReferenceImplementations::diagram_CIa);
        ReferenceImplementations.def("diagram_CIb", &ReferenceImplementations::diagram_CIb);
@@ -781,6 +781,8 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm223_232", &ReferenceImplementations::comm223_232);
        ReferenceImplementations.def("comm331ss", &ReferenceImplementations::comm331ss);
        ReferenceImplementations.def("comm133ss", &ReferenceImplementations::comm133ss);
+       ReferenceImplementations.def("comm233_pp_hhss", &ReferenceImplementations::comm233_pp_hhss); 
+       ReferenceImplementations.def("comm233_phss", &ReferenceImplementations::comm233_phss); 
 
        ReferenceImplementations.def("comm331st", &ReferenceImplementations::comm331st);
        ReferenceImplementations.def("comm223st", &ReferenceImplementations::comm223st);
@@ -789,6 +791,11 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm133st", &ReferenceImplementations::comm133st);
        ReferenceImplementations.def("comm132st", &ReferenceImplementations::comm132st);    
        ReferenceImplementations.def("comm332_ppph_hhhpst", &ReferenceImplementations::comm332_ppph_hhhpst);  
+       ReferenceImplementations.def("comm332_pphhst", &ReferenceImplementations::comm332_pphhst);  
+       ReferenceImplementations.def("comm233_pp_hhst", &ReferenceImplementations::comm233_pp_hhst);  
+       ReferenceImplementations.def("comm233_phst", &ReferenceImplementations::comm233_phst);  
+       ReferenceImplementations.def("comm333_ppp_hhhst", &ReferenceImplementations::comm333_ppp_hhhst);  
+       ReferenceImplementations.def("comm333_pph_hhpst", &ReferenceImplementations::comm333_pph_hhpst); 
 
 
       py::class_<RPA>(m, "RPA")
@@ -889,6 +896,14 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm133st", &UnitTest::Mscheme_Test_comm133st)
           .def("Mscheme_Test_comm132st", &UnitTest::Mscheme_Test_comm132st)
           .def("Mscheme_Test_comm332_ppph_hhhpst", &UnitTest::Mscheme_Test_comm332_ppph_hhhpst)
+          .def("Mscheme_Test_comm332_pphhst", &UnitTest::Mscheme_Test_comm332_pphhst)
+          .def("Mscheme_Test_comm233_pp_hhst", &UnitTest::Mscheme_Test_comm233_pp_hhst)
+          .def("Mscheme_Test_comm233_phst", &UnitTest::Mscheme_Test_comm233_phst)
+          .def("Mscheme_Test_comm233_phst", &UnitTest::Mscheme_Test_comm233_phst)
+          .def("Mscheme_Test_comm333_ppp_hhhst", &UnitTest::Mscheme_Test_comm333_ppp_hhhst)
+          .def("Mscheme_Test_comm333_pph_hhpst", &UnitTest::Mscheme_Test_comm333_pph_hhpst)
+
+
 
           .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) // Op, a,ma, b,mb...
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)                                                                          // Op, a,ma, b,mb...
