@@ -409,6 +409,21 @@ void TwoBodyME::GetTBME_J_norm_twoOps(const TwoBodyME& OtherTBME, int j_bra, int
 }
 
 
+void TwoBodyME::GetTBME_J_twoOps(const TwoBodyME& OtherTBME, int j_bra, int j_ket, int a, int b, int c, int d, double& tbme_this, double& tbme_other) const
+{
+   GetTBME_J_norm_twoOps(OtherTBME, j_bra,j_ket, a,b,c,d, tbme_this, tbme_other);
+   if (a==b)
+   {
+      tbme_this *= PhysConst::SQRT2;
+      tbme_other *= PhysConst::SQRT2;
+   }
+   if (c==d)
+   {
+      tbme_this *= PhysConst::SQRT2;
+      tbme_other *= PhysConst::SQRT2;
+   }
+}
+
 // for backwards compatibility...
 double TwoBodyME::GetTBME(int ch, int a, int b, int c, int d) const
 {
