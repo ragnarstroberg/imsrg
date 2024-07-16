@@ -132,6 +132,15 @@ namespace imsrg_util
          }
          theop =  GaussianPotential(modelspace,sigma);
       }
+      else if (opnamesplit[0] =="VGausCSB")
+      {
+         double sigma = 1.0;
+         if ( opnamesplit.size() > 1 ) 
+         {
+           std::istringstream( opnamesplit[1] ) >> sigma;
+         }
+         theop =  GaussianCSBPotential(modelspace,sigma);
+      }
       else if (opnamesplit[0] =="VSDI")
       {
 //        std::cout << "    " << opnamesplit[0] << " " << opnamesplit[1] << " " << opnamesplit[2] << std::endl;
@@ -4405,6 +4414,45 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
        Ket& ket = tbc.GetKet(iket);
 //       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
        double vminn = MinnesotaMatEl( modelspace, bra, ket, J, params);
+       Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
+       Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
+     }
+    }
+   }
+   return Vminnesota;
+ }
+
+ // A gaussian potential with strength 1.0
+ // We just reuse the Minnesota potential code and set the singlet and triplet strengths to zero
+ Operator GaussianCSBPotential( ModelSpace& modelspace, double sigma )
+ {
+   double VR = 1.0 ;
+////   double VT = -178. ;
+//   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+//   double VS = -91.85 ;
+   double kR = 1.0 / (2*sigma*sigma); // make things dimensionless
+//   double kR = 1.487 * oscillator_b2; // make things dimensionless
+//   double kT = 0.639 * oscillator_b2;
+//   double kS = 0.465 * oscillator_b2;
+   std::array<double,6> params = {VR,0.0,0.0, kR,1,1};
+   Operator Vminnesota(modelspace, 0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+//       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
+       double vminn = -tbc.Tz * MinnesotaMatEl( modelspace, bra, ket, J, params);
        Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
        Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
      }

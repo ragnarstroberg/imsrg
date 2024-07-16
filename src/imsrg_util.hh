@@ -148,6 +148,7 @@ namespace imsrg_util
 
  Operator MinnesotaPotential( ModelSpace& modelspace );
  Operator GaussianPotential( ModelSpace& modelspace, double sigma );
+ Operator GaussianCSBPotential( ModelSpace& modelspace, double sigma );
  double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params );
 // double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J );
  Operator SerberTypePotential( ModelSpace& modelspace, double V0, double mu, double A, double B, double C, double D); // not yet implemented
