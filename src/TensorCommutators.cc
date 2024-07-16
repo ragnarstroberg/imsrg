@@ -1474,7 +1474,7 @@ namespace Commutator
                           if (std::abs(j0 - j1) > Lambda * 2 or (j0 + j1) < Lambda * 2)
                             continue;
                           //double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
-                          double sixj1 = Z.modelspace->GetSixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
 
                           if (std::abs(sixj1) < 1.e-6)
                             continue;
@@ -1500,7 +1500,7 @@ namespace Commutator
                             continue;
 
                           //double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
-                          double sixj1 = Z.modelspace->GetSixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
                           if (std::abs(sixj1) < 1.e-6)
                             continue;
 
