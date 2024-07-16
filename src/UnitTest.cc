@@ -7414,6 +7414,10 @@ bool UnitTest::Mscheme_Test_comm333_pph_hhpst(const Operator &X, const Operator 
 
                           // if (not(m_i == 1 and m_j == -1 and m_k == 1 and m_l == 1 and m_m == -1 and m_n == 1))
                           //   continue;
+
+                          if ( (m_i + m_j + m_k < 0 and m_l + m_m + m_n < 0))
+                            continue;
+
                           double z_ijklmn = 0;
 
                           size_t norb = X.modelspace->GetNumberOrbits();

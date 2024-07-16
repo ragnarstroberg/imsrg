@@ -4703,7 +4703,7 @@ namespace ReferenceImplementations
 
                                        sixj *= AngMom::SixJ(twoj4 / 2.,  twoj5 / 2.,   Lambda,
                                                             twoj2 / 2.,  twoj1 / 2.,   J3);
-                                if (std::abs(sixj) < 1e-7)
+                                if (std::abs(sixj) < 1e-12)
                                   continue;
                                 int phasefactor = Z.modelspace->phase(( o3.j2  + o6.j2 + oc.j2 + twoj3) / 2 + J1p + J2p + Jab + J3 + Lambda);
                                 double hatfactor =  (twoj3 + 1) * (2 * J3 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * ( twoj4 + 1) * (twoj5 + 1) );
@@ -4749,7 +4749,7 @@ namespace ReferenceImplementations
                                         sixj *= AngMom::SixJ(o6.j2 / 2.,  twoj6 / 2.,   J3,
                                                              o3.j2 / 2.,  twoj2 / 2.,   J2p);
 
-                                  if (std::abs(sixj) < 1e-7)
+                                  if (std::abs(sixj) < 1e-12)
                                     continue;
                                   int phasefactor = Z.modelspace->phase(( o3.j2  + twoj4 + oc.j2 + twoj2) / 2 );
                                   double hatfactor =  (twoj5 + 1) * (twoj6 + 1) * (2 * J3 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * ( twoj3 + 1) * (twoj4 + 1) );

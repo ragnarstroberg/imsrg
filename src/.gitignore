@@ -12,3 +12,5 @@ build/
 .vscode/
 .cache/
 CMakeUserPresets.json
+imsrg++.cc
+imsrg++
