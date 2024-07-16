@@ -999,47 +999,94 @@ namespace Commutator
         for (size_t ibra = 0; ibra < nbras; ibra++)
         {
           Ket &bra = tbc_bra.GetKet(ibra);
-          size_t p = bra.p;
-          size_t q = bra.q;
+          index_t p = bra.p;
+          index_t q = bra.q;
           Orbit &op = Z.modelspace->GetOrbit(p);
           Orbit &oq = Z.modelspace->GetOrbit(q);
           int phasepq = bra.Phase(J);
           for (size_t iket = ibra; iket < nkets; iket++)
           {
             Ket &ket = tbc_ket.GetKet(iket);
-            size_t r = ket.p;
-            size_t s = ket.q;
+            index_t r = ket.p;
+            index_t s = ket.q;
             Orbit &oR = Z.modelspace->GetOrbit(r);
             Orbit &os = Z.modelspace->GetOrbit(s);
             double zpqrs = 0;
+            double gamma2b,eta2b;
 
             for (auto b : Z.OneBodyChannels.at({op.l, op.j2, op.tz2}))
             {
-              zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
-              zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
+              auto ibra_bq = tbc_bra.GetLocalIndex(std::min(b,q),std::max(b,q));
+              if (ibra_bq < 0  or ibra_bq > tbc_bra.GetNumberKets()  )  continue;
+              double norm = ( b==q ? PhysConst::SQRT2 : 1) * (p==q ? 1/PhysConst::SQRT2 : 1 );
+              if (b>q) norm *= bra.Phase(tbc_bra.J);
+              zpqrs += norm * CHI_I(p, b) * Gamma.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra_bq,iket);
+              zpqrs += norm * hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra_bq,iket); // tricky minus sign.
+//              zpqrs += norm * hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J_norm(J, J, b, q, r, s); // tricky minus sign.
+//              Gamma.TwoBody.GetTBME_J_twoOps(Eta.TwoBody , J,J,b,q,r,s, gamma2b,eta2b);
+//              zpqrs += CHI_I(p, b) * gamma2b;
+//              zpqrs += hZ * CHI_II(b, p) * eta2b; // tricky minus sign.
+//              zpqrs += CHI_I(p, b) *     Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
+//              zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
+//              zpqrs += CHI_I(p, b) *     Gamma.TwoBody.GetTBME(ch_bra, ch_ket, b, q, r, s);
+//              zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME(ch_bra, ch_ket, b, q, r, s); // tricky minus sign.
             }                                                                       // for a
             for (auto b : Z.OneBodyChannels.at({oq.l, oq.j2, oq.tz2}))
             {
-              zpqrs += CHI_I(q, b) * Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
-              zpqrs += hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
+              auto ibra_pb = tbc_bra.GetLocalIndex(std::min(p,b),std::max(p,b));
+              if (ibra_pb < 0  or ibra_pb > tbc_bra.GetNumberKets()  )  continue;
+              double norm = ( b==p ? PhysConst::SQRT2 : 1) * (p==q ? 1/PhysConst::SQRT2 : 1 );
+              if (p>b) norm *= bra.Phase(tbc_bra.J);
+              zpqrs += norm * CHI_I(q, b) * Gamma.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra_pb,iket);
+              zpqrs += norm * hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra_pb,iket); // tricky minus sign.
+
+//              double norm = ( b==p ? PhysConst::SQRT2 : 1) * (p==q ? 1/PhysConst::SQRT2 : 1 );
+//              zpqrs += norm * CHI_I(q, b) *     Gamma.TwoBody.GetTBME_J_norm(J, J, p, b, r, s);
+//              zpqrs += norm * hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_J_norm(J, J, p, b, r, s); // tricky minus sign.
+//              Gamma.TwoBody.GetTBME_J_twoOps(Eta.TwoBody , J,J,p,b,r,s, gamma2b,eta2b);
+//              zpqrs += CHI_I(q, b) * gamma2b;
+//              zpqrs += hZ * CHI_II(b, q) * eta2b; // tricky minus sign.
+//              zpqrs += CHI_I(q, b) *     Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
+//              zpqrs += hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s); // tricky minus sign.
             }                                                                       // for a
             for (auto b : Z.OneBodyChannels.at({oR.l, oR.j2, oR.tz2}))
             {
-              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r);
-              zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r);
+              auto iket_bs = tbc_ket.GetLocalIndex(std::min(b,s),std::max(b,s));
+              if (iket_bs < 0  or iket_bs > tbc_bra.GetNumberKets()  )  continue;
+              double norm = ( b==s ? PhysConst::SQRT2 : 1) * (r==s ? 1/PhysConst::SQRT2 : 1 );
+              if (b>s) norm *= ket.Phase(tbc_ket.J);
+              zpqrs += norm * Gamma.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra,iket_bs) * CHI_I(b, r);
+              zpqrs -= norm * Eta.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra,iket_bs) * CHI_II(b, r);
+//              zpqrs += norm * Gamma.TwoBody.GetTBME_J_norm(J, J, p, q, b, s) * CHI_I(b, r);
+//              zpqrs -= norm * Eta.TwoBody.GetTBME_J_norm(J, J, p, q, b, s) * CHI_II(b, r);
+//              Gamma.TwoBody.GetTBME_J_twoOps(Eta.TwoBody , J,J,p,q,b,s, gamma2b,eta2b);
+//              zpqrs += gamma2b * CHI_I(b, r);
+//              zpqrs -= eta2b * CHI_II(b, r);
+//              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_I(b, r);
+//              zpqrs -=   Eta.TwoBody.GetTBME_J(J, J, p, q, b, s) * CHI_II(b, r);
             } // for a
             for (auto b : Z.OneBodyChannels.at({os.l, os.j2, os.tz2}))
             {
-              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
-              zpqrs -= Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
+              auto iket_rb = tbc_ket.GetLocalIndex(std::min(r,b),std::max(r,b));
+              if (iket_rb < 0  or iket_rb > tbc_bra.GetNumberKets()  )  continue;
+              double norm = ( b==r ? PhysConst::SQRT2 : 1) * (r==s ? 1/PhysConst::SQRT2 : 1 );
+              if (r>b) norm *= ket.Phase(tbc_ket.J);
+              zpqrs += norm * Gamma.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra,iket_rb) * CHI_I(b, s);
+              zpqrs -= norm * Eta.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra,iket_rb) * CHI_II(b, s);
+//              Gamma.TwoBody.GetTBME_J_twoOps(Eta.TwoBody , J,J,p,q,r,b, gamma2b,eta2b);
+//              zpqrs += gamma2b * CHI_I(b, s);
+//              zpqrs -= eta2b * CHI_II(b, s);
+//              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
+//              zpqrs -=   Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
             } // for a
 
-            // normalize
-            if (p == q)
-              zpqrs /= PhysConst::SQRT2;
-            if (r == s)
-              zpqrs /= PhysConst::SQRT2;
-            Z2.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
+//            // normalize
+//            if (p == q)
+//              zpqrs /= PhysConst::SQRT2;
+//            if (r == s)
+//              zpqrs /= PhysConst::SQRT2;
+            Z2.AddToTBME(ch_bra, ch_ket, ibra, iket, zpqrs);
+//            Z2.AddToTBME(ch_bra, ch_ket, bra, ket, zpqrs);
           } // for iket
         }   // for ibra
 
