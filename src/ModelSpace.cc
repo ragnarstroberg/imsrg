@@ -1690,18 +1690,22 @@ void ModelSpace::PreCalculateSixJ()
   std::cout << "Precalculating SixJ's" << std::endl;
   double t_start = omp_get_wtime();
   std::vector<uint64_t> KEYS;
-  for (int j2a = 1; j2a <= 3 * (2 * Emax + 1); j2a += 2)
+  int upperLimit_j2a = (2 * Emax + 1);
+  int upperLimit_j2b =  3 * (2 * Emax + 1);
+  int upperLimit_j2c = (2 * Emax + 1);
+  int upperLimit_j2d =  3 * (2 * Emax + 1);
+
+  for (int j2a = 1; j2a <= upperLimit_j2a; j2a += 2)
   {
-    //   for (int j2b=1; j2b<=(2*Emax+1); j2b+=2)
-    for (int j2b = 1; j2b <= 3 * (2 * Emax + 1); j2b += 2)
+    for (int j2b = 1; j2b <= upperLimit_j2b; j2b += 2)
     {
-      for (int j2c = 1; j2c <= (2 * Emax + 1); j2c += 2)
+      for (int j2c = 1; j2c <= upperLimit_j2c; j2c += 2)
       {
         // four half-integer j's,  two integer J's
-        for (int j2d = 1; j2d <= (2 * Emax + 1); j2d += 2)
+        for (int j2d = 1; j2d <= upperLimit_j2d; j2d += 2)
         {
-          //if (j2b > std::max(j2d, 2 * Emax + 1))
-          //  continue;
+          if (j2b > std::max(j2d, 2 * Emax + 1))
+            continue;
           // J1 couples a,b, and c,d;  J2 couples a,d and b,c
           // We extend the hash table to include symbols outside the coupling range for computational gain.
           // We may want to revert this change at some point.
@@ -1709,14 +1713,7 @@ void ModelSpace::PreCalculateSixJ()
           {
             for (int J2 = 0; J2 <= 2 * (Emax * 2 + 1); J2 += 2)
             {
-              uint64_t key = SixJHash(0.5 * j2b, 0.5 * j2d, 0.5 * J1, 0.5 * j2a, 0.5 * j2c, 0.5 * J2);
-              if (SixJList.count(key) == 0)
-              {
-                KEYS.push_back(key);
-                SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
-              }
-              
-              key = SixJHash(0.5 * j2c, 0.5 * j2d, 0.5 * J1, 0.5 * j2a, 0.5 * j2b, 0.5 * J2);
+              uint64_t key = SixJHash(0.5 * j2a, 0.5 * j2b, 0.5 * J1, 0.5 * j2c, 0.5 * j2d, 0.5 * J2);
               if (SixJList.count(key) == 0)
               {
                 KEYS.push_back(key);

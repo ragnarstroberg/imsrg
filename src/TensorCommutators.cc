@@ -1474,7 +1474,7 @@ namespace Commutator
                           if (std::abs(j0 - j1) > Lambda * 2 or (j0 + j1) < Lambda * 2)
                             continue;
                           //double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
-                          double sixj1 = Z.modelspace->GetSixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
 
                           if (std::abs(sixj1) < 1.e-6)
                             continue;
@@ -1500,7 +1500,7 @@ namespace Commutator
                             continue;
 
                           //double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
-                          double sixj1 = Z.modelspace->GetSixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
+                          double sixj1 = AngMom::SixJ(oj.j2 / 2., oi.j2 / 2., Lambda, j0 / 2., j1 / 2., J1);
                           if (std::abs(sixj1) < 1.e-6)
                             continue;
 
@@ -1547,6 +1547,8 @@ namespace Commutator
     Z.modelspace->PreCalculateSixJ();
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
+
+    double tstart = omp_get_wtime();
 
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
@@ -1721,6 +1723,7 @@ namespace Commutator
       } // for iket
     } // for ch3
 
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm233st
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1746,6 +1749,8 @@ namespace Commutator
     int Lambda = Z.GetJRank();
     Z.modelspace->PreCalculateSixJ();
     size_t norb = Z.modelspace->GetNumberOrbits();
+
+    double tstart = omp_get_wtime();
 
   #pragma omp parallel for schedule(dynamic,1)
     for (size_t i = 0; i < norb; i++)
@@ -1852,6 +1857,8 @@ namespace Commutator
         Z1(i, j) += zij;
       } // j
     } // i
+  
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm231st
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1887,7 +1894,7 @@ namespace Commutator
     int Lambda = Z.GetJRank();
     Z.modelspace->PreCalculateSixJ();
     int nch = Z.modelspace->GetNumberTwoBodyChannels();
-
+    double tstart = omp_get_wtime();
     std::vector<std::array<size_t, 2>> channels;
     for (auto &iter : Z.TwoBody.MatEl)
       channels.push_back(iter.first);
@@ -2196,7 +2203,7 @@ namespace Commutator
         } // for iket
       } // for ibra
     } // for ch
-
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm232st
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2221,7 +2228,7 @@ namespace Commutator
     auto &Z3 = Z.ThreeBody;
     int Lambda = Z.GetJRank();
     Z.modelspace->PreCalculateSixJ();
-
+    double tstart = omp_get_wtime();
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
     {
@@ -2471,7 +2478,7 @@ namespace Commutator
 
       } // for iket
     } // for ich  -> {ch_bra,ch_ket,ibra}
-
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm133st
 
 
@@ -2493,7 +2500,7 @@ namespace Commutator
     auto &Z2 = Z.TwoBody;
     int Lambda = Z.GetJRank();
     Z.modelspace->PreCalculateSixJ();
-
+    double tstart = omp_get_wtime();
     std::vector<size_t> ch_bra_list, ch_ket_list;
 
     for (auto &iter : Z.TwoBody.MatEl)
@@ -2578,6 +2585,8 @@ namespace Commutator
         } // iket
       } // ibra
     } // ch2
+  
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm132st
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2595,7 +2604,7 @@ namespace Commutator
     auto &Z2 = Z.TwoBody;
     int Lambda = Z.GetJRank();
     Z.modelspace->PreCalculateSixJ();
-
+    double tstart = omp_get_wtime();
     std::vector<int> bra_channels;
     std::vector<int> ket_channels;
     for (auto &itmat : Z.TwoBody.MatEl)
@@ -2691,7 +2700,7 @@ namespace Commutator
         } // iket
       } // ibra
     } // ch2
-
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm332_ppph_hhhpst
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2716,7 +2725,7 @@ namespace Commutator
     auto &Z2 = Z.TwoBody;
     int Lambda = Z.GetJRank();
     Z.modelspace->PreCalculateSixJ();
-
+    double tstart = omp_get_wtime();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
     std::vector<int> bra_channels;
@@ -2947,6 +2956,8 @@ namespace Commutator
         } // for iket
       } // for ibra
     } // for ch
+ 
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2975,7 +2986,7 @@ namespace Commutator
 
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
-
+    double tstart = omp_get_wtime();
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
     {
@@ -3181,6 +3192,7 @@ namespace Commutator
       } // for iket
     } // for ch3 and ibra
 
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm233_pp_hhst
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3212,7 +3224,7 @@ namespace Commutator
 
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
-
+    double tstart = omp_get_wtime();
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
     {
@@ -3419,7 +3431,8 @@ namespace Commutator
       } // for iket
         //    }//ibra
     } // ch
-    std::cout << "Ref " << __func__ << " Done" << std::endl;
+  
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm233_phst
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3445,7 +3458,7 @@ namespace Commutator
       }
     }
     size_t n_bra_ket_ch = bra_ket_channels.size();
-
+    double tstart = omp_get_wtime();
 #pragma omp parallel for schedule(dynamic, 1)
     for (size_t ibra_ket = 0; ibra_ket < n_bra_ket_ch; ibra_ket++)
     {
@@ -3506,7 +3519,7 @@ namespace Commutator
       } // iket : lmn
       //    }//ibra : ijk
     } // chbra, chket
-
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm333_ppp_hhhst
 
   void comm333_pph_hhpst(const Operator &X, const Operator &Y, Operator &Z)
@@ -3516,7 +3529,7 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
-
+    double tstart = omp_get_wtime();
     Z.modelspace->PreCalculateSixJ();
     int parityY = Y.GetParity();
     int parityZ = parityY;
@@ -3765,6 +3778,9 @@ namespace Commutator
         Z3.AddToME_pn_ch(ch3bra, ch3ket, ibra, iket, zijklmn);
       } // iket : lmn
     } // chbra, chket //ibra : ijk
+  
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;  
+  
   } // comm333_pph_hhpst
 
 }// namespace Commutator
