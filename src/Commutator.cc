@@ -317,6 +317,9 @@ namespace Commutator
     ModelSpace &ms = *(Y.GetModelSpace());
     Operator Z(ms, z_Jrank, z_Trank, z_parity, z_particlerank);
 
+    if (Z.IsReduced())
+       Z.MakeNotReduced();
+
     if ((X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()))
       Z.SetAntiHermitian();
     else if ((X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()))
