@@ -429,11 +429,6 @@ namespace ReferenceImplementations
       TwoBodyChannel &tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
 
-      //   int nch = Z.modelspace->GetNumberTwoBodyChannels();
-      //   #pragma omp parallel for schedule(dynamic,1)
-      //   for (int ch=0; ch<nch; ch++)
-      //   {
-      //     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
       int J = tbc_bra.J;
       int nbras = tbc_bra.GetNumberKets();
       int nkets = tbc_ket.GetNumberKets();
@@ -458,8 +453,6 @@ namespace ReferenceImplementations
           Orbit &ol = Z.modelspace->GetOrbit(l);
 
           double zijkl = 0;
-          //         int Jpmin = std::max( std::abs(oi.j2-ol.j2) , std::abs(oj.j2-ok.j2) )/2;
-          //         int Jpmax = std::min( oi.j2+ol.j2 , oj.j2+ok.j2 )/2;
           int Jpmin = std::min(std::max(std::abs(oi.j2 - ol.j2), std::abs(oj.j2 - ok.j2)),
                                std::max(std::abs(oj.j2 - ol.j2), std::abs(oi.j2 - ok.j2))) /
                       2;
@@ -509,6 +502,7 @@ namespace ReferenceImplementations
                 }
 
                 zbar_ilkj += (oa.occ - ob.occ) * (xbar_ilab * ybar_abkj - ybar_ilab * xbar_abkj);
+
 
                 // "Exchange" term obtained by exchanging i<->j.
                 double xbar_jlab = 0;
@@ -4703,7 +4697,7 @@ namespace ReferenceImplementations
 
                                        sixj *= AngMom::SixJ(twoj4 / 2.,  twoj5 / 2.,   Lambda,
                                                             twoj2 / 2.,  twoj1 / 2.,   J3);
-                                if (std::abs(sixj) < 1e-7)
+                                if (std::abs(sixj) < 1e-12)
                                   continue;
                                 int phasefactor = Z.modelspace->phase(( o3.j2  + o6.j2 + oc.j2 + twoj3) / 2 + J1p + J2p + Jab + J3 + Lambda);
                                 double hatfactor =  (twoj3 + 1) * (2 * J3 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * ( twoj4 + 1) * (twoj5 + 1) );
@@ -4749,7 +4743,7 @@ namespace ReferenceImplementations
                                         sixj *= AngMom::SixJ(o6.j2 / 2.,  twoj6 / 2.,   J3,
                                                              o3.j2 / 2.,  twoj2 / 2.,   J2p);
 
-                                  if (std::abs(sixj) < 1e-7)
+                                  if (std::abs(sixj) < 1e-12)
                                     continue;
                                   int phasefactor = Z.modelspace->phase(( o3.j2  + twoj4 + oc.j2 + twoj2) / 2 );
                                   double hatfactor =  (twoj5 + 1) * (twoj6 + 1) * (2 * J3 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * ( twoj3 + 1) * (twoj4 + 1) );

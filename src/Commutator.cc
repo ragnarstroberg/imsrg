@@ -317,6 +317,9 @@ namespace Commutator
     ModelSpace &ms = *(Y.GetModelSpace());
     Operator Z(ms, z_Jrank, z_Trank, z_parity, z_particlerank);
 
+    if (Z.IsReduced())
+       Z.MakeNotReduced();
+
     if ((X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()))
       Z.SetAntiHermitian();
     else if ((X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()))
@@ -619,7 +622,7 @@ namespace Commutator
   void comm110ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
-    if (Z.IsAntiHermitian())
+    if ( Z.IsAntiHermitian() )
       return;
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
@@ -658,8 +661,8 @@ namespace Commutator
     double t_start = omp_get_wtime();
     if (X.GetParticleRank() < 2 or Y.GetParticleRank() < 2)
       return;
-    if (Z.IsAntiHermitian())
-      return; // I think this is the case
+    if ( Z.IsAntiHermitian() )
+      return;
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
 

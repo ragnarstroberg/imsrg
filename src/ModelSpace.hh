@@ -497,7 +497,8 @@ class ModelSpace
    double GetdE3max(){return dE3max;};
    double GetOccNat3Cut(){return occnat3cut;}; // setting this to zero or less makes no cut, setting to 0.25 cuts out everything
    void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
-   std::map<int,double> GetEFermi(){ return e_fermi ;};
+//   std::map<int,double> GetEFermi(){ return e_fermi ;};
+   std::map<int,double> GetEFermi();
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
 
    double GetCachedSixJ(

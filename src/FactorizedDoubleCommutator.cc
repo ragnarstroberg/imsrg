@@ -1045,8 +1045,6 @@ namespace Commutator
               if (b>q) norm *= bra.Phase(tbc_bra.J);
               zpqrs += norm * CHI_I(p, b) * Gamma.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra_bq,iket);
               zpqrs += norm * hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra_bq,iket); // tricky minus sign.
-//              zpqrs += CHI_I(p, b) *     Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
-//              zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s); // tricky minus sign.
             }                                                                       // for a
             for (auto b : Z.OneBodyChannels.at({oq.l, oq.j2, oq.tz2}))
             {
@@ -1078,11 +1076,11 @@ namespace Commutator
               if (r>b) norm *= ket.Phase(tbc_ket.J);
               zpqrs += norm * Gamma.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra,iket_rb) * CHI_I(b, s);
               zpqrs -= norm * Eta.TwoBody.GetTBME_norm(ch_bra,ch_ket,ibra,iket_rb) * CHI_II(b, s);
+
 //              zpqrs += Gamma.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_I(b, s);
 //              zpqrs -=   Eta.TwoBody.GetTBME_J(J, J, p, q, r, b) * CHI_II(b, s);
             } // for a
 
-//            // normalize   //SRS normalization is now handled as we go.
 //            if (p == q)
 //              zpqrs /= PhysConst::SQRT2;
 //            if (r == s)

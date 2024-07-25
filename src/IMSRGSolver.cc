@@ -103,11 +103,12 @@ void IMSRGSolver::GatherOmega()
   {
     auto &last = Omega.back();
     Omega.emplace_back(last);
+    Omega.back().Erase(); // SRS: in this case the hunter should be zero. Fixes bug found by Matthias Heinz July 2024.
   }
   // the last omega in the list is the hunter. the one just preceeding it is the gatherer.
   auto &hunter = Omega.back();
   auto &gatherer = Omega[Omega.size() - 2];
-  if (hunter.Norm() > 1e-6)
+  if (hunter.Norm() > 1e-12) // SRS: changed this from 1e-6 to 1e-12. No reason for it to be so big.
   {
     gatherer = BCH::BCH_Product(hunter, gatherer);
   }
@@ -960,6 +961,12 @@ Operator IMSRGSolver::Transform_Partial(Operator &OpIn, int n)
   if (OpOut.GetParticleRank() == 1)
     OpOut.SetParticleRank(2);
 
+//  if (Commutator::use_imsrg3 and not OpIn.ThreeBody.Is_PN_Mode() )
+//  {
+//    OpIn.ThreeBody.SetMode("pn");
+//    OpOut.ThreeBody.SetMode("pn");
+//  }
+
   //  if ((rw != NULL) and rw->GetScratchDir() != "")
   if (scratchdir != "")
   {
@@ -994,6 +1001,11 @@ Operator IMSRGSolver::Transform_Partial(Operator &OpIn, int n)
     //     std::cout << " norm of op = " << OpOut.Norm() << std::endl;
     //     std::cout << " op zero body = " << OpOut.ZeroBody << std::endl;
     //    OpOut = OpOut.BCH_Transform( Omega[i] );
+//    if (Commutator::use_imsrg3 and not Omega[i].ThreeBody.Is_PN_Mode() )
+//    {
+//       
+//       Omega[i].ThreeBody.SetMode("pn");
+//    }
     OpOut = BCH::BCH_Transform(OpOut, Omega[i]);
     //     if (OpIn.GetJRank()>0)cout << "done" << endl;
   }

@@ -1,7 +1,6 @@
 
 #include "AngMom.hh"
 #include <cmath>
-//#include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_sf_coupling.h>
 #include <iostream>
 
