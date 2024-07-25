@@ -627,6 +627,9 @@ namespace Commutator
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
 
+    // SRS  Noticed that when running IMSRG(3), the time per commutator for this routine increased
+    //  by several orders of magnitude. Rewriting it this way seems to have fixed it, but I'm
+    //  not entirely clear on what was causing the issue. Maybe some caching magic???
     for (auto &a : Z.modelspace->holes)
     {
       Orbit &oa = Z.modelspace->GetOrbit(a);
@@ -662,6 +665,7 @@ namespace Commutator
       return;
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
+
 
     for (int ch = 0; ch < Y.nChannels; ++ch)
     {

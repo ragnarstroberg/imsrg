@@ -614,7 +614,6 @@ namespace Commutator
     // recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
     //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
     //  for (size_t ch=0; ch<nch; ch++)
-    //  {
     std::vector<size_t> ch_bra_list;
     std::vector<size_t> ch_ket_list;
     for (auto &it_ch : Z.TwoBody.MatEl)
@@ -769,6 +768,7 @@ namespace Commutator
 
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
+
 
   void comm232ss(const Operator &X, const Operator &Y, Operator &Z)
   {
