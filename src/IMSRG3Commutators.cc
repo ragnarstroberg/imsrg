@@ -836,6 +836,9 @@ namespace Commutator
     bool y_channel_diag = Y.GetTRank() == 0 and Y.GetParity() == 0;
     bool z_channel_diag = Z.GetTRank() == 0 and Z.GetParity() == 0;
 
+    if ( not ( x_has_3 or y_has_3) ) return;
+
+
     // Eventually, this version should be able to handle both cases (channel diagonal and not)
     // without too much of a performance hit. But that's not the case for now. This is a quick
     // and dirty way of doing things.
@@ -1104,7 +1107,7 @@ namespace Commutator
 
               if (XY_case == 0)
               {
-                bool y3_good = true;
+                bool y3_good = y_has_3;
                 double yabjklc = 0;
                 if (y3_good)
                   yabjklc = Y3.GetME_pn(Jab, Jkl, twoJp, a, b, j, k, l, c);
@@ -1112,7 +1115,7 @@ namespace Commutator
               }
               if (XY_case == 1)
               {
-                bool x3_good = true;
+                bool x3_good = x_has_3;
                 double xabjklc = 0;
                 if (x3_good)
                   xabjklc = X3.GetME_pn(Jab, Jkl, twoJp, a, b, j, k, l, c);
@@ -1639,13 +1642,22 @@ namespace Commutator
             size_t j = kljJJ[2];
             size_t Jkl = kljJJ[3];
             size_t twoJp = kljJJ[4];
-            size_t hash = Hash_comm232_key(kljJJ);
 
             if (!Y.ThreeBody.IsKetValid(Jkl, twoJp, k, l, j))
               continue;
+            size_t hash = Hash_comm232_key(kljJJ);
+
             std::vector<size_t> iketlist;
             std::vector<double> recouplelist;
-            size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling(Jkl, twoJp, k, l, j, iketlist, recouplelist);
+            size_t ch_check;
+            if ( y_has_3 )
+            {
+              ch_check = Y.ThreeBody.GetKetIndex_withRecoupling(Jkl, twoJp, k, l, j, iketlist, recouplelist);
+            }
+            else 
+            {
+              ch_check = X.ThreeBody.GetKetIndex_withRecoupling(Jkl, twoJp, k, l, j, iketlist, recouplelist);
+            }
 
             recoupling_cache_lookup[hash] = recouple_info.size();
             recouple_info.push_back(ch_check);
@@ -4448,7 +4460,7 @@ namespace Commutator
   {
     double tstart = omp_get_wtime();
     if (Commutator::verbose)
-      std::cout << __func__ << std::endl;
+        std::cout << __func__ << std::endl;
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
