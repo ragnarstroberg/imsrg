@@ -595,6 +595,8 @@ namespace Commutator
     auto &Y1 = Y.OneBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
+    double x3norm = X.ThreeBodyNorm();
+    double y3norm = Y.ThreeBodyNorm();
 
     int hZ = Z.IsHermitian() ? +1 : -1;
 
@@ -612,7 +614,6 @@ namespace Commutator
     // recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
     //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
     //  for (size_t ch=0; ch<nch; ch++)
-    //  {
     std::vector<size_t> ch_bra_list;
     std::vector<size_t> ch_ket_list;
     for (auto &it_ch : Z.TwoBody.MatEl)
@@ -694,9 +695,9 @@ namespace Commutator
             {
               if (x_channel_diag and y_channel_diag and b_loop > 0)
                 continue;
-              if ( b_loop ==0 and Y.ThreeBodyNorm()<1e-8)
+              if ( b_loop ==0 and y3norm<1e-12)
                  continue;
-              if ( b_loop ==1 and X.ThreeBodyNorm()<1e-8)
+              if ( b_loop ==1 and x3norm<1e-12)
                  continue;
               std::set<size_t> blist;
               //             std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
@@ -767,6 +768,7 @@ namespace Commutator
 
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
+
 
   void comm232ss(const Operator &X, const Operator &Y, Operator &Z)
   {
