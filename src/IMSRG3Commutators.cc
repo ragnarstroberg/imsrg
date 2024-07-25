@@ -595,6 +595,8 @@ namespace Commutator
     auto &Y1 = Y.OneBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
+    double x3norm = X.ThreeBodyNorm();
+    double y3norm = Y.ThreeBodyNorm();
 
     int hZ = Z.IsHermitian() ? +1 : -1;
 
@@ -694,9 +696,9 @@ namespace Commutator
             {
               if (x_channel_diag and y_channel_diag and b_loop > 0)
                 continue;
-              if ( b_loop ==0 and Y.ThreeBodyNorm()<1e-8)
+              if ( b_loop ==0 and y3norm<1e-12)
                  continue;
-              if ( b_loop ==1 and X.ThreeBodyNorm()<1e-8)
+              if ( b_loop ==1 and x3norm<1e-12)
                  continue;
               std::set<size_t> blist;
               //             std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
