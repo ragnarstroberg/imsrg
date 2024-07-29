@@ -226,6 +226,11 @@ void IMSRGSolver::Solve()
   }
   else
     std::cout << "IMSRGSolver: I don't know method " << method << std::endl;
+
+  if (hunter_gatherer)
+  {
+    GatherOmega();
+  }
 }
 
 void IMSRGSolver::UpdateEta()
