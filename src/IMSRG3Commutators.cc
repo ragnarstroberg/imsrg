@@ -595,6 +595,8 @@ namespace Commutator
     auto &Y1 = Y.OneBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
+    double x3norm = X.ThreeBodyNorm();
+    double y3norm = Y.ThreeBodyNorm();
 
     int hZ = Z.IsHermitian() ? +1 : -1;
 
@@ -612,7 +614,6 @@ namespace Commutator
     // recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
     //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
     //  for (size_t ch=0; ch<nch; ch++)
-    //  {
     std::vector<size_t> ch_bra_list;
     std::vector<size_t> ch_ket_list;
     for (auto &it_ch : Z.TwoBody.MatEl)
@@ -694,9 +695,9 @@ namespace Commutator
             {
               if (x_channel_diag and y_channel_diag and b_loop > 0)
                 continue;
-              if ( b_loop ==0 and Y.ThreeBodyNorm()<1e-8)
+              if ( b_loop ==0 and y3norm<1e-12)
                  continue;
-              if ( b_loop ==1 and X.ThreeBodyNorm()<1e-8)
+              if ( b_loop ==1 and x3norm<1e-12)
                  continue;
               std::set<size_t> blist;
               //             std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
@@ -768,6 +769,7 @@ namespace Commutator
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
+
   void comm232ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
@@ -835,6 +837,9 @@ namespace Commutator
     bool x_channel_diag = X.GetTRank() == 0 and X.GetParity() == 0;
     bool y_channel_diag = Y.GetTRank() == 0 and Y.GetParity() == 0;
     bool z_channel_diag = Z.GetTRank() == 0 and Z.GetParity() == 0;
+
+    if ( not ( x_has_3 or y_has_3) ) return;
+
 
     // Eventually, this version should be able to handle both cases (channel diagonal and not)
     // without too much of a performance hit. But that's not the case for now. This is a quick
@@ -1104,7 +1109,7 @@ namespace Commutator
 
               if (XY_case == 0)
               {
-                bool y3_good = true;
+                bool y3_good = y_has_3;
                 double yabjklc = 0;
                 if (y3_good)
                   yabjklc = Y3.GetME_pn(Jab, Jkl, twoJp, a, b, j, k, l, c);
@@ -1112,7 +1117,7 @@ namespace Commutator
               }
               if (XY_case == 1)
               {
-                bool x3_good = true;
+                bool x3_good = x_has_3;
                 double xabjklc = 0;
                 if (x3_good)
                   xabjklc = X3.GetME_pn(Jab, Jkl, twoJp, a, b, j, k, l, c);
@@ -1639,13 +1644,22 @@ namespace Commutator
             size_t j = kljJJ[2];
             size_t Jkl = kljJJ[3];
             size_t twoJp = kljJJ[4];
-            size_t hash = Hash_comm232_key(kljJJ);
 
             if (!Y.ThreeBody.IsKetValid(Jkl, twoJp, k, l, j))
               continue;
+            size_t hash = Hash_comm232_key(kljJJ);
+
             std::vector<size_t> iketlist;
             std::vector<double> recouplelist;
-            size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling(Jkl, twoJp, k, l, j, iketlist, recouplelist);
+            size_t ch_check;
+            if ( y_has_3 )
+            {
+              ch_check = Y.ThreeBody.GetKetIndex_withRecoupling(Jkl, twoJp, k, l, j, iketlist, recouplelist);
+            }
+            else 
+            {
+              ch_check = X.ThreeBody.GetKetIndex_withRecoupling(Jkl, twoJp, k, l, j, iketlist, recouplelist);
+            }
 
             recoupling_cache_lookup[hash] = recouple_info.size();
             recouple_info.push_back(ch_check);
@@ -4448,7 +4462,7 @@ namespace Commutator
   {
     double tstart = omp_get_wtime();
     if (Commutator::verbose)
-      std::cout << __func__ << std::endl;
+        std::cout << __func__ << std::endl;
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;

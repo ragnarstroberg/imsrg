@@ -622,20 +622,18 @@ namespace Commutator
   void comm110ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
-    if (X.IsHermitian() and Y.IsHermitian())
-      return; // I think this is the case
-    if (X.IsAntiHermitian() and Y.IsAntiHermitian())
-      return; // I think this is the case
+    if ( Z.IsAntiHermitian() )
+      return;
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
 
-//    arma::mat xyyx = X.OneBody * Y.OneBody - Y.OneBody * X.OneBody;
-    arma::vec xyyx = arma::diagvec(X.OneBody * Y.OneBody - Y.OneBody * X.OneBody);
+    // SRS  Noticed that when running IMSRG(3), the time per commutator for this routine increased
+    //  by several orders of magnitude. Rewriting it this way seems to have fixed it, but I'm
+    //  not entirely clear on what was causing the issue. Maybe some caching magic???
     for (auto &a : Z.modelspace->holes)
     {
       Orbit &oa = Z.modelspace->GetOrbit(a);
-//      Z.ZeroBody += (oa.j2 + 1) * oa.occ * xyyx(a, a);
-      Z.ZeroBody += (oa.j2 + 1) * oa.occ * xyyx(a);
+      Z.ZeroBody += (oa.j2 + 1) * oa.occ * arma::as_scalar( X.OneBody.row(a)*Y.OneBody.col(a) - Y.OneBody.row(a)*X.OneBody.col(a));
     }
     X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
@@ -663,12 +661,11 @@ namespace Commutator
     double t_start = omp_get_wtime();
     if (X.GetParticleRank() < 2 or Y.GetParticleRank() < 2)
       return;
-    if (X.IsHermitian() and Y.IsHermitian())
-      return; // I think this is the case
-    if (X.IsAntiHermitian() and Y.IsAntiHermitian())
-      return; // I think this is the case
+    if ( Z.IsAntiHermitian() )
+      return;
     if (Z.GetJRank() > 0 or Z.GetTRank() > 0 or Z.GetParity() != 0)
       return;
+
 
     for (int ch = 0; ch < Y.nChannels; ++ch)
     {

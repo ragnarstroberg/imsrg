@@ -1409,6 +1409,7 @@ void ModelSpace::SetEmax(int e)
   Emax = e;
   EmaxUnocc = Emax;
   E2max = 2 * Emax;
+  SetEmax3Body(Emax);
   Lmax = Emax;
   if (e > old_emax)
   {
@@ -1457,6 +1458,17 @@ void ModelSpace::SetEmaxUnocc(int e)
 
   Init(holemap, corelist, valencelist);
 }
+
+
+
+std::map<int,double> ModelSpace::GetEFermi()
+{
+  if ( e_fermi.size() < 2 )  FindEFermi();
+  return e_fermi ;
+}
+
+
+
 
 void ModelSpace::ClearVectors()
 {
