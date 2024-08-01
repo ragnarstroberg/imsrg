@@ -4986,17 +4986,20 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
 
   skip_comments(infile);
   int prtorb, ntnorb, pcore, ncore;
-  infile >> prtorb >> ntnorb >> pcore >> ncore;
+  std::getline(infile, line);
+  std::istringstream(line) >> prtorb >> ntnorb >> pcore >> ncore;
+//  infile >> prtorb >> ntnorb >> pcore >> ncore;
   int num=prtorb+ntnorb;
   int norb = modelspace->GetNumberOrbits();
 
   for( int i=0; i<num; i++)
   {
      std::getline( infile, line );
-     std::istringstream iss(line);  // SRS modified this to handle comments at the end of the line
 //    std::cout << "  i = " << i << "  num = " << num << std::endl;
     int iorb, n, l, j, tz;
-    infile >> iorb >> n >> l >> j >> tz;
+    iorb = 1;
+    std::istringstream(line) >> iorb >> n >> l >> j >> tz;
+//    infile >> iorb >> n >> l >> j >> tz;
     int io = modelspace->GetOrbitIndex(n, l, j, tz);
 //    std::cout << __func__ << "  " << io << " " << iorb << " " << n << " " << l << " " << j << " " << tz << std::endl;
     if(io >= norb) continue;
@@ -5014,15 +5017,19 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
 //  getline(infile, line);
 //  skip_comments(infile);
 
-  infile >> num;
-//  std::cout << "num  = " << num << std::endl;
   getline(infile, line);
+  std::istringstream(line) >> num;
+//  infile >> num;
+//  std::cout << "num  = " << num << std::endl;
+//  getline(infile, line);
   skip_comments(infile);
   for(int n=0; n<num; n++)
   {
     int i, j;
     double h1;
-    infile >> i >> j >> h1;
+    getline(infile, line);
+    std::istringstream(line) >> i >> j >> h1;
+//    infile >> i >> j >> h1;
     if( orbits_remap.find(i) == orbits_remap.end() ) continue;
     if( orbits_remap.find(j) == orbits_remap.end() ) continue;
     int io = orbits_remap.at(i);
@@ -5032,20 +5039,23 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
       op.OneBody(jo,io) = h1;
     else if (op.IsAntiHermitian())
       op.OneBody(jo,io) = -h1;
-//    std::cout << io << " " << jo << " " << h1 << std::endl;
+    std::cout << io << " " << jo << " " << h1 << std::endl;
   }
-  getline(infile, line);
 
   skip_comments(infile);
-  infile >> num;
-//  std::cout << "Now num is " << num << std::endl;
   getline(infile, line);
+  std::istringstream(line) >> num;
+//  infile >> num;
+//  std::cout << "Now num is " << num << std::endl;
+//  getline(infile, line);
   skip_comments(infile);
   for(int n=0; n<num; n++)
   {
     int i, j, k, l, jj;
     double tbme;
-    infile >> i >> j >> k >> l >> jj >> tbme;
+    std::getline(infile,line);
+    std::istringstream(line) >> i >> j >> k >> l >> jj >> tbme;
+//    infile >> i >> j >> k >> l >> jj >> tbme;
     if( orbits_remap.find(i) == orbits_remap.end() ) continue;
     if( orbits_remap.find(j) == orbits_remap.end() ) continue;
     if( orbits_remap.find(k) == orbits_remap.end() ) continue;
