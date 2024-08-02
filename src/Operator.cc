@@ -1001,7 +1001,8 @@ void Operator::MakeReduced()
 {
   if (is_reduced)
   {
-    std::cout << "Calling MakeReduced(), but this operator is already reduced." << std::endl;
+    std::cout << "Calling MakeReduced(), but this operator is already reduced. Doing nothing." << std::endl;
+    return;
   }
   if (rank_J > 0)
   {
@@ -1052,7 +1053,8 @@ void Operator::MakeNotReduced()
 {
   if (not is_reduced)
   {
-    std::cout << "Calling MakeNotReduced(), but this operator is already not reduced." << std::endl;
+    std::cout << "Calling MakeNotReduced(), but this operator is already not reduced. Doing nothing." << std::endl;
+    return;
   }
   if (rank_J > 0)
   {
