@@ -5007,9 +5007,6 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
   }
 
 
-//  skip_comments(infile);
-//  getline(infile, line);
-
   skip_comments(infile);
 //  double zerobody;
 //  infile >> zerobody;
@@ -5039,7 +5036,7 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
       op.OneBody(jo,io) = h1;
     else if (op.IsAntiHermitian())
       op.OneBody(jo,io) = -h1;
-    std::cout << io << " " << jo << " " << h1 << std::endl;
+//    std::cout << io << " " << jo << " " << h1 << std::endl;
   }
 
   skip_comments(infile);
