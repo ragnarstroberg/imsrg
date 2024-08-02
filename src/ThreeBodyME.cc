@@ -384,6 +384,7 @@ void ThreeBodyME::SetMode(std::string mode)
   {
     std::cout << " WARNING: I don't know 3N mode " << mode << " .  Continuing with what we had before which is " << threebody_storage->GetStorageMode() << std::endl;
   }
+  threebody_storage->SetHerm( this->herm );
   threebody_storage->Allocate();
 //  storage_mode = pn;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
