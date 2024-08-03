@@ -523,7 +523,8 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
           for (auto &h : occupied) // C++11 syntax
           {
             Orbit &oh = modelspace->GetOrbit(h);
-            if (opNO.rank_J == 0)
+//            if (opNO.rank_J == 0)
+            if (not opNO.IsReduced() )
             {
               opNO.OneBody(a, b) += hatfactor / (2 * ja + 1.0) * sign * oh.occ * TwoBody.GetTBME(ch_bra, ch_ket, a, h, b, h);
             }
