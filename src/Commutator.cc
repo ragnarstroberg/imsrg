@@ -209,99 +209,111 @@ namespace Commutator
   /// Returns \f$ Z = [X,Y] \f$
   Operator Commutator(const Operator &X, const Operator &Y)
   {
-    int xrank = X.rank_J;
-    int yrank = Y.rank_J;
-    int xlegs = X.GetNumberLegs();
-    int ylegs = Y.GetNumberLegs();
+//    int xrank = X.rank_J;
+//    int yrank = Y.rank_J;
+//    int xlegs = X.GetNumberLegs();
+//    int ylegs = Y.GetNumberLegs();
 
     X.modelspace->PreCalculateSixJ();
 
-    if (xrank == 0)
+//    if ( (xlegs%2==0) and (ylegs%2==0) ) // X and Y are particle-number conserving
+    if ( X.IsNumberConserving() and Y.IsNumberConserving() ) // X and Y are particle-number conserving
     {
-      if ((xlegs % 2 == 0) and (ylegs % 2 == 1))
-      {
-        return CommutatorScalarDagger(X, Y);
-      }
-      if ((xlegs % 2 == 1) and (ylegs % 2 == 0))
-      {
-        return -CommutatorScalarDagger(Y, X);
-      }
-      if ((xlegs % 2 == 1) and (ylegs % 2 == 1))
-      {
-        std::cout << "TROUBLE!!!! Called commutator with two Dagger operators. This isn't implemented. Dying..." << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
-      if (yrank == 0)
-      {
-        if ((not X.IsReduced()) and (not Y.IsReduced()))
-        {
-          return CommutatorScalarScalar(X, Y); // [S,S]
-        }
-        else
-        {
-          if (not X.IsReduced())
+       // Here, we use some temporary objects in case we need to change X and Y from reduced to non-reduced.
+       // We use temporary objects to preserve the const-ness of X and Y.
+       // We also use pointers so that we don't have to allocate copies if we don't need to.
+       Operator Xtmp,Ytmp;  // Declared, but not yet allocated, for reasons of scope.
+       if ( ( X.GetJRank()==0) and (Y.GetJRank()==0) ) // X and Y are scalars under rotation
+       {
+
+          const Operator * Xnred = &X;  // Pointer to the non-reduced version of the operator
+          const Operator * Ynred = &Y;
+          if ( X.IsReduced() )
           {
-            Operator Ynred = Y;
-            Ynred.MakeNotReduced();
-            Operator Z = CommutatorScalarScalar(X, Ynred);
-            Z.MakeReduced();
-            return Z;
+             Xtmp = X;
+             Xtmp.MakeNotReduced();
+             Xnred = &Xtmp; // Now Xnred points to the not-reduced copy Xtmp
           }
-          if (not Y.IsReduced())
+          if ( Y.IsReduced() )
           {
-            Operator Xnred = X;
-            Xnred.MakeNotReduced();
-            Operator Z = CommutatorScalarScalar(Xnred, Y);
-            Z.MakeReduced();
-            return Z;
+             Ytmp = Y;
+             Ytmp.MakeNotReduced();
+             Ynred = &Ytmp;  // Now Ynred points to the not-reduced copy Ytmp
           }
-          else if (X.GetTRank() == 0 and Y.GetTRank() == 0) // if X and Y are parity-changing, then Z is parity conserving
+
+          Operator Z = CommutatorScalarScalar( *Xnred, *Ynred); // CommutatorScalarScalar assumes X and Y are not reduced.
+
+          if ( (Z.GetParity() !=0) or (Z.GetTRank() !=0) )
           {
-            Operator Xnred = X;
-            Xnred.MakeNotReduced();
-            Operator Ynred = Y;
-            Ynred.MakeNotReduced();
-            Operator Z = CommutatorScalarScalar(Xnred, Ynred);
-            return Z;
+            Z.MakeReduced();  // If Z changes parity or Tz, we by default store it as reduced. So make it as expected. Is that a good idea? Not sure....
           }
-          else
+
+          return Z;
+
+       }
+       else  // Either X or Y are non-scalar under rotation
+       {
+          if ( (X.GetJRank()==0) and (Y.GetJRank()!=0) )  // X is scalar, Y is tensor
           {
-            std::cout << " TROUBLE IN " << __FILE__ << " line " << __LINE__ << " Calling scalar commutators with two reduced isospin changing operators..." << std::endl;
-            std::exit(EXIT_FAILURE);
+            const Operator * Xnred = &X;  // Pointer to the non-reduced version of the operator
+            if ( X.IsReduced() )
+            {
+               Xtmp = X;
+               Xtmp.MakeNotReduced();
+               Xnred = &Xtmp;
+            }
+            return CommutatorScalarTensor( *Xnred, Y );
           }
-        }
-      }
-      else
-      {
-        if ((not X.IsReduced()) and (Y.IsReduced()))
-        {
-          return CommutatorScalarTensor(X, Y); // [S,T]
-        }
-        else if (Y.IsReduced())
-        {
-          Operator Xnred = X;
-          Xnred.MakeNotReduced();
-          return CommutatorScalarTensor(Xnred, Y);
-        }
-        else
-        {
-          std::cout << " TROUBLE IN " << __FILE__ << " line " << __LINE__ << " not sure what to do with this." << std::endl;
-          std::exit(EXIT_FAILURE);
-        }
-      }
+          else if ( (X.GetJRank()!=0) and (Y.GetJRank()==0) ) // Y is scalar, X is tensor
+          {
+            const Operator * Ynred = &Y;
+            if ( Y.IsReduced() )
+            {
+               Ytmp = Y;
+               Ytmp.MakeNotReduced();
+               Ynred = &Ytmp;
+            }
+            return -CommutatorScalarTensor( X, *Ynred );  // [T,S] = -[S,T]
+
+          }
+          else  // Both are tensor. Uh oh.
+          {
+             std::cout << __FILE__ << " line " << __LINE__ << "   " << __func__ << std::endl;
+             std::cout << " In Tensor-Tensor because X.rank_J = " << X.GetJRank() << "  X.rank_T = " << X.GetTRank() << "  X.parity = " << X.GetParity() << "   ";
+             std::cout << "  Y.rank_J = " << Y.GetJRank() << "  Y.rank_T = " << Y.GetTRank() << "  Y.parity = " << Y.GetParity() << std::endl;
+             std::cout << " Tensor-Tensor commutator not yet implemented." << std::endl;
+             std::exit(EXIT_FAILURE);
+          }
+       }
     }
-    else if (yrank == 0)
+    else // Either X or Y changes the number of particles. In principle, we should be checking that the non-changing operator is not reduced...
     {
-      return -CommutatorScalarTensor(Y, X); // [T,S]
+       int xlegs = X.GetNumberLegs();
+       int ylegs = Y.GetNumberLegs();
+       if (X.IsNumberConserving() and (not Y.IsNumberConserving()) ) // Y is of a^dagger form
+       {
+         return CommutatorScalarDagger(X, Y);
+       }
+       else if ((not X.IsNumberConserving()) and Y.IsNumberConserving() ) // X is of a^dagger form
+       {
+         return -CommutatorScalarDagger(Y, X);
+       }
+       else // both X and Y are of a^dagger form. Uh oh.
+
+       {
+         std::cout << "TROUBLE!!!! Called commutator with two Dagger operators. This isn't implemented. Dying..." << std::endl;
+         std::exit(EXIT_FAILURE);
+       }
     }
-    else
-    {
-      std::cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  X.rank_T = " << X.rank_T << "  X.parity = " << X.parity << "   ";
-      std::cout << "  Y.rank_J = " << Y.rank_J << "  Y.rank_T = " << Y.rank_T << "  Y.parity = " << Y.parity << std::endl;
-      std::cout << " Tensor-Tensor commutator not yet implemented." << std::endl;
-    }
-    return 0 * Y;
-  }
+
+    // Shouldn't make it here...
+    std::cout << "Made it to the end of " << __func__ << "  without returning an operator. That's not good." << std::endl;
+    return 0*Y;
+
+  }// end of Commutator::Commutator
+
+
+
 
   /// Commutator where \f$ X \f$ and \f$Y\f$ are scalar operators.
   /// Should be called through Commutator()

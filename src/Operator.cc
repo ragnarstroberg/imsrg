@@ -391,9 +391,10 @@ void Operator::ReadBinary(std::ifstream &ifs)
 
 Operator Operator::DoNormalOrdering() const
 {
-  if (legs % 2 > 0)
+//  if (legs % 2 > 0)
+  if ( not this->IsNumberConserving() )
     return DoNormalOrderingDagger(+1, modelspace->holes);
-  if (legs > 5)
+  if ( this->GetParticleRank() >= 3 )
     return DoNormalOrdering3(+1, modelspace->holes);
   else
     return DoNormalOrdering2(+1, modelspace->holes);
@@ -401,18 +402,13 @@ Operator Operator::DoNormalOrdering() const
 
 Operator Operator::UndoNormalOrdering() const
 {
-  std::cout << " IN " << __func__ << "   legs = " << legs << std::endl;
-  if (legs % 2 > 0)
+//  std::cout << " IN " << __func__ << "   legs = " << legs << std::endl;
+  if ( not this->IsNumberConserving() )
     return DoNormalOrderingDagger(-1, modelspace->holes);
-  //    return UndoNormalOrderingDagger();
-  else if (legs < 5)
-    return DoNormalOrdering2(-1, modelspace->holes);
-  //    return UndoNormalOrdering2();
-  else
-  {
+  if ( this->GetParticleRank() >=3)
     return DoNormalOrdering3(-1, modelspace->holes);
-    //    return UndoNormalOrdering3();
-  }
+  else
+    return DoNormalOrdering2(-1, modelspace->holes);
 }
 
 // Operator Operator::UndoNormalOrdering2() const
@@ -431,10 +427,11 @@ Operator Operator::UndoNormalOrdering() const
 
 Operator Operator::DoNormalOrderingCore() const
 {
-  std::cout << " IN " << __func__ << "   legs = " << legs << std::endl;
-  if (legs % 2 > 0)
+//  std::cout << " IN " << __func__ << "   legs = " << legs << std::endl;
+//  if (legs % 2 > 0)
+  if ( not this->IsNumberConserving() )
     return DoNormalOrderingDagger(+1, modelspace->core);
-  if (legs > 5)
+  if ( this->GetParticleRank() >= 3 )
     return DoNormalOrdering3(+1, modelspace->core);
   else
     return DoNormalOrdering2(+1, modelspace->core);
@@ -920,9 +917,10 @@ void Operator::Erase()
   EraseOneBody();
   TwoBody.Erase();
   //  if (particle_rank >=3)
-  if (legs >= 6)
+//  if (legs >= 6)
     ThreeBody.Erase();
-  if ((legs % 2) > 0)
+//  if ((legs % 2) > 0)
+//  if (not this->IsNumberConserving() )
     ThreeLeg.Erase();
 }
 
@@ -976,7 +974,8 @@ void Operator::SetNumberLegs(int l)
   legs = l;
   if (l == old_legs)
     return;
-  if (legs % 2 == 0)
+//  if (legs % 2 == 0)
+  if (this->IsNumberConserving() )
   {
     if (old_legs < 4)
       TwoBody = TwoBodyME(modelspace, rank_J, rank_T, parity);
@@ -1612,13 +1611,15 @@ double Operator::MP1_Eval(Operator &H)
 /// \f[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \f]
 double Operator::Norm() const
 {
-  if (legs % 2 == 0)
+//  if (legs % 2 == 0)
+  if  (this->IsNumberConserving() )
   {
     double n1 = OneBodyNorm();
     double n2 = TwoBody.Norm();
-    double n3 = 0.;
-    if (legs > 5)
-      n3 = ThreeBody.Norm();
+    double n3 = ThreeBody.Norm();
+//    double n3 = 0.;
+//    if (legs > 5)
+//      n3 = ThreeBody.Norm();
     //      return sqrt(n1*n1+n2*n2);
     return sqrt(n1 * n1 + n2 * n2 + n3 * n3);
   }

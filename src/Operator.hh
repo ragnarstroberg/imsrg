@@ -157,6 +157,8 @@ class Operator
   void MakeNormalized();
   void MakeUnNormalized();
 
+  bool IsNumberConserving()const { return legs%2 == 0;}; // TODO: in principle, we could have a 2-leg number-changing operator like a+a+. Then we'd need to rethink this.
+
 
   void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
