@@ -209,14 +209,9 @@ namespace Commutator
   /// Returns \f$ Z = [X,Y] \f$
   Operator Commutator(const Operator &X, const Operator &Y)
   {
-//    int xrank = X.rank_J;
-//    int yrank = Y.rank_J;
-//    int xlegs = X.GetNumberLegs();
-//    int ylegs = Y.GetNumberLegs();
 
-    X.modelspace->PreCalculateSixJ();
+    X.modelspace->PreCalculateSixJ(); // if we already called this, it does nothing.
 
-//    if ( (xlegs%2==0) and (ylegs%2==0) ) // X and Y are particle-number conserving
     if ( X.IsNumberConserving() and Y.IsNumberConserving() ) // X and Y are particle-number conserving
     {
        // Here, we use some temporary objects in case we need to change X and Y from reduced to non-reduced.
@@ -228,7 +223,7 @@ namespace Commutator
 
           const Operator * Xnred = &X;  // Pointer to the non-reduced version of the operator
           const Operator * Ynred = &Y;
-          if ( X.IsReduced() )
+          if ( X.IsReduced() ) // CommutatorScalarScalar doesn't expect reduced operators. Need to make it not reduced.
           {
              Xtmp = X;
              Xtmp.MakeNotReduced();
@@ -288,8 +283,6 @@ namespace Commutator
     }
     else // Either X or Y changes the number of particles. In principle, we should be checking that the non-changing operator is not reduced...
     {
-       int xlegs = X.GetNumberLegs();
-       int ylegs = Y.GetNumberLegs();
        if (X.IsNumberConserving() and (not Y.IsNumberConserving()) ) // Y is of a^dagger form
        {
          return CommutatorScalarDagger(X, Y);
