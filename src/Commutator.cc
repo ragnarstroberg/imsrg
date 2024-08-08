@@ -316,11 +316,14 @@ namespace Commutator
     int z_Jrank = X.GetJRank() + Y.GetJRank(); // I sure hope this is zero.
     int z_Trank = X.GetTRank() + Y.GetTRank();
     int z_parity = (X.GetParity() + Y.GetParity()) % 2;
-    int z_particlerank = std::max(X.GetParticleRank(), Y.GetParticleRank());
-    if (use_imsrg3)
-      z_particlerank = std::max(z_particlerank, 3);
+    int z_particlerank = use_imsrg3 ? 3 : 2;
+//    int z_particlerank = std::max(X.GetParticleRank(), Y.GetParticleRank());
+//    if (use_imsrg3)
+//      z_particlerank = std::max(z_particlerank, 3);
     ModelSpace &ms = *(Y.GetModelSpace());
     Operator Z(ms, z_Jrank, z_Trank, z_parity, z_particlerank);
+
+
 
     if (Z.IsReduced())
        Z.MakeNotReduced();
@@ -332,12 +335,16 @@ namespace Commutator
     else
       Z.SetNonHermitian();
 
+    if ( z_particlerank>2)
+       Z.ThreeBody.SetMode("pn");
+
     bool save_single_thread = single_thread;
 
-    if (Z.GetParticleRank() > 2)
-    {
-      Z.ThreeBody.SwitchToPN_and_discard();
-    }
+//    if (Z.GetParticleRank() > 2)
+//    {
+//      Z.ThreeBody.SwitchToPN_and_discard();
+//    }
+
 
     // Here is where we start calling the IMSRG(2) commutator expressions.
     if (comm_term_on["comm110ss"])
@@ -345,12 +352,14 @@ namespace Commutator
     if (comm_term_on["comm220ss"])
       comm220ss(X, Y, Z);
 
+
     if (comm_term_on["comm111ss"])
       comm111ss(X, Y, Z);
     if (comm_term_on["comm121ss"])
       comm121ss(X, Y, Z);
     if (comm_term_on["comm122ss"])
       comm122ss(X, Y, Z);
+
 
     // The 222_pp_hh and 221ss terms can share a common intermediate
     // so if we're computing both, we do them together
@@ -365,10 +374,15 @@ namespace Commutator
       if (comm_term_on["comm221ss"])
         comm221ss(X, Y, Z);
     }
+
+
     //    if (comm_term_on["comm222_pp_hh_221ss"])
     //      comm222_pp_hh_221ss(X, Y, Z);
     if (comm_term_on["comm222_phss"])
       comm222_phss(X, Y, Z);
+
+
+
 
     if (use_imsrg3 and ((X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold)))
     {
@@ -1760,7 +1774,7 @@ namespace Commutator
       }
       else if (Y.GetParity() == 0 and Y.GetTRank() == 0)
       {
-        Operator Xred = -X; // because [X,Y] = -[Y,-X].
+        Operator Xred = -X; // because [X,Y] = -[Y,X] = [Y,-X].
         Xred.MakeReduced();
         Z.MakeReduced();
         comm222_phst(Y, Xred, Z);
@@ -1786,6 +1800,8 @@ namespace Commutator
       Z.MakeNotReduced();
       return;
     }
+
+
 
     int hy = Y.IsHermitian() ? 1 : -1;
     // Create Pandya-transformed hp and ph matrix elements
