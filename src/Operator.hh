@@ -152,6 +152,7 @@ class Operator
 
   void MakeReduced();
   void MakeNotReduced();
+  void ApplyWignerEckartJFactor( bool multiply );// if argument is false, then we divide by sqrt(2J+1)
   bool IsReduced()const { return is_reduced;};
   void ChangeNormalization(double coeff);
   void MakeNormalized();

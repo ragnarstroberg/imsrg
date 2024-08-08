@@ -997,6 +997,16 @@ void Operator::SetNumberLegs(int l)
   }
 }
 
+
+//  Wigner-Eckart theorem convention:
+//  < J M | Ojm | J' M'> = (-1)*(2*j) <J'M' jm | JM> / sqrt(2J+1) <J||Oj||J'>
+//
+//  If j!=0 we have no business making the operator not-reduced, since we don't specify m.
+//  Assuming j=0, J=J', then
+//  <JM| O00 | JM> = 1/sqrt(2J+1) <J||O||J>.
+//  Given an operator expressed in terms of reduced matrix elements, we can make it not reduced
+// by dividing my sqrt(2J+1). To make it reduced, we multiply by sqrt(2J+1).
+//
 void Operator::MakeReduced()
 {
   if (is_reduced)
@@ -1009,45 +1019,12 @@ void Operator::MakeReduced()
     std::cout << "Trying to reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  for (size_t a = 0; a < modelspace->GetNumberOrbits(); ++a)
-  {
-    Orbit &oa = modelspace->GetOrbit(a);
-    for (size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}))
-    {
-      //      if (b<a) continue;
-      OneBody(a, b) *= sqrt(oa.j2 + 1);
-      //      OneBody(b,a) *= sqrt(oa.j2+1);
-    }
-  }
-  for (auto &itmat : TwoBody.MatEl)
-  {
-    TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-    itmat.second *= sqrt(2 * tbc.J + 1);
-  }
-
-  if (particle_rank > 2)
-  {
-    for (auto &it : ThreeBody.Get_ch_start())
-    {
-      size_t ThCH_bra = it.first.ch_bra;
-      size_t ThCH_ket = it.first.ch_ket;
-      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
-      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
-      size_t nbras3 = Tbc_bra.GetNumberKets();
-      for (size_t ibra = 0; ibra < nbras3; ibra++)
-      {
-        size_t nket3 = Tbc_bra.GetNumberKets();
-        for (size_t iket = ibra; iket < nket3; iket++)
-        {
-          double ME3b = ThreeBody.GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
-          ThreeBody.SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b * sqrt(Tbc_bra.twoJ + 1) );
-        }
-      }
-    }
-  }
+  ApplyWignerEckartJFactor( true ); // true means multiply by sqrt(2J+1)
 
   is_reduced = true;
 }
+
+
 
 void Operator::MakeNotReduced()
 {
@@ -1061,20 +1038,32 @@ void Operator::MakeNotReduced()
     std::cout << "Trying to un-reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
+  ApplyWignerEckartJFactor( false ); // false means divide rather than multiply by sqrt(2J+1).
+
+  is_reduced = false;
+}
+
+
+// Multiply or divide by sqrt(2J+1) to convert between reduced/non-reduced matrix elements
+void Operator::ApplyWignerEckartJFactor( bool multiply )
+{
   for (size_t a = 0; a < modelspace->GetNumberOrbits(); ++a)
   {
     Orbit &oa = modelspace->GetOrbit(a);
+    double WE_factor = multiply ? sqrt(oa.j2+1) : 1.0/sqrt(oa.j2+1);
     for (size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}))
     {
       //      if (b<a) continue;
-      OneBody(a, b) /= sqrt(oa.j2 + 1);
-      //      OneBody(b,a) = OneBody(a,b);
+         OneBody(a, b) *= WE_factor;
+      //      OneBody(b,a) *= sqrt(oa.j2+1);
     }
   }
   for (auto &itmat : TwoBody.MatEl)
   {
     TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-    itmat.second /= sqrt(2 * tbc.J + 1);
+    double WE_factor = multiply ? sqrt(2 * tbc.J + 1)  : 1.0 / sqrt(2 * tbc.J + 1);
+    itmat.second *= WE_factor;
+//    itmat.second *= sqrt(2 * tbc.J + 1);
   }
 
   if (particle_rank > 2)
@@ -1085,46 +1074,25 @@ void Operator::MakeNotReduced()
       size_t ThCH_ket = it.first.ch_ket;
       ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
       ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
+      double WE_factor = multiply ? sqrt(Tbc_bra.twoJ + 1) : 1.0/sqrt(Tbc_bra.twoJ + 1) ;
       size_t nbras3 = Tbc_bra.GetNumberKets();
       for (size_t ibra = 0; ibra < nbras3; ibra++)
       {
-        size_t nket3 = Tbc_bra.GetNumberKets();
-        for (size_t iket = ibra; iket < nket3; iket++)
+        size_t nket3 = Tbc_ket.GetNumberKets();
+        size_t iket_min = (ThCH_bra==ThCH_ket) ? ibra : 0;
+        for (size_t iket = iket_min; iket < nket3; iket++)
         {
-          double ME3b = ThreeBody.GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
-          ThreeBody.SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b / sqrt(Tbc_bra.twoJ + 1) );
+          double ME3b = WE_factor *  ThreeBody.GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
+          ThreeBody.SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b );
         }
       }
     }
   }
-
-  is_reduced = false;
 }
 
-//// this routine then multiplies the TBME <ab|Op|cd> by coeff if a==b, and again if c==d
-// void Operator::ChangeNormalization( double coeff )
-//{
-//   for (auto& it_mat : TwoBody.MatEl )
-//   {
-//     int ch_bra = it_mat.first[0];
-//     int ch_ket = it_mat.first[1];
-//     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-//     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-//     int nbras = tbc_bra.GetNumberKets();
-//     int nkets = tbc_ket.GetNumberKets();
-//     for (int ibra=0; ibra<nbras; ++ibra)
-//     {
-//       Ket& bra = tbc_bra.GetKet(ibra);
-//       if ( bra.p == bra.q ) it_mat.second.row(ibra) *= coeff;
-//     }
-//     for (int iket=0; iket<nkets; ++iket)
-//     {
-//       Ket& ket = tbc_ket.GetKet(iket);
-//       if ( ket.p == ket.q ) it_mat.second.col(iket) *= coeff;
-//     }
-//   }
-//
-// }
+
+
+
 
 void Operator::ScaleZeroBody(double x)
 {
@@ -1141,13 +1109,7 @@ void Operator::ScaleTwoBody(double x)
   TwoBody.Scale(x);
 }
 
-// This is unused
-// void Operator::Eye()
-//{
-//   ZeroBody = 1;
-//   OneBody.eye();
-//   TwoBody.Eye();
-//}
+
 
 /// Calculate the second-order perturbation theory correction to the energy
 /// \f[
