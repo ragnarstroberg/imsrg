@@ -383,7 +383,7 @@ void ThreeBodyStorage_pn::AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, si
       or    iket_1>ch_dim[ch_1] or iket_2>ch_dim[ch_2])
   {
     std::ostringstream oss;
-    oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
+    oss << __FILE__ << " " << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
     throw std::domain_error( oss.str() );
   }
   // ch_start points to where the matrix for this channel starts, and the rest
