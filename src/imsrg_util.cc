@@ -2232,15 +2232,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
     Operator Fermi(modelspace,0,1,0,2);
     Fermi.SetHermitian();
     int norbits = modelspace.GetNumberOrbits();
-    for (int i=0; i<norbits; ++i)
+//    for (int i=0; i<norbits; ++i)
+    for ( auto i : modelspace.proton_orbits )
     {
       Orbit& oi = modelspace.GetOrbit(i);
-      for (int j : Fermi.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
-      {
-        Orbit& oj = modelspace.GetOrbit(j);
-        if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
-        Fermi.OneBody(i,j) = sqrt(oi.j2+1.0);  // Reduced matrix element
-      }
+      int j = modelspace.GetOrbitIndex( oi.n, oi.l, oi.j2, -oi.tz2);
+      Fermi.OneBody(i,j) = sqrt(oi.j2+1); // Reduced matrix element
+      Fermi.OneBody(j,i) = Fermi.OneBody(i,j); // Hermitian
+//      for (int j : Fermi.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+//      {
+//        Orbit& oj = modelspace.GetOrbit(j);
+//        if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
+//        Fermi.OneBody(i,j) = sqrt(oi.j2+1.0);  // Reduced matrix element
+//      }
     }
     return Fermi;
   }
