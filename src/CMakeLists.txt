@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
+cmake_policy(SET CMP0167 NEW)
 set(INSTDIR $ENV{HOME})
 set(BLA_VENDOR OpenBLAS)
 # set(CMAKE_SKIP_INSTALL_RPATH ON)

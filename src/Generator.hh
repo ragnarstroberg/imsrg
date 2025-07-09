@@ -69,6 +69,7 @@ class Generator
   void SetUseIsospinAveraging( bool tf ){use_isospin_averaging=tf;};
 
   Operator GetHod(Operator& H);
+  Operator GetHod_CC(Operator& H, std::string lr);
 
 
 
@@ -87,7 +88,11 @@ class Generator
   double Get3bDenominator(int i, int j, int k, int l, int m, int n);
 
   Operator GetHod_SingleRef( Operator& H );
+  Operator GetHod_SingleRef_left( Operator& H );
+  Operator GetHod_SingleRef_right( Operator& H );
+  Operator Get_adjoint(Operator &H);
   Operator GetHod_ShellModel( Operator& H );
+  double GetOverlap(Operator &H1, Operator &H2);
   
 
 };
