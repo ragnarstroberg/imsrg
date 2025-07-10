@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <map>
 #include <functional>
+#include <cstdint>
 
 /// Class containing the partial wave decomposition of any scalar two-body potential
 /// as described in https://doi.org/10.1016/0375-9474(71)90279-X. The advantages

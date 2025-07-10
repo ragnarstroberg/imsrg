@@ -136,6 +136,8 @@ class Operator
   void SetHermitian() ;
   void SetAntiHermitian() ;
   void SetNonHermitian() ;
+void Set_OneBody_Hermitian();
+void Set_OneBody_antiHermitian();
   bool IsHermitian()const {return hermitian;};
   bool IsAntiHermitian()const {return antihermitian;};
   bool IsNonHermitian()const {return not (hermitian or antihermitian);};
