@@ -93,6 +93,8 @@ class Generator
   Operator Get_adjoint(Operator &H);
   Operator GetHod_ShellModel( Operator& H );
   double GetOverlap(Operator &H1, Operator &H2);
+  Operator  GetEOM_ladder(Operator& H , int herm);
+  double  GetEOM_Overlap(Operator& H1, Operator& H2 );
   
 
 };

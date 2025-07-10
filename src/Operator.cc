@@ -944,7 +944,6 @@ void Operator::SetHermitian()
 {
   hermitian = true;
   antihermitian = false;
-  Set_OneBody_Hermitian();
   TwoBody.SetHermitian();
   ThreeBody.SetHermitian();
 }
@@ -953,7 +952,6 @@ void Operator::SetAntiHermitian()
 {
   hermitian = false;
   antihermitian = true;
-  Set_OneBody_antiHermitian();
   TwoBody.SetAntiHermitian();
   ThreeBody.SetAntiHermitian();
 }
@@ -966,26 +964,6 @@ void Operator::SetNonHermitian()
 }
 
 
-void Operator::Set_OneBody_Hermitian()
-{
-	// void here, since the onebody is Hermitian by default?
-}
-
-
-void Operator::Set_OneBody_antiHermitian()
-{
-  for (size_t a = 0; a < modelspace->GetNumberOrbits(); ++a)
-  {
-	  
-	 OneBody(a,a)=0.0;
-  for (size_t b = 0; b < modelspace->GetNumberOrbits(); ++b)
-  {
-	  if(a>b)continue;
-
-	  OneBody(a,b) *= -1;
-  }
-  }
-}
 
 // As the code is currently set up, operators have an instance of ThreeBodyME
 // even if particle_rank < 3. In that case it should be unallocated. However,
