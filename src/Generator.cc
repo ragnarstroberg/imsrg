@@ -1001,6 +1001,16 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
             Hod2(ibra,iket) =  H2(ibra,iket);
          }
       }
+
+      for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
+      {
+         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) 
+         {
+	    int phase_jj = H.modelspace->phase(tbc_bra.J-tbc_ket.J);
+		Hod2(ibra,iket) =  H2(ibra,iket)*phase_jj;
+         }
+      }
+
     }
 
 
@@ -1042,6 +1052,17 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
              ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
          }
       }
+
+
+      for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
+      {
+         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) 
+         {
+	     ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
+         }
+      }
+
+
     }
    return ovlp;
 
