@@ -15,7 +15,6 @@ def htc(Haml, chi):
     ht_minus= chi*0
 
     ht_plus.SetAntiHermitian()
-
     ht_minus.SetHermitian()
 
     ht_plus = cm.Commutator(Haml, chi )

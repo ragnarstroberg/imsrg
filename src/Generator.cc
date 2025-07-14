@@ -961,6 +961,7 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
 
     int herm_phase =1;
    Operator Hod = 0.0* H;
+
   if(herm == 0){
    Hod.SetHermitian();
      herm_phase =1;
@@ -994,21 +995,20 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
       arma::mat& H2 =  iter.second;
       arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
-      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
-      {
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
-         {
-            Hod2(ibra,iket) =  H2(ibra,iket);
-         }
-      }
+    //  for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+     // {
+  //       for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
+     
+//	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
+//}
+      
 
       for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
       {
-         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) 
-         {
-	    int phase_jj = H.modelspace->phase(tbc_bra.J-tbc_ket.J);
-		Hod2(ibra,iket) =  H2(ibra,iket)*phase_jj;
-         }
+         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) {
+	int phase_ab = H.modelspace->phase(tbc_bra.J -tbc_ket.J);
+//	Hod.TwoBody.AddToTBME(ch_ket,ch_bra, iket, ibra, H2(ibra,iket)*phase_ab);
+}
       }
 
     }
@@ -1049,7 +1049,7 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
-             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
+          //   ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/16.;
          }
       }
 
@@ -1058,7 +1058,7 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
       {
          for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) 
          {
-	     ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
+	  //   ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/16.;
          }
       }
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pyIMSRG import *
 import numpy as np
 
@@ -100,14 +101,20 @@ cm=Commutator
 gm=Generator()
 
 
-ndim=10
+ndim=40
 unt = UnitTest(ms)
 rank_j, parity, rank_Tz, particle_rank, herm= 2,0,0,2,0
+
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
-#h3.MakeReduced()
+
 chi= gm.GetEOM_ladder(h3,0)
+
 cnorm=Norm(chi,chi)
+
 chi=chi/np.sqrt(cnorm)
+
 e,v,lvs = lanczos_proc( htc, Norm, Hs, chi, ndim)
+
 e=np.sort(e)
+
 print(e)
