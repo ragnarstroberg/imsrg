@@ -101,17 +101,23 @@ cm=Commutator
 gm=Generator()
 
 
-ndim=40
+ndim=80
 unt = UnitTest(ms)
-rank_j, parity, rank_Tz, particle_rank, herm= 2,0,0,2,0
+rank_j, parity, rank_Tz, particle_rank, herm= 2,0,0,2,1
 
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 
 chi= gm.GetEOM_ladder(h3,0)
 
+
 cnorm=Norm(chi,chi)
 
 chi=chi/np.sqrt(cnorm)
+
+cnorm=Norm(chi,chi)
+
+
+## initialize T+T'
 
 e,v,lvs = lanczos_proc( htc, Norm, Hs, chi, ndim)
 

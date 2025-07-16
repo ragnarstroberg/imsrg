@@ -13,11 +13,13 @@ def htc(Haml, chi):
 
     ht_plus= chi*0
     ht_minus= chi*0
+    ## chi is hermitian, hplus is antihermitian
 
     ht_plus.SetAntiHermitian()
     ht_minus.SetHermitian()
 
     ht_plus = cm.Commutator(Haml, chi )
+
     ht_minus = cm.Commutator(Haml, chi_d )
 
 

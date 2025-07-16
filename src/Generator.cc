@@ -959,8 +959,8 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
   // Generate a (anti-)hermit operator, regardless the hermitian of operator of H
   // int herm, 0 for hermit, and 1 for antihermit
 
-    int herm_phase =1;
-   Operator Hod = 0.0* H;
+    int herm_phase =0;
+    Operator Hod = 0.0* H;
 
   if(herm == 0){
    Hod.SetHermitian();
@@ -973,6 +973,7 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
    
 
    // One body piece -- eliminate ph bits
+   // 
    for ( auto& i : H.modelspace->core)
    {
       Orbit& oi = H.modelspace->GetOrbit(i);
@@ -986,6 +987,9 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
       }
    }
 
+
+//Hod.EraseTwoBody();
+
    // Two body piece only stored half channel, no need to change
    for ( auto& iter : H.TwoBody.MatEl )
    {
@@ -993,25 +997,44 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
       size_t ch_ket = iter.first[1];
       TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
+
       arma::mat& H2 =  iter.second;
+
       arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
-    //  for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
-     // {
-  //       for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
-     
-//	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
-//}
-      
+
+
+// diagonal channel
+	// diagnal channel, add <ab|ij> and <ij||ab> will be automatically added with proper factor from (anti)hermitian
+if(ch_bra==ch_ket){
+
+      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      {
+         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
+	{
+	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
+        //Hod2(ibra,iket)= H2(ibra,iket);
+}
+}}
+ 
+ if(ch_bra /= ch_ket){
+
+
+// off-diagonal channel
+   
 
       for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
       {
-         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) {
-	int phase_ab = H.modelspace->phase(tbc_bra.J -tbc_ket.J);
-//	Hod.TwoBody.AddToTBME(ch_ket,ch_bra, iket, ibra, H2(ibra,iket)*phase_ab);
+         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+	{
+	//Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket)*herm_phase);
+   //     Hod2(ibra,iket)= H2(ibra,iket)*herm_phase;
 }
-      }
+}
 
-    }
+}
+
+
+}
 
 
    return Hod;
@@ -1045,22 +1068,38 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
       arma::mat& Hmat1 =  iter.second;
       arma::mat& Hmat2 = H2.TwoBody.GetMatrix(ch_bra,ch_ket);
 
+// diagonal channel
+     if(ch_bra==ch_ket){
       for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
-          //   ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/16.;
+             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/4.;
          }
       }
+}
 
+// off-diagonal channel
+     if(ch_bra/=ch_ket){
+
+      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      {
+         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
+         {
+//             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/4.;
+         }
+      }
 
       for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
       {
-         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) 
+         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
          {
-	  //   ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/16.;
+ //            ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/4.;
          }
       }
+
+
+}
 
 
     }
