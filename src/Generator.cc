@@ -958,6 +958,7 @@ Operator  Generator::GetEOM_ladder(Operator& H , int herm)
 
   // Generate a (anti-)hermit operator, regardless the hermitian of operator of H
   // int herm, 0 for hermit, and 1 for antihermit
+    int hZ = H.IsHermitian() ? +1 : -1;
 
     int herm_phase =0;
     Operator Hod = 0.0* H;
@@ -1012,9 +1013,12 @@ if(ch_bra==ch_ket){
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
 	{
 	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
-        //Hod2(ibra,iket)= H2(ibra,iket);
 }
-}}
+}
+
+
+
+}
  
  if(ch_bra /= ch_ket){
 
@@ -1022,12 +1026,20 @@ if(ch_bra==ch_ket){
 // off-diagonal channel
    
 
-      for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
+      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
-         for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
 	{
-	//Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket)*herm_phase);
-   //     Hod2(ibra,iket)= H2(ibra,iket)*herm_phase;
+        Hod2(ibra,iket)= H2(ibra,iket);
+}
+}
+
+
+      for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+      {
+         for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
+	{
+        Hod2(ibra,iket)= H2(ibra,iket)*herm_phase;
 }
 }
 
@@ -1074,7 +1086,7 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
-             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/4.;
+             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
          }
       }
 }
@@ -1086,7 +1098,7 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
-//             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/4.;
+             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
          }
       }
 
@@ -1094,7 +1106,7 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
       {
          for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
          {
- //            ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket)/4.;
+             ovlp += Hmat1(ibra,iket)*Hmat2(ibra,iket);
          }
       }
 
