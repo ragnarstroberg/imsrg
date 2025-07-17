@@ -1030,7 +1030,8 @@ if(ch_bra==ch_ket){
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
 	{
-        Hod2(ibra,iket)= H2(ibra,iket);
+        //Hod2(ibra,iket)= H2(ibra,iket);
+	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 }
 }
 
@@ -1039,7 +1040,8 @@ if(ch_bra==ch_ket){
       {
          for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
 	{
-        Hod2(ibra,iket)= H2(ibra,iket)*hZ*herm_phase;
+        //Hod2(ibra,iket)= H2(ibra,iket)*hZ*herm_phase;
+	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket)*hZ*herm_phase);
 }
 }
 
