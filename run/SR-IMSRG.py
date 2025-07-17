@@ -5,7 +5,7 @@ from pyIMSRG import *
 
 
 emax =3         # maximum number of oscillator quanta in the model space
-ref = 'O16'     # reference used for normal ordering
+ref = 'O22'     # reference used for normal ordering
 val = ref # valence space
 
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')
@@ -22,13 +22,14 @@ smax_core = 50       # limit of integration in flow parameter s for first stage 
 #hw=16
 
 #### Example format of how to read input interaction matrix elements from file (these are not included with the code)
-f2b='input/TwBME-HO_NN-only_N3LO_EM500_srg1.8_hw16_emax14_e2max28.me2j.gz'
-f2e1,f2e2,f2l = 14,28,14
-f3b='input/NO2B_ThBME_EM7.5_1.8_2.0_IS_hw16from16_ms14_28_18.me3j.gz'
+#f2b='input/TwBME-HO_NN-only_N3LO_EM500_srg1.8_hw16_emax14_e2max28.me2j.gz'
+f2b='input/chi2b_srg0625_eMax08_hwHO020.me2j.gz'
+f2e1,f2e2,f2l = 4,8,4
+f3b='none'
 f3e1,f3e2,f3e3 = 14,28,18
 mode3n='no2b'
 LECs = 'EM7.5_1820'
-hw=16
+hw=20
 
 
 

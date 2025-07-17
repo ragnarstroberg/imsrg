@@ -11,23 +11,24 @@ def htc(Haml, chi):
     ## generate a antihermit chi
     chi_d = gm.GetEOM_ladder(chi, 1)
 
-    ht_plus= chi*0
+    #ht_plus= chi*0
     ht_minus= chi*0
     ## chi is hermitian, hplus is antihermitian
 
-    ht_plus.SetAntiHermitian()
+    #ht_plus.SetAntiHermitian()
     ht_minus.SetHermitian()
 
-    ht_plus = cm.Commutator(Haml, chi )
+    #ht_plus = cm.Commutator(Haml, chi )
 
     ht_minus = cm.Commutator(Haml, chi_d )
 
 
-    heom1= gm.GetEOM_ladder(ht_plus, 0)
+    #heom1= gm.GetEOM_ladder(ht_plus, 0)
 
     heom2= gm.GetEOM_ladder(ht_minus, 0)
 
-    hod = (heom1+heom2)/2
+    #hod = (heom1+heom2)/2
+    hod=heom2
 
     hod.SetHermitian()
 

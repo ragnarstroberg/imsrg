@@ -1020,7 +1020,7 @@ if(ch_bra==ch_ket){
 
 }
  
- if(ch_bra /= ch_ket){
+ if(ch_bra != ch_ket){
 
 
 // off-diagonal channel
@@ -1092,7 +1092,7 @@ double  Generator::GetEOM_Overlap(Operator& H1, Operator& H2 )
 }
 
 // off-diagonal channel
-     if(ch_bra/=ch_ket){
+     if(ch_bra!=ch_ket){
 
       for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
