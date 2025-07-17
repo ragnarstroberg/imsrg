@@ -102,9 +102,9 @@ cm=Commutator
 gm=Generator()
 
 
-ndim=200
+ndim=100
 unt = UnitTest(ms)
-rank_j, parity, rank_Tz, particle_rank, herm= 2,1,0,2,1
+rank_j, parity, rank_Tz, particle_rank, herm= 2,0,0,2,1
 
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 

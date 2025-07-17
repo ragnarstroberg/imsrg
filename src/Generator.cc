@@ -1039,7 +1039,7 @@ if(ch_bra==ch_ket){
       {
          for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
 	{
-        Hod2(ibra,iket)= H2(ibra,iket)*herm_phase;
+        Hod2(ibra,iket)= H2(ibra,iket)*hZ*herm_phase;
 }
 }
 
