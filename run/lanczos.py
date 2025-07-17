@@ -39,9 +39,9 @@ def Norm(T1, T2):
 
 import numpy as np
 
-def lanczos_proc( hv_func, norm_func, haml, vi, ndim):
+def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     lanczos_vector = []
-    hall = np.zeros([ndim,ndim])
+    hall = np.zeros([max_iter,max_iter])
     hall[0,0]=0.
 
     ## normalize it to 1
@@ -49,8 +49,9 @@ def lanczos_proc( hv_func, norm_func, haml, vi, ndim):
     print(nn)
     vi=vi/np.sqrt(nn)
     lanczos_vector.append(vi)
-
-    for j in range(ndim):
+    norm_e_old=-1000
+    norm_e_new=-1000
+    for j in range(max_iter):
 
         w = hv_func(haml,lanczos_vector[j])
 
@@ -70,12 +71,26 @@ def lanczos_proc( hv_func, norm_func, haml, vi, ndim):
             break
         lanczos_vector.append(w/bj)
 
-        if(j<ndim-1):
+        if(j<max_iter-1):
             hall[j,j+1]=bj
             hall[j+1,j]=bj
         #print(j,ai,bj)
-    print(hall)
-    e,v = np.linalg.eig(hall[0:j,0:j])
+        if(j > 20 and j%5 == 0):
+            e,v = np.linalg.eig(hall[0:j,0:j])
+            e=np.sort(e)
+            print("Energy on ", j , ' th iteration: ', e[0:state_want] )
+            norm_e_new=0.0
+            for k in range(state_want):
+                norm_e_new += e[k]*e[k]
+            if(abs(norm_e_new-norm_e_old) < 0.01):
+                break
+            norm_e_old=norm_e_new
 
-    return(e,v,lanczos_vector)
+    print('Lanczos converged with ', j, ' step')
+    for k in range(state_want):
+        print('E(',k,')= ', e[k])
+    print('Lanczos converged with ', j, ' step')
+    return(e[0:state_want], v[0:state_want,:],lanczos_vector)
+
+
 

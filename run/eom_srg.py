@@ -102,9 +102,9 @@ cm=Commutator
 gm=Generator()
 
 
-ndim=100
+max_iter=100
 unt = UnitTest(ms)
-rank_j, parity, rank_Tz, particle_rank, herm= 2,0,0,2,1
+rank_j, parity, rank_Tz, particle_rank, herm= 1,1,0,2,1
 
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 
@@ -120,8 +120,6 @@ cnorm=Norm(chi,chi)
 
 ## initialize T+T'
 
-e,v,lvs = lanczos_proc( htc, Norm, Hs, chi, ndim)
+e,v,lvs = lanczos_proc( htc, Norm, Hs, chi, max_iter, 2)
 
-e=np.sort(e)
 
-print(e)
