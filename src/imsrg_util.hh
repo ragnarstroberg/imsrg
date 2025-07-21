@@ -95,6 +95,8 @@ namespace imsrg_util
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 
+ Operator Charge_Density_Op( ModelSpace& modelspace );
+
  Operator AxialCharge_Op( ModelSpace& modelspace );
 
  Operator TViolatingPotential_Op( ModelSpace& modelspace, std::vector<double> LECs );

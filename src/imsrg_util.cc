@@ -126,6 +126,7 @@ namespace imsrg_util
       else if (opname == "LdotS")         theop =  LdotS_Op( modelspace);
       else if (opname == "DGT")           theop = M0nu::DGT_Op(modelspace);
       else if (opname == "Anapole")       theop = AnapoleMoment(modelspace);
+      else if (opname == "ChargeDensity") theop = Charge_Density_Op(modelspace);
       else if (opnamesplit[0] =="VGaus")
       {
          double sigma = 1.0;
@@ -713,7 +714,17 @@ namespace imsrg_util
    return rho;
  }
 
-
+ Operator Charge_Density_Op(ModelSpace& modelspace)
+ {
+   // in unit of e
+   Operator rho(modelspace,0,0,0,2);
+   for ( auto a : modelspace.proton_orbits )
+   {
+      // Orbit & oa = modelspace.GetOrbit(a);
+      rho.OneBody(a,a) = 1.; 
+   }
+   return rho;
+ }
 
 /// Lab-frame kinetic energy in the oscillator basis
 Operator KineticEnergy_Op(ModelSpace& modelspace)
