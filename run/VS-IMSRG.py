@@ -4,8 +4,8 @@ from pyIMSRG import *
 
 
 
-emax =4         # maximum number of oscillator quanta in the model space
-ref = 'C12'     # reference used for normal ordering
+emax =3         # maximum number of oscillator quanta in the model space
+ref = 'He4'     # reference used for normal ordering
 val = 'p-shell' # valence space
 
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')
@@ -115,10 +115,6 @@ Hs = Hs.DoNormalOrderingCore()
 
 ### Write out the effective valence space interaction
 rw.WriteTokyo( Hs, valence_fname,'')
-
-### Finally, print out profiling information so we know why this took so dang long to run...
-prof = IMSRGProfiler()
-prof.PrintAll()
 
 
 

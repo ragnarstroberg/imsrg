@@ -95,6 +95,9 @@ class Generator
   double GetOverlap(Operator &H1, Operator &H2);
   Operator  GetEOM_ladder(Operator& H , int herm);
   double  GetEOM_Overlap(Operator& H1, Operator& H2 );
+  Operator  GetVSEOM_ladder(Operator& H , int herm);
+  double  GetVSEOM_Overlap(Operator& H);
+  double  GetVSEOM_test(Operator& H );
   
 
 };

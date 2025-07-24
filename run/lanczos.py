@@ -32,10 +32,42 @@ def htc(Haml, chi):
     return(hod)
 
 
+def htc_vs(Haml, chi):
+
+    ## generate a antihermit chi
+    chi_d = gm.GetVSEOM_ladder(chi, 1)
+
+    ht_plus= chi_d*0
+    ht_minus= chi*0
+    ## chi is hermitian, hplus is antihermitian
+
+    ht_plus.SetAntiHermitian()
+
+    ht_minus.SetHermitian()
+
+    ht_plus = cm.Commutator(Haml, chi )
+
+    ht_minus = cm.Commutator(Haml, chi_d )
+
+
+    heom1= gm.GetVSEOM_ladder(ht_plus, 0)
+    heom2= gm.GetVSEOM_ladder(ht_minus, 0)
+    hod=heom1
+    #hod = (heom1+heom2)/2
+
+    return(hod)
 
 
 def Norm(T1, T2):
     return(gm.GetEOM_Overlap(T1,T2))
+
+def Norm_vs(T1,T2):
+    T3=gm.GetVSEOM_ladder(T1,1)
+    nop=cm.Commutator(T1,T3)
+    nop=nop/2
+
+    nm = gm.GetVSEOM_Overlap(nop)
+    return(nm)
 
 import numpy as np
 
@@ -46,7 +78,7 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
 
     ## normalize it to 1
     nn=norm_func(vi,vi)
-    print(nn)
+    print('initial norm vector', nn)
     vi=vi/np.sqrt(nn)
     lanczos_vector.append(vi)
     norm_e_old=-1000
@@ -67,6 +99,8 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
 
 
         bj = np.sqrt(norm_func(w,w))
+
+#        print(j,ai,bj)
         if bj < 0.00001 :
             break
         lanczos_vector.append(w/bj)
@@ -75,7 +109,7 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
             hall[j,j+1]=bj
             hall[j+1,j]=bj
         #print(j,ai,bj)
-        if(j > 20 and j%5 == 0):
+        if(j > 4 and j%2 == 0):
             e,v = np.linalg.eig(hall[0:j,0:j])
             e=np.sort(e)
             print("Energy on ", j , ' th iteration: ', e[0:state_want] )
@@ -90,6 +124,7 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     for k in range(state_want):
         print('E(',k,')= ', e[k])
     print('Lanczos converged with ', j, ' step')
+    print(hall)
     return(e[0:state_want], v[0:state_want,:],lanczos_vector)
 
 
