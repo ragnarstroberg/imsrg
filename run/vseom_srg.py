@@ -110,21 +110,14 @@ Hs = imsrgsolver.GetH_s()
 cm=Commutator
 gm=Generator()
 
+
 unt = UnitTest(ms)
 rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,2,1
-
+ 
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 chi= gm.GetVSEOM_ladder(h3,0)
-#chi.PrintOneBody()
-chid=gm.GetVSEOM_ladder(chi,1)
-#chid.PrintOneBody()
 nm=Norm_vs(chi,chi)
-print(nm)
-chi=chi/np.sqrt(nm)
-chid=gm.GetVSEOM_ladder(chi,1)
-nm=Norm_vs(chi,chid)
 
-print(nm)
 e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 20, 4)
 
 

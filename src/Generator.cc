@@ -1211,7 +1211,7 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_qv() ) )
 	{
-	Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
+      Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 }
 }
 
@@ -1264,7 +1264,7 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
         Ket & dbra = tbc_bra.GetKet(ibra);
 //        std::cout << dbra.p << dbra.q << dket.p<<dket.q <<std::endl;
         if(ibra == iket){
-            std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) <<std::endl;
+//            std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) <<std::endl;
             if(dbra.p == 3 and dbra.q ==3)ovlp2+=(0.953*0.953)*H2(ibra,iket);
             if(dbra.p == 5 and dbra.q ==5)ovlp2+=(0.304*0.304)*H2(ibra,iket);
         }
@@ -1273,7 +1273,7 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
 }
 }}
     
-std::cout << ovlp << " "<<ovlp1 << " "<<ovlp2<<std::endl;
+//std::cout << ovlp << " "<<ovlp1 << " "<<ovlp2<<std::endl;
 return(ovlp+ovlp1+ovlp2);
 
 }

@@ -34,10 +34,11 @@ def htc(Haml, chi):
 
 def htc_vs(Haml, chi):
 
+
     ## generate a antihermit chi
     chi_d = gm.GetVSEOM_ladder(chi, 1)
 
-    ht_plus= chi_d*0
+    ht_plus= chi*0
     ht_minus= chi*0
     ## chi is hermitian, hplus is antihermitian
 
@@ -52,8 +53,8 @@ def htc_vs(Haml, chi):
 
     heom1= gm.GetVSEOM_ladder(ht_plus, 0)
     heom2= gm.GetVSEOM_ladder(ht_minus, 0)
-    hod=heom1
-    #hod = (heom1+heom2)/2
+    #hod=heom2
+    hod = (heom1+heom2)/2
 
     return(hod)
 
@@ -62,10 +63,19 @@ def Norm(T1, T2):
     return(gm.GetEOM_Overlap(T1,T2))
 
 def Norm_vs(T1,T2):
-    T3=gm.GetVSEOM_ladder(T1,1)
-    nop=cm.Commutator(T1,T3)
-    nop=nop/2
 
+    T3=gm.GetVSEOM_ladder(T1,1)
+    T4=gm.GetVSEOM_ladder(T2,1)
+
+    nop1=T1*0
+    nop1.SetAntiHermitian()
+    nop1=cm.Commutator(T1,T4)
+
+    nop2=T1*0
+    nop2.SetAntiHermitian()
+    nop2=cm.Commutator(T3,T2)
+    nop=(nop1-nop2)/4
+    #nop=nop1
     nm = gm.GetVSEOM_Overlap(nop)
     return(nm)
 
@@ -83,6 +93,12 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     lanczos_vector.append(vi)
     norm_e_old=-1000
     norm_e_new=-1000
+
+    w = hv_func(haml,lanczos_vector[0])
+
+    ai=norm_func(w,lanczos_vector[0])
+    
+
     for j in range(max_iter):
 
         w = hv_func(haml,lanczos_vector[j])
