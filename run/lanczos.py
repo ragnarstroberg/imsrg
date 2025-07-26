@@ -6,30 +6,30 @@ gm=Generator()
 
 ## initialize the T and D^dagger
 
-def htc(Haml, chi):
-
-    ## generate a antihermit chi
-    chi_d = gm.GetEOM_ladder(chi, 1)
-
-    ht_plus= chi*0
-    ht_minus= chi*0
-    ## chi is hermitian, hplus is antihermitian
-
-    ht_plus.SetAntiHermitian()
-    ht_minus.SetHermitian()
-
-    ht_plus = cm.Commutator(Haml, chi )
-
-    ht_minus = cm.Commutator(Haml, chi_d )
-
-
-    heom1= gm.GetEOM_ladder(ht_plus, 0)
-
-    heom2= gm.GetEOM_ladder(ht_minus, 0)
-    #hod=heom1
-    hod = (heom1+heom2)/2
-
-    return(hod)
+#def htc(Haml, chi):
+#
+#    ## generate a antihermit chi
+#    chi_d = gm.GetEOM_ladder(chi, 1)
+#
+#    ht_plus= chi*0
+#    ht_minus= chi*0
+#    ## chi is hermitian, hplus is antihermitian
+#
+#    ht_plus.SetAntiHermitian()
+#    ht_minus.SetHermitian()
+#
+#    ht_plus = cm.Commutator(Haml, chi )
+#
+#    ht_minus = cm.Commutator(Haml, chi_d )
+#
+#
+#    heom1= gm.GetEOM_ladder(ht_plus, 0)
+#
+#    heom2= gm.GetEOM_ladder(ht_minus, 0)
+#    #hod=heom1
+#    hod = (heom1+heom2)/2
+#
+#    return(hod)
 
 
 def htc_vs(Haml, chi):
@@ -53,8 +53,8 @@ def htc_vs(Haml, chi):
 
     heom1= gm.GetVSEOM_ladder(ht_plus, 0)
     heom2= gm.GetVSEOM_ladder(ht_minus, 0)
-    #hod=heom2
-    hod = (heom1+heom2)/2
+    hod=heom2
+    #hod = (heom1+heom2)/2
 
     return(hod)
 
@@ -64,18 +64,13 @@ def Norm(T1, T2):
 
 def Norm_vs(T1,T2):
 
-    T3=gm.GetVSEOM_ladder(T1,1)
-    T4=gm.GetVSEOM_ladder(T2,1)
+    T0=gm.GetVSEOM_ladder(T2,1)
 
-    nop1=T1*0
-    nop1.SetAntiHermitian()
-    nop1=cm.Commutator(T1,T4)
+    nop=T1*0
+    nop.SetHermitian()
+    nop=cm.Commutator(T1,T0)
+    nop=nop/2
 
-    nop2=T1*0
-    nop2.SetAntiHermitian()
-    nop2=cm.Commutator(T3,T2)
-    nop=(nop1-nop2)/4
-    #nop=nop1
     nm = gm.GetVSEOM_Overlap(nop)
     return(nm)
 
@@ -125,7 +120,7 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
             hall[j,j+1]=bj
             hall[j+1,j]=bj
         #print(j,ai,bj)
-        if(j > 4 and j%2 == 0):
+        if(j > 2 and j%2 == 0):
             e,v = np.linalg.eig(hall[0:j,0:j])
             e=np.sort(e)
             print("Energy on ", j , ' th iteration: ', e[0:state_want] )

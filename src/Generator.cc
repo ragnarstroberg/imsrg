@@ -1162,9 +1162,9 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       {
       Orbit& oa = H.modelspace->GetOrbit(a);
 
-         Hod.OneBody(a,i) = H.OneBody(a,i);
+//         Hod.OneBody(a,i) = H.OneBody(a,i);
 
-         Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
+ //        Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
       }
    }
 
@@ -1196,7 +1196,7 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
 
 // PPvq
 //
-      for ( auto& iket : tbc_ket.GetKetIndex_qv() ) // cc means core-core ('holes' refer to the reference state)
+      for ( auto& iket : tbc_ket.GetKetIndex_vc() ) // cc means core-core ('holes' refer to the reference state)
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
 	{
@@ -1278,16 +1278,6 @@ return(ovlp+ovlp1+ovlp2);
 
 }
 
-
-double  Generator::GetVSEOM_test(Operator& H )
-{
-    // [S+S', S-S']=[S',S] - [S,S']=2[S',S]
-
-
-
-    
-
-}
 
 
 
