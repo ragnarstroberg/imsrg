@@ -6,43 +6,16 @@ gm=Generator()
 
 ## initialize the T and D^dagger
 
-#def htc(Haml, chi):
-#
-#    ## generate a antihermit chi
-#    chi_d = gm.GetEOM_ladder(chi, 1)
-#
-#    ht_plus= chi*0
-#    ht_minus= chi*0
-#    ## chi is hermitian, hplus is antihermitian
-#
-#    ht_plus.SetAntiHermitian()
-#    ht_minus.SetHermitian()
-#
-#    ht_plus = cm.Commutator(Haml, chi )
-#
-#    ht_minus = cm.Commutator(Haml, chi_d )
-#
-#
-#    heom1= gm.GetEOM_ladder(ht_plus, 0)
-#
-#    heom2= gm.GetEOM_ladder(ht_minus, 0)
-#    #hod=heom1
-#    hod = (heom1+heom2)/2
-#
-#    return(hod)
-
-def htc_vs2(Haml, chi):
-
+def htc(Haml, chi):
 
     ## generate a antihermit chi
-    chi_d = gm.GetVSEOM_ladder(chi, 1)
+    chi_d = gm.GetEOM_ladder(chi, 1)
 
     ht_plus= chi*0
     ht_minus= chi*0
     ## chi is hermitian, hplus is antihermitian
 
     ht_plus.SetAntiHermitian()
-
     ht_minus.SetHermitian()
 
     ht_plus = cm.Commutator(Haml, chi )
@@ -50,13 +23,13 @@ def htc_vs2(Haml, chi):
     ht_minus = cm.Commutator(Haml, chi_d )
 
 
-    heom1= gm.GetVSEOM_ladder2(ht_plus, 0)
-    heom2= gm.GetVSEOM_ladder2(ht_minus, 0)
-    #hod=heom2
+    heom1= gm.GetEOM_ladder(ht_plus, 0)
+
+    heom2= gm.GetEOM_ladder(ht_minus, 0)
+    #hod=heom1
     hod = (heom1+heom2)/2
 
     return(hod)
-
 
 def htc_vs(Haml, chi):
 
@@ -124,7 +97,6 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
         w = hv_func(haml,lanczos_vector[j])
 
         ai=norm_func(w,lanczos_vector[j])
-        print('ai norm', ai)
 
 
         if(j>0):
@@ -137,7 +109,6 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
 
         bj = np.sqrt(norm_func(w,w))
 
-        print(j,ai,bj)
         if bj < 0.0000001 :
             break
         lanczos_vector.append(w/bj)
@@ -161,7 +132,6 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     for k in range(state_want):
         print('E(',k,')= ', e[k])
     print('Lanczos converged with ', j, ' step')
-    print(hall)
     return(e[0:state_want], v[0:state_want,:],lanczos_vector)
 
 

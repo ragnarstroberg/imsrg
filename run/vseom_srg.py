@@ -123,6 +123,6 @@ print('norm_new ', nm)
 
 gm.force_decouple(Hs)
 
-e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 10, 4)
+e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 100, 4)
 
 
