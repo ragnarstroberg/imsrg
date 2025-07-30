@@ -118,10 +118,11 @@ h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 chi= gm.GetVSEOM_ladder(h3,0)
 nm=Norm_vs(chi,chi)
 chi=chi/np.sqrt(nm)
-op=htc_vs(Hs, chi)
-nm=Norm_vs(chi, op)
-print(nm)
+nm=Norm_vs(chi,chi)
+print('norm_new ', nm)
 
-e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 956, 4)
+gm.force_decouple(Hs)
+
+e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 10, 4)
 
 
