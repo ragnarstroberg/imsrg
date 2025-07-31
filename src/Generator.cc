@@ -1130,8 +1130,8 @@ void  Generator::force_decouple(Operator& H )
    {
       for ( auto& a : H.modelspace->valence )
       {
-         H.OneBody(a,i) = 0.;
-         H.OneBody(i,a) = 0.;
+//         H.OneBody(a,i) = 0.;
+//         H.OneBody(i,a) = 0.;
       }
    }
 
@@ -1180,7 +1180,7 @@ void  Generator::force_decouple(Operator& H )
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_vv() ) )
 	{
-      H.TwoBody.SetTBME(ch_bra,ch_ket, ibra, iket, 0.);
+  //    H.TwoBody.SetTBME(ch_bra,ch_ket, ibra, iket, 0.);
 }
 }
 
@@ -1349,6 +1349,9 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
   double  ovlp1=0;
   double  ovlp2=0;
 
+  double c1= -0.95542499;
+  double c2= 0.29523395;
+
 
     ovlp+=H.ZeroBody;
      
@@ -1358,9 +1361,14 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
       Orbit& oi = H.modelspace->GetOrbit(i);
         if(oi.tz2 != 1)continue;
         if(std::abs(H.OneBody(i,i))<1e-6)continue;
-        if(oi.j2==3)ovlp1+=2*H.OneBody(i,i)*(0.953*0.953);
-        if(oi.j2==1)ovlp1+=2*H.OneBody(i,i)*(0.304*0.304);
+      //  std::cout << oi.j2 << " " << H.OneBody(i,i) << std::endl;
+        if(oi.j2==3)ovlp1+=2*H.OneBody(i,i)*c1*c1;
+        if(oi.j2==1)ovlp1+=2*H.OneBody(i,i)*c2*c2;
+      //  std::cout << 2*H.OneBody(i,i)*c2*c2 << std::endl;
    }
+
+
+    //    std::cout << "here one body" << ovlp1 << std::endl;
 
    for ( auto& iter : H.TwoBody.MatEl )
    {
@@ -1383,22 +1391,23 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
         Ket & dbra = tbc_bra.GetKet(ibra);
 //        std::cout << dbra.p << dbra.q << dket.p<<dket.q <<std::endl;
         if(ibra == iket){
- //           std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) <<std::endl;
-            if(dbra.p == 3 and dbra.q ==3)ovlp2+=(0.953*0.953)*H2(ibra,iket);
-            if(dbra.p == 5 and dbra.q ==5)ovlp2+=(0.304*0.304)*H2(ibra,iket);
+            if(dbra.p == 3 and dbra.q ==3)ovlp2+=c1*c1*H2(ibra,iket);
+            if(dbra.p == 5 and dbra.q ==5)ovlp2+=c2*c2*H2(ibra,iket);
+  //          std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) << " " << ovlp2 <<std::endl;
         }
         if(ibra != iket){
-//            std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) <<std::endl;
-            if(dbra.p == 3 and dbra.q ==3)ovlp2+=(-0.953*0.304)*H2(ibra,iket);
+            if(dbra.p == 3 and dbra.q ==3)ovlp2+=c1*c2*H2(ibra,iket)*2;
+//            std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) << " " << ovlp2 <<std::endl;
         }
 }
 }}
-
 
     
 return(ovlp+ovlp1+ovlp2);
 
 }
+
+
 
 
 

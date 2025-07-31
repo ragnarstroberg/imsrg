@@ -52,7 +52,7 @@ def htc_vs(Haml, chi):
 
     heom1= gm.GetVSEOM_ladder(ht_plus, 0)
     heom2= gm.GetVSEOM_ladder(ht_minus, 0)
-    #hod=heom2
+    hod=heom2
     hod = (heom1+heom2)/2
 
     return(hod)
@@ -64,11 +64,11 @@ def Norm(T1, T2):
 def Norm_vs(T1,T2):
 
     T0=gm.GetVSEOM_ladder(T2,1)
-
     nop=T1*0
     nop.SetHermitian()
     nop=cm.Commutator(T1,T0)
     nop=nop/2
+
     nm = gm.GetVSEOM_Overlap(nop)
     return(nm)
 
@@ -90,6 +90,8 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     w = hv_func(haml,lanczos_vector[0])
 
     ai=norm_func(w,lanczos_vector[0])
+    print('first step ai :', ai)
+
     
 
     for j in range(max_iter):
@@ -116,7 +118,7 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
         if(j<max_iter-1):
             hall[j,j+1]=bj
             hall[j+1,j]=bj
-        #print(j,ai,bj)
+        print(j,ai,bj)
         if(j > 2 and j%2 == 0):
             e,v = np.linalg.eig(hall[0:j,0:j])
             e=np.sort(e)
