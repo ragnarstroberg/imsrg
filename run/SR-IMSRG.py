@@ -5,7 +5,7 @@ from pyIMSRG import *
 
 
 emax =3         # maximum number of oscillator quanta in the model space
-ref = 'O22'     # reference used for normal ordering
+ref = 'vacuum'     # reference used for normal ordering
 val = ref # valence space
 
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')

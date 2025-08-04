@@ -1126,14 +1126,6 @@ void  Generator::force_decouple(Operator& H )
 {
 
    
-   for ( auto& i : H.modelspace->valence)
-   {
-      for ( auto& a : H.modelspace->valence )
-      {
-//         H.OneBody(a,i) = 0.;
-//         H.OneBody(i,a) = 0.;
-      }
-   }
 
 
 
@@ -1164,27 +1156,9 @@ void  Generator::force_decouple(Operator& H )
       }
    }
 
-   for ( auto& iter : H.TwoBody.MatEl )
-   {
-      size_t ch_bra = iter.first[0];
-      size_t ch_ket = iter.first[1];
-      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
 
 
 
-
-// vvvv
-//
-      for ( auto& iket : tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
-      {
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_vv() ) )
-	{
-  //    H.TwoBody.SetTBME(ch_bra,ch_ket, ibra, iket, 0.);
-}
-}
-
-}
 
 
 //Hod.EraseTwoBody();
@@ -1349,8 +1323,11 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
   double  ovlp1=0;
   double  ovlp2=0;
 
-  double c1= -0.95542499;
+  double c1= 0.95542499;
   double c2= 0.29523395;
+// double c1= 0.95;
+ // double c2= 0.29;
+
 
 
     ovlp+=H.ZeroBody;

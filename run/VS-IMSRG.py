@@ -6,12 +6,12 @@ from pyIMSRG import *
 
 emax =3         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
-val = 'p-shell' # valence space
+val = 'FCI' # valence space
 
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')
 valence_generator = 'shell-model-atan'  # definition of generator for decoupling the valence space (could also use 'shell-model-white'
-smax_core = 50       # limit of integration in flow parameter s for first stage of decoupling
-smax_valence = 100   # limit of s for second stage of decoupling
+smax_core = 0       # limit of integration in flow parameter s for first stage of decoupling
+smax_valence = 0   # limit of s for second stage of decoupling
 
 #### Example format of how to read input interaction matrix elements from file (these are not included with the code)
 #f2b = 'input/chi2b_srg0800_eMax16_EMax16_hwHO020.me2j.gz'
