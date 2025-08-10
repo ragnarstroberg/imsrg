@@ -200,6 +200,7 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     lanczos_vector.append(vi)
     norm_e_old=-10000
     norm_e_new=-1000
+    e=np.zeros(state_want)
 
     for j in range(max_iter-1):
         w = hv_func(haml,lanczos_vector[j])
@@ -211,7 +212,6 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
             for i in range(j):
                 bj=norm_func(w,lanczos_vector[i])
                 hall[j,i]=bj
-
                 w=w-bj*lanczos_vector[i]
 
         ## generate the new vector
@@ -222,31 +222,27 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
         print(j,'th step: ',bj)
         w=w/np.sqrt(bj)
         lanczos_vector.append(w)
-        e=[0,100]
-        if(j > state_want ):
-            hsub=hall[0:j,0:j]
+
+        for m in range(j):
+            vl=lanczos_vector[j]
+            vm=lanczos_vector[m]
+            vec=hv_func(haml, vm)
+            nmm=norm_func(vl,vec)
+            hall[m,j] =nmm
+        if(j >= state_want ):
             #hsub=(hsub+hsub.T)/2
-
-            for l in range(j):
-                for m in range(l+1,j):
-                    vl=lanczos_vector[l]
-                    vm=lanczos_vector[m]
-                    vec=htc_vs(haml, vl)
-                    nmm=norm_func(vm,vec)
-                    hsub[l,m] =nmm
-
-            e,v = np.linalg.eig(hsub[0:j,0:j])
+            e,v = np.linalg.eig(hall[0:j+1,0:j+1])
             e=np.sort(e)
             print("Energy on ", j , ' th iteration: ', e[0:state_want] )
-            #norm_e_new=0.0
-            #for k in range(state_want):
-            #    norm_e_new += e[k]*e[k]
-            #if(abs(norm_e_new-norm_e_old) < 0.0001):
-            #    print('energy converge')
-            #    break
-            #norm_e_old=norm_e_new
+            norm_e_new=0.0
+            for k in range(state_want):
+                norm_e_new += e[k]*e[k]
+            if(abs(norm_e_new-norm_e_old) < 0.01):
+                print('energy converge')
+                break
+            norm_e_old=norm_e_new
 
-    print(hsub)
+    print(hall)
     print('Arnoldi converged with ', j, ' step')
     #for k in range(state_want):
     #    print('E(',k,')= ', e[k])

@@ -5,7 +5,7 @@ from lanczos import *
 
 
 
-emax =2         # maximum number of oscillator quanta in the model space
+emax =3         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
 val = 'p-shell' # valence space
 
@@ -172,16 +172,16 @@ vec2.SetAntiHermitian()
 
 
 #e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 30, 2)
-e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 100, 2)
-#dim=len(v2)
-#fnm=np.zeros([dim,dim])
+e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 800, 4)
+dim=len(v2)
+fnm=np.zeros([dim,dim])
 #
-#for i ,vi in enumerate(v2):
-#    for j ,vj in enumerate(v2):
-#        vec=htc_vs(Hs, vi)
-#        nm=Norm_vs_new(vj,vec)
-#        fnm[i,j]=nm
-#print(fnm)
+for i ,vi in enumerate(v2):
+    for j ,vj in enumerate(v2):
+        nm=Norm_vs_new(vi,vj)
+        fnm[i,j]=nm
+        if(abs(nm) > 0.001):
+            print(i,j,nm)
 
 #va=v2[0]
 #vb=v2[1]
