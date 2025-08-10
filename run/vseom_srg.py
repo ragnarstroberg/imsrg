@@ -172,16 +172,16 @@ vec2.SetAntiHermitian()
 
 
 #e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 30, 2)
-e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 80, 5)
-
-dim=len(v2)
-fnm=np.zeros([dim,dim])
-
-for i ,vi in enumerate(v2):
-    for j ,vj in enumerate(v2):
-        nm=Norm_vs_new(vi,vj)
-        if(abs(nm) >0.000001):
-            print(i,j, nm)
+e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 100, 2)
+#dim=len(v2)
+#fnm=np.zeros([dim,dim])
+#
+#for i ,vi in enumerate(v2):
+#    for j ,vj in enumerate(v2):
+#        vec=htc_vs(Hs, vi)
+#        nm=Norm_vs_new(vj,vec)
+#        fnm[i,j]=nm
+#print(fnm)
 
 #va=v2[0]
 #vb=v2[1]
@@ -195,4 +195,3 @@ for i ,vi in enumerate(v2):
 #print(Norm_vs_new(vs1,vb))
 
 #vs1=htc_vs(Hs, vb)
-#print(Norm_vs_new(va,vs1))

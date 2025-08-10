@@ -1134,9 +1134,9 @@ void  Generator::force_decouple(Operator& H )
       {
       Orbit& oa = H.modelspace->GetOrbit(a);
 //
-  //       H.OneBody(a,i) = 0.;
+         H.OneBody(a,i) = 0.;
 //
-  //       H.OneBody(i,a) = 0.;
+         H.OneBody(i,a) = 0.;
       }
    }
 
@@ -1155,7 +1155,7 @@ void  Generator::force_decouple(Operator& H )
       {
          for ( auto& ibra : tbc_bra.GetKetIndex_vv()  )
 	{
-//        H.TwoBody.SetTBME(ch_bra,ch_ket, ibra, iket, 0.);
+        H.TwoBody.SetTBME(ch_bra,ch_ket, ibra, iket, 0.);
 }
 }
 }

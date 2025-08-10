@@ -19,26 +19,9 @@ def htc(Haml, chi):
     ht_plus.SetAntiHermitian()
     ht_minus.SetHermitian()
 
-#    ht_plus = cm.Commutator(Haml, chi )
-#    ht_minus = cm.Commutator(Haml, chi_d )
+    ht_plus = cm.Commutator(Haml, chi )
+    ht_minus = cm.Commutator(Haml, chi_d )
 
-#    cm.comm111ss(Haml, chi  , ht_plus  )
-#    cm.comm111ss(Haml, chi_d, ht_minus )
-#    cm.comm121ss(Haml, chi  , ht_plus  )
-#    cm.comm121ss(Haml, chi_d, ht_minus )
-#    cm.comm221ss(Haml, chi  , ht_plus  )
-#    cm.comm221ss(Haml, chi_d, ht_minus )
-#    cm.comm122ss(Haml, chi  , ht_plus  )
-#    cm.comm122ss(Haml, chi_d, ht_minus )
-#
-    cm.comm222_pp_hhss(Haml, chi  , ht_plus  )
-    cm.comm222_pp_hhss(Haml, chi_d, ht_minus )
-##    cm.comm222_pp_hh_221ss(Haml, chi  , ht_plus  )
-##    cm.comm222_pp_hh_221ss(Haml, chi_d, ht_minus )
-##    cm.comm222_phss(Haml, chi  , ht_plus  )
-##    cm.comm222_phss(Haml, chi_d, ht_minus )
-#    cm.comm222_phss_slower(Haml, chi  , ht_plus  )
-#    cm.comm222_phss_slower(Haml, chi_d, ht_minus )
 
     heom1= gm.GetVSEOM_ladder(ht_plus, 0)
     heom2= gm.GetVSEOM_ladder(ht_minus, 0)
@@ -63,7 +46,6 @@ def htc_vs(Haml, chi):
     ht_minus.SetHermitian()
 
     ht_plus = cm.Commutator(Haml, chi )
-
     ht_minus = cm.Commutator(Haml, chi_d )
 
 #    cm.comm111ss(Haml, chi  , ht_plus  )
@@ -82,13 +64,14 @@ def htc_vs(Haml, chi):
 #    cm.comm222_pp_hh_221ss(Haml, chi_d, ht_minus )
 
 
-#    heom1= gm.GetVSEOM_ladder(ht_plus, 0)
-#    heom2= gm.GetVSEOM_ladder(ht_minus, 0)
-#    hod = heom1
+    heom1= gm.GetVSEOM_ladder(ht_plus, 0)
+    heom2= gm.GetVSEOM_ladder(ht_minus, 0)
+
     hod=Haml*0
-    hod.SetNonHermitian()
-    hod = (ht_plus+ht_minus)
-    hod=gm.GetVSEOM_ladder(hod,0)
+    hod.SetHermitian()
+    hod = (heom1+heom2)/2
+    #hod = (ht_plus+ht_minus)
+    #hod=gm.GetVSEOM_ladder(hod,0)
     return(hod)
 
 
@@ -215,7 +198,7 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
     print('initial norm vector', nn)
     vi=vi/np.sqrt(nn)
     lanczos_vector.append(vi)
-    norm_e_old=-1000
+    norm_e_old=-10000
     norm_e_new=-1000
 
     for j in range(max_iter-1):
@@ -223,44 +206,47 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want):
         ai=norm_func(w,lanczos_vector[j])
         hall[j,j]=ai
         w=w-ai*lanczos_vector[j]
+
         if(j>0):
             for i in range(j):
                 bj=norm_func(w,lanczos_vector[i])
                 hall[j,i]=bj
+
                 w=w-bj*lanczos_vector[i]
 
         ## generate the new vector
         bj = norm_func(w,w)
-        print(j,'th step: ',bj)
-        if bj < 0.1 :
+        if bj < 0.1:
             print('bj is small: ', bj, j)
             break
-        
-#        print(w.Norm)
-#        print(bj)
-#        w=w/np.sqrt(bj)
-#        bj = norm_func(w,w)
-#        print(bj)
+        print(j,'th step: ',bj)
         w=w/np.sqrt(bj)
-        print(norm_func(w,w))
-        #lanczos_vector.append(new_vec)
         lanczos_vector.append(w)
-        e=[0,0]
-        if(j >= state_want ):
+        e=[0,100]
+        if(j > state_want ):
             hsub=hall[0:j,0:j]
-            hsub=(hsub+hsub.T)/2
+            #hsub=(hsub+hsub.T)/2
+
+            for l in range(j):
+                for m in range(l+1,j):
+                    vl=lanczos_vector[l]
+                    vm=lanczos_vector[m]
+                    vec=htc_vs(haml, vl)
+                    nmm=norm_func(vm,vec)
+                    hsub[l,m] =nmm
+
             e,v = np.linalg.eig(hsub[0:j,0:j])
             e=np.sort(e)
             print("Energy on ", j , ' th iteration: ', e[0:state_want] )
-            norm_e_new=0.0
-            for k in range(state_want):
-                norm_e_new += e[k]*e[k]
-            if(abs(norm_e_new-norm_e_old) < 0.0001):
-                print('energy converge')
-                break
-            norm_e_old=norm_e_new
+            #norm_e_new=0.0
+            #for k in range(state_want):
+            #    norm_e_new += e[k]*e[k]
+            #if(abs(norm_e_new-norm_e_old) < 0.0001):
+            #    print('energy converge')
+            #    break
+            #norm_e_old=norm_e_new
 
-    print(hall)
+    print(hsub)
     print('Arnoldi converged with ', j, ' step')
     #for k in range(state_want):
     #    print('E(',k,')= ', e[k])
