@@ -651,9 +651,11 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetHod", &Generator::GetHod, py::arg("H"))
           .def("Get_adjoint", &Generator::Get_adjoint, py::arg("H"))
           .def("GetOverlap", &Generator::GetOverlap, py::arg("H1"), py::arg("H2"))
-          .def("GetEOM_ladder", &Generator::GetEOM_ladder, py::arg("H1"), py::arg("herm"))
+          .def("GetEOM_ladder", &Generator::GetEOM_ladder, py::arg("H"), py::arg("herm"))
           .def("GetEOM_Overlap", &Generator::GetEOM_Overlap, py::arg("H1"), py::arg("H2"))
-          .def("GetVSEOM_ladder", &Generator::GetVSEOM_ladder, py::arg("H1"), py::arg("herm"))
+          .def("GetVSEOM_ladder", &Generator::GetVSEOM_ladder, py::arg("H"), py::arg("herm"))
+          .def("GetVSEOM_ladder_d", &Generator::GetVSEOM_ladder_d, py::arg("H"), py::arg("herm"))
+          .def("PrintEOMVS_ladder", &Generator::PrintEOMVS_ladder, py::arg("H"), py::arg("info"))
           .def("GetVSEOM_Overlap", &Generator::GetVSEOM_Overlap, py::arg("H"))
           .def("force_decouple", &Generator::force_decouple, py::arg("H"))
           .def("GetHod_CC", &Generator::GetHod_CC, py::arg("H"), py::arg("lr"))
@@ -718,6 +720,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("comm222_pp_hh_221ss", &Commutator::comm222_pp_hh_221ss);
        Commutator.def("comm222_pp_hhss", &Commutator::comm222_pp_hhss);
        Commutator.def("comm222_phss", &Commutator::comm222_phss);
+       Commutator.def("comm222_phss_slower", &Commutator::comm222_phss_slower);
        // IMSRG(3) commutators
        Commutator.def("comm330ss", &Commutator::comm330ss);
        Commutator.def("comm331ss", &Commutator::comm331ss);

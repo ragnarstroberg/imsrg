@@ -4,7 +4,7 @@ from pyIMSRG import *
 
 
 
-emax =3         # maximum number of oscillator quanta in the model space
+emax =2         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
 val = 'FCI' # valence space
 

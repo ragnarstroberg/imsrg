@@ -42,7 +42,7 @@ namespace Commutator
       {"comm122ss", true},
       {"comm222_pp_hhss", true},
       {"comm222_phss", true},
-      //      {"comm222_pp_hh_221ss", true},
+//      {"comm222_pp_hh_221ss", true},
       {"comm111st", true},
       {"comm121st", true},
       {"comm221st", true},
@@ -376,8 +376,8 @@ namespace Commutator
     }
 
 
-    //    if (comm_term_on["comm222_pp_hh_221ss"])
-    //      comm222_pp_hh_221ss(X, Y, Z);
+//    if (comm_term_on["comm222_pp_hh_221ss"])
+//      comm222_pp_hh_221ss(X, Y, Z);
     if (comm_term_on["comm222_phss"])
       comm222_phss(X, Y, Z);
 

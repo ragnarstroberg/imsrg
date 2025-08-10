@@ -5,7 +5,7 @@ from lanczos import *
 
 
 
-emax =3         # maximum number of oscillator quanta in the model space
+emax =2         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
 val = 'p-shell' # valence space
 
@@ -115,14 +115,84 @@ unt = UnitTest(ms)
 rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,2,1
  
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
+
 chi= gm.GetVSEOM_ladder(h3,0)
 nm=Norm_vs(chi,chi)
 chi=chi/np.sqrt(nm)
 nm=Norm_vs(chi,chi)
-print('norm_new ', nm)
 
 gm.force_decouple(Hs)
 
-e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 10, 4)
+#lvs=[]
+#print('initial vector')
+info=1
+gm.PrintEOMVS_ladder(Hs,info);
+Hs.PrintOneBody()
+#
+#
+vec2=chi*0
+vec2.SetAntiHermitian()
+#cm.comm110ss(Hs, chi, vec2)
+#cm.comm220ss(Hs, chi, vec2)
+#cm.comm111ss(Hs, chi, vec2)
+#cm.comm121ss(Hs, chi, vec2)
+#cm.comm122ss(Hs, chi, vec2)
+#cm.comm222_pp_hhss(Hs, chi, vec2)
+#cm.comm221ss(Hs, chi, vec2)
+#cm.comm222_phss(Hs, chi, vec2)
+#vec2=cm.CommutatorScalarScalar(Hs, chi)
+#nm=gm.GetVSEOM_Overlap(vec2)
+#print(nm)
+
+#vec2=htc_vs(Hs, chi)
+#vec2=gm.GetVSEOM_ladder(vec2,0)
+#gm.PrintEOMVS_ladder(vec2,info)
+#
+#ai=Norm_vs(chi,vec2)
+#print(ai)
 
 
+#v1=htc_vs(Hs,chi)
+
+#a=Norm_vs(chi,v1)
+#
+#v1=v1-a*chi
+#
+#bb=Norm_vs(v1,v1)
+#
+#v1=v1/np.sqrt(bb)
+
+## methd a
+
+#w1=htc_vs(Hs,v1)
+#w2=htc_vs(Hs,chi)
+#print('Norm condition: ', Norm_vs(v1,chi), Norm_vs(chi,v1))
+#print(Norm_vs(w1,chi))
+#print(Norm_vs(w2,v1))
+
+
+#e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 30, 2)
+e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 80, 5)
+
+dim=len(v2)
+fnm=np.zeros([dim,dim])
+
+for i ,vi in enumerate(v2):
+    for j ,vj in enumerate(v2):
+        nm=Norm_vs_new(vi,vj)
+        if(abs(nm) >0.000001):
+            print(i,j, nm)
+
+#va=v2[0]
+#vb=v2[1]
+#
+#print(Norm_vs_new(va,vb))
+#print(Norm_vs_new(vb,va))
+#
+#Hs.EraseOneBody()
+#vs1=htc_vs(Hs, va)
+#print(Norm_vs_new(vb,vs1))
+#print(Norm_vs_new(vs1,vb))
+
+#vs1=htc_vs(Hs, vb)
+#print(Norm_vs_new(va,vs1))
