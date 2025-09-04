@@ -5,7 +5,7 @@ from lanczos import *
 
 
 
-emax =3         # maximum number of oscillator quanta in the model space
+emax =2         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
 val = 'p-shell' # valence space
 
@@ -117,17 +117,23 @@ rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,2,1
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 
 chi= gm.GetVSEOM_ladder(h3,0)
-nm=Norm_vs(chi,chi)
+
+nm=Norm_vs_new(chi,chi)
 chi=chi/np.sqrt(nm)
-nm=Norm_vs(chi,chi)
+nm=Norm_vs_new(chi,chi)
 
 gm.force_decouple(Hs)
+Hs.ZeroBody=0
+
+nm=gm.GetVSEOM_Overlap(Hs)
+print('reference energy: ', nm, 'vs [ 0.73265033 19.49274967] in nmax2 for He6',)
+
 
 #lvs=[]
 #print('initial vector')
-info=1
-gm.PrintEOMVS_ladder(Hs,info);
-Hs.PrintOneBody()
+#info=1
+#gm.PrintEOMVS_ladder(Hs,info);
+#Hs.PrintOneBody()
 #
 #
 vec2=chi*0
@@ -141,7 +147,6 @@ vec2.SetAntiHermitian()
 #cm.comm221ss(Hs, chi, vec2)
 #cm.comm222_phss(Hs, chi, vec2)
 #vec2=cm.CommutatorScalarScalar(Hs, chi)
-#nm=gm.GetVSEOM_Overlap(vec2)
 #print(nm)
 
 #vec2=htc_vs(Hs, chi)
@@ -171,17 +176,30 @@ vec2.SetAntiHermitian()
 #print(Norm_vs(w2,v1))
 
 
-#e,v1,v2=lanczos_proc(htc_vs, Norm_vs, Hs, chi, 30, 2)
-e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 800, 4)
+#e,v1,v2=lanczos_proc(htc_vs, Norm_vs_new, Hs, chi, 16, 2,ms)
+e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new2, Hs, chi, 4, 2,ms)
 dim=len(v2)
 fnm=np.zeros([dim,dim])
 #
 for i ,vi in enumerate(v2):
+    vtmp=vi*0.
+    vtmp.SetHermitian()
     for j ,vj in enumerate(v2):
-        nm=Norm_vs_new(vi,vj)
-        fnm[i,j]=nm
-        if(abs(nm) > 0.001):
-            print(i,j,nm)
+        vtmp=htc_vs(Hs,vi)
+        mat=Norm_vs_new(vj,vtmp)
+#        mat+=Norm3(vj,vi,Hs,ms)
+        fnm[i,j]=mat
+print(fnm)
+#vi=v2[0]
+#vj=v2[1]
+#print(Norm3(vj,vi,Hs,ms)-Norm3(vi,vj,Hs,ms), Norm3(vi,vj,Hs,ms) )
+print(fnm[0,1]-fnm[1,0])
+
+e,v=np.linalg.eig(fnm)
+e=np.sort(e)
+print(e[0:4])
+
+
 
 #va=v2[0]
 #vb=v2[1]
