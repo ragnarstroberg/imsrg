@@ -125,8 +125,9 @@ nm=Norm_vs_new(chi,chi)
 gm.force_decouple(Hs)
 Hs.ZeroBody=0
 
+print('compute reference energy to check hermitian')
 nm=gm.GetVSEOM_Overlap(Hs)
-print('reference energy: ', nm, 'vs [ 0.73265033 19.49274967] in nmax2 for He6',)
+print('reference energy: ', nm, 'vs [ 0.73284264 19.4924669 ] in nmax2 for He6',)
 
 
 #lvs=[]
@@ -177,30 +178,48 @@ vec2.SetAntiHermitian()
 
 
 #e,v1,v2=lanczos_proc(htc_vs, Norm_vs_new, Hs, chi, 16, 2,ms)
-e,v1,v2=arnoldi_proc(htc_vs, Norm_vs_new2, Hs, chi, 4, 2,ms)
+e,v2=arnoldi_proc(htc_vs, Norm_vs_new2, Hs, chi, 260, 2,ms)
 dim=len(v2)
 fnm=np.zeros([dim,dim])
+nnm=np.zeros([dim,dim])
 #
 for i ,vi in enumerate(v2):
     vtmp=vi*0.
     vtmp.SetHermitian()
     for j ,vj in enumerate(v2):
+
+        nnm[i,j]=Norm_vs_new(vi,vj)
+        nnm[j,i]=Norm_vs_new(vj,vi)
         vtmp=htc_vs(Hs,vi)
+#        if(i>j):
+#            continue
         mat=Norm_vs_new(vj,vtmp)
-#        mat+=Norm3(vj,vi,Hs,ms)
+#        mat+=Norm3(vi,vj,Hs,ms)
         fnm[i,j]=mat
+        fnm[j,i]=mat
 print(fnm)
 #vi=v2[0]
 #vj=v2[1]
-#print(Norm3(vj,vi,Hs,ms)-Norm3(vi,vj,Hs,ms), Norm3(vi,vj,Hs,ms) )
-print(fnm[0,1]-fnm[1,0])
+#print(Norm3(vj,vi,Hs,ms)-Norm3(vi,vj,Hs,ms) )
+#print(fnm[0,1]-fnm[1,0])
 
-e,v=np.linalg.eig(fnm)
+e,vs=np.linalg.eig(fnm)
 e=np.sort(e)
 print(e[0:4])
 
 
-
+for iq in range(len(e)):
+    vtmp=chi*0.
+    vtmp.SetHermitian()
+    for i ,vi in enumerate(v2):
+        alpha = vs[i,iq]
+        vtmp=vtmp+vi*alpha
+    print('Norm: ', Norm_vs_new(vtmp,vtmp))
+    vj=vtmp
+    vtmp=htc_vs(Hs,vj)
+    mat=Norm_vs_new(vj,vtmp)
+    mat+=Norm3(vj,vj,Hs,ms)
+    print('Energy: ', mat)
 #va=v2[0]
 #vb=v2[1]
 #

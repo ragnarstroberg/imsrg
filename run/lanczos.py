@@ -142,6 +142,7 @@ def Norm3(t1,t2,haml,ms):
     cm.comm223ss(haml,t2,t3)
     cm.comm232ss(t1,t3,nop)
     cm.comm231ss(t1,t3,nop)
+    cm.comm132ss(t1,t3,nop)
     rst=gm.GetVSEOM_Overlap(nop)
 
     nop=t1*0.0
@@ -151,6 +152,7 @@ def Norm3(t1,t2,haml,ms):
     cm.comm223ss(haml,t2d,t3)
     cm.comm232ss(t1,t3,nop)
     cm.comm231ss(t1,t3,nop)
+    cm.comm132ss(t1,t3,nop)
     rst+=gm.GetVSEOM_Overlap(nop)
     
 
@@ -161,6 +163,7 @@ def Norm3(t1,t2,haml,ms):
     cm.comm223ss(haml,t2,t3)
     cm.comm232ss(t1d,t3,nop)
     cm.comm231ss(t1d,t3,nop)
+    cm.comm132ss(t1d,t3,nop)
     rst-=gm.GetVSEOM_Overlap(nop)
 
 
@@ -171,6 +174,7 @@ def Norm3(t1,t2,haml,ms):
     cm.comm223ss(haml,t2d,t3)
     cm.comm232ss(t1d,t3,nop)
     cm.comm231ss(t1d,t3,nop)
+    cm.comm132ss(t1d,t3,nop)
     rst-=gm.GetVSEOM_Overlap(nop)
     return(rst/4)
 
@@ -276,7 +280,7 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
                 w=w-bj*lanczos_vector[i]
 
         ## generate the new vector
-        bj = norm_func(w,w)*0.9
+        bj = norm_func(w,w)
         if bj < 0.1:
             print('bj is small: ', bj, j)
             break
@@ -310,5 +314,5 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
     #    print('E(',k,')= ', e[k])
     #print('Arnoldi converged with ', j, ' step')
 
-    return(e, v,lanczos_vector)
+    return(e, lanczos_vector)
     #return(lanczos_vector)
