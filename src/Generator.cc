@@ -1273,8 +1273,8 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       for ( auto& a : VectorUnion(H.modelspace->valence,H.modelspace->qspace) )
       {
       Orbit& oa = H.modelspace->GetOrbit(a);
-//         Hod.OneBody(a,i) = H.OneBody(a,i);
-//         Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
+  //       Hod.OneBody(a,i) = H.OneBody(a,i);
+    //     Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
       }
    }
 //
@@ -1365,11 +1365,11 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
  //
 //emax 2
   
-// double c1= 0.95161831;
-// double c2= 0.30728258;
+ double c1= 0.95161831;
+ double c2= 0.30728258;
 
- double c2= -0.95161831;
- double c1= 0.30728258;
+// double c2= -0.95161831;
+// double c1= 0.30728258;
  
 // emax 3
 //double c1 = 0.9675254 ;

@@ -366,7 +366,7 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
         if(j >= state_want ):
             #hsub=(hall+hall.T)/2
             hsub=hall
-            print(hsub[0:j+1,0:j+1])
+          #  print(hsub[0:j+1,0:j+1])
             e,v = np.linalg.eig(hsub[0:j+1,0:j+1])
             idx = np.argsort(e)   
             e = e[idx]
