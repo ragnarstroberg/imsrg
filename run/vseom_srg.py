@@ -12,7 +12,7 @@ val = 'p-shell' # valence space
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')
 valence_generator = 'shell-model-atan'  # definition of generator for decoupling the valence space (could also use 'shell-model-white'
 smax_core = 50       # limit of integration in flow parameter s for first stage of decoupling
-smax_valence = 50   # limit of s for second stage of decoupling
+smax_valence = 100   # limit of s for second stage of decoupling
 
 #### Example format of how to read input interaction matrix elements from file (these are not included with the code)
 #f2b = 'input/chi2b_srg0800_eMax16_EMax16_hwHO020.me2j.gz'
@@ -86,7 +86,10 @@ hf.PrintSPEandWF()
 
 ### Do normal ordering with respect to the HF basis
 HNO = hf.GetNormalOrderedH(2)
-
+ips1 = ms.GetOrbitIndex(0,0,1,-1)
+ins1 = ms.GetOrbitIndex(0,0,1,+1)
+HNO.SetOneBody(ips1,ips1, HNO.GetOneBody(ips1,ips1)-10)
+HNO.SetOneBody(ins1,ins1, HNO.GetOneBody(ins1,ins1)-10)
 ### Create an instance of the IMSRGSolver class, used for solving the IMSRG flow equations
 imsrgsolver = IMSRGSolver(HNO)
 imsrgsolver.SetMethod('magnus')  # Solve using the Magnus formulation. Could also be 'flow_RK4'
@@ -104,7 +107,16 @@ imsrgsolver.SetSmax(smax_valence)
 imsrgsolver.Solve()
 
 ### Hs is the IMSRG-evolved Hamiltonian
+#rw.WriteTokyo( HNO, valence_fname,'')
 Hs = imsrgsolver.GetH_s()
+
+rw.WriteTokyo( Hs, 'sd.snt','')
+#Hs = Hs.DoNormalOrderingCore()
+
+### Write out the effective valence space interaction
+
+Hs.ZeroBody=0.
+
 
 
 cm=Commutator
@@ -117,118 +129,22 @@ rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,2,1
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 
 chi= gm.GetVSEOM_ladder(h3,0)
-
 nm=Norm_vs_new(chi,chi)
+
+print('Norm of random Op: ', nm)
 chi=chi/np.sqrt(nm)
+
 nm=Norm_vs_new(chi,chi)
 
 gm.force_decouple(Hs)
-Hs.ZeroBody=0
 
 print('compute reference energy to check hermitian')
 nm=gm.GetVSEOM_Overlap(Hs)
-print('reference energy: ', nm, 'vs [ 0.73284264 19.4924669 ] in nmax2 for He6',)
+print('reference energy: ', nm, 'vs [ -4.19234292  9.75174484 ] in nmax2 for He6',)
 
 
-#lvs=[]
-#print('initial vector')
-#info=1
-#gm.PrintEOMVS_ladder(Hs,info);
-#Hs.PrintOneBody()
-#
-#
-vec2=chi*0
-vec2.SetAntiHermitian()
-#cm.comm110ss(Hs, chi, vec2)
-#cm.comm220ss(Hs, chi, vec2)
-#cm.comm111ss(Hs, chi, vec2)
-#cm.comm121ss(Hs, chi, vec2)
-#cm.comm122ss(Hs, chi, vec2)
-#cm.comm222_pp_hhss(Hs, chi, vec2)
-#cm.comm221ss(Hs, chi, vec2)
-#cm.comm222_phss(Hs, chi, vec2)
-#vec2=cm.CommutatorScalarScalar(Hs, chi)
-#print(nm)
-
-#vec2=htc_vs(Hs, chi)
-#vec2=gm.GetVSEOM_ladder(vec2,0)
-#gm.PrintEOMVS_ladder(vec2,info)
-#
-#ai=Norm_vs(chi,vec2)
-#print(ai)
+#e,v1,v2=lanczos_proc(htc_vs, Norm_vs_new, Hs, chi, 160, 2,ms)
+e,vs,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 60, 4,ms)
 
 
-#v1=htc_vs(Hs,chi)
 
-#a=Norm_vs(chi,v1)
-#
-#v1=v1-a*chi
-#
-#bb=Norm_vs(v1,v1)
-#
-#v1=v1/np.sqrt(bb)
-
-## methd a
-
-#w1=htc_vs(Hs,v1)
-#w2=htc_vs(Hs,chi)
-#print('Norm condition: ', Norm_vs(v1,chi), Norm_vs(chi,v1))
-#print(Norm_vs(w1,chi))
-#print(Norm_vs(w2,v1))
-
-
-#e,v1,v2=lanczos_proc(htc_vs, Norm_vs_new, Hs, chi, 16, 2,ms)
-e,v2=arnoldi_proc(htc_vs, Norm_vs_new2, Hs, chi, 260, 2,ms)
-dim=len(v2)
-fnm=np.zeros([dim,dim])
-nnm=np.zeros([dim,dim])
-#
-for i ,vi in enumerate(v2):
-    vtmp=vi*0.
-    vtmp.SetHermitian()
-    for j ,vj in enumerate(v2):
-
-        nnm[i,j]=Norm_vs_new(vi,vj)
-        nnm[j,i]=Norm_vs_new(vj,vi)
-        vtmp=htc_vs(Hs,vi)
-#        if(i>j):
-#            continue
-        mat=Norm_vs_new(vj,vtmp)
-#        mat+=Norm3(vi,vj,Hs,ms)
-        fnm[i,j]=mat
-        fnm[j,i]=mat
-print(fnm)
-#vi=v2[0]
-#vj=v2[1]
-#print(Norm3(vj,vi,Hs,ms)-Norm3(vi,vj,Hs,ms) )
-#print(fnm[0,1]-fnm[1,0])
-
-e,vs=np.linalg.eig(fnm)
-e=np.sort(e)
-print(e[0:4])
-
-
-for iq in range(len(e)):
-    vtmp=chi*0.
-    vtmp.SetHermitian()
-    for i ,vi in enumerate(v2):
-        alpha = vs[i,iq]
-        vtmp=vtmp+vi*alpha
-    print('Norm: ', Norm_vs_new(vtmp,vtmp))
-    vj=vtmp
-    vtmp=htc_vs(Hs,vj)
-    mat=Norm_vs_new(vj,vtmp)
-    mat+=Norm3(vj,vj,Hs,ms)
-    print('Energy: ', mat)
-#va=v2[0]
-#vb=v2[1]
-#
-#print(Norm_vs_new(va,vb))
-#print(Norm_vs_new(vb,va))
-#
-#Hs.EraseOneBody()
-#vs1=htc_vs(Hs, va)
-#print(Norm_vs_new(vb,vs1))
-#print(Norm_vs_new(vs1,vb))
-
-#vs1=htc_vs(Hs, vb)

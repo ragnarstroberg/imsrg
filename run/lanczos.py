@@ -6,30 +6,6 @@ gm=Generator()
 
 ## initialize the T and D^dagger
 
-def Norm_vs_new2(T1,T2):
-
-    T1d=gm.GetVSEOM_ladder(T1,1)
-    T2d=gm.GetVSEOM_ladder(T2,1)
-    nop=T1*0
-    nop1=T1*0
-    nop2=T1*0
-    nop3=T1*0
-    nop4=T1*0
-    nop.SetNonHermitian()
-    nop1.SetAntiHermitian()
-    nop2.SetHermitian()
-    nop3.SetHermitian()
-    nop4.SetAntiHermitian()
-
-    nop1= cm.Commutator(T1,T2)
-    nop2= cm.Commutator(T1d,T2)
-    nop3= cm.Commutator(T1,T2d)
-    nop4= cm.Commutator(T1d,T2d)
-
-    nop=nop1-nop2+nop3-nop4
-    nop=nop/4
-    nm = gm.GetVSEOM_Overlap(nop)
-    return(nm)
 
 def htc(Haml, chi):
     ## generate a antihermit chi
@@ -86,6 +62,78 @@ def htc_vs(Haml, chi):
 def Norm(T1, T2):
     return(gm.GetEOM_Overlap(T1,T2))
 
+def Norm_vs_new2(T1,T2):
+    T1d=T1*0.
+    T1d.SetAntiHermitian()
+    T2d=T1*0.
+    T2d.SetAntiHermitian()
+    nop2=T1*0.
+    nop2.SetNonHermitian()
+
+    T1d=gm.GetVSEOM_ladder(T1,1)
+    T2d=gm.GetVSEOM_ladder(T2,1)
+
+    rst=0.
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1,T2)
+    nop2+=nop
+
+
+    nop=T1*0
+    nop.SetHermitian()
+    nop= cm.Commutator(T1,T2d)
+    nop2+=nop
+
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1d,T2)
+    nop2-=nop
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1d,T2d)
+    nop2-=nop
+
+    rst = gm.GetVSEOM_Overlap(nop2)
+    return(rst/4.)
+
+
+def Norm_vs_new3(T1,T2):
+    T1d=T1*0.
+    T1d.SetAntiHermitian()
+    T2d=T1*0.
+    T2d.SetAntiHermitian()
+
+    T1d=gm.GetVSEOM_ladder(T1,1)
+    T2d=gm.GetVSEOM_ladder(T2,1)
+
+    rst=0.
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1,T2)
+    rst += gm.GetVSEOM_Overlap(nop)
+
+
+    nop=T1*0
+    nop.SetHermitian()
+    nop= cm.Commutator(T1,T2d)
+    rst += gm.GetVSEOM_Overlap(nop)
+
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1d,T2)
+    rst -= gm.GetVSEOM_Overlap(nop)
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1d,T2d)
+    rst -= gm.GetVSEOM_Overlap(nop)
+    return(rst/4.)
 
 def Norm_vs_new(T1,T2):
     T1d=T1*0.
@@ -207,7 +255,7 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want, ms):
         w = hv_func(haml,lanczos_vector[j])
 
         ai=norm_func(w,lanczos_vector[j])
-        ai-=Norm3(lanczos_vector[j],lanczos_vector[j],haml,ms)
+        #ai-=Norm3(lanczos_vector[j],lanczos_vector[j],haml,ms)
         print('ai at', j, ': ', ai )
 
 
@@ -218,8 +266,18 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want, ms):
 
         hall[j,j]=ai
 
-
         bj = np.sqrt(norm_func(w,w))
+
+
+        w1=w/bj
+        w2=hv_func(haml,w1)
+        nm2=norm_func(lanczos_vector[j],w2)
+        nm3=Norm3(lanczos_vector[j],w1,haml, ms)
+        bjj=nm2+nm3
+        print('Beta, bj: ', bjj,bj)
+        
+
+        #bj = np.sqrt(norm_func(w,w))
 
         if bj < 0.01 :
             print('bj is small')
@@ -269,14 +327,15 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
 
     for j in range(max_iter-1):
         w = hv_func(haml,lanczos_vector[j])
+        dai=Norm3(lanczos_vector[j],lanczos_vector[j],haml, ms)
         ai=norm_func(w,lanczos_vector[j])
-        hall[j,j]=ai
+        hall[j,j]=ai+dai
         w=w-ai*lanczos_vector[j]
 
         if(j>0):
             for i in range(j):
                 bj=norm_func(w,lanczos_vector[i])
-                hall[j,i]=bj
+#                hall[j,i]=bj
                 w=w-bj*lanczos_vector[i]
 
         ## generate the new vector
@@ -284,21 +343,44 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
         if bj < 0.1:
             print('bj is small: ', bj, j)
             break
-        print(j,'th step: ',bj)
         w=w/np.sqrt(bj)
         lanczos_vector.append(w)
-
+        nmm=100
+        nm3=100
         for m in range(j):
             vl=lanczos_vector[j]
             vm=lanczos_vector[m]
+            vec=vl*0.0
+            vec.SetHermitian()
+
             vec=hv_func(haml, vm)
             nmm=norm_func(vl,vec)
-            hall[m,j] =nmm
+            nm3=Norm3(vl,vm,haml, ms)
+            hall[m,j] =nmm+nm3
+            hall[j,m] =nmm+nm3
+        if nmm+nm3 < 0.1:
+            print('coupling bj is small: ', bj, j)
+            break
+        print(j,'th step: ',bj,np.sqrt(bj),nmm+nm3, j+1,len(lanczos_vector))
+
         if(j >= state_want ):
             #hsub=(hall+hall.T)/2
             hsub=hall
+            print(hsub[0:j+1,0:j+1])
             e,v = np.linalg.eig(hsub[0:j+1,0:j+1])
-            e=np.sort(e)
+            idx = np.argsort(e)   
+            e = e[idx]
+            vs = v[:,idx]
+            vec_a=lanczos_vector[j]*0.
+            for kk in range(len(e)):
+                vec_a = vec_a + lanczos_vector[kk]*vs[kk,0]
+            vec_b=hv_func(haml, vec_a)
+            nmm=norm_func(vec_a,vec_b)
+            nm3=Norm3(vec_a,vec_a,haml, ms)
+            nm=norm_func(vec_a,vec_a)
+            print('energy check: ', nmm+nm3,nm)
+
+
             print("Energy on ", j , ' th iteration: ', e[0:state_want] )
             norm_e_new=0.0
             for k in range(state_want):
@@ -307,12 +389,14 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
                 print('energy converge')
                 break
             norm_e_old=norm_e_new
+    hsub=hall[0:j,0:j]
+    e,v = np.linalg.eig(hsub[0:j,0:j])
+    e=np.sort(e)
 
-    print(hall)
     print('Arnoldi converged with ', j, ' step')
     #for k in range(state_want):
     #    print('E(',k,')= ', e[k])
     #print('Arnoldi converged with ', j, ' step')
 
-    return(e, lanczos_vector)
+    return(e, v,lanczos_vector)
     #return(lanczos_vector)

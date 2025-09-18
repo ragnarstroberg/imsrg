@@ -6,12 +6,12 @@ from pyIMSRG import *
 
 emax =2         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
-val = 'FCI' # valence space
+val = 'psd-shell' # valence space
 
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')
 valence_generator = 'shell-model-atan'  # definition of generator for decoupling the valence space (could also use 'shell-model-white'
-smax_core = 0       # limit of integration in flow parameter s for first stage of decoupling
-smax_valence = 0   # limit of s for second stage of decoupling
+smax_core = 50       # limit of integration in flow parameter s for first stage of decoupling
+smax_valence = 100   # limit of s for second stage of decoupling
 
 #### Example format of how to read input interaction matrix elements from file (these are not included with the code)
 #f2b = 'input/chi2b_srg0800_eMax16_EMax16_hwHO020.me2j.gz'
@@ -85,7 +85,10 @@ hf.PrintSPEandWF()
 
 ### Do normal ordering with respect to the HF basis
 HNO = hf.GetNormalOrderedH(2)
-
+ips1 = ms.GetOrbitIndex(0,0,1,-1)
+ins1 = ms.GetOrbitIndex(0,0,1,+1)
+HNO.SetOneBody(ips1,ips1, HNO.GetOneBody(ips1,ips1)-10)
+HNO.SetOneBody(ins1,ins1, HNO.GetOneBody(ins1,ins1)-10)
 ### Create an instance of the IMSRGSolver class, used for solving the IMSRG flow equations
 imsrgsolver = IMSRGSolver(HNO)
 imsrgsolver.SetMethod('magnus')  # Solve using the Magnus formulation. Could also be 'flow_RK4'
@@ -102,20 +105,25 @@ imsrgsolver.SetSmax(smax_valence)
 
 imsrgsolver.Solve()
 
-
 ### Hs is the IMSRG-evolved Hamiltonian
 Hs = imsrgsolver.GetH_s()
 
 ### Shell model codes assume the interaction is normal ordered with respect to the core
 ### and typically we choose a reference different from the core, so we need to re-normal-order
 ### with respect to the core
-Hs = Hs.UndoNormalOrdering()
+#Hs = Hs.UndoNormalOrdering()
 
-Hs = Hs.DoNormalOrderingCore()
+#Hs = Hs.DoNormalOrderingCore()
 
 ### Write out the effective valence space interaction
 rw.WriteTokyo( Hs, valence_fname,'')
 
 
+Hs = Hs.UndoNormalOrdering()
 
+msfci = ModelSpace(emax,'vacuum','FCI')
+Hs.SetModelSpace(msfci)
+
+
+rw.WriteTokyo( Hs, 'fci_test.snt','')
 
