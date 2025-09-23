@@ -1273,8 +1273,8 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       for ( auto& a : VectorUnion(H.modelspace->valence,H.modelspace->qspace) )
       {
       Orbit& oa = H.modelspace->GetOrbit(a);
-  //       Hod.OneBody(a,i) = H.OneBody(a,i);
-    //     Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
+         Hod.OneBody(a,i) = H.OneBody(a,i);
+        Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
       }
    }
 //
@@ -1311,7 +1311,7 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
 	{
-//Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
+Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 }
 }
 

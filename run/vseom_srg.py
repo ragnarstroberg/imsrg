@@ -145,7 +145,7 @@ print('reference energy: ', nm, 'vs [ -4.19234292  9.75174484 ] in nmax2 for He6
 
 
 #e,v1,v2=lanczos_proc(htc_vs, Norm_vs_new, Hs, chi, 160, 2,ms)
-e,vs,v2=arnoldi_proc(htc_vs, Norm_vs_new, Hs, chi, 60, 4,ms)
+e,vs,v2=arnoldi_proc(htc_vs, Norm_vs_new2, Hs, chi, 60, 1,ms)
 
 
 

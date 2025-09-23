@@ -340,9 +340,6 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
 
         ## generate the new vector
         bj = norm_func(w,w)
-        if bj < 0.1:
-            print('bj is small: ', bj, j)
-            break
         w=w/np.sqrt(bj)
         lanczos_vector.append(w)
         nmm=100
@@ -379,15 +376,21 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
             nm3=Norm3(vec_a,vec_a,haml, ms)
             nm=norm_func(vec_a,vec_a)
             print('energy check: ', nmm+nm3,nm)
+            if(abs(nm-1.)>0.01):
+                print('Lost Orthogonality, converged')
+                break
 
 
-            print("Energy on ", j , ' th iteration: ', e[0:state_want] )
+            print("Energy on ", j , ' th iteration: ', e[:] )
             norm_e_new=0.0
             for k in range(state_want):
                 norm_e_new += e[k]*e[k]
             if(abs(norm_e_new-norm_e_old) < 0.01):
                 print('energy converge')
                 break
+        if bj < 0.1:
+            print('bj is small: ', bj, j)
+            break
             norm_e_old=norm_e_new
     hsub=hall[0:j,0:j]
     e,v = np.linalg.eig(hsub[0:j,0:j])

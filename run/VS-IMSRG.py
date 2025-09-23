@@ -6,7 +6,7 @@ from pyIMSRG import *
 
 emax =2         # maximum number of oscillator quanta in the model space
 ref = 'He4'     # reference used for normal ordering
-val = 'psd-shell' # valence space
+val = 'FCI' # valence space
 
 core_generator = 'atan'   # definition of generator eta for decoupling the core (could also use 'white')
 valence_generator = 'shell-model-atan'  # definition of generator for decoupling the valence space (could also use 'shell-model-white'
