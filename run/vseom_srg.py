@@ -123,9 +123,14 @@ cm=Commutator
 cm.SetIMSRG3Noqqq(True)
 gm=Generator()
 
+## read in the reduce transition matrix for reference 
+tdm_op=read_tdm("c12.ref",ms)
+
+tdm_op.PrintTwoBody_ch(4)
+#nmm=tdm_op.GetTBME(0,0,1, 0,0,1, 3,3,3,3)
 
 unt = UnitTest(ms)
-rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,2,1
+rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,3,1
  
 h3= unt.RandomOp( ms, rank_j,  rank_Tz, parity, particle_rank,herm)
 
@@ -140,12 +145,16 @@ nm=Norm_vs_new(chi,chi)
 gm.force_decouple(Hs)
 
 print('compute reference energy to check hermitian')
-nm=gm.GetVSEOM_Overlap(Hs)
+nm=gm.GetVSEOM_Overlap_rd(Hs,tdm_op)
+#nm=gm.GetVSEOM_Overlap(Hs)
 print('reference energy: ', nm, 'vs [ -4.19234292  9.75174484 ] in nmax2 for He6',)
+
+exit()
+
 
 
 #e,v1,v2=lanczos_proc(htc_vs, Norm_vs_new, Hs, chi, 160, 2,ms)
-e,vs,v2=arnoldi_proc(htc_vs, Norm_vs_new2, Hs, chi, 60, 1,ms)
+#e,vs,v2=arnoldi_proc(htc_vs, Norm_vs_new3, Hs, chi, 60, 1,ms)
 
 
 

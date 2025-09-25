@@ -1342,13 +1342,109 @@ Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 }
 }
 
+
+// here we add three-body excitations
+//
+//
+//
+    size_t nch3 = H.modelspace->GetNumberThreeBodyChannels();
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t ch3=0; ch3<nch3; ch3++)
+    {
+      ThreeBodyChannel& Tbc = H.modelspace->GetThreeBodyChannel(ch3);
+      size_t nkets3 = Tbc.GetNumberKets();
+      for (size_t ibra=0; ibra<nkets3; ibra++)
+      {
+        Ket3& bra = Tbc.GetKet(ibra);
+        if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
+        
+        for (size_t iket=0; iket<nkets3; iket++)
+        {
+           Ket3& ket = Tbc.GetKet(iket);
+           if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
+           if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+
+
+           double ME_od = H.ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
+
+           Hod.ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket,  ME_od); // hermitian conjugate automatically gets added
+           
+        }// for iket
+      }// for ibra
+
+    }// for ch3
+
 }
+
+
+
 
 
    return Hod;
 }
 
 
+double  Generator::GetVSEOM_Overlap_rd(Operator& H, Operator& Rd )
+{
+    // [S+S', S-S']=[S',S] - [S,S']=2[S',S]
+  double  ovlp=0;
+  double  ovlp1=0;
+  double  ovlp2=0;
+
+
+
+    ovlp+=H.ZeroBody;
+    
+
+   for ( auto& i : H.modelspace->valence)
+   {
+      Orbit& oi = H.modelspace->GetOrbit(i);
+    for ( auto& j : H.modelspace->valence){
+      Orbit& oj = H.modelspace->GetOrbit(j);
+
+
+        ovlp1+=H.OneBody(i,j)*Rd.OneBody(i,j)*sqrt((oi.j2+1));
+        std::cout << H.OneBody(i,j) <<" "<<Rd.OneBody(i,j) << " "<< (oj.j2+1) << std::endl;
+   }
+   }
+
+
+    //    std::cout << "here one body" << ovlp1 << std::endl;
+
+   for ( auto& iter : H.TwoBody.MatEl )
+   {
+      size_t ch_bra = iter.first[0];
+      size_t ch_ket = iter.first[1];
+      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
+      arma::mat& H2 =  iter.second;
+
+
+      for ( auto& iket : tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
+      {
+
+        Ket & dket = tbc_bra.GetKet(iket);
+
+         for ( auto& ibra :  tbc_bra.GetKetIndex_vv() )
+	{
+        Ket & dbra = tbc_bra.GetKet(ibra);
+
+        double rdm=Rd.TwoBody.GetTBME(ch_bra,ch_ket,dbra,dket);
+
+        double norm_fact=1.0;
+            if(dbra.p == dbra.q)norm_fact*=sqrt(2);
+            if(dket.p == dket.q)norm_fact*=sqrt(2);
+
+        ovlp2+=H2(ibra,iket)*rdm*sqrt(2*tbc_bra.J+1)/norm_fact;
+
+        std::cout << H2(ibra,iket) <<" "<< rdm << " "<<dbra.p << dbra.q<< dket.p<< dket.q<<ch_bra<<ch_ket<<" "<<ibra<<" "<<iket<<" "<< 2*tbc_bra.J+1 <<" 2b "<< std::endl;
+}
+}}
+
+std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
+return(ovlp+ovlp1+ovlp2);
+
+}
 
 
 double  Generator::GetVSEOM_Overlap(Operator& H )
@@ -1392,7 +1488,7 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
         if(oi.j2==3)ovlp1+=2*H.OneBody(i,i)*c1*c1;
         if(oi.j2==1)ovlp1+=2*H.OneBody(i,i)*c2*c2;
 
-    //    std::cout << std::setprecision (15) << H.OneBody(i,i) << std::endl;
+        std::cout << std::setprecision (15) << H.OneBody(i,i) << " "<<2*H.OneBody(i,i)*c1*c1 << std::endl;
    }
 
 
@@ -1432,7 +1528,7 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
 }
 }}
 
-//std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
+std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
 return(ovlp+ovlp1+ovlp2);
 
 }

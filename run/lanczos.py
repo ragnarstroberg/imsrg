@@ -135,6 +135,41 @@ def Norm_vs_new3(T1,T2):
     rst -= gm.GetVSEOM_Overlap(nop)
     return(rst/4.)
 
+
+def Norm_vs_new4(T1,T2, rdm):
+    T1d=T1*0.
+    T1d.SetAntiHermitian()
+    T2d=T1*0.
+    T2d.SetAntiHermitian()
+
+    T1d=gm.GetVSEOM_ladder(T1,1)
+    T2d=gm.GetVSEOM_ladder(T2,1)
+
+    rst=0.
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1,T2)
+    rst += gm.GetVSEOM_Overlap_rd(nop,rdm)
+
+
+    nop=T1*0
+    nop.SetHermitian()
+    nop= cm.Commutator(T1,T2d)
+    rst += gm.GetVSEOM_Overlap_rd(nop,rdm)
+
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1d,T2)
+    rst -= gm.GetVSEOM_Overlap_rd(nop,rdm)
+
+    nop=T1*0
+    nop.SetNonHermitian()
+    nop= cm.Commutator(T1d,T2d)
+    rst -= gm.GetVSEOM_Overlap_rd(nop,rdm)
+    return(rst/4.)
+
 def Norm_vs_new(T1,T2):
     T1d=T1*0.
     T1d.SetAntiHermitian()
@@ -403,3 +438,85 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
 
     return(e, v,lanczos_vector)
     #return(lanczos_vector)
+
+
+
+def read_tdm(tdm_file,ms):
+
+
+    rank_j, parity, rank_Tz, particle_rank, herm= 0,0,0,2,1
+    ops = Operator(ms,rank_j, parity, rank_Tz, particle_rank)
+    ops*=0.
+
+    data = []
+    with open(tdm_file, 'r') as f:
+        lines = f.readlines()
+    ## line 1 is the number of single particle orbits
+    lidx=0
+    line=lines[lidx]
+    values = line.strip().split()
+    norb=int(values[0])
+    ob_idx=np.zeros([norb,3],dtype=np.int8)
+    for obs in range(norb):
+        lidx+=1
+        line=lines[lidx]
+        values = line.strip().split()
+        nn=int(values[1])
+        ll=int(values[2])
+        jj=int(values[3])
+        tt=int(values[4])
+        ips = ms.GetOrbitIndex(nn,ll,jj,tt)
+        ob_idx[obs,0]=ips
+        ob_idx[obs,1]=ll
+        ob_idx[obs,2]=tt
+    ## read in OBTD
+
+    lidx+=1
+    line=lines[lidx]
+    values = line.strip().split()
+    n_obrd=int(values[0])
+
+    for obs in range(n_obrd):
+        lidx+=1
+        line=lines[lidx]
+        values = line.strip().split()
+        aa=ob_idx[int(values[1])-1,0]
+        bb=ob_idx[int(values[2])-1,0]
+        rd=float(values[-1])
+        ops.SetOneBody(aa,bb,rd)
+
+    lidx+=1
+    line=lines[lidx]
+    values = line.strip().split()
+    n_tbrd=int(values[0])
+
+
+    for obs in range(n_tbrd):
+        lidx+=1
+        line=lines[lidx]
+        values = line.strip().split()
+        aa=ob_idx[int(values[1])-1,0]
+        bb=ob_idx[int(values[2])-1,0]
+        cc=ob_idx[int(values[3])-1,0]
+        dd=ob_idx[int(values[4])-1,0]
+        jij=int(values[5])
+        pij=ob_idx[int(values[1])-1,1]+ob_idx[int(values[2])-1,1]
+        tij=ob_idx[int(values[1])-1,2]+ob_idx[int(values[2])-1,2]
+        pij=int(pij%2)
+        tij=int(tij/2)
+        jkl=int(values[6])
+        pkl=ob_idx[int(values[3])-1,1]+ob_idx[int(values[4])-1,1]
+        tkl=ob_idx[int(values[3])-1,2]+ob_idx[int(values[4])-1,2]
+        pkl=int(pkl%2)
+        tkl=int(tkl/2)
+
+        rd=float(values[-1])
+        print('read rdm: ',aa,bb,cc,dd,rd)
+        ops.SetTwoBody(jij,pij,tij, jkl,pkl,tkl, aa,bb,cc,dd, rd)
+    return(ops)
+
+
+        
+
+
+
