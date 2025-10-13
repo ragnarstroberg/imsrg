@@ -1865,6 +1865,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator AnapoleMoment(ModelSpace& modelspace)
   {
     Operator As(modelspace, 1, 0, 1, 2);
+    As.SetAntiHermitian();
     double bL = pow(HBARC * HBARC / M_NUCLEON / modelspace.GetHbarOmega(), 0.5 * 1); // b^L where b=sqrt(hbar/mw)
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
@@ -1874,14 +1875,16 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
       double magnetic_moment = oi.tz2 < 0 ? PROTON_SPIN_G/2 : NEUTRON_SPIN_G/2; // These are 5.586 and -3.826 for proton and neutron, respectively. Defined in PhysicalConstants.hh
       for (int j: As.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}))
       {
+        if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
         if (oi.tz2 != oj.tz2) continue;
         double jj = 0.5 * oj.j2; 
         double r2int = RadialIntegral(oi.n, oi.l, oj.n, oj.l, 1) * bL ;
         double nineJ = AngMom::NineJ(oi.l, 0.5, ji, oj.l, 0.5, jj, 1, 1, 1);
-        double hatfactors = sqrt((2 * ji + 1) * (2 * jj + 1) * (2 * oi.l + 1) * (2 * oi.l + 1));
+        double hatfactors = sqrt((2 * ji + 1) * (2 * jj + 1) * (2 * oi.l + 1) * (2 * oj.l + 1));
+        // Including the factor of sqrt(4pi/3) from the spherical harmonics
         As.OneBody(i, j) = 3 * sqrt(2) * magnetic_moment * r2int * hatfactors * nineJ * AngMom::ThreeJ(oj.l, 1, oi.l, 0, 0, 0);
-        As.OneBody(j, i) = -1 * modelspace.phase((oi.j2 - oj.j2) / 2) * As.OneBody(i, j);
+        As.OneBody(j, i) = -  modelspace.phase((oi.j2-oj.j2)/2) * As.OneBody(i, j); // Operator is imagniary and therefore antisymmetric, reduced ME need a phase under hermitian conjugation
       }
     }
     return As;
@@ -1904,7 +1907,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
         double jj = 0.5*oj.j2;
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,rL) * bL ;
         EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
-	if( YL == 0 ) EL.OneBody(i,j) = EL.OneBody(i,j) * sqrt(4.*3.1415926);
+	      if( YL == 0 ) EL.OneBody(i,j) = EL.OneBody(i,j) * sqrt(4.*3.1415926);
         double fac = isospin ? oi.tz2 : 1.0;
         EL.OneBody(i,j) = EL.OneBody(i,j) * fac;
         EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
@@ -1931,7 +1934,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,rL) * bL ;
         EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
         EL.OneBody(i,j) = EL.OneBody(i,j) * (0.5 - oi.tz2*0.5 - modelspace.GetTargetZ()*1.0/modelspace.GetTargetMass() );
-	EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
+	      EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
     }
     return EL;
@@ -1957,7 +1960,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
         double r2intp = RadialIntegral(oi.n,oi.l,oj.n,oj.l,1) * bLp ;
         r2int = r2int - 5.0/3.0*r2intp*Rms*Rms ;
         EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
-	EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
+	      EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
     }
     return EL;
@@ -1967,10 +1970,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   /// Schiff Moment = Isoscalar dipole / 10 (where the sum is over proton orbits only)  with units e * fm^3  --added by DK. Ref. PHYSICAL REVIEW C 89, 014335 (2014)
   Operator SchiffOp(ModelSpace& modelspace, int rL, int YL, double Rms)
   {   
-    Operator EL(modelspace, YL,0,YL%2,2); 
+    Operator EL(modelspace, YL,0,YL%2,2);
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
     double bLp = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*1);
-    int norbits = modelspace.GetNumberOrbits();
+    // int norbits = modelspace.GetNumberOrbits();
     for (int i : modelspace.proton_orbits)
    // for (int i=0; i<norbits; ++i) //DK: modify for protons only
     {     
@@ -1984,7 +1987,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,rL) * bL ;
         double r2intp = RadialIntegral(oi.n,oi.l,oj.n,oj.l,1) * bLp ;
         r2int = r2int - 5.0/3.0*r2intp*Rms*Rms ;
-        EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
+        EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./PI) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
         EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
     }
@@ -3037,45 +3040,45 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  Operator TViolatingPotential_Op( ModelSpace& modelspace, std::vector<double> LECs )
  {
   //alpha0,alpha1,alpha2 are the inputs which are gg_0,2mpi/(8piMnucleon)
-   double alpha0 = LECs[0];
-   double alpha1 = LECs[1];
-   double alpha2 = LECs[2];
-   Operator VPT(modelspace, 0,0,1,2 ); // J=0, dTz=0, parity=odd, particle-rank=2
+  double alpha0 = LECs[0];
+  double alpha1 = LECs[1];
+  double alpha2 = LECs[2];
+  Operator VPT(modelspace, 0,0,1,2 ); // J=0, dTz=0, parity=odd, particle-rank=2
 
-   // Isospin factors converted to proton-neutron basis
-     // ATT'Tz = alpha0[4T-3]+2*alpha1*Tz + 2*alpha2*delta_T,1*[delta_|Tz|,1 -2delta_|Tz|,0
-     // BTT' = 2 alpha1 delta_T+T',1
-     // A111 = alpha0 + 2 alpha1 + 2 alpha2
-     // A110 = alpha0 - 4 alpha2
-     // A000 = -3 alpha0 -4 alpha2
-     // B10 = B01 = 2 alpha1
-     // |np> = (|1,0> + |0,0>)/sqrt(2),  |pn> = (|1,0> - |0,0>)/sqrt(2)
-     // Apppp = A111  = alpha0 + 2 alpha1 + 2 alpha2
-     // Annnn = A11-1 = alpha0 - 2 alpha1 + 2 alpha2
-     // Apnpn = Anpnp = 1/2 (A110 + A000) = -alpha0 - 4 alpha2
-     // Anppn = Apnnp = 1/2 (A110 - A000) = 2 alpha0
-     // Bnpnp = -Bpnpn = 1/2 (B10 + B01) = 2 alpha1
-     // Bnppn = -Bpnnp = 1/2(B01 - B10) = 0
-   double Apppp = alpha0 + 2*alpha1 + 2*alpha2;
-   double Annnn = alpha0 - 2*alpha1 + 2*alpha2;
-   double Apnpn = -alpha0 - 4*alpha2;
-   double Anpnp = Apnpn;
-   double Anppn = 2 * alpha0;
-   double Apnnp = Anppn;
-   double Bnpnp = 2 * alpha1;
-   double Bpnpn = -Bnpnp;
+  // Isospin factors converted to proton-neutron basis
+    // ATT'Tz = alpha0[4T-3]+2*alpha1*Tz + 2*alpha2*delta_T,1*[delta_|Tz|,1 -2delta_|Tz|,0
+    // BTT' = 2 alpha1 delta_T+T',1
+    // A111 = alpha0 + 2 alpha1 + 2 alpha2
+    // A110 = alpha0 - 4 alpha2
+    // A000 = -3 alpha0 -4 alpha2
+    // B10 = B01 = 2 alpha1
+    // |np> = (|1,0> + |0,0>)/sqrt(2),  |pn> = (|1,0> - |0,0>)/sqrt(2)
+    // Apppp = A111  = alpha0 + 2 alpha1 + 2 alpha2
+    // Annnn = A11-1 = alpha0 - 2 alpha1 + 2 alpha2
+    // Apnpn = Anpnp = 1/2 (A110 + A000) = -alpha0 - 4 alpha2
+    // Anppn = Apnnp = 1/2 (A110 - A000) = 2 alpha0
+    // Bnpnp = -Bpnpn = 1/2 (B10 + B01) = 2 alpha1
+    // Bnppn = -Bpnnp = 1/2(B01 - B10) = 0
+  double Apppp = alpha0 + 2*alpha1 + 2*alpha2;
+  double Annnn = alpha0 - 2*alpha1 + 2*alpha2;
+  double Apnpn = -alpha0 - 4*alpha2;
+  double Anpnp = Apnpn;
+  double Anppn = 2 * alpha0;
+  double Apnnp = Anppn;
+  double Bnpnp = 2 * alpha1;
+  double Bpnpn = -Bnpnp;
 
  //  auto isoA = [alpha0,alpha1,alpha2] (int T,int Tp,int Tz) { return alpha0*(4*T-3) + 2*alpha1*Tz + 2*alpha2*T*( 3*std::abs(Tz) - 2) * (T==Tp) ; } ;
-   auto isoA = [alpha0,alpha1,alpha2] (int T,int Tp,int Tz) { return (alpha0*(4*T-3) + 2*alpha1*Tz + 2*alpha2*(T==1)*((std::abs(Tz)==1) - 2*(Tz==0))) * (T==Tp) ; } ;
-   auto isoB = [alpha1] (int T,int Tp) { return 2*alpha1 * ((T+Tp)==1) ; };
+  auto isoA = [alpha0,alpha1,alpha2] (int T,int Tp,int Tz) { return (alpha0*(4*T-3) + 2*alpha1*Tz + 2*alpha2*(T==1)*((std::abs(Tz)==1) - 2*(Tz==0))) * (T==Tp) ; } ;
+  auto isoB = [alpha1] (int T,int Tp) { return 2*alpha1 * ((T+Tp)==1) ; };
 
-   double hw = modelspace.GetHbarOmega();
-   double bosc = HBARC/sqrt( hw * M_NUCLEON);
-   double mpi = (2*PhysConst::M_PION_CHARGED + PhysConst::M_PION_NEUTRAL)/3;
-   int emax = modelspace.Emax;
+  double hw = modelspace.GetHbarOmega();
+  double bosc = HBARC/sqrt( hw * M_NUCLEON);
+  double mpi = (2*PhysConst::M_PION_CHARGED + PhysConst::M_PION_NEUTRAL)/3;
+  int emax = modelspace.Emax;
 
    std::map< std::array<int,4>,double> IntegralLookup;
-   #pragma omp parallel for 
+   #pragma omp parallel for schedule(dynamic, 1)
    // Do the radial integral and cache it
    for (int n=0; n <= emax; n++)
    {
@@ -3112,12 +3115,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      ch_ket_list.push_back(itmat.first[1]);
    }
    int nbraket = ch_bra_list.size();
-     #pragma omp parallel for 
-//   for (auto& itmat : VPT.TwoBody.MatEl )
+   #pragma omp parallel for schedule(dynamic, 1)
    for (int ibraket=0; ibraket<nbraket; ibraket++ )
    {
-//     int ch_bra = itmat.first[0];
-//     int ch_ket = itmat.first[1];
      int ch_bra = ch_bra_list[ibraket];
      int ch_ket = ch_ket_list[ibraket];
      TwoBodyChannel& tbc_bra = modelspace.GetTwoBodyChannel(ch_bra);
@@ -3160,8 +3160,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
          {
            for (int Sp=0; Sp<=1; Sp++)
            {
-
-
+             if (S+Sp==0)
+                continue;
              int Lmin = std::max( J-S, 0);
              int Lmax = J+S;
              int Lpmin = std::max( J-Sp, 0);
@@ -3169,16 +3169,16 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
              for (int L=Lmin; L<=Lmax; L++)
              {
                double ninej1 = AngMom::NineJ( la,sa,ja,  lb,sb,jb, L,S,J);
-//std::cout << "la=" << la << "sa=" << sa << "ja=" << ja << "lb=" << lb << "sb="<< sb << "jb=" << jb << "L=" << L << "S=" << S << "J=" << J << "ninej1 = " << ninej1 << std::endl;
+               //std::cout << "la=" << la << "sa=" << sa << "ja=" << ja << "lb=" << lb << "sb="<< sb << "jb=" << jb << "L=" << L << "S=" << S << "J=" << J << "ninej1 = " << ninej1 << std::endl;
                for (int Lp=Lpmin; Lp<=Lpmax; Lp++)
                {
                  if ( std::abs(L-Lp)>1 ) continue;
                  double sixj1 =  AngMom::SixJ( L, S, J, Sp, Lp, 1);
-//std::cout << "L=" << L << "S=" << S << "J=" << J << "Sp=" << Sp << "Lp=" << Lp << "sixj1 = " << sixj1 << std::endl;
-//std::cout << "sixj1 = " << sixj1 << std::endl;
+                 //std::cout << "L=" << L << "S=" << S << "J=" << J << "Sp=" << Sp << "Lp=" << Lp << "sixj1 = " << sixj1 << std::endl;
+                 //std::cout << "sixj1 = " << sixj1 << std::endl;
                  double ninej2 = AngMom::NineJ( lc,sc,jc, ld,sd,jd, Lp,Sp,J);
-//std::cout << "lc=" << lc << "sc=" << sc << "jc=" << jc << "ld=" << ld << "sd="<< sd << "jd=" << jd << "Lp=" << Lp << "Sp=" << Sp << "J=" << J << "ninej2 = " << ninej2 << std::endl;
-//std::cout << "ninej2 = " << ninej2 << std::endl;
+                 //std::cout << "lc=" << lc << "sc=" << sc << "jc=" << jc << "ld=" << ld << "sd="<< sd << "jd=" << jd << "Lp=" << Lp << "Sp=" << Sp << "J=" << J << "ninej2 = " << ninej2 << std::endl;
+                 //std::cout << "ninej2 = " << ninej2 << std::endl;
                  // Now sum over relative/CM coordinates
                  for (int Ncm=0; 2*Ncm<=std::min(ebra,eket); Ncm++ )
                  {
@@ -3199,41 +3199,41 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
                                double iso_to_pn_factor = 1;  // This account for converting an isospin expression to pn formalism
                                if (pn_case == "npnp") iso_to_pn_factor = 0.5;
                                if (pn_case == "pnpn") iso_to_pn_factor = 0.5 * AngMom::phase( T+Tp ) ;
-                               if (pn_case == "nppn") iso_to_pn_factor = 0.5 * AngMom::phase( T+1  ) ;
-                               if (pn_case == "pnnp") iso_to_pn_factor = 0.5 * AngMom::phase( Tp+1 ) ;
+                               if (pn_case == "nppn") iso_to_pn_factor = 0.5 * AngMom::phase( Tp+1  ) ;
+                               if (pn_case == "pnnp") iso_to_pn_factor = 0.5 * AngMom::phase( T+1 ) ;
                                
                                if ( (S+Sp)==1)           AplusB += iso_to_pn_factor * asymmfactor * isoA(T,Tp,Tz);
                                if ( (S==1) and (Sp==1) ) AplusB += iso_to_pn_factor * asymmfactor * isoB(T,Tp) * sqrt(2); //sqrt(2) missing here
-//std::cout << "asymmfactor = " << asymmfactor << std::endl; 
+                               //std::cout << "asymmfactor = " << asymmfactor << std::endl; 
                            }
                          }
-//                         if ((lprel + Sp)%2==0) continue; // factor [1 - (-1)^(lprel+Sp) ]
-//std::cout << "AplusB = " << AplusB << std::endl;
+                         //if ((lprel + Sp)%2==0) continue; // factor [1 - (-1)^(lprel+Sp) ]
+                         //std::cout << "AplusB = " << AplusB << std::endl;
                          double threej = AngMom::ThreeJ( lrel,lprel,1, 0,0,0);
-//std::cout << "threej = " << threej << std::endl;
-//std::cout << "lrel=" << lrel << "lprel=" << lprel << "threej=" << threej << std::endl;
+                         //std::cout << "threej = " << threej << std::endl;
+                         //std::cout << "lrel=" << lrel << "lprel=" << lprel << "threej=" << threej << std::endl;
                          double sixj2 = AngMom::SixJ( lrel,L,Lcm,  Lp,lprel,1);
-//std::cout << "sixj2 = " << sixj2 << std::endl;
-//std::cout << "lrel=" << lrel << "L=" << L << "Lcm=" << Lcm << "Lp=" << Lp << "lprel=" << lprel << "sixj2 = " << sixj2 << std::endl;
+                         //std::cout << "sixj2 = " << sixj2 << std::endl;
+                         //std::cout << "lrel=" << lrel << "L=" << L << "Lcm=" << Lcm << "Lp=" << Lp << "lprel=" << lprel << "sixj2 = " << sixj2 << std::endl;
                          double mosh1 = AngMom::Moshinsky(Ncm,Lcm,nrel,lrel,na,la,nb,lb,L);
-//std::cout << "mosh1 = " << mosh1 << std::endl;
-//std::cout << "Ncm=" << Ncm << "Lcm=" << Lcm << "nrel=" << nrel << "lrel=" << lrel << "na="<< na << "la=" << la << "nb=" << nb << "lb=" << lb << "L=" << L << "mosh1 = " << mosh1 << std::endl;
+                         //std::cout << "mosh1 = " << mosh1 << std::endl;
+                         //std::cout << "Ncm=" << Ncm << "Lcm=" << Lcm << "nrel=" << nrel << "lrel=" << lrel << "na="<< na << "la=" << la << "nb=" << nb << "lb=" << lb << "L=" << L << "mosh1 = " << mosh1 << std::endl;
                          double mosh2 = AngMom::Moshinsky(Ncm,Lcm,nprel,lprel,nc,lc,nd,ld,Lp);
-//std::cout << "mosh2 = " << mosh2 << std::endl;
-//std::cout << "Ncm=" << Ncm << "Lcm=" << Lcm << "nprel=" << nprel << "lprel=" << lprel << "nc="<< nc << "lc=" << lc << "nd=" << nd << "ld=" << ld << "Lp=" << Lp << "mosh2 = " << mosh2 << std::endl;
+                         //std::cout << "mosh2 = " << mosh2 << std::endl;
+                         //std::cout << "Ncm=" << Ncm << "Lcm=" << Lcm << "nprel=" << nprel << "lprel=" << lprel << "nc="<< nc << "lc=" << lc << "nd=" << nd << "ld=" << ld << "Lp=" << Lp << "mosh2 = " << mosh2 << std::endl;
                          double integral = IntegralLookup[{nrel,lrel,nprel,lprel}];
-//std::cout << "integral = " << integral << std::endl;
+                         //std::cout << "integral = " << integral << std::endl;
                          vpt += sqrt((2*S+1)*(2*Sp+1)) * AplusB * (2*L+1) * (2*Lp+1) * sixj1 * ninej1 * ninej2
                                * AngMom::phase(Lcm) * sqrt((2*lrel+1)*(2*lprel+1)) * threej * sixj2 * mosh1*mosh2 * integral; // *2 factor is from the integral, was already included bt Ragnar  
-//std::cout << "sixj1 = " << sixj1 << std::endl;
-//std::cout << "ninej1 = " << ninej1 << std::endl;
-//std::cout << "ninej2 = " << ninej2 << std::endl;
-//std::cout << "AplusB = " << AplusB << std::endl;
-//std::cout << "threej = " << threej << std::endl;
-//std::cout << "sixj2 = " << sixj2 << std::endl;
-//std::cout << "mosh1 = " << mosh1 << std::endl;
-//std::cout << "mosh2 = " << mosh2 << std::endl;
-//std::cout << "integral = " << integral << std::endl;
+                         //std::cout << "sixj1 = " << sixj1 << std::endl;
+                         //std::cout << "ninej1 = " << ninej1 << std::endl;
+                         //std::cout << "ninej2 = " << ninej2 << std::endl;
+                         //std::cout << "AplusB = " << AplusB << std::endl;
+                         //std::cout << "threej = " << threej << std::endl;
+                         //std::cout << "sixj2 = " << sixj2 << std::endl;
+                         //std::cout << "mosh1 = " << mosh1 << std::endl;
+                         //std::cout << "mosh2 = " << mosh2 << std::endl;
+                         //std::cout << "integral = " << integral << std::endl;
                       }//nprel
                      }//nrel
                    }//Lcm
@@ -3243,12 +3243,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
            }//Sp
          }//S
          vpt *= AngMom::phase(J) * 2*sqrt(3) * sqrt((2*ja+1)*(2*jb+1)*(2*jc+1)*(2*jd+1)) ;// * (2*J+1); //(2*J+1) should not be here?
+         vpt *= sqrt(2*J+1.); //Because the operator violates parity, the code expects the operator to be reduced
          if (bra.p==bra.q) vpt /= SQRT2;
          if (ket.p==ket.q) vpt /= SQRT2;
 
          //std::cout << "Setting  channels " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << "  = " << vpt << std::endl;
 
-//         std::cout << "The Matrix: " << std::endl << VPT.TwoBody.GetMatrix(ch_bra,ch_ket) << std::endl;
+         //std::cout << "The Matrix: " << std::endl << VPT.TwoBody.GetMatrix(ch_bra,ch_ket) << std::endl;
          VPT.TwoBody.SetTBME(ch_bra,ch_ket,ibra,iket,vpt);
        }//iket
      }//ibra

@@ -44,7 +44,7 @@ class Generator
   denominator_partitioning_t denominator_partitioning;
 
   double regulator_length;
-
+  bool only_1b_eta;
   bool only_2b_eta; // even if we're doing IMSRG(3), keep eta to 2b
   bool use_isospin_averaging;
 
@@ -81,6 +81,7 @@ class Generator
   void ConstructGenerator_HartreeFock();
   void ConstructGenerator_1PA(std::function<double(double,double)>& eta_func);
   void SetOnly2bEta(bool tf){only_2b_eta = tf;};
+  void SetOnly1bEta(bool tf) { only_1b_eta = tf; };
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket) { return Get2bDenominator(ch,ch,ibra,iket);};
   double Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket);

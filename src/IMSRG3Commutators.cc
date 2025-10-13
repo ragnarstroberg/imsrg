@@ -9,6 +9,7 @@ namespace Commutator
 {
 
   bool imsrg3_no_qqq = false;
+  bool imsrg3_only_vvv = false;
   bool imsrg3_valence_2b = false;
   bool discard_0b_from_3b = false;
   bool discard_1b_from_3b = false;
@@ -3354,7 +3355,7 @@ namespace Commutator
   // k|  l|
   //
   //
-  //  Checked with UnitTest and passed.
+  //  Checked with UnitTest and passed. BUT THE UNDERLYING EXPRESSION HAD AN OVERALL MINUS SIGN ERROR. CORRECTED ON Sep 3 2025
   //
   void comm332_ppph_hhhpss(const Operator &X, const Operator &Y, Operator &Z)
   {
@@ -3430,7 +3431,8 @@ namespace Commutator
             double nd = od.occ;
             //          double d_ed = std::abs( 2*od.n + od.l - e_fermi[od.tz2]);
             //          double occnat_d = od.occ_nat;
-            double occfactor = occ_abc * (1 - nd) - occ_abc_bar * nd;
+//            double occfactor = occ_abc * (1 - nd) - occ_abc_bar * nd;
+            double occfactor = occ_abc_bar * nd - occ_abc * (1 - nd) ;  // Minus sign error corrected Sep 3 2025 (SRS)
             if (std::abs(occfactor) < 1e-6)
               continue;
             if ((std::abs(2 * J - od.j2) > twoJ) or (2 * J + od.j2) < twoJ)
@@ -4942,7 +4944,6 @@ namespace Commutator
     if ((std::abs(X2.Norm() * Y2.Norm()) < 1e-6) and not Z.modelspace->scalar3b_transform_first_pass)
       return;
 
-//    std::cout << "Z particle rank = " << Z.GetParticleRank() << "   is Z3 allocated? " << Z3.IsAllocated() << std::endl;
 
     Z.modelspace->PreCalculateSixJ(); // If we already did this, this does nothing.
 
@@ -5038,6 +5039,8 @@ namespace Commutator
         continue;
       if (imsrg3_no_qqq and (oi.cvq + oj.cvq + ok.cvq) > 5)
         continue; // Need at least one core or valence particle
+      if (imsrg3_only_vvv and ((oi.cvq!=1) or (oj.cvq!=1) or (ok.cvq!=1) ))
+        continue; // everything should be valence
 
       int J1 = bra.Jpq;
 
@@ -5072,6 +5075,8 @@ namespace Commutator
         if (perturbative_triples and (std::abs(occ_ijk*unocc_lmn - unocc_ijk*occ_lmn)<1e-8) )
           continue;
         if (imsrg3_no_qqq and (ol.cvq + om.cvq + on.cvq) > 5)
+          continue;
+        if (imsrg3_only_vvv and ((ol.cvq!=1) or (om.cvq!=1) or (on.cvq!=1) ))
           continue;
         int J2 = ket.Jpq;
 
@@ -5235,7 +5240,6 @@ namespace Commutator
 
 
                       } // for a
-                        //                }// for j2a
                     }   // for it_obc
                   }     // for J2p
                 }       // for tz2a
@@ -5286,7 +5290,7 @@ namespace Commutator
     }
 
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
-  }
+  }// comm223ss
 
 
 

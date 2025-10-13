@@ -169,7 +169,7 @@ class IMSRGSolver
      std::vector<double>& E0;
      std::vector<double>& eta1;
      std::vector<double>& eta2;
-//     void operator() (const vector<Operator>& x, double t)
+    //     void operator() (const vector<Operator>& x, double t)
      void operator() (const std::deque<Operator>& x, double t)
      {
         times.push_back(t);

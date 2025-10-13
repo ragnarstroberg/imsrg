@@ -1,0 +1,27 @@
+.vscode/
+build/
+#CMake output files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeUserPresets.json
+CTestTestfile.cmake
+Testing/
+#Output compiled libraries
+*.o
+*.so
+*.gz
+*.a
+#Compiled executables
+src/imsrg++
+#Temporary files
+tmp*
+src/.*.swp
+#Macos specific files
+.DS_Store
+#Image files for apptained
+*.sifs
+#Work folders should only contain the examples scripts
+work/
+__pycache__

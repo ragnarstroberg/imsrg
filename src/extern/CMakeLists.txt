@@ -1,0 +1,8 @@
+if (USE_ARMADILLO_EXTERN)
+    add_subdirectory(armadillo)
+endif()
+add_subdirectory(boost_src)
+add_subdirectory(half)
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    add_subdirectory(pybind11)
+endif()

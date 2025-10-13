@@ -1654,7 +1654,7 @@ uint64_t ModelSpace::NineJHash(double j1, double j2, double J12, double j3, doub
   return key;
 }
 
-void ModelSpace::NineJUnHash(uint64_t key, uint64_t& k1, uint64_t& k2, uint64_t& K12, uint64_t& k3, uint64_t& k4, uint64_t& K34, uint64_t& K13, uint64_t& K24, uint64_t& K)
+void ModelSpace::NineJUnHash(uint64_t key, uint64_t &k1, uint64_t &k2, uint64_t &K12, uint64_t &k3, uint64_t &k4, uint64_t &K34, uint64_t &K13, uint64_t &K24, uint64_t &K)
 {
   uint64_t klist[9];
   uint64_t key_so_far = 0;
@@ -1667,16 +1667,15 @@ void ModelSpace::NineJUnHash(uint64_t key, uint64_t& k1, uint64_t& k2, uint64_t&
     factor_last = factor;
     factor *= 91;
   }
-  k1  = klist[0];
-  k2  = klist[1];
+  k1 = klist[0];
+  k2 = klist[1];
   K12 = klist[2];
-  k3  = klist[3];
-  k4  = klist[4];
+  k3 = klist[3];
+  k4 = klist[4];
   K34 = klist[5];
   K13 = klist[6];
   K24 = klist[7];
-  K   = klist[8];
-
+  K = klist[8];
 }
 
 uint64_t ModelSpace::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L)
@@ -1739,6 +1738,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
   return sixj;
 }
 
+
 /// Loop over all the 6j symbols that we expect to encounter, and
 /// store them in a hash table.
 /// Calculate all symbols
@@ -1762,45 +1762,62 @@ void ModelSpace::PreCalculateSixJ()
   std::cout << "Precalculating SixJ's" << std::endl;
   double t_start = omp_get_wtime();
   std::vector<uint64_t> KEYS;
-  int upperLimit_j2a = (2 * Emax + 1);
-  int upperLimit_j2b = 3 * (2 * Emax + 1);
-  int upperLimit_j2c = (2 * Emax + 1);
-  int upperLimit_j2d = 3 * (2 * Emax + 1);
+  SixJList.clear();
 
-  for (int j2a = 1; j2a <= upperLimit_j2a; j2a += 2)
+  int jmax_1b = 2*Emax+1; // maximum j a single particle can have
+  int jmax_2b = 2*jmax_1b; // max j two particles can have
+  int jmax_3b = 3*jmax_1b; // max j three particles can have
+
+  // { ja jb J1 }  for IMSRG(2), a,b,c,d are all single-particle js.
+  // { jc jd J2 }  for many IMSRG(3) terms,  jd can be a 3-particle j
+  //               and for 333_pph_hhp, both jb and jd can be 3-particle
+  //               for 133 both jc and jd can be 3-particle
+
+  for (int j2a = 1; j2a <= jmax_1b; j2a += 2)
   {
-    for (int j2b = 1; j2b <= upperLimit_j2b; j2b += 2)
+    for (int j2b = 1; j2b <= jmax_3b; j2b += 2)
     {
-      for (int j2c = 1; j2c <= upperLimit_j2c; j2c += 2)
+      for (int j2c = 1; j2c <= jmax_1b; j2c += 2)
       {
         // four half-integer j's,  two integer J's
-        for (int j2d = 1; j2d <= upperLimit_j2d; j2d += 2)
+        for (int j2d = 1; j2d <= jmax_3b; j2d += 2)
         {
-          if (j2b > std::max(j2d, 2 * Emax + 1))
+          if (j2b > std::max(j2d, jmax_1b))
             continue;
           // J1 couples a,b, and c,d;  J2 couples a,d and b,c
           // We extend the hash table to include symbols outside the coupling range for computational gain.
-          // We may want to revert this change at some point.
-          for (int J1 = 0; J1 <= 2 * (Emax * 2 + 1); J1 += 2)
+          // We may want to revert this change at some point. SRS: I reverted it.
+          for (int J1 = 0; J1 <= jmax_2b; J1 += 2)
           {
-            for (int J2 = 0; J2 <= 2 * (Emax * 2 + 1); J2 += 2)
+            if (not ( AngMom::Triangle(j2a,j2b,J1) and AngMom::Triangle(j2c,j2d,J1) ) ) continue;
+            for (int J2 = 0; J2 <= jmax_2b; J2 += 2)
             {
+              if (not ( AngMom::Triangle(j2a,j2d,J2) and AngMom::Triangle(j2c,j2b,J2) ) ) continue;
               uint64_t key = SixJHash(0.5 * j2a, 0.5 * j2b, 0.5 * J1, 0.5 * j2c, 0.5 * j2d, 0.5 * J2);
               if (SixJList.count(key) == 0)
               {
-                KEYS.push_back(key);
                 SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
               }
             } // for J2
           } // for J1
         } // for j2d
+      } // for j2c
+    } // for j2b
+  } // for j2a
 
-        // three half-integer j's, three integer J's
-        // <J1,J2|J3>  <a,b|J3>,  <J1,b|c>  <a,J2|c>
+  // three half-integer j's, three integer J's
+  //  { J1 J2 J3 }    for the tensor 223 commutator, we need this where both
+  //  { ja jb jc }    ja and jb are 3-body Js, which can go up to 3 times the single-particle limit.
+  for (int j2a = 1; j2a <= jmax_3b; j2a += 2)
+  {
+    for (int j2b = 1; j2b <= jmax_3b; j2b += 2)
+    {
+      for (int j2c = 1; j2c <= jmax_1b; j2c += 2)
+      {
         int J1_min = std::abs(j2b - j2c);
-        int J1_max = j2b + j2c;
+        int J1_max = std::min( j2b + j2c,  jmax_2b);
         int J2_min = std::abs(j2a - j2c);
-        int J2_max = j2a + j2c;
+        int J2_max = std::min( j2a + j2c,  jmax_2b);
         for (int J1 = J1_min; J1 <= J1_max; J1 += 2)
         {
           for (int J2 = J2_min; J2 <= J2_max; J2 += 2)
@@ -1812,7 +1829,6 @@ void ModelSpace::PreCalculateSixJ()
               uint64_t key = SixJHash(0.5 * J1, 0.5 * J2, 0.5 * J3, 0.5 * j2a, 0.5 * j2b, 0.5 * j2c);
               if (SixJList.count(key) == 0)
               {
-                KEYS.push_back(key);
                 SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
               }
             } // for J3
@@ -1821,6 +1837,10 @@ void ModelSpace::PreCalculateSixJ()
       } // for j2c
     } // for j2b
   } // for j2a
+  for (auto& iter : SixJList)
+  {
+                KEYS.push_back(iter.first);
+  }
 
 #pragma omp parallel for schedule(dynamic, 1)
   for (size_t i = 0; i < KEYS.size(); ++i)
@@ -1828,6 +1848,7 @@ void ModelSpace::PreCalculateSixJ()
     uint64_t j1, j2, j3, J1, J2, J3;
     uint64_t key = KEYS[i];
     SixJUnHash(key, j1, j2, j3, J1, J2, J3);
+//    std::cout << "   " << j1 << " " << j2 << " " << j3 << " " << J1 << " "<< J2 << " " << J3 << std::endl;
     SixJList[key] = AngMom::SixJ(0.5 * j1, 0.5 * j2, 0.5 * j3, 0.5 * J1, 0.5 * J2, 0.5 * J3);
   }
   sixj_has_been_precalculated = true;
@@ -1836,8 +1857,6 @@ void ModelSpace::PreCalculateSixJ()
             << "  estimated storage ~ " << ((SixJList.bucket_count() + SixJList.size()) * (sizeof(size_t) + sizeof(void *))) / (1024. * 1024. * 1024.) << " GB" << std::endl;
   profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
-
-
 
 void ModelSpace::PreCalculateNineJ()
 {
@@ -1880,10 +1899,10 @@ void ModelSpace::PreCalculateNineJ()
 #pragma omp parallel for schedule(dynamic, 1)
   for (size_t i = 0; i < KEYS.size(); ++i)
   {
-    uint64_t k1, k2, k3, k4,K12, K34, K13, K24, K;
+    uint64_t k1, k2, k3, k4, K12, K34, K13, K24, K;
     uint64_t key = KEYS[i];
-    NineJUnHash(key, k1, k2, K12, k3,k4,K34, K13, K24, K);
-    NineJList[key] = AngMom::NineJ(0.5 * k1, 0.5 * k2, 0.5*K12, 0.5 * k3, 0.5*k4, 0.5 * K34, 0.5 * K13, 0.5*K24, 0.5 * K);
+    NineJUnHash(key, k1, k2, K12, k3, k4, K34, K13, K24, K);
+    NineJList[key] = AngMom::NineJ(0.5 * k1, 0.5 * k2, 0.5 * K12, 0.5 * k3, 0.5 * k4, 0.5 * K34, 0.5 * K13, 0.5 * K24, 0.5 * K);
   }
   ninej_has_been_precalculated = true;
   std::cout << "done calculating nineJs (" << KEYS.size() << " of them)" << std::endl;
@@ -2017,48 +2036,48 @@ double ModelSpace::GetMoshinsky(int N, int Lam, int n, int lam, int n1, int l1, 
 double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
 {
 
-  uint64_t key = NineJHash(j1,j2,J12,j3,j4,J34,J13,J24,J);
+  uint64_t key = NineJHash(j1, j2, J12, j3, j4, J34, J13, J24, J);
   auto it = NineJList.find(key);
   if (it != NineJList.end())
   {
     return it->second;
   }
 
-  double ninej=0;
-  int twoxmin =  std::max( { std::abs( j1-J), std::abs(j2-J34), std::abs(j3-J24)} )*2  ;
-  int twoxmax = std::min( { j1+J, j2+J34, j3+J24} )*2;
-  for (int twox=twoxmin; twox<=twoxmax; twox+=2)
+  double ninej = 0;
+  int twoxmin = std::max({std::abs(j1 - J), std::abs(j2 - J34), std::abs(j3 - J24)}) * 2;
+  int twoxmax = std::min({j1 + J, j2 + J34, j3 + J24}) * 2;
+  for (int twox = twoxmin; twox <= twoxmax; twox += 2)
   {
-     double x = 0.5*twox;
-//     ninej += AngMom::phase(twox) * (twox+1) * AngMom::SixJ( j1,j2,J12, J34,J,x) * AngMom::SixJ(j3,j4,J34, j2,x,J24) * AngMom::SixJ(J13,J24,J, x, j1,j3);
-     ninej += AngMom::phase(twox) * (twox+1) * GetSixJ( j1,j2,J12, J34,J,x) * GetSixJ(j3,j4,J34, j2,x,J24) * GetSixJ(J13,J24,J, x, j1,j3);
+    double x = 0.5 * twox;
+    //     ninej += AngMom::phase(twox) * (twox+1) * AngMom::SixJ( j1,j2,J12, J34,J,x) * AngMom::SixJ(j3,j4,J34, j2,x,J24) * AngMom::SixJ(J13,J24,J, x, j1,j3);
+    ninej += AngMom::phase(twox) * (twox + 1) * GetSixJ(j1, j2, J12, J34, J, x) * GetSixJ(j3, j4, J34, j2, x, J24) * GetSixJ(J13, J24, J, x, j1, j3);
   }
-//  double ninej = AngMom::NineJ(j1,j2,J12,j3,j4,J34,J13,J24,J);
+  //  double ninej = AngMom::NineJ(j1,j2,J12,j3,j4,J34,J13,J24,J);
 
   if (omp_get_num_threads() < 2)
   {
 #pragma omp critical
     NineJList[key] = ninej;
   }
-//  else
-//  {
-//#pragma omp critical
-//   {
-//    uint64_t Q[9];
-//    NineJUnHash( key, Q[0],Q[1],Q[2],Q[3],Q[4],Q[5],Q[6],Q[7],Q[8]);
-//    std::cout << "DANGER!!!!!!!  Updating NineJList inside a parellel loop breaks thread safety!" << std::endl;
-//    std::cout << "  I shouldn't be here in GetNineJ(";
-//    for (int i = 0; i < 9; i++)
-//      std::cout << std::setprecision(1) << std::fixed << jlist[i] << " ";
-//
-//    std::cout << "). key = " << std::hex << key << "   ninej = " << std::dec << ninej << std::endl;
-//    std::cout << "Unhashing I get ";
-//    for (int i=0; i<9; i++) std::cout << Q[i] << " " ;
-//    std::cout << std::endl;
-//    profiler.counter["N_CalcNineJ_in_Parallel_loop"] += 1;
-//    exit(EXIT_FAILURE);
-//   }
-//  }
+  //  else
+  //  {
+  // #pragma omp critical
+  //   {
+  //    uint64_t Q[9];
+  //    NineJUnHash( key, Q[0],Q[1],Q[2],Q[3],Q[4],Q[5],Q[6],Q[7],Q[8]);
+  //    std::cout << "DANGER!!!!!!!  Updating NineJList inside a parellel loop breaks thread safety!" << std::endl;
+  //    std::cout << "  I shouldn't be here in GetNineJ(";
+  //    for (int i = 0; i < 9; i++)
+  //      std::cout << std::setprecision(1) << std::fixed << jlist[i] << " ";
+  //
+  //    std::cout << "). key = " << std::hex << key << "   ninej = " << std::dec << ninej << std::endl;
+  //    std::cout << "Unhashing I get ";
+  //    for (int i=0; i<9; i++) std::cout << Q[i] << " " ;
+  //    std::cout << std::endl;
+  //    profiler.counter["N_CalcNineJ_in_Parallel_loop"] += 1;
+  //    exit(EXIT_FAILURE);
+  //   }
+  //  }
 
   return ninej;
 }

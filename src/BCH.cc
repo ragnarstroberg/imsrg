@@ -109,17 +109,21 @@ namespace BCH
     {
       OpOut.SetParticleRank(2);
     }
-    //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
-    //   This was a bug, intruduced Feb 2022, fixed May 2022.
-    //   Only call SetMode and SetParticleRank if ThreeBody is not already allocated.
-    //   Otherwise, we are erasing the 3N inherited from OpIn.
-    //   if (use_imsrg3  )
-    if (Commutator::use_imsrg3 and not(OpOut.GetParticleRank() >= 3 and OpOut.ThreeBody.IsAllocated() and OpOut.ThreeBody.Is_PN_Mode())) // IMSRG(3) commutators work in PN mode only so far.
+    if (OpOut.GetJRank() == 0 and (OpOut.GetTRank() != 0 or OpOut.GetParity() != 0) and OpOut.IsReduced() == false)
     {
-      std::cout << __func__ << "  Allocating Three Body with pn mode" << std::endl;
-      OpOut.ThreeBody.SetMode("pn");
-      OpOut.SetParticleRank(3);
+      OpOut.MakeReduced();
     }
+      //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
+      //   This was a bug, intruduced Feb 2022, fixed May 2022.
+      //   Only call SetMode and SetParticleRank if ThreeBody is not already allocated.
+      //   Otherwise, we are erasing the 3N inherited from OpIn.
+      //   if (use_imsrg3  )
+      if (Commutator::use_imsrg3 and not(OpOut.GetParticleRank() >= 3 and OpOut.ThreeBody.IsAllocated() and OpOut.ThreeBody.Is_PN_Mode())) // IMSRG(3) commutators work in PN mode only so far.
+      {
+        std::cout << __func__ << "  Allocating Three Body with pn mode" << std::endl;
+        OpOut.ThreeBody.SetMode("pn");
+        OpOut.SetParticleRank(3);
+      }
     double factorial_denom = 1.0;
 
     Operator chi, chi2; // auxiliary one-body operator used to recover 4th-order quadruples.
@@ -141,7 +145,6 @@ namespace BCH
       double epsilon = nx * exp(-2 * ny) * bch_transform_threshold / (2 * ny); // this should probably be explained somewhere...
       for (int i = 1; i <= max_iter; ++i)
       {
-
         // Put this before the bch_skip step, so we still copy and allocate chi2.
         if (use_factorized_correction)
         {
@@ -170,8 +173,6 @@ namespace BCH
 
         OpNested = Commutator::Commutator(Omega, OpNested); // the ith nested commutator
 
-
-
         int i_min_factorized = bch_skip_ieq1 ? 2 : 1;
         if (i > i_min_factorized and use_factorized_correction)
         {
@@ -192,10 +193,12 @@ namespace BCH
 
         if (OpOut.rank_J > 0)
         {
+          auto id5 = OpOut.modelspace->GetOrbitIndex(0,2,5,+1);
           std::cout << "Tensor BCH, i=" << i << "  Norm = " << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.OneBodyNorm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.TwoBodyNorm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.ThreeBody.Norm() << " "
                     << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.Norm() << std::endl;
+//                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.Norm() << "    d5d5 = " << OpNested.OneBody(id5,id5) << " sum " << OpOut.OneBody(id5,id5) << std::endl;
         }
         epsilon *= i + 1;
         if (OpNested.Norm() < epsilon)
@@ -207,7 +210,8 @@ namespace BCH
       }
     }
     //   std::cout << "Done with BCH_Transform, 3-body norm of OpOut = " << OpOut.ThreeBodyNorm() << std::endl;
-    OpIn.profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
+//    OpIn.profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
+    OpIn.profiler.timer[__func__] += omp_get_wtime() - t_start;
     return OpOut;
   }
 
@@ -240,7 +244,7 @@ namespace BCH
         goosetank_chi.OneBody(i, j) *= oi.occ * oj.occ + (1.0 - oi.occ) * (1.0 - oj.occ);
       }
     }
-    OpNested.profiler.timer["GooseTankUpdate"] += omp_get_wtime() - t_start;
+    OpNested.profiler.timer[__func__] += omp_get_wtime() - t_start;
     return goosetank_chi;
   }
 
@@ -277,7 +281,6 @@ namespace BCH
   //*****************************************************************************************
   Operator BCH_Product(Operator &X, Operator &Y)
   {
-    //   std::cout << "!!! " << __func__ << " !!! " << std::endl;
     double tstart = omp_get_wtime();
     double nx = X.Norm();
     double ny = Y.Norm();
@@ -285,6 +288,7 @@ namespace BCH
     std::vector<double> factorial = {1.0, 1.0, 2.0, 6.0, 24., 120., 720., 5040., 40320.};
 
     Operator Z = X + Y;
+  
 
     // if we set the option only_2b_omega
     // then temporarily switch to imsrg2 for updating Omega
@@ -294,7 +298,6 @@ namespace BCH
       Z.ThreeBody.Erase();
       Commutator::use_imsrg3 = false;
     }
-
     Operator Nested = Commutator::Commutator(Y, X); // [Y,X]
 
     double nxy = Nested.Norm();
@@ -356,7 +359,7 @@ namespace BCH
 
     Commutator::use_imsrg3 = _save_imsrg3; // set it back to how it was.
 
-    X.profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
+    X.profiler.timer[__func__] += omp_get_wtime() - tstart;
     return Z;
   }
 
@@ -402,7 +405,225 @@ namespace BCH
 //
 //    return est_err;
   }
+  std::tuple<Operator, Operator> BCH_ProductPV(Operator &X, Operator &XPV, Operator &Y, Operator &YPV)
+  {
+    double tstart = omp_get_wtime();
+    double nx = X.Norm();
+    double ny = Y.Norm();
+    double nxPV = XPV.Norm();
+    double nyPV = YPV.Norm();
+    std::vector<double> bernoulli = {1.0, -0.5, 1. / 6, 0.0, -1. / 30, 0.0, 1. / 42, 0, -1. / 30};
+    std::vector<double> factorial = {1.0, 1.0, 2.0, 6.0, 24., 120., 720., 5040., 40320.};
 
+    Operator Z = X + Y;
+    Operator ZPV = XPV+YPV;
 
+    
+    Operator Nested = Commutator::Commutator(Y, X) + Commutator::Commutator(YPV, XPV); // [Y,X]
+    Operator NestedPV = Commutator::Commutator(YPV, X) + Commutator::Commutator(Y, XPV); // [Y,X]
 
+    double nxy = Nested.Norm();
+    double nxyPV = NestedPV.Norm();
+    // We assume X is small, but just in case, we check if we should include the [X,[X,Y]] term.
+    if (sqrt(nxy * nx* nxy * nx + nxyPV * nxyPV * nxPV * nxPV) > bch_product_threshold)
+    {
+      Z += (1. / 12) * (Commutator::Commutator(Nested, X)+Commutator::Commutator(NestedPV,XPV));
+      ZPV += (1. / 12) * (Commutator::Commutator(NestedPV, X)+Commutator::Commutator(Nested,XPV));
+    }
+
+    
+    size_t k = 1;
+    // k=1 adds 1/2[X,Y],  k=2 adds 1/12 [Y,[Y,X]], k=4 adds -1/720 [Y,[Y,[Y,[Y,X]]]], and so on.
+    //   while( Nested.Norm() > bch_product_threshold and k<9)
+    while (sqrt(nxy*nxy+nxyPV+nxyPV) > bch_product_threshold)
+    {
+      if ((k < 2) or (k % 2 == 0))
+      {
+        Z += (bernoulli[k] / factorial[k]) * Nested;
+        ZPV += (bernoulli[k] / factorial[k]) * NestedPV;
+      }
+
+      k++;
+      if (k >= bernoulli.size())
+        break; // don't evaluate the commutator if we're not going to use it
+      if (2 * sqrt(ny * nxy * ny * nxy + nyPV * nyPV * nxyPV * nxyPV) < bch_product_threshold)
+        break;
+
+      Operator Optmp = Commutator::Commutator(Y, Nested) + Commutator::Commutator(YPV, NestedPV);
+      Operator OptmpPV = Commutator::Commutator(YPV, Nested) + Commutator::Commutator(Y, NestedPV);
+      Nested = Optmp;
+      NestedPV = OptmpPV;
+
+      nxy = Nested.Norm();
+      nxyPV = NestedPV.Norm();
+    }
+
+    X.profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
+    return {Z, ZPV};
+  }
+
+  std::tuple<Operator, Operator> BCH_TransformPV(const Operator &Op, const Operator &OpPV, const Operator &Omega, const Operator &OmegaPV)
+  {
+    return  Standard_BCH_TransformPV(Op, OpPV, Omega, OmegaPV);
+  }
+
+  std::tuple<Operator, Operator> BCH_TransformHPV(const Operator &Op, const Operator &OpPV, const Operator &Omega, const Operator &OmegaPV)
+  {
+    return  Standard_BCH_TransformHPV(Op, OpPV, Omega, OmegaPV);
+  }
+
+  /// X.BCH_Transform(Y) returns \f$ Z = e^{Y} X e^{-Y} \f$.
+  /// We use the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
+  /// \f[ Z = X + [Y,X] + \frac{1}{2!}[Y,[Y,X]] + \frac{1}{3!}[Y,[Y,[Y,X]]] + \ldots \f]
+  /// with all commutators truncated at the two-body level.
+  std::tuple<Operator, Operator> Standard_BCH_TransformPV(const Operator &OpIn, const Operator &OpInPV, const Operator &Omega, const Operator &OmegaPV)
+  {
+
+    double t_start = omp_get_wtime();
+    int max_iter = 40;
+    int warn_iter = 12;
+    double nx = OpIn.Norm();
+    double ny = Omega.Norm();
+    double nxPV = OpInPV.Norm();
+    double nyPV = OmegaPV.Norm();
+    Operator OpOut = OpIn;
+    Operator OpOutPV = OpInPV;
+    if ((OpOut.GetNumberLegs() % 2 == 0) and OpOut.GetParticleRank() < 2)
+    {
+      OpOut.SetParticleRank(2);
+    }
+
+    if (OpOut.GetJRank() == 0 and (OpOut.GetTRank() != 0 or OpOut.GetParity() != 0) and OpOut.IsReduced() == false)
+    {
+      OpOut.MakeReduced();
+    }
+
+    if (OpOutPV.GetJRank() == 0 and (OpOutPV.GetTRank() != 0 or OpOutPV.GetParity() != 0) and OpOutPV.IsReduced() == false)
+    {
+      OpOutPV.MakeReduced();
+    }
+
+    double factorial_denom = 1.0;
+
+    
+    if (sqrt(nx*nx+nxPV*nxPV) > bch_transform_threshold)
+    {
+      Operator OpNested = OpOut;
+      Operator OpNestedPV = OpOutPV;
+
+      double epsilon = sqrt(nx * nx + nxPV * nxPV) * exp(-2 * sqrt(ny * ny + nyPV * nyPV)) * bch_transform_threshold / (2 * sqrt(ny * ny + nyPV * nyPV)); // this should probably be explained somewhere...
+      for (int i = 1; i <= max_iter; ++i)
+      {
+
+        // Specifically for the perturbative triples, we need 1/(i+1)! rather than 1/i!
+        // This is because we have Wbar = [Omega,H]_3b + 1/2![Omega,[Omega,H]]_3b + 1/3![Omega,[Omega,[Omega,H]]]_3b + ...
+        //                              = [Omega, Htilde]_3b,  where Htilde = H + 1/2![Omega,H] + 1/3![Omega,[Omega,H]] + ...
+        if (bch_skip_ieq1 and i == 1)
+          continue;
+        Operator Optmp = Commutator::Commutator(OmegaPV, OpNestedPV) + Commutator::Commutator(Omega, OpNested)  ;
+        Operator OptmpPV = Commutator::Commutator(OmegaPV, OpNested) + Commutator::Commutator(Omega, OpNestedPV);
+        OpNested = Optmp; // the ith nested commutator
+        OpNestedPV = OptmpPV;
+        factorial_denom /= i;
+        OpOut += factorial_denom * OpNested;
+        OpOutPV += factorial_denom * OpNestedPV;
+        if (OpOut.rank_J > 0)
+        {
+          std::cout << "Tensor BCH, i=" << i << "  Norm = " << std::setw(12) << std::setprecision(8) << std::fixed << OpOut.OneBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.TwoBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.ThreeBody.Norm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.Norm() << std::endl;
+          std::cout << "Tensor BCH, i=" << i << "  NormPV = " << std::setw(12) << std::setprecision(8) << std::fixed << OpOutPV.OneBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNestedPV.TwoBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNestedPV.ThreeBody.Norm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNestedPV.Norm() << std::endl;
+        }
+        epsilon *= i + 1;
+        if (sqrt(OpNested.Norm()*OpNested.Norm()+OpNestedPV.Norm()*OpNestedPV.Norm()) < epsilon)
+          break;
+        if (i == warn_iter)
+          std::cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << std::endl;
+        else if (i == max_iter)
+          std::cout << "Warning: BCH_Transform didn't coverge after " << max_iter << " nested commutators" << std::endl;
+      }
+    }
+
+    OpIn.profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
+    return {OpOut,OpOutPV};
+  }
+
+  std::tuple<Operator, Operator> Standard_BCH_TransformHPV(const Operator &OpIn, const Operator &OpInPV, const Operator &Omega, const Operator &OmegaPV)
+  {
+
+    double t_start = omp_get_wtime();
+    int max_iter = 40;
+    int warn_iter = 12;
+    double nx = OpIn.Norm();
+    double ny = Omega.Norm();
+    double nxPV = OpInPV.Norm();
+    double nyPV = OmegaPV.Norm();
+    Operator OpOut = OpIn;
+    Operator OpOutPV = OpInPV;
+    if ((OpOut.GetNumberLegs() % 2 == 0) and OpOut.GetParticleRank() < 2)
+    {
+      OpOut.SetParticleRank(2);
+    }
+
+    if (OpOut.GetJRank() == 0 and (OpOut.GetTRank() != 0 or OpOut.GetParity() != 0) and OpOut.IsReduced() == false)
+    {
+      OpOut.MakeReduced();
+    }
+
+    if (OpOutPV.GetJRank() == 0 and (OpOutPV.GetTRank() != 0 or OpOutPV.GetParity() != 0) and OpOutPV.IsReduced() == false)
+    {
+      OpOutPV.MakeReduced();
+    }
+
+    double factorial_denom = 1.0;
+
+    if (sqrt(nx * nx + nxPV * nxPV) > bch_transform_threshold)
+    {
+      Operator OpNested = OpOut;
+      Operator OpNestedPV = OpOutPV;
+
+      double epsilon = sqrt(nx * nx + nxPV * nxPV) * exp(-2 * sqrt(ny * ny + nyPV * nyPV)) * bch_transform_threshold / (2 * sqrt(ny * ny + nyPV * nyPV)); // this should probably be explained somewhere...
+      for (int i = 1; i <= max_iter; ++i)
+      {
+
+        // Specifically for the perturbative triples, we need 1/(i+1)! rather than 1/i!
+        // This is because we have Wbar = [Omega,H]_3b + 1/2![Omega,[Omega,H]]_3b + 1/3![Omega,[Omega,[Omega,H]]]_3b + ...
+        //                              = [Omega, Htilde]_3b,  where Htilde = H + 1/2![Omega,H] + 1/3![Omega,[Omega,H]] + ...
+        if (bch_skip_ieq1 and i == 1)
+          continue;
+        Operator Optmp = Commutator::Commutator(Omega, OpNested);
+        Operator OptmpPV = Commutator::Commutator(OmegaPV, OpNested) + Commutator::Commutator(Omega, OpNestedPV);
+        OpNested = Optmp; // the ith nested commutator
+        OpNestedPV = OptmpPV;
+        factorial_denom /= i;
+        OpOut += factorial_denom * OpNested;
+        OpOutPV += factorial_denom * OpNestedPV;
+        if (OpOut.rank_J > 0)
+        {
+          std::cout << "Tensor BCH, i=" << i << "  Norm = " << std::setw(12) << std::setprecision(8) << std::fixed << OpOut.OneBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.TwoBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.ThreeBody.Norm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.Norm() << std::endl;
+          std::cout << "Tensor BCH, i=" << i << "  NormPV = " << std::setw(12) << std::setprecision(8) << std::fixed << OpOutPV.OneBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNestedPV.TwoBodyNorm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNestedPV.ThreeBody.Norm() << " "
+                    << std::setw(12) << std::setprecision(8) << std::fixed << OpNestedPV.Norm() << std::endl;
+        }
+        epsilon *= i + 1;
+        if (sqrt(OpNested.Norm() * OpNested.Norm() + OpNestedPV.Norm() * OpNestedPV.Norm()) < epsilon)
+          break;
+        if (i == warn_iter)
+          std::cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << std::endl;
+        else if (i == max_iter)
+          std::cout << "Warning: BCH_Transform didn't coverge after " << max_iter << " nested commutators" << std::endl;
+      }
+    }
+
+    OpIn.profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
+    return {OpOut, OpOutPV};
+  }
 }// namespace BCH

@@ -607,6 +607,7 @@ void ThreeBodyStorage_no2b<StoreType>::ReadFile( std::vector<std::string>& Strin
    if ( filemode == "bin" ) // binary. check how big the file is.
    {
      infile = std::ifstream(FileName, std::ios::binary);
+
      infile.seekg(0,infile.end);
      size_t n_elem_in_file = infile.tellg();
      infile.seekg(0, infile.beg);
@@ -617,6 +618,7 @@ void ThreeBodyStorage_no2b<StoreType>::ReadFile( std::vector<std::string>& Strin
    else if ( filemode == "gz")  // a gzipped me3j file
    {
      infile = std::ifstream(FileName, std::ios_base::in | std::ios_base::binary);
+
      zipstream.push(boost::iostreams::gzip_decompressor());
      zipstream.push(infile);
      // skip the first line
@@ -631,6 +633,11 @@ void ThreeBodyStorage_no2b<StoreType>::ReadFile( std::vector<std::string>& Strin
      infile.getline(line,LINESIZE);
    }
  
+   if ( not infile.good())
+   {
+      std::cout << "Uh Oh. Trouble reading 3N file " << FileName << "  " << __func__ << " in " << __FILE__ << " line " << __LINE__ << "   dying." << std::endl;
+      std::exit(EXIT_FAILURE);
+   }
  
    size_t buffer_size = std::min( MAX_READ,  n_elem_to_read);
  

@@ -353,6 +353,11 @@ void ThreeBodyStorage_iso::WriteBinary(std::ofstream& f)
 
 void ThreeBodyStorage_iso::ReadBinary(std::ifstream& f)
 {
+   if ( not f.good())
+   {
+      std::cout << "Uh Oh. Trouble reading 3N file " <<  __func__ << " in " << __FILE__ << " line " << __LINE__ << "   dying." << std::endl;
+      std::exit(EXIT_FAILURE);
+   }
   f.read((char*)&E3max,sizeof(E3max));
   f.read((char*)&total_dimension,sizeof(total_dimension));
   Allocate();

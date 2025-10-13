@@ -528,4 +528,7 @@ std::string ThreeBodyME::GetStorageMode() const
 
 
 
-
+void ThreeBodyME::Print() const
+{
+   threebody_storage->Print();
+}

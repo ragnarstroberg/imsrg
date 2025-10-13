@@ -1,0 +1,15 @@
+.vscode
+build
+CMakeFiles
+doc
+extern
+src
+work
+.gitmodules
+CITATION.cff
+cmake*
+CMake*
+*.def
+*.sif
+*Makefile
+*.md

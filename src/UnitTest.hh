@@ -91,6 +91,20 @@ class UnitTest
   bool Test_comm221st( const Operator& X, const Operator& Y ) ;
   bool Test_comm222_pp_hhst( const Operator& X, const Operator& Y ) ;
   bool Test_comm222_phst( const Operator& X, const Operator& Y ) ;
+  // Tensor 3b
+  bool Test_comm331st( const Operator& X, const Operator& Y ) ;
+  bool Test_comm231st( const Operator& X, const Operator& Y ) ;
+  bool Test_comm232st( const Operator& X, const Operator& Y ) ;
+  bool Test_comm132st( const Operator& X, const Operator& Y ) ;
+  bool Test_comm223st( const Operator& X, const Operator& Y ) ;
+  bool Test_comm133st( const Operator& X, const Operator& Y ) ;
+
+  bool Test_comm332_pphhst( const Operator& X, const Operator& Y ) ;
+  bool Test_comm332_ppph_hhhpst( const Operator& X, const Operator& Y ) ;
+  bool Test_comm233_pp_hhst( const Operator& X, const Operator& Y ) ;
+  bool Test_comm233_phst( const Operator& X, const Operator& Y ) ;
+  bool Test_comm333_ppp_hhhst( const Operator& X, const Operator& Y ) ;
+  bool Test_comm333_pph_hhpst( const Operator& X, const Operator& Y ) ;
 
   bool Mscheme_Test_comm330ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm331ss( const Operator& X, const Operator& Y );

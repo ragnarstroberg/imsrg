@@ -356,6 +356,10 @@ class ModelSpace
 
    SixJCache_112112 six_j_cache_2b_;
 
+//   int upperLimit_j2a_6j;
+//   int upperLimit_j2b_6j;
+//   int upperLimit_j2c_6j;
+//   int upperLimit_j2d_6j;
    static std::unordered_map<uint64_t,double> SixJList;
    static std::unordered_map<uint64_t,double> NineJList;
    static std::unordered_map<uint64_t,double> MoshList;

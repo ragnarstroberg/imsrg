@@ -1,226 +1,478 @@
 #include "IMSRGSolverPV.hh"
 #include "Commutator.hh"
-//#include "Operator.hh"
-//#include <algorithm>
-//#include <cmath>
-//#include <iomanip>
-//#include <iostream>
-//#include <string>
-//#include <sstream>
+#include "BCH.hh"
+// #include "Operator.hh"
+// #include <algorithm>
+// #include <cmath>
+// #include <iomanip>
+// #include <iostream>
+// #include <string>
+// #include <sstream>
 
 #ifndef NO_ODE
 #include <boost/numeric/odeint.hpp>
 #endif
 
-/*
-IMSRGSolverPV::~IMSRGSolverPV()
-{
-  CleanupScratch();
+
+
+IMSRGSolverPV::IMSRGSolverPV(Operator &H_in, Operator &VPT_in)
+    : IMSRGSolver(H_in), VPT_0(&VPT_in), FlowingOpsPV(1, VPT_in), Etapv(VPT_in)                                                                                                                                                                                                                   
+{   
+    Etapv.Erase();
+    //Note the Eta is already added to Omega deque in the IMSRGSolver Constructor
+    if (VPT_in.IsHermitian())
+    {
+        Etapv.SetAntiHermitian();
+    }
+    else
+    {
+        Etapv.SetHermitian();
+    }
+    OmegaPV.emplace_back(Etapv);
 }
 
-IMSRGSolverPV::IMSRGSolverPV()
-    : s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
-     flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
-     pert_triples_this_omega(0),pert_triples_sum(0),ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-{}
-*/
 
-IMSRGSolverPV::IMSRGSolverPV( Operator &H_in, Operator &VPT_in, Operator &Schiff_in, Operator &Schiffpp_in)
-   : IMSRGSolver(H_in), VPT_0(&VPT_in), Schiff_0(&Schiff_in), Schiffpp_0(&Schiffpp_in), FlowingOpsH(1,H_in), FlowingOpsV(1,VPT_in), FlowingOpsSchiff(1,Schiff_in), FlowingOpsSchiffpp(1,Schiffpp_in), Etapv(VPT_in)//modelspace(H_in.GetModelSpace()), H_0(&H_in), VPT_0(&VPT_in), FlowingOpsH(1,H_in),FlowingOpsV(1,VPT_in), Eta(H_in), Etapv(VPT_in), istep(0), s(0),ds(0.1),ds_max(0.5), smax(2.0) , norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
-    //flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
-    //pert_triples_this_omega(0),pert_triples_sum(0),ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
+void IMSRGSolverPV::SetFlowFilePV(std::string str)
 {
-   Eta.Erase();
-   Etapv.Erase();
-   Eta.SetAntiHermitian();
-   Etapv.SetAntiHermitian();
- //  Omega.emplace_back( Eta);
+      flowfile = str;
+      std::ofstream flowf;
+      if (flowfile != "")
+      {
+            flowf.open(flowfile, std::ofstream::out);
+            flowf.close();
+      }
 }
 
-//void IMSRGSolverPV::UpdateEta()
-//{
-//   generatorPV.Update(FlowingOpsH[0],FlowingOpsV[0],Eta,Etapv);
-//}
 
 void IMSRGSolverPV::Solve_flow_RK4_PV()
 {
-   istep = 0;
+      istep = 0;
+      
+      generatorPV.Update(FlowingOps[0], FlowingOpsPV[0], Eta, Etapv);
 
-//   generator.Update(&FlowingOps[0],&Eta);
-   generatorPV.Update(FlowingOpsH[0],FlowingOpsV[0],Eta,Etapv);
-
- //  if (generator.GetType() == "shell-model-atan")
-//   {
-//     generator.SetDenominatorCutoff(1.0); // do we need this?
-//   }
-
-   Elast = H_0->ZeroBody;
-   cumulative_error = 0;
-    // Write details of the flow
-   WriteFlowStatus(flowfile);
-   WriteFlowStatus(std::cout);
-
-//   Operator goosetank_chi( *modelspace, 0,0,0,1);// for use if we do IMSRG2* to mock up the goose tanks
-//   Operator goosetank_dchi( *modelspace, 0,0,0,1);// for use if we do IMSRG2* to mock up the goose tanks
-
-   for (istep=1;s<smax;++istep)
-   {
-
-      double norm_eta = Eta.Norm();
-      double norm_etapv = Etapv.Norm();
-      if (norm_eta < eta_criterion and norm_etapv < eta_criterion )
-      {
-        break;
-      }
-
-      ds = std::min(ds_max,smax-s);
-      s += ds;
-
-      int nops = FlowingOps.size();
-      std::vector<Operator> K1H(nops);
-      std::vector<Operator> K2H(nops);
-      std::vector<Operator> K3H(nops);
-      std::vector<Operator> K4H(nops);
-      std::vector<Operator> KtmpH(nops);
-      std::vector<Operator> K1V(nops);
-      std::vector<Operator> K2V(nops);
-      std::vector<Operator> K3V(nops);
-      std::vector<Operator> K4V(nops);
-      std::vector<Operator> KtmpV(nops);
-      std::vector<Operator> K1S(nops); //Schiff
-      std::vector<Operator> K2S(nops);
-      std::vector<Operator> K3S(nops);
-      std::vector<Operator> K4S(nops);
-      std::vector<Operator> KtmpS(nops);
-      std::vector<Operator> K1Spp(nops); //Schiffpp
-      std::vector<Operator> K2Spp(nops);
-      std::vector<Operator> K3Spp(nops);
-      std::vector<Operator> K4Spp(nops);
-      std::vector<Operator> KtmpSpp(nops);
-
-
-//      Operator& Hs = FlowingOps[0];   // this is not used explicitly
-      for ( int i=0;i<nops; i++ )
-      {
-//        if (i==0)
-//           K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] + goosetank_chi ) ;
-//        else
-           K1V[i] =  Commutator::Commutator( Eta, FlowingOpsV[i] ) + Commutator::Commutator( Etapv, FlowingOpsH[i] );
-           K1H[i] =  Commutator::Commutator( Eta, FlowingOpsH[i] );
-           K1Spp[i] = Commutator::Commutator(Eta, FlowingOpsSchiffpp[i]) + Commutator::Commutator(Etapv, FlowingOpsSchiff[i]);
-           K1S[i] = Commutator::Commutator(Eta, FlowingOpsSchiff[i]);
-           KtmpV[i] = FlowingOpsV[i] + 0.5*ds*K1V[i];
-           KtmpH[i] = FlowingOpsH[i] + 0.5*ds*K1H[i];
-           KtmpS[i] = FlowingOpsSchiff[i] + 0.5*ds*K1S[i];
-           KtmpSpp[i] = FlowingOpsSchiffpp[i] + 0.5*ds*K1Spp[i];
-      }
-//      Operator K1 = Commutator::Commutator( Eta, Hs );
-//      Operator Htmp = Hs + 0.5*ds*K1[0];
-//      generator.Update(&Htmp,&Eta);
-//      generator.Update(&Ktmp[0],&Eta);
-      generatorPV.Update(KtmpH[0],KtmpV[0],Eta,Etapv);
-      for (int i=0; i<nops; i++ )
-      {
-//        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
-//        if (i==0)
-//            K2[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi );
-//        else
-           K2V[i] =  Commutator::Commutator( Eta, KtmpV[i] ) + Commutator::Commutator( Etapv, KtmpH[i] );
-           K2H[i] =  Commutator::Commutator( Eta, KtmpH[i] );
-           K2Spp[i] = Commutator::Commutator(Eta, FlowingOpsSchiffpp[i]) + Commutator::Commutator(Etapv, FlowingOpsSchiff[i]);
-           K2S[i] = Commutator::Commutator(Eta, FlowingOpsSchiff[i]);
-           KtmpV[i] = FlowingOpsV[i] + 0.5*ds*K2V[i];
-           KtmpH[i] = FlowingOpsH[i] + 0.5*ds*K2H[i];  
-           KtmpS[i] = FlowingOpsSchiff[i] + 0.5*ds*K2S[i];
-           KtmpSpp[i] = FlowingOpsSchiffpp[i] + 0.5*ds*K2Spp[i]; 
-   }
-
-//      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
-//      Htmp = Hs + 0.5*ds*K2;
-//      generator.Update(&Htmp,&Eta);
-//      generator.Update(&Ktmp[0],&Eta);
-      generatorPV.Update(KtmpH[0],KtmpV[0],Eta,Etapv);
-      for (int i=0; i<nops; i++ )
-      {
-//        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
-//        if (i==0)
-//           K3[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi);
-//        else
-           K3V[i] =  Commutator::Commutator( Eta, KtmpV[i] ) + Commutator::Commutator( Etapv, KtmpH[i] );
-           K3H[i] =  Commutator::Commutator( Eta, KtmpH[i] );
-           K3Spp[i] = Commutator::Commutator(Eta, FlowingOpsSchiffpp[i]) + Commutator::Commutator(Etapv, FlowingOpsSchiff[i]);
-           K3S[i] = Commutator::Commutator(Eta, FlowingOpsSchiff[i]);
-           KtmpV[i] = FlowingOpsV[i] + 1.0*ds*K3V[i];
-           KtmpH[i] = FlowingOpsH[i] + 1.0*ds*K3H[i];    
-           KtmpS[i] = FlowingOpsSchiff[i] + 1.0*ds*K3S[i];
-           KtmpSpp[i] = FlowingOpsSchiffpp[i] + 1.0*ds*K3Spp[i];
-  }
-//      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
-//      Htmp = Hs + 1.0*ds*K3;
-//      generator.Update(&Htmp,&Eta);
-//      generator.Update(&Ktmp[0],&Eta);
-     generatorPV.Update(KtmpH[0],KtmpV[0],Eta,Etapv);
-      for (int i=0; i<nops; i++ )
-      {
-//        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
-//        if (i==0)
-//           K4[i] = Commutator::Commutator( Eta, Ktmp[i] + goosetank_chi);
-//        else
-           K4V[i] =  Commutator::Commutator( Eta, KtmpV[i] ) + Commutator::Commutator( Etapv, KtmpH[i] );
-           K4H[i] =  Commutator::Commutator( Eta, KtmpH[i] );
-           K4Spp[i] = Commutator::Commutator(Eta, FlowingOpsSchiffpp[i]) + Commutator::Commutator(Etapv, FlowingOpsSchiff[i]);
-           K4S[i] = Commutator::Commutator(Eta, FlowingOpsSchiff[i]);
-     FlowingOpsH[i] += ds/6.0 * ( K1H[i] + 2*K2H[i] + 2*K3H[i] + K4H[i] );
-     FlowingOpsV[i] += ds/6.0 * ( K1V[i] + 2*K2V[i] + 2*K3V[i] + K4V[i] );
-     FlowingOpsSchiff[i] += ds/6.0 * ( K1S[i] + 2*K2S[i] + 2*K3S[i] + K4S[i] );
-     FlowingOpsSchiffpp[i] += ds/6.0 * ( K1Spp[i] + 2*K2Spp[i] + 2*K3Spp[i] + K4Spp[i] );     
- }
-//      Operator K4 = Commutator::Commutator( Eta, Hs+Htmp );
-//      Hs += ds/6.0 * ( K1 + 2*K2 + 2*K3 + K4);
-
-/*
-      if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
-      {
-        generator.SetDenominatorCutoff(1e-6);
-      }
-
-      if ( Commutator::use_goose_tank_correction )
-      {
-         goosetank_dchi.EraseOneBody();
-         Commutator::comm221ss( Eta, FlowingOps[0], goosetank_dchi );  // update chi.
-         for (auto i : modelspace->all_orbits )  // enforce n_in_j + nbar_i nbar_j
-         {
-           Orbit &oi = modelspace->GetOrbit(i);
-           for ( auto j : modelspace->all_orbits )
-           {
-            Orbit &oj = modelspace->GetOrbit(j);
-            goosetank_dchi.OneBody(i,j) *=  oi.occ*oj.occ + (1.0-oi.occ)*(1.0-oj.occ) ;
-           }
-         }
-         goosetank_chi += goosetank_dchi * ds;
-//        std::cout << " " << __FILE__ << "  line " << __LINE__ << s << "  " << goosetank_chi.OneBody(1,1) << std::endl;;
-      }
-*/
-//      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
-//      generator.Update(&FlowingOps[0],&Eta);
-      generatorPV.Update(FlowingOpsH[0],FlowingOpsV[0],Eta,Etapv);
-//      cumulative_error += EstimateStepError();
-
+      Elast = H_0->ZeroBody;
+      cumulative_error = 0;
       // Write details of the flow
-      WriteFlowStatus(flowfile);
-      WriteFlowStatus(std::cout);
-//      profiler.PrintMemory();
-      Elast = FlowingOps[0].ZeroBody;
+      WriteFlowStatusHeaderPV(std::cout); // commented beatriz 03/05/2025
+      WriteFlowStatusPV(std::cout);
+      for (istep = 1; s < smax; ++istep)
+      {
+            double norm_eta = Eta.Norm();
+            double norm_etapv = Etapv.Norm();
+            if (sqrt(norm_eta*norm_eta+norm_etapv*norm_etapv) < eta_criterion)
+            {       
+                  break;
+            }
 
-   }
+            ds = std::min(ds_max, smax - s);
+            s += ds;
+            int nops = FlowingOps.size();
+            int nops_pv = FlowingOpsPV.size();
+            if (nops != nops_pv)
+            {
+                std::cout<<"Problem, number of PC and PV operators isn't the same..."<<std::endl;
+                exit(0);
+            }
+            std::vector<Operator> K1H(nops);
+            std::vector<Operator> K2H(nops);
+            std::vector<Operator> K3H(nops);
+            std::vector<Operator> K4H(nops);
+            std::vector<Operator> KtmpH(nops);
+            std::vector<Operator> K1V(nops);
+            std::vector<Operator> K2V(nops);
+            std::vector<Operator> K3V(nops);
+            std::vector<Operator> K4V(nops);
+            std::vector<Operator> KtmpV(nops);
+            
+            for (int i = 0; i < nops; i++)
+            {
+                K1V[i] = Commutator::Commutator(Eta, FlowingOpsPV[i]) + Commutator::Commutator(Etapv, FlowingOps[i]);
+                K1H[i] = Commutator::Commutator(Eta, FlowingOps[i]) + Commutator::Commutator(Etapv, FlowingOpsPV[i]);
+                KtmpV[i] = FlowingOpsPV[i] + 0.5 * ds * K1V[i];
+                KtmpH[i] = FlowingOps[i] + 0.5 * ds * K1H[i];
+            }
+            generatorPV.Update(KtmpH[0], KtmpV[0], Eta, Etapv);
+            for (int i = 0; i < nops; i++)
+            {
+                K2V[i] = Commutator::Commutator(Eta, KtmpV[i]) + Commutator::Commutator(Etapv, KtmpH[i]);
+                K2H[i] = Commutator::Commutator(Eta, KtmpH[i]) + Commutator::Commutator(Etapv, KtmpV[i]);
+                KtmpV[i] = FlowingOpsPV[i] + 0.5 * ds * K2V[i];
+                KtmpH[i] = FlowingOps[i] + 0.5 * ds * K2H[i];
+            }
+            generatorPV.Update(KtmpH[0], KtmpV[0], Eta, Etapv);
+            for (int i = 0; i < nops; i++)
+            {
+                K3V[i] = Commutator::Commutator(Eta, KtmpV[i]) + Commutator::Commutator(Etapv, KtmpH[i]);
+                K3H[i] = Commutator::Commutator(Eta, KtmpH[i]) + Commutator::Commutator(Etapv, KtmpV[i]);
+                KtmpV[i] = FlowingOpsPV[i] + 1.0 * ds * K3V[i];
+                KtmpH[i] = FlowingOps[i] + 1.0 * ds * K3H[i];
+     
+            }
+            generatorPV.Update(KtmpH[0], KtmpV[0], Eta, Etapv);
+            for (int i = 0; i < nops; i++)
+            {
+                K4V[i] = Commutator::Commutator(Eta, KtmpV[i]) + Commutator::Commutator(Etapv, KtmpH[i]);
+                K4H[i] = Commutator::Commutator(Eta, KtmpH[i]) + Commutator::Commutator(Etapv, KtmpV[i]);
+                FlowingOps[i] += ds / 6.0 * (K1H[i] + 2 * K2H[i] + 2 * K3H[i] + K4H[i]);
+                FlowingOpsPV[i] += ds / 6.0 * (K1V[i] + 2 * K2V[i] + 2 * K3V[i] + K4V[i]);
+            }
+            // FlowingOps[0].PrintOneBody();
+            generatorPV.Update(FlowingOps[0], FlowingOpsPV[0], Eta, Etapv);
+            // Write details of the flow
+            WriteFlowStatusPV(flowfile);
+            WriteFlowStatusPV(std::cout);
+            Elast = FlowingOps[0].ZeroBody;
+      }
+    //   FlowingOps[0].PrintOneBody();
 }
+
+
+void IMSRGSolverPV::NewOmega_PV()
+{
+    H_saved = FlowingOps[0];
+    VPT_saved = FlowingOpsPV[0];
+    std::cout << "pushing back another Omega. Omega.size = " << Omega.size()
+                << " , operator size = " << Omega.front().Size() / 1024. / 1024. << " MB"
+                << ",  memory usage = " << profiler.CheckMem()["RSS"] / 1024. / 1024. << " GB";
+    std::cout << std::endl;
+    std::cout << "pushing back another OmegaPV. OmegaPV.size = " << OmegaPV.size()
+              << " , operator size = " << OmegaPV.front().Size() / 1024. / 1024. << " MB"
+              << ",  memory usage = " << profiler.CheckMem()["RSS"] / 1024. / 1024. << " GB";
+    std::cout << std::endl;
+    if (scratchdir != "")
+    {
+        if (scratchdir.find("/dev/null") == std::string::npos)
+        {
+            std::ostringstream filename;
+            filename << scratchdir.c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
+            std::ofstream ofs(filename.str(), std::ios::binary);
+            Omega.back().WriteBinary(ofs);
+            std::ostringstream filenamePV;
+            filenamePV << scratchdir.c_str() << "/OMEGAPV_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
+            std::ofstream ofsPV(filenamePV.str(), std::ios::binary);
+            OmegaPV.back().WriteBinary(ofsPV);
+            std::cout << "Omega written to file " << filenamePV.str() << "  written " << n_omega_written << " so far." << std::endl;
+            if (n_omega_written > max_omega_written)
+            {
+                std::cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
+                        << " ) deleting OMEGA files and calling terminate." << std::endl;
+                CleanupScratch();
+                std::terminate();
+            }
+        }
+        if (Omega.back().GetModelSpace() != Eta.GetModelSpace() or OmegaPV.back().GetModelSpace() != Etapv.GetModelSpace())
+        {
+            Omega.back() = Eta;
+            OmegaPV.back() = Etapv;
+        }
+        n_omega_written++;
+    }
+    else
+    {
+        Omega.emplace_back(Eta);
+        OmegaPV.emplace_back(Etapv);
+    }
+    Omega.back().Erase();
+    OmegaPV.back().Erase();
+}
+
+
+void IMSRGSolverPV::Solve_magnus_euler_PV()
+{
+  istep = 0;
+  generatorPV.Update(FlowingOps[0], FlowingOpsPV[0], Eta, Etapv);
+  // SRS noticed this on June 12 2024. If these two parameters are equal, and especially if we're using the hunter-gatherer mode, then we become sensitive to
+  // numerical precision when deciding if we should split omega, leading to machine-dependent behavior.
+  if ( std::abs( omega_norm_max - norm_domega)<1e-6 )
+  {
+     norm_domega += 1e-4;
+     std::cout << __func__ << ":  adjusting norm_domega to " << norm_domega << "  to avoid numerical trouble, since omega_norm_max = " << omega_norm_max << std::endl;
+  }
+
+  Elast = H_0->ZeroBody;
+  cumulative_error = 0;
+  // Write details of the flow
+  //   WriteFlowStatusPV(flowfile);
+  WriteFlowStatusHeaderPV(std::cout);
+  WriteFlowStatusPV(std::cout);
+
+  for (istep = 1; s < smax; ++istep)
+  {
+    double norm_eta = Eta.Norm();
+    double norm_etaPV = Etapv.Norm();
+    if (sqrt(norm_eta*norm_eta+norm_etaPV*norm_etaPV)< eta_criterion)
+    {
+      break;
+    }
+    if (norm_eta > 1e12 or std::abs(Elast) > 1e9) // This is obviously going nowhere...
+    {
+      std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+      std::cout << "!!!!!!!!!!!  Norm of eta is " << norm_eta << " E0 = " << Elast << "  things are clearly broken. Giving up." << std::endl;
+      std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+      FlowingOps[0] *= 1.0 / 0.0;
+      break;
+    }
+    double norm_omega = Omega.back().Norm();
+    double norm_omegaPV = OmegaPV.back().Norm();
+    if (sqrt(norm_omega*norm_omega+norm_omegaPV*norm_omegaPV) > omega_norm_max)
+    {
+      if (hunter_gatherer)
+      {
+        std::cout<<"Hunter-Gatherer not implemented for PV solver."<<std::endl;
+        exit(0);
+      }
+      else
+      {
+        NewOmega_PV();
+        std::cout<<"new omega"<<std::endl;
+      }
+      norm_omega = 0;
+      norm_omegaPV = 0;
+    }
+    // ds should never be more than 1, as this is over-rotating
+    // Also, since we check if ||Omega|| < omega_norm_max, if we choose ds so that ||Omega|| = omega_norm_max, then we become sensitive
+    // to numerical precision details when evaluating the inequality and behavior becomes machine dependent. So we add 1e-5 to the omega_norm_max
+    // option to ensure that we're definitely on one side of the inequality.
+    if (magnus_adaptive)
+        ds = std::min({norm_domega / sqrt(norm_eta * norm_eta + norm_etaPV * norm_etaPV), norm_domega / sqrt(norm_eta * norm_eta + norm_etaPV * norm_etaPV) / (sqrt(norm_omega * norm_omega + norm_omegaPV * norm_omegaPV) + 1.0e-9), (omega_norm_max + 1e-5) / sqrt(norm_eta * norm_eta + norm_etaPV * norm_etaPV), ds_max});
+    ds = std::min(ds, smax - s);
+
+    s += ds;
+    Eta *= ds; // Here's the Euler step.
+    Etapv *= ds;
+    // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
+    std::tuple<Operator, Operator> Omega_tmp = BCH::BCH_ProductPV(Eta, Etapv, Omega.back(), OmegaPV.back());
+    Omega.back() = std::get<0>(Omega_tmp);
+    OmegaPV.back() = std::get<1>(Omega_tmp);
+    // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
+    std::tuple<Operator, Operator> H_tmp; 
+    if ((Omega.size() + n_omega_written) < 2)
+    {
+        H_tmp = BCH::BCH_TransformPV(*H_0, *VPT_0, Omega.back(), OmegaPV.back());
+        FlowingOps[0] = std::get<0>(H_tmp);
+        FlowingOpsPV[0] = std::get<1>(H_tmp);
+    }
+    else
+    {
+        H_tmp = BCH::BCH_TransformPV(H_saved, VPT_saved, Omega.back(), OmegaPV.back());
+        FlowingOps[0] = std::get<0>(H_tmp);
+        FlowingOpsPV[0] = std::get<1>(H_tmp);
+    }
+
+    // if (norm_eta < 1.0 and generator.GetType() == "shell-model-atan")
+    // {
+    //   generatorPV.SetDenominatorCutoff(1e-6);
+    // }
+
+    generatorPV.Update(FlowingOps[0], FlowingOpsPV[0], Eta, Etapv);
+    // Etapv.PrintOneBody();
+    // Etapv.PrintTwoBody();
+
+    // Write details of the flow
+    // WriteFlowStatusPV(flowfile);
+    WriteFlowStatusPV(std::cout);
+    Elast = FlowingOps[0].ZeroBody;
+  }
+  //   WriteFlowStatusPV(std::cout);
+}
+
 
 void IMSRGSolverPV::SetGeneratorPV(std::string gen)
-{     
-  generatorPV.SetType(gen);
-
+{
+      generatorPV.SetType(gen);
+      if (Omega.back().Norm() > 1e-6 or OmegaPV.back().Norm() >1e-6)
+      {
+        Eta.Erase();
+        Etapv.Erase();
+        NewOmega_PV();
+      }
+      if (magnus_adaptive)
+      {
+          ds = ds_0;
+          in_soft_landing_phase_ = false;
+      }
 }
 
+void IMSRGSolverPV::WriteFlowStatusPV(std::string fname)
+{
+      if (fname != "")
+      {
+            std::ofstream ff(fname, std::ios::app);
+            WriteFlowStatusPV(ff);
+      }
+}
+void IMSRGSolverPV::WriteFlowStatusPV(std::ostream &f)
+{
+      if (f.good())
+      {
+            int fwidth = 18;
+            int fprecision = 8;
+            auto &H_s = FlowingOps[0];
+            auto &V_s = FlowingOpsPV[0];
 
 
+            f.setf(std::ios::fixed);
+            f << std::setw(5) << std::setw(5) << istep
+              << std::setw(10) << std::setprecision(3) << s
+              << std::setw(fwidth) << std::setprecision(fprecision) << H_s.ZeroBody
+              << std::setw(fwidth) << std::setprecision(fprecision) << H_s.OneBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << H_s.TwoBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Norm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << V_s.OneBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << V_s.TwoBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << V_s.Norm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << Eta.Norm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << Etapv.Norm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << Etapv.OneBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << Etapv.TwoBodyNorm()
+              << std::setw(fwidth) << std::setprecision(fprecision) << sqrt(Etapv.Norm()*Etapv.Norm()+Eta.Norm()*Eta.Norm())
+              << std::setw(fwidth) << std::setprecision(fprecision) << H_s.GetMP2_Energy()
+              << std::setprecision(fprecision)
+              << std::setw(7) << std::setprecision(1) << profiler.GetTimes()["real"]
+              << std::endl;
+      }
+}
+
+void IMSRGSolverPV::WriteFlowStatusHeaderPV(std::string fname)
+{
+      std::ofstream ff;
+      if (fname != "")
+            ff.open(fname, std::ios::app);
+      WriteFlowStatusHeaderPV(ff);
+}
+void IMSRGSolverPV::WriteFlowStatusHeaderPV(std::ostream &f)
+{
+      if (f.good())
+      {
+            for (int x = 0; x < 220; x++)
+                  f << "-";
+            f << std::endl;
+            int fwidth = 18;
+            int fprecision = 8;
+            f.setf(std::ios::fixed);
+            f << std::fixed << std::setw(5) << "i"
+              << std::setw(8) << std::setprecision(3) << "s"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "E0"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||H1||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||H2||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||H||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Vpt1||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Vpt2||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Vpt||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_pv||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_pv_1||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_pv_2||"
+              << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_total||"
+              << std::setw(15) << std::setprecision(fprecision) << "E(MP2)"
+              << std::setw(10) << std::setprecision(fprecision) << "t(s)"
+              << std::endl;
+            for (int x = 0; x < 220; x++)
+                  f << "-";
+            f << std::endl;
+      }
+}
+
+std::tuple<Operator, Operator> IMSRGSolverPV::Transform(Operator &OpIn, Operator &OpInPV)
+{
+    return Transform_Partial(OpIn, OpInPV,  0);
+}
+
+std::tuple<Operator, Operator> IMSRGSolverPV::Transform(Operator &&OpIn, Operator &&OpInPV)
+{
+    return Transform_Partial(OpIn, OpInPV, 0);
+}
+
+std::tuple<Operator, Operator> IMSRGSolverPV::Transform_Partial(Operator &OpIn, Operator &OpInPV, int n)
+{
+    Operator OpOut = OpIn;
+    Operator OpOutPV = OpInPV;
+    if (OpOut.GetParticleRank() == 1)
+    {
+        OpOut.SetParticleRank(2);
+    }
+       
+    if (OpOutPV.GetParticleRank() == 1)
+    {
+        OpOutPV.SetParticleRank(2);
+    }
+        
+    if (scratchdir != "")
+    {
+        for (int i = n; i < n_omega_written; i++)
+        {
+            Operator omega(Eta);
+            Operator omegaPV(Etapv);
+            // Read Omega
+            std::ostringstream filename;
+            filename << scratchdir.c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+            std::cout << "Transforming using " << filename.str() << std::endl;
+            std::ifstream ifs(filename.str(), std::ios::binary);
+            omega.ReadBinary(ifs);
+            // Read OmegaPV
+            std::ostringstream filenamePV;
+            filenamePV << scratchdir.c_str() << "/OMEGAPV_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+            std::cout << "Transforming using " << filenamePV.str() << std::endl;
+            std::ifstream ifsPV(filenamePV.str(), std::ios::binary);
+            omegaPV.ReadBinary(ifsPV);
+            std::tuple<Operator, Operator> Op_tmp = BCH::BCH_TransformPV(OpOut, OpOutPV, omega, omegaPV);
+            OpOut = std::get<0>(Op_tmp);
+            OpOutPV = std::get<1>(Op_tmp);
+            std::cout << "norm of omega = " << omega.Norm() << "norm of omegaPV = "<<omegaPV.Norm()<< std::endl;
+            std::cout << " op zero body = " << OpOut.ZeroBody << " opPV zero body = " << OpOutPV.ZeroBody << std::endl;
+        }
+    }
+
+    for (size_t i = std::max(n - n_omega_written, 0); i < Omega.size(); ++i)
+    {
+        std::tuple<Operator, Operator> Op_tmp = BCH::BCH_TransformPV(OpOut, OpOutPV, Omega[i], OmegaPV[i]);
+        OpOut = std::get<0>(Op_tmp);
+        OpOutPV = std::get<1>(Op_tmp);
+    }
+
+    return {OpOut, OpOutPV};
+}
+
+std::tuple<Operator, Operator> IMSRGSolverPV::Transform_Partial(Operator &&OpIn, Operator &&OpInPV, int n)
+{
+    
+    Operator OpOut = OpIn;
+    Operator OpOutPV = OpInPV;
+    Operator Optmp;
+    Operator OptmpPV;
+    if (scratchdir != "")
+    {
+        for (int i = n; i < n_omega_written; i++)
+        {
+            Operator omega(Eta);
+            Operator omegaPV(Etapv);
+            // Read Omega
+            std::ostringstream filename;
+            filename << scratchdir.c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+            std::ifstream ifs(filename.str(), std::ios::binary);
+            omega.ReadBinary(ifs);
+            // Read OmegaPV
+            std::ostringstream filenamePV;
+            filenamePV << scratchdir.c_str() << "/OMEGAPV_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+            std::ifstream ifsPV(filenamePV.str(), std::ios::binary);
+            omegaPV.ReadBinary(ifsPV);
+            std::tuple<Operator, Operator> Op_tmp = BCH::BCH_TransformPV(OpOut, OpOutPV, omega, omegaPV);
+            OpOut = std::get<0>(Op_tmp);
+            OpOutPV = std::get<1>(Op_tmp);
+            std::cout << "norm of omega = " << omega.Norm() << "norm of omegaPV = " << omegaPV.Norm() << std::endl;
+            std::cout << " op zero body = " << OpOut.ZeroBody << " opPV zero body = " << OpOutPV.ZeroBody << std::endl;
+        }
+    }
+
+    for (size_t i = std::max(n - n_omega_written, 0); i < Omega.size(); ++i)
+    {
+        std::tuple<Operator, Operator> Op_tmp = BCH::BCH_TransformPV(OpOut, OpOutPV, Omega[i], OmegaPV[i]);
+        OpOut = std::get<0>(Op_tmp);
+        OpOutPV = std::get<1>(Op_tmp);
+    }
+    return {OpOut, OpOutPV};
+}

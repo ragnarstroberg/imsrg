@@ -33,6 +33,7 @@ namespace Commutator
     extern bool perturbative_triples;
 
     extern bool imsrg3_no_qqq;
+    extern bool imsrg3_only_vvv;
     extern bool imsrg3_valence_2b;
     extern bool discard_0b_from_3b;
     extern bool discard_1b_from_3b;
@@ -46,6 +47,7 @@ namespace Commutator
     void Discard2bFrom3b(bool tf);
 
     void SetIMSRG3Noqqq(bool tf);
+    void SetIMSRG3Onlyvvv(bool tf);
     void SetIMSRG3valence2b(bool tf);
 //    void SetIMSRG3Verbose(bool tf);
     void SetSingleThread(bool tf); 

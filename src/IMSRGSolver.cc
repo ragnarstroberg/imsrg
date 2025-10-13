@@ -36,7 +36,7 @@ IMSRGSolver::IMSRGSolver(Operator &H_in)
 {
   Eta.Erase();
   Eta.SetAntiHermitian();
-//  Eta.ThreeBody.SetMode("pn");  // DONT DO THIS, it allocates a 3N structure even if you don't want it.
+  //  Eta.ThreeBody.SetMode("pn");  // DONT DO THIS, it allocates a 3N structure even if you don't want it.
   Omega.emplace_back(Eta);
 }
 
@@ -243,7 +243,7 @@ void IMSRGSolver::Solve_magnus_euler()
   istep = 0;
 
   generator.Update(FlowingOps[0], Eta);
-
+  // Eta.PrintTwoBody();
   // SRS noticed this on June 12 2024. If these two parameters are equal, and especially if we're using the hunter-gatherer mode, then we become sensitive to
   // numerical precision when deciding if we should split omega, leading to machine-dependent behavior.
   if ( std::abs( omega_norm_max - norm_domega)<1e-6 )
@@ -511,10 +511,6 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 void IMSRGSolver::Solve_flow_RK4()
 {
   istep = 0;
-
-  //   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
-
-  //   generator.Update(&FlowingOps[0],&Eta);
   generator.Update(FlowingOps[0], Eta);
 
   if (generator.GetType() == "shell-model-atan")
@@ -550,7 +546,6 @@ void IMSRGSolver::Solve_flow_RK4()
     std::vector<Operator> K4(nops);
     std::vector<Operator> Ktmp(nops);
 
-    //      Operator& Hs = FlowingOps[0];   // this is not used explicitly
     for (int i = 0; i < nops; i++)
     {
       if (i == 0)

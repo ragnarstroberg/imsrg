@@ -392,7 +392,7 @@ void Operator::ReadBinary(std::ifstream &ifs)
 
 Operator Operator::DoNormalOrdering() const
 {
-//  if (legs % 2 > 0)
+  // if (legs % 2 > 0)
   if ( not this->IsNumberConserving() )
     return DoNormalOrderingDagger(+1, modelspace->holes);
   if ( this->GetParticleRank() >= 3 )
@@ -410,6 +410,17 @@ Operator Operator::UndoNormalOrdering() const
     return DoNormalOrdering3(-1, modelspace->holes);
   else
     return DoNormalOrdering2(-1, modelspace->holes);
+}
+
+Operator Operator::UndoNormalOrderingCore() const
+{
+  //  std::cout << " IN " << __func__ << "   legs = " << legs << std::endl;
+  if (not this->IsNumberConserving())
+    return DoNormalOrderingDagger(-1, modelspace->core);
+  if (this->GetParticleRank() >= 3)
+    return DoNormalOrdering3(-1, modelspace->core);
+  else
+    return DoNormalOrdering2(-1, modelspace->core);
 }
 
 // Operator Operator::UndoNormalOrdering2() const
@@ -450,6 +461,7 @@ Operator Operator::DoNormalOrderingFilledValence() const
       return DoNormalOrdering2(+1, modelspace->valence);
 }
 
+
 //*************************************************************
 ///  Normal ordering of a 2body operator
 ///  set up for scalar or tensor operators, but
@@ -458,14 +470,10 @@ Operator Operator::DoNormalOrderingFilledValence() const
 // Operator Operator::DoNormalOrdering2(int sign) const
 Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
 {
-  //   for ( auto o : occupied ) std::cout << o << " ";
-  //   std::cout << std::endl;
-
   Operator opNO(*this);
   bool scalar = (opNO.rank_J == 0 and opNO.rank_T == 0 and opNO.parity == 0);
   if (scalar)
   {
-    //     for (auto& k : modelspace->holes) // loop over hole orbits
     for (auto &k : occupied) // loop over hole orbits
     {
       Orbit &ok = modelspace->GetOrbit(k);
@@ -523,8 +531,8 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
           for (auto &h : occupied) // C++11 syntax
           {
             Orbit &oh = modelspace->GetOrbit(h);
-//            if (opNO.rank_J == 0)
-            if (not opNO.IsReduced() )
+            // if (opNO.rank_J == 0)
+            if (not opNO.IsReduced())
             {
               opNO.OneBody(a,b) += hatfactor / (2 * ja + 1.0) * sign * oh.occ * TwoBody.GetTBME(ch_bra, ch_ket, a, h, b, h);
               if ( herm !=0 )
@@ -712,6 +720,7 @@ Operator Operator::Truncate(ModelSpace &ms_new)
   OpNew.ZeroBody = ZeroBody;
   OpNew.hermitian = hermitian;
   OpNew.antihermitian = antihermitian;
+  OpNew.is_reduced = is_reduced; // Bug fix suggested by Antoine
   size_t norb = ms_new.GetNumberOrbits();
   arma::uvec old_orbs(norb);
   for (size_t i = 0; i < norb; i++)

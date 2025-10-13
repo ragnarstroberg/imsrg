@@ -418,3 +418,31 @@ void ThreeBodyStorage_pn::AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, si
 
 
 
+void ThreeBodyStorage_pn::Print()
+{
+    for (auto &it : ch_start )
+    {
+      size_t ch_bra = it.first.ch_bra;
+      size_t ch_ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
+      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
+      size_t nbras = Tbc_bra.GetNumberKets();
+      size_t nkets = Tbc_ket.GetNumberKets();
+      for (size_t ibra = 0; ibra < nbras; ibra++)
+      {
+        Ket3& bra = Tbc_bra.GetKet( ibra);
+        for ( size_t iket = 0; iket <nkets; iket++)
+        {
+           Ket3& ket = Tbc_ket.GetKet( iket);
+           double ME = GetME_pn_ch( ch_bra,  ch_ket, ibra,  iket);
+           std::cout << "  " << bra.p << " " << bra.q << " " << bra.r << " " << bra.Jpq << "   " << ket.p << " " << ket.q << " " << ket.r << " " << ket.Jpq << " , " << Tbc_bra.twoJ << " " << Tbc_ket.twoJ
+                     << "( " << bra.op->cvq <<  bra.oq->cvq << bra.oR->cvq << ket.op->cvq << ket.oq->cvq << ket.oR->cvq  << " )" << "  => " << ME << std::endl;
+        }
+      }
+    }
+
+
+}
+
+
+

@@ -22,6 +22,7 @@
 
 //#include <cmath>
 #include <vector>
+#include <array>
 
 //#define MOSH_BETA_1 M_PI_4   // Moshinksy beta parameter for mass ratio 1:1
 //#define MOSH_BETA_2 atan(sqrt(2)) // Moshinsky beta parameter for  mass ratio m1/m2 = 2
@@ -45,6 +46,8 @@ namespace AngMom
    int phase(int x);
    double Tri(double j1, double j2, double j3);
    bool Triangle(double j1, double j2, double j3);
+   int Jmin( std::vector< std::array<int,2>> jpairs);
+   int Jmax( std::vector< std::array<int,2>> jpairs);
    double CG(double ja, double ma, double jb, double mb, double J, double M);
    double ThreeJ(double j1, double j2, double j3, double m1, double m2, double m3);
    double SixJ(double j1, double j2, double j3, double J1, double J2,double J3);

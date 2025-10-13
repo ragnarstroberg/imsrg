@@ -177,7 +177,7 @@ class ThreeBodyME
   void Erase(); // set all three-body terms to zero
   void Deallocate();
   size_t size();
-  void Print();
+  void Print() const;
   std::string GetStorageMode() const ;
 
 

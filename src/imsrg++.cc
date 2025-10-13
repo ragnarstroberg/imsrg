@@ -1433,15 +1433,14 @@ int main(int argc, char** argv)
       }
 //      Operator op = imsrg_util::OperatorFromString( modelspace, opname );
 
-      if ( op.GetJRank()==0 and ( op.GetTRank()!=0 or op.GetParity()!=0 ) )
-      {
-         std::cout << "Before doing HF, making " << opname << "  not reduced" << std::endl;
-         op.MakeNotReduced();
-      }
+
 
       // Added by Antoine Belley
       if (write_HO_ops)
       {
+        op.MakeNotReduced();
+        op = op.DoNormalOrderingCore();
+        op.MakeReduced();
         std::cout << "writing HO tensor files " << std::endl;
         if (valence_file_format == "tokyo")
         {
@@ -1452,12 +1451,18 @@ int main(int argc, char** argv)
           rw.WriteTensorOneBody(intfile+opnames[i]+"_HO_1b.op",op,opnames[i]);
           rw.WriteTensorTwoBody(intfile+opnames[i]+"_HO_2b.op",op,opnames[i]);
         }
+        op.MakeNotReduced();
+        op.UndoNormalOrderingCore();
+        op.MakeReduced();
+      }
+      
+
+      if (op.GetJRank() == 0 and (op.GetTRank() != 0 or op.GetParity() != 0))
+      {
+        std::cout << "Before doing HF, making " << opname << "  not reduced" << std::endl;
+        op.MakeNotReduced();
       }
 
-
-
-
-      
       if ( basis == "oscillator" or opname=="OccRef")
       {
         op = op.DoNormalOrdering();
@@ -1485,6 +1490,9 @@ int main(int argc, char** argv)
       // Added by Antoine Belley
       if (write_HF_ops)
       {
+        op.MakeNotReduced();
+        op = op.DoNormalOrderingCore();
+        op.MakeReduced();
         std::cout << "writing HF tensor files " << std::endl;
         if (valence_file_format == "tokyo")
         {
@@ -1495,14 +1503,15 @@ int main(int argc, char** argv)
           rw.WriteTensorOneBody(intfile+opnames[i]+"_HF_1b.op",op,opnames[i]);
           rw.WriteTensorTwoBody(intfile+opnames[i]+"_HF_2b.op",op,opnames[i]);
         }
+        op.MakeNotReduced();
+        op.UndoNormalOrderingCore();
+        op.MakeReduced();
       }
 
-
-
-
+  
       op = imsrgsolver.Transform(op);
-
-//      std::cout << "Before renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
+      
+      //      std::cout << "Before renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
       if (renormal_order) 
       {
         if ( op.GetParticleRank()>2) op.SetParticleRank(2); // Discard the residual 3N because we don't want to deal with it in the valence calculation

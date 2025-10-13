@@ -5785,7 +5785,7 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
   ModelSpace * modelspace = op.GetModelSpace();
   int wint = 4; // width for printing integers
   int wdouble = 16; // width for printing doubles
-  int pdouble = 10; // precision for printing doubles
+  int pdouble = 16; // precision for printing doubles
   std::vector<int> valence_protons(modelspace->valence.size());
   std::vector<int> valence_neutrons(modelspace->valence.size());
   auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
@@ -5834,7 +5834,8 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
      for (auto b : modelspace->valence) {
        if(a < b) continue;
        double obme = op.OneBody(a,b);
-       if(std::abs(obme) < 1e-7) continue;
+       if (std::abs(obme) < 1e-7 or op.OneBodyNorm() == 0)
+         continue;
        cnt_obme += 1;
      }
    }
@@ -5843,9 +5844,18 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0; ch<nchan; ++ch) {
      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+     
      for (auto& ibra: tbc.GetKetIndex_vv() ) {
+       Ket &bra = tbc.GetKet(ibra);
+       int a = bra.p;
+       int b = bra.q;
        for (auto& iket: tbc.GetKetIndex_vv() ) {
          if (iket < ibra) continue;
+         Ket &ket = tbc.GetKet(iket);
+         int c = ket.p;
+         int d = ket.q;
+         double me = op.TwoBody.GetTBME_norm(ch, a, b, c, d);
+         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0) continue;
          cnt_tbme += 1;
        }
      }
@@ -5859,8 +5869,9 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
        int b_ind = orb2kshell[b];
        if(a < b) continue;
        double obme = op.OneBody(a,b);
-       if(std::abs(obme) < 1e-7) continue;
-       intfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind
+       if (std::abs(obme) < op.OneBodyNorm() * 1e-7 or op.OneBodyNorm() == 0)
+         continue;
+       intfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind << "   "
            << std::setw(wdouble) << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << obme
            << std::endl;
      }
@@ -5901,9 +5912,11 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
            tbme += op.TwoBody.GetTBME_norm(ch,aa,bb,cc,dd); // looks like some isospin averaging for an operator file?
            tbme /= 2;
          }
+         if (std::abs(tbme) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+           continue;
          intfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind
            << std::setw(wint) << c_ind << std::setw(wint) << d_ind
-           << std::setw(wint) << tbc.J << std::setw(wdouble)
+           << std::setw(wint) << tbc.J << "  " << std::setw(wdouble)
            << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << tbme
            << std::endl;
        }
@@ -5973,7 +5986,7 @@ void ReadWrite::WriteTokyoFull(Operator& op, std::string filename)
        if(a < b) continue;
        double obme = op.OneBody(a,b);
        if(std::abs(obme) < 1e-7) continue;
-       intfile << std::setw(wint) << a << std::setw(wint) << b
+       intfile << std::setw(wint) << a << std::setw(wint) << b << "   "
            << std::setw(wdouble) << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << obme
            << std::endl;
      }
@@ -5993,10 +6006,10 @@ void ReadWrite::WriteTokyoFull(Operator& op, std::string filename)
          if (iket < ibra) continue;
          double tbme = op.TwoBody.GetTBME_norm(ch,a,b,c,d);
          intfile << std::setw(wint) << a << std::setw(wint) << b
-           << std::setw(wint) << c << std::setw(wint) << d
-           << std::setw(wint) << tbc.J << std::setw(wdouble)
-           << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << tbme
-           << std::endl;
+                 << std::setw(wint) << c << std::setw(wint) << d
+                 << std::setw(wint) << tbc.J << "   " << std::setw(wdouble)
+                 << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << tbme
+                 << std::endl;
        }
      }
    }
@@ -6011,8 +6024,8 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
   outfile.open(filename, std::ofstream::out);
   ModelSpace * modelspace = op.GetModelSpace();
   int wint = 4; // width for printing integers
-  int wdouble = 12; // width for printing doubles
-  int pdouble = 6; // precision for printing doubles
+  int wdouble = 16; // width for printing doubles
+  int pdouble = 16; // precision for printing doubles
   std::vector<int> valence_protons(modelspace->valence.size());
   std::vector<int> valence_neutrons(modelspace->valence.size());
   auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
@@ -6060,7 +6073,8 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
    for (auto a : modelspace->valence ) {
      for (auto b : modelspace->valence) {
        double obme = op.OneBody(a,b);
-       if(std::abs(obme) < 1e-7) continue;
+       if (std::abs(obme) < op.OneBodyNorm() * 1e-7 or op.OneBodyNorm() == 0)
+         continue;
        cnt_obme += 1;
      }
    }
@@ -6074,7 +6088,8 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
      for (auto& ibra : tbc_bra.GetKetIndex_vv() ) {
        for (auto& iket : tbc_ket.GetKetIndex_vv() ) {
          double me = matrix(ibra,iket);
-         if(std::abs(me) < 1e-7) continue;
+         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+           continue;
          cnt_tbme += 1;
        }
      }
@@ -6087,8 +6102,9 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
      for (auto b : modelspace->valence) {
        int b_ind = orb2kshell[b];
        double obme = op.OneBody(a,b);
-       if(std::abs(obme) < 1e-7) continue;
-       outfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind
+       if (std::abs(obme) < op.OneBodyNorm() * 1e-7 or op.OneBodyNorm() == 0)
+         continue;
+       outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << "   "
            << std::setw(wdouble) << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << obme
            << std::endl;
      }
@@ -6108,7 +6124,8 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
          int c_ind = orb2kshell[ket.p];
          int d_ind = orb2kshell[ket.q];
          double me = matrix(ibra,iket);
-         if(std::abs(me) < 1e-7) continue;
+         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+           continue;
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) <<
            c_ind << " " << std::setw(wint) << d_ind << "   " << std::setw(wint) << tbc_bra.J <<
            " " << std::setw(wint) << tbc_ket.J << "   " <<
@@ -6164,6 +6181,7 @@ Operator ReadWrite::ReadOperator2b_Miyagi(std::string filename, ModelSpace& mode
   // std::cout << filename << std::endl;
   getline(zipstream, line);
   getline(zipstream, line);
+  // std::cout<< line << std::endl;
   int J = 0, P = 0, Z = 0;
   int emax = modelspace.GetEmax(), e2max = modelspace.GetE2max();
   std::istringstream tmp( line.c_str() );
@@ -6172,7 +6190,6 @@ Operator ReadWrite::ReadOperator2b_Miyagi(std::string filename, ModelSpace& mode
   Operator op = Operator(modelspace, J, Z, (1-P)/2, 2);
   zipstream >> op.ZeroBody;
   std::vector<int> orbits_remap;
-
   std::vector<int> energy_vals;
   std::vector<int> n_vals;
   std::vector<int> l_vals;
@@ -6245,13 +6262,13 @@ Operator ReadWrite::ReadOperator2b_Miyagi(std::string filename, ModelSpace& mode
               if( energy_vals[nlj2] > modelspace.GetEmax() ) continue;
               if( energy_vals[nlj3] > modelspace.GetEmax() ) continue;
               if( energy_vals[nlj4] > modelspace.GetEmax() ) continue;
-            
+
               if( std::abs(me_pppp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kp, lp, me_pppp);
               if( std::abs(me_nnnn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, in, jn, kn, ln, me_nnnn);
               if( std::abs(me_pnpn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jn, kp, ln, me_pnpn);
               if( std::abs(me_pnnp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jn, kn, lp, me_pnnp);
               if( std::abs(me_npnp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, in, jp, kn, lp, me_npnp);
-            
+
               if( std::abs(me_pppn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kp, ln, me_pppn);
               if( std::abs(me_ppnp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kn, lp, me_ppnp);
               if( std::abs(me_pnnn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jn, kn, ln, me_pnnn);

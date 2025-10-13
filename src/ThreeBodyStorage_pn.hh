@@ -59,7 +59,7 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   void ReadBinary(std::ifstream& f) override;
 
   int CountAllocations() const override {return number_allocated;};
-//  void Print() override {};
+  void Print() override ;
 
 //  void SetHerm(int h) { herm = h; std::cout << __FILE__ << "  setting herm to " << herm; };
 

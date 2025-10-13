@@ -80,6 +80,28 @@ namespace AngMom
    return true;
  }
 
+
+ // Get minimum value of J that satisfies triangle condition for all pairs provided
+ int Jmin( std::vector< std::array<int,2>> jpairs)
+ {
+     int jmin = 0;
+     for (auto p : jpairs )
+     {
+        jmin = std::max( jmin, std::abs(p[0]-p[1]) );
+     }
+     return jmin;
+ }
+ // Get minimum value of J that satisfies triangle condition for all pairs provided
+ int Jmax( std::vector< std::array<int,2>> jpairs)
+ {
+     int jmax = 1000;
+     for (auto p : jpairs )
+     {
+        jmax = std::min( jmax, p[0]+p[1]);
+     }
+     return jmax;
+ }
+
  /// Wigner 3j symbol
  double ThreeJ(double j1, double j2, double j3, double m1, double m2, double m3)
  {
