@@ -96,8 +96,6 @@ class Generator
   Operator  GetEOM_ladder(Operator& H , int herm);
   double  GetEOM_Overlap(Operator& H1, Operator& H2 );
   Operator  GetVSEOM_ladder(Operator& H , int herm);
-  Operator  GetVSEOM_ladder_part(Operator& H , int herm, int part);
-  void PrintEOMVS_ladder(Operator& H, int info);
   double  GetVSEOM_Overlap(Operator& H);
   double  GetVSEOM_Overlap_rd(Operator& H, Operator& Rd);
   void force_decouple(Operator& H);

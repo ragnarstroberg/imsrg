@@ -606,6 +606,20 @@ target_link_libraries(
 )
 
 add_library(
+    EOM
+    EOM.hh EOM.cc
+)
+target_link_libraries(
+    EOM
+    PUBLIC
+    armadillo
+    ModelSpace
+    Operator
+    PRIVATE
+    PhysicalConstants
+    AngMom
+)
+add_library(
     RPA
     RPA.hh RPA.cc
 )
@@ -684,6 +698,7 @@ add_library(
     UnitTest
     PhysicalConstants
     RPA
+    EOM
 )
 target_link_libraries(
     IMSRG
@@ -708,6 +723,7 @@ target_link_libraries(
     UnitTest
     PhysicalConstants
     RPA
+    EOM
 )
 set_target_properties(IMSRG PROPERTIES SUFFIX ".so")
 

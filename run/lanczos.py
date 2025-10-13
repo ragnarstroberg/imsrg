@@ -42,10 +42,12 @@ def htc_vs(Haml, chi):
     ht_minus= chi*0
     ## chi is hermitian, hplus is antihermitian
 
-    ht_plus.SetAntiHermitian()
-    ht_minus.SetHermitian()
+    ht_plus.SetAntiHermitian() ##[h,chi]
+
+    ht_minus.SetHermitian()  ## [h,chi_d]
 
     ht_plus = cm.Commutator(Haml, chi )
+
     ht_minus = cm.Commutator(Haml, chi_d )
 
     heom1= gm.GetVSEOM_ladder(ht_plus, 0)
@@ -54,15 +56,15 @@ def htc_vs(Haml, chi):
     hod=Haml*0
     hod.SetHermitian()
     hod = (heom1+heom2)/2
-    #hod = (ht_plus+ht_minus)
-    #hod=gm.GetVSEOM_ladder(hod,0)
+   # this works
+    #hod=heom1
     return(hod)
 
 
 def Norm(T1, T2):
     return(gm.GetEOM_Overlap(T1,T2))
 
-def Norm_vs_new2(T1,T2):
+def Norm_vs_new2(T1,T2,rdm):
     T1d=T1*0.
     T1d.SetAntiHermitian()
     T2d=T1*0.
@@ -97,7 +99,7 @@ def Norm_vs_new2(T1,T2):
     nop= cm.Commutator(T1d,T2d)
     nop2-=nop
 
-    rst = gm.GetVSEOM_Overlap(nop2)
+    rst = gm.GetVSEOM_Overlap_rd(nop2,rdm)
     return(rst/4.)
 
 
@@ -133,6 +135,7 @@ def Norm_vs_new3(T1,T2):
     nop.SetNonHermitian()
     nop= cm.Commutator(T1d,T2d)
     rst -= gm.GetVSEOM_Overlap(nop)
+
     return(rst/4.)
 
 
@@ -170,7 +173,7 @@ def Norm_vs_new4(T1,T2, rdm):
     rst -= gm.GetVSEOM_Overlap_rd(nop,rdm)
     return(rst/4.)
 
-def Norm_vs_new(T1,T2):
+def Norm_vs_new(T1,T2,rdm):
     T1d=T1*0.
     T1d.SetAntiHermitian()
     T2d=T1*0.
@@ -204,7 +207,110 @@ def Norm_vs_new(T1,T2):
     rst -= gm.GetVSEOM_Overlap(nop)
     return(rst/4.)
 
-def Norm3(t1,t2,haml,ms):
+
+def Norm_vs_new5(T1,T2,rdm):
+    T1d=T1*0.
+    T1d.SetAntiHermitian()
+    T2d=T1*0.
+    T2d.SetAntiHermitian()
+
+    T1d=gm.GetVSEOM_ladder(T1,1)
+    T2d=gm.GetVSEOM_ladder(T2,1)
+
+    rst=0.
+
+    nopf=T1*0
+    nopf.SetNonHermitian()
+
+    nop=T1*0
+    nop.SetAntiHermitian()
+    nop= cm.Commutator(T1,T2)
+    nopf=nopf+nop
+
+
+    nop=T1*0
+    nop.SetHermitian()
+    nop= cm.Commutator(T1,T2d)
+    nopf=nopf+nop
+
+
+    nop=T1*0
+    nop.SetHermitian()
+    nop= cm.Commutator(T1d,T2)
+    nopf=nopf-nop
+
+    nop=T1*0
+    nop.SetAntiHermitian()
+    nop= cm.Commutator(T1d,T2d)
+    nopf=nopf-nop
+
+    rst = gm.GetVSEOM_Overlap(nopf)
+
+    return(rst/4.)
+
+
+
+
+def Norm4(t1,t2,haml,ms,rdm):
+
+    rank_j, parity, rank_Tz, particle_rank = 0,0,0,3
+    t3 = Operator(ms,rank_j, parity, rank_Tz, particle_rank)
+    t3.ThreeBody.SetMode("pn")
+    t1d=t1*0.
+    t2d=t1*0.
+    t1d.SetAntiHermitian()
+    t2d.SetAntiHermitian()
+    
+    t1d=gm.GetVSEOM_ladder(t1,1)
+    t2d=gm.GetVSEOM_ladder(t2,1)
+    rst=0.
+
+    nop=t1*0.0
+    nop2=t1*0.0
+    nop2.SetNonHermitian()
+    t3*=0.
+    nop.SetHermitian()
+    t3.SetAntiHermitian()
+    cm.comm223ss(haml,t2,t3)
+    cm.comm232ss(t1,t3,nop)
+    cm.comm231ss(t1,t3,nop)
+    cm.comm132ss(t1,t3,nop)
+    nop2 = nop2 + nop
+
+    nop=t1*0.0
+    t3*=0.
+    nop.SetAntiHermitian()
+    t3.SetHermitian()
+    cm.comm223ss(haml,t2d,t3)
+    cm.comm232ss(t1,t3,nop)
+    cm.comm231ss(t1,t3,nop)
+    cm.comm132ss(t1,t3,nop)
+    nop2 = nop2 + nop
+    
+
+    nop=t1*0.0
+    t3*=0.
+    nop.SetAntiHermitian()
+    t3.SetAntiHermitian()
+    cm.comm223ss(haml,t2,t3)
+    cm.comm232ss(t1d,t3,nop)
+    cm.comm231ss(t1d,t3,nop)
+    cm.comm132ss(t1d,t3,nop)
+    nop2 = nop2 - nop
+
+    nop=t1*0.0
+    t3*=0.
+    nop.SetHermitian()
+    t3.SetHermitian()
+    cm.comm223ss(haml,t2d,t3)
+    cm.comm232ss(t1d,t3,nop)
+    cm.comm231ss(t1d,t3,nop)
+    cm.comm132ss(t1d,t3,nop)
+    nop2 = nop2 - nop
+    rst=gm.GetVSEOM_Overlap_rd(nop2,rdm)
+    return(rst/4.)
+
+def Norm3(t1,t2,haml,ms,rdm):
 
     rank_j, parity, rank_Tz, particle_rank = 0,0,0,3
     t3 = Operator(ms,rank_j, parity, rank_Tz, particle_rank)
@@ -249,7 +355,6 @@ def Norm3(t1,t2,haml,ms):
     cm.comm132ss(t1d,t3,nop)
     rst-=gm.GetVSEOM_Overlap(nop)
 
-
     nop=t1*0.0
     t3*=0.
     nop.SetHermitian()
@@ -259,9 +364,7 @@ def Norm3(t1,t2,haml,ms):
     cm.comm231ss(t1d,t3,nop)
     cm.comm132ss(t1d,t3,nop)
     rst-=gm.GetVSEOM_Overlap(nop)
-    return(rst/4)
-
-
+    return(rst/4.)
 
 import numpy as np
 
@@ -346,13 +449,14 @@ def lanczos_proc( hv_func, norm_func, haml, vi, max_iter,state_want, ms):
 
 
 
-def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
+def arnoldi_proc( hv_func, norm_func,norm_three, haml, vi, max_iter,state_want,ms,rdmat):
     lanczos_vector = []
     hall = np.zeros([max_iter,max_iter])
     hall[0,0]=0.
 
+    converged = 0
     ## normalize it to 1
-    nn=norm_func(vi,vi)
+    nn=norm_func(vi,vi,rdmat)
     print('initial norm vector', nn)
     vi=vi/np.sqrt(nn)
     lanczos_vector.append(vi)
@@ -362,43 +466,41 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
 
     for j in range(max_iter-1):
         w = hv_func(haml,lanczos_vector[j])
-        dai=Norm3(lanczos_vector[j],lanczos_vector[j],haml, ms)
-        ai=norm_func(w,lanczos_vector[j])
+        dai=norm_three(lanczos_vector[j],lanczos_vector[j],haml, ms,rdmat)
+        ai=norm_func(w,lanczos_vector[j],rdmat)
         hall[j,j]=ai+dai
+
         w=w-ai*lanczos_vector[j]
 
         if(j>0):
             for i in range(j):
-                bj=norm_func(w,lanczos_vector[i])
-#                hall[j,i]=bj
+                bj=norm_func(w,lanczos_vector[i],rdmat)
                 w=w-bj*lanczos_vector[i]
 
-        ## generate the new vector
-        bj = norm_func(w,w)
-        w=w/np.sqrt(bj)
-        lanczos_vector.append(w)
-        nmm=100
-        nm3=100
-        for m in range(j):
-            vl=lanczos_vector[j]
-            vm=lanczos_vector[m]
-            vec=vl*0.0
-            vec.SetHermitian()
 
-            vec=hv_func(haml, vm)
-            nmm=norm_func(vl,vec)
-            nm3=Norm3(vl,vm,haml, ms)
-            hall[m,j] =nmm+nm3
-            hall[j,m] =nmm+nm3
-        if nmm+nm3 < 0.1:
+        ## generate the new vector
+        bj = norm_func(w,w,rdmat)
+
+        if abs(bj) < 0.00001:
             print('coupling bj is small: ', bj, j)
             break
-        print(j,'th step: ',bj,np.sqrt(bj),nmm+nm3, j+1,len(lanczos_vector))
-
-        if(j >= state_want ):
-            #hsub=(hall+hall.T)/2
-            hsub=hall
-          #  print(hsub[0:j+1,0:j+1])
+        w=w/np.sqrt(bj)
+        lanczos_vector.append(w)
+        nmm=0.
+        nm3=0.
+        vs=np.zeros([1,1])
+        for m in range(j):
+            vl=lanczos_vector[m]
+            vm=lanczos_vector[j]
+            vec=vl*0.0
+            vec.SetHermitian()
+            vec=hv_func(haml, vm)
+            nmm=norm_func(vl,vec,rdmat)
+            nm3=norm_three(vl,vm,haml, ms,rdmat)
+            hall[m,j] =nmm+nm3
+            hall[j,m] =nmm+nm3
+        if(j+1 >= state_want ):
+            hsub=hall[0:j+1,0:j+1]
             e,v = np.linalg.eig(hsub[0:j+1,0:j+1])
             idx = np.argsort(e)   
             e = e[idx]
@@ -406,38 +508,34 @@ def arnoldi_proc( hv_func, norm_func, haml, vi, max_iter,state_want,ms):
             vec_a=lanczos_vector[j]*0.
             for kk in range(len(e)):
                 vec_a = vec_a + lanczos_vector[kk]*vs[kk,0]
+
             vec_b=hv_func(haml, vec_a)
-            nmm=norm_func(vec_a,vec_b)
-            nm3=Norm3(vec_a,vec_a,haml, ms)
-            nm=norm_func(vec_a,vec_a)
+            nmm=norm_func(vec_a,vec_b,rdmat)
+            nm3=norm_three(vec_a,vec_a,haml, ms,rdmat)
+            nm=norm_func(vec_a,vec_a,rdmat)
+
             print('energy check: ', nmm+nm3,nm)
-            if(abs(nm-1.)>0.01):
+            if(abs(nm-1.)>0.0001):
                 print('Lost Orthogonality, converged')
                 break
+            print("Energy on ", j+1 , ' th iteration: ', e[:] )
 
-
-            print("Energy on ", j , ' th iteration: ', e[:] )
             norm_e_new=0.0
             for k in range(state_want):
                 norm_e_new += e[k]*e[k]
-            if(abs(norm_e_new-norm_e_old) < 0.01):
+            if(abs(norm_e_new-norm_e_old) < 0.0000001):
                 print('energy converge')
                 break
-        if bj < 0.1:
-            print('bj is small: ', bj, j)
-            break
             norm_e_old=norm_e_new
-    hsub=hall[0:j,0:j]
-    e,v = np.linalg.eig(hsub[0:j,0:j])
-    e=np.sort(e)
 
-    print('Arnoldi converged with ', j, ' step')
-    #for k in range(state_want):
-    #    print('E(',k,')= ', e[k])
-    #print('Arnoldi converged with ', j, ' step')
 
-    return(e, v,lanczos_vector)
-    #return(lanczos_vector)
+    print('Arnoldi converged with ', j+1, ' step')
+    lanczos_vector.pop()
+
+    return(e, vs,lanczos_vector)
+
+
+
 
 
 
@@ -451,11 +549,19 @@ def read_tdm(tdm_file,ms):
     data = []
     with open(tdm_file, 'r') as f:
         lines = f.readlines()
-    ## line 1 is the number of single particle orbits
+    ## line 0 is the total J of the state
     lidx=0
     line=lines[lidx]
     values = line.strip().split()
+    jtotal = float(values[0])
+    factor=np.sqrt(2*jtotal +1.)
+
+    ## line 1 is the number of single particle orbits
+    lidx+=1
+    line=lines[lidx]
+    values = line.strip().split()
     norb=int(values[0])
+
     ob_idx=np.zeros([norb,3],dtype=np.int8)
     for obs in range(norb):
         lidx+=1
@@ -482,7 +588,7 @@ def read_tdm(tdm_file,ms):
         values = line.strip().split()
         aa=ob_idx[int(values[1])-1,0]
         bb=ob_idx[int(values[2])-1,0]
-        rd=float(values[-1])
+        rd=float(values[-1])/factor
         ops.SetOneBody(aa,bb,rd)
 
     lidx+=1
@@ -510,8 +616,7 @@ def read_tdm(tdm_file,ms):
         pkl=int(pkl%2)
         tkl=int(tkl/2)
 
-        rd=float(values[-1])
-        print('read rdm: ',aa,bb,cc,dd,rd)
+        rd=float(values[-1])/factor
         ops.SetTwoBody(jij,pij,tij, jkl,pkl,tkl, aa,bb,cc,dd, rd)
     return(ops)
 
@@ -520,3 +625,43 @@ def read_tdm(tdm_file,ms):
 
 
 
+def print_op(chi, ms):
+
+    chiv=[]
+    jj=0
+    pp=0
+    tt=1
+    for jj in [0]:
+        ch=ms.GetTwoBodyChannelIndex(jj,0,1)
+        kcf=ms.GetTwoBodyChannel(ch)
+        bras=kcf.GetKetIndex_qq()+kcf.GetKetIndex_qv()
+        kets=kcf.GetKetIndex_vv()
+        for ibra in bras:
+            dbra=kcf.GetKet(ibra)
+            for iket in kets:
+                dket=kcf.GetKet(iket)
+                chiv.append(chi.GetTwoBody(ch,ch,ibra,iket))
+#    ## ppvh
+#    nch=ms.GetNumberTwoBodyChannels()
+#    
+#    for ich in range(nch):
+#        dch = ms.GetTwoBodyChannel(ich)
+#        jj=dch.J
+#        pp=dch.parity
+#        tt=dch.Tz
+#        ch=ms.GetTwoBodyChannelIndex(jj,pp,tt)
+#    #    print(jj,pp,tt,ich,ch)
+#        kcf=ms.GetTwoBodyChannel(ch)
+#        if(kcf.GetNumberKets() == 0):
+#            continue
+#                #print(ch, kcf.GetNumberKets())
+#        bras=kcf.GetKetIndex_qq()+kcf.GetKetIndex_qv()+kcf.GetKetIndex_vv()
+#        kets=kcf.GetKetIndex_vc()
+#        for ibra in bras:
+#            dbra=kcf.GetKet(ibra)
+#            for iket in kets:
+#                dket=kcf.GetKet(iket)
+#                if(dket.q %2 == 0):
+#                    continue
+#                chiv.append(chi.GetTwoBody(ch,ch,ibra,iket))
+    return(np.array(chiv))

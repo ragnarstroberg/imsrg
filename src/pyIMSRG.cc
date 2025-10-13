@@ -654,8 +654,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetEOM_ladder", &Generator::GetEOM_ladder, py::arg("H"), py::arg("herm"))
           .def("GetEOM_Overlap", &Generator::GetEOM_Overlap, py::arg("H1"), py::arg("H2"))
           .def("GetVSEOM_ladder", &Generator::GetVSEOM_ladder, py::arg("H"), py::arg("herm"))
-          .def("GetVSEOM_ladder_part", &Generator::GetVSEOM_ladder_part, py::arg("H"), py::arg("herm"),py::arg("part"))
-          .def("PrintEOMVS_ladder", &Generator::PrintEOMVS_ladder, py::arg("H"), py::arg("info"))
           .def("GetVSEOM_Overlap", &Generator::GetVSEOM_Overlap, py::arg("H"))
           .def("GetVSEOM_Overlap_rd", &Generator::GetVSEOM_Overlap_rd, py::arg("H"), py::arg("Rd"))
           .def("force_decouple", &Generator::force_decouple, py::arg("H"))
@@ -872,6 +870,11 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm333_ppp_hhhst", &ReferenceImplementations::comm333_ppp_hhhst);  
        ReferenceImplementations.def("comm333_pph_hhpst", &ReferenceImplementations::comm333_pph_hhpst); 
 
+
+      py::class_<EOM>(m, "EOM")
+          .def(py::init<Operator &>())
+          .def(py::init<ModelSpace &>())
+          .def("ConstructConfigs", &EOM::ConstructConfigs);
 
       py::class_<RPA>(m, "RPA")
           .def(py::init<Operator &>())

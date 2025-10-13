@@ -1127,40 +1127,6 @@ void  Generator::force_decouple(Operator& H )
 
    
 
-   for ( auto& i : H.modelspace->valence)
-   {
-      Orbit& oi = H.modelspace->GetOrbit(i);
-      for ( auto& a : H.modelspace->valence )
-      {
-      Orbit& oa = H.modelspace->GetOrbit(a);
-//
-      //   H.OneBody(a,i) = 0.;
-//
-      //   H.OneBody(i,a) = 0.;
-      }
-   }
-
-   for ( auto& iter : H.TwoBody.MatEl )
-   {
-      size_t ch_bra = iter.first[0];
-      size_t ch_ket = iter.first[1];
-      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
-
-
-
-// vvvv
-//
-      for ( auto& iket : tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
-      {
-         for ( auto& ibra : tbc_bra.GetKetIndex_vv()  )
-	{
-      //  H.TwoBody.SetTBME(ch_bra,ch_ket, ibra, iket, 0.);
-}
-}
-}
-
-
 
    // One body piece -- eliminate ph bits
    //  particle hole excitation
@@ -1184,7 +1150,6 @@ void  Generator::force_decouple(Operator& H )
       Orbit& oa = H.modelspace->GetOrbit(a);
 
          H.OneBody(a,i) = 0.;
-
          H.OneBody(i,a) = 0.;
       }
    }
@@ -1203,7 +1168,6 @@ void  Generator::force_decouple(Operator& H )
       size_t ch_ket = iter.first[1];
       TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
-
 
 
 // PPHH
@@ -1245,7 +1209,6 @@ void  Generator::force_decouple(Operator& H )
 
 
 
-
 Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
 {
 
@@ -1273,8 +1236,8 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       for ( auto& a : VectorUnion(H.modelspace->valence,H.modelspace->qspace) )
       {
       Orbit& oa = H.modelspace->GetOrbit(a);
-         Hod.OneBody(a,i) = H.OneBody(a,i);
-        Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
+ //        Hod.OneBody(a,i) = H.OneBody(a,i);
+ //       Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
       }
    }
 //
@@ -1285,8 +1248,8 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       {
       Orbit& oa = H.modelspace->GetOrbit(a);
 
-         Hod.OneBody(a,i) = H.OneBody(a,i);
-         Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
+ //        Hod.OneBody(a,i) = H.OneBody(a,i);
+ //        Hod.OneBody(i,a) = H.OneBody(a,i)*herm_phase;
       }
    }
 
@@ -1299,11 +1262,8 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       size_t ch_ket = iter.first[1];
       TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
-
       arma::mat& H2 =  iter.second;
-
       arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
-
 
 // PPHH
 //
@@ -1311,7 +1271,7 @@ Operator  Generator::GetVSEOM_ladder(Operator& H , int herm)
       {
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
 	{
-Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
+//Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 }
 }
 
@@ -1322,7 +1282,6 @@ Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
       {
         Ket & dket = tbc_ket.GetKet(iket);
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() )  )
-//         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_qv() ) )
 	{
      Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 
@@ -1347,32 +1306,32 @@ Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
 //
 //
 //
-    size_t nch3 = H.modelspace->GetNumberThreeBodyChannels();
-    #pragma omp parallel for schedule(dynamic,1)
-    for (size_t ch3=0; ch3<nch3; ch3++)
-    {
-      ThreeBodyChannel& Tbc = H.modelspace->GetThreeBodyChannel(ch3);
-      size_t nkets3 = Tbc.GetNumberKets();
-      for (size_t ibra=0; ibra<nkets3; ibra++)
-      {
-        Ket3& bra = Tbc.GetKet(ibra);
-        if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
-        
-        for (size_t iket=0; iket<nkets3; iket++)
-        {
-           Ket3& ket = Tbc.GetKet(iket);
-           if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
-           if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
-
-
-           double ME_od = H.ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
-
-           Hod.ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket,  ME_od); // hermitian conjugate automatically gets added
-           
-        }// for iket
-      }// for ibra
-
-    }// for ch3
+//    size_t nch3 = H.modelspace->GetNumberThreeBodyChannels();
+//    #pragma omp parallel for schedule(dynamic,1)
+//    for (size_t ch3=0; ch3<nch3; ch3++)
+//    {
+//      ThreeBodyChannel& Tbc = H.modelspace->GetThreeBodyChannel(ch3);
+//      size_t nkets3 = Tbc.GetNumberKets();
+//      for (size_t ibra=0; ibra<nkets3; ibra++)
+//      {
+//        Ket3& bra = Tbc.GetKet(ibra);
+//        if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
+//        
+//        for (size_t iket=0; iket<nkets3; iket++)
+//        {
+//           Ket3& ket = Tbc.GetKet(iket);
+//           if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
+//           if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+//
+//
+//           double ME_od = H.ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
+//
+////           Hod.ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket,  ME_od); // hermitian conjugate automatically gets added
+//           
+//        }// for iket
+//      }// for ibra
+//
+//    }// for ch3
 
 }
 
@@ -1402,9 +1361,7 @@ double  Generator::GetVSEOM_Overlap_rd(Operator& H, Operator& Rd )
     for ( auto& j : H.modelspace->valence){
       Orbit& oj = H.modelspace->GetOrbit(j);
 
-
         ovlp1+=H.OneBody(i,j)*Rd.OneBody(i,j)*sqrt((oi.j2+1));
-        std::cout << H.OneBody(i,j) <<" "<<Rd.OneBody(i,j) << " "<< (oj.j2+1) << std::endl;
    }
    }
 
@@ -1418,30 +1375,31 @@ double  Generator::GetVSEOM_Overlap_rd(Operator& H, Operator& Rd )
       TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
       arma::mat& H2 =  iter.second;
+      arma::mat& r2 = Rd.TwoBody.GetMatrix(ch_bra,ch_ket);
 
 
       for ( auto& iket : tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
       {
 
-        Ket & dket = tbc_bra.GetKet(iket);
+        Ket & dket = tbc_ket.GetKet(iket);
 
-         for ( auto& ibra :  tbc_bra.GetKetIndex_vv() )
+     for ( auto& ibra :  tbc_bra.GetKetIndex_vv() )
 	{
         Ket & dbra = tbc_bra.GetKet(ibra);
 
         double rdm=Rd.TwoBody.GetTBME(ch_bra,ch_ket,dbra,dket);
 
         double norm_fact=1.0;
-            if(dbra.p == dbra.q)norm_fact*=sqrt(2);
-            if(dket.p == dket.q)norm_fact*=sqrt(2);
+        if(dbra.p == dbra.q)norm_fact*=sqrt(2.);
+        if(dket.p == dket.q)norm_fact*=sqrt(2.);
 
-        ovlp2+=H2(ibra,iket)*rdm*sqrt(2*tbc_bra.J+1)/norm_fact;
+        //ovlp2+=H2(ibra,iket)*rdm*sqrt(2*tbc_bra.J+1.)/norm_fact;
+        ovlp2+=H2(ibra,iket)*r2(ibra,iket)*sqrt(2*tbc_bra.J+1.);
 
-        std::cout << H2(ibra,iket) <<" "<< rdm << " "<<dbra.p << dbra.q<< dket.p<< dket.q<<ch_bra<<ch_ket<<" "<<ibra<<" "<<iket<<" "<< 2*tbc_bra.J+1 <<" 2b "<< std::endl;
 }
 }}
 
-std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
+//std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
 return(ovlp+ovlp1+ovlp2);
 
 }
@@ -1461,11 +1419,11 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
  //
 //emax 2
   
- double c1= 0.95161831;
- double c2= 0.30728258;
+// double c1= 0.95161831;
+// double c2= 0.30728258;
 
-// double c2= -0.95161831;
-// double c1= 0.30728258;
+ double c2= -0.95161831;
+ double c1= 0.30728258;
  
 // emax 3
 //double c1 = 0.9675254 ;
@@ -1488,7 +1446,7 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
         if(oi.j2==3)ovlp1+=2*H.OneBody(i,i)*c1*c1;
         if(oi.j2==1)ovlp1+=2*H.OneBody(i,i)*c2*c2;
 
-        std::cout << std::setprecision (15) << H.OneBody(i,i) << " "<<2*H.OneBody(i,i)*c1*c1 << std::endl;
+  //      std::cout << std::setprecision (15) << H.OneBody(i,i) << " "<<2*H.OneBody(i,i)*c1*c1 << std::endl;
    }
 
 
@@ -1514,175 +1472,24 @@ double  Generator::GetVSEOM_Overlap(Operator& H )
         Ket & dbra = tbc_bra.GetKet(ibra);
 //        std::cout << dbra.p << dbra.q << dket.p<<dket.q <<std::endl;
         if(ibra == iket){
-            if(dbra.p == 3 and dbra.q ==3)ovlp2+=c1*c1*H2(ibra,iket);
-            if(dbra.p == 5 and dbra.q ==5)ovlp2+=c2*c2*H2(ibra,iket);
-  //          std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " <<std::setprecision (15)<< H2(ibra,iket) << " " << ovlp2 <<std::endl;
+            double ceof=1.;
+            if(dbra.p == 3 and dbra.q ==3){ovlp2+=c1*c1*H2(ibra,iket); ceof=c1*c1;}
+            if(dbra.p == 5 and dbra.q ==5){ovlp2+=c2*c2*H2(ibra,iket);ceof = c2*c2;}
+ //           std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) << " "<< ceof<<" " << H2(ibra,iket)*ceof <<std::endl;
         }
         if(ibra != iket){
             // do not suppose the hermitian of hamiltinian
             if(dbra.p == 3 and dbra.q ==3)ovlp2+=c1*c2*H2(ibra,iket);
             if(dbra.p == 5 and dbra.q ==5)ovlp2+=c1*c2*H2(ibra,iket);
-//            std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << std::setprecision (15) << H2(ibra,iket) << " " << ovlp2 <<std::endl;
-  //          std::cout << H2(ibra,iket) << "  " << H2(iket,ibra) <<" "<<ovlp2 << " " <<c1*c2*H2(ibra,iket) << " " << std::endl ;
+//            std::cout << dbra.p << dbra.q<<dket.p<<dket.q<<" " << " " << H2(ibra,iket) << " "<< c1*c2<<" " << H2(ibra,iket)*c1*c2 <<std::endl;
+//            std::cout << H2(ibra,iket) << "  " << H2(iket,ibra) <<" "<<ovlp2 << " " <<c1*c2*H2(ibra,iket) << " " << std::endl ;
         }
 }
 }}
 
-std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
+
+//std::cout << " overlap, 0b, 1b,2b : "<<ovlp <<" " << ovlp1 << " " <<ovlp2<< std::endl;
 return(ovlp+ovlp1+ovlp2);
 
-}
-
-
-
-
-
-
-
-
-void  Generator::PrintEOMVS_ladder(Operator& H, int info)
-{
-
-    double a[6];
-    int idx=0;
-
-
-   // Two body piece only stored half channel, no need to change
-   for ( auto& iter : H.TwoBody.MatEl )
-   {
-      size_t ch_bra = iter.first[0];
-      size_t ch_ket = iter.first[1];
-      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
-
-      arma::mat& H2 =  iter.second;
-
-      if(tbc_bra.J !=0 )continue;
-      if(tbc_bra.parity !=0 )continue;
-      if(tbc_bra.Tz!=1 )continue;
-
-
-
-// PPvv
-//
-      for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(),tbc_ket.GetKetIndex_qv(),tbc_ket.GetKetIndex_vv())   ) // cc means core-core ('holes' refer to the 2233reference state)
-      {
-        Ket & dket = tbc_ket.GetKet(iket);
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(),tbc_bra.GetKetIndex_qv(), tbc_bra.GetKetIndex_vv() ) )
-	{
-        Ket & dbra = tbc_bra.GetKet(ibra);
-
-        if(abs(H2(ibra,iket)) >0.0000001){
-            if(info==1) std::cout<< dbra.p<<dbra.q<<dket.p<<dket.q<<" " << H2(ibra,iket) <<std::endl;
-        }
-  // if(dket.p==5 and dket.q==5){
-  //   Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));}
-}
-}
-
-
-      for ( auto& iket : tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
-      {
-        Ket & dket = tbc_ket.GetKet(iket);
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_qv() ) )
-	{
-        Ket & dbra = tbc_bra.GetKet(ibra);
-
-        if(abs(H2(ibra,iket)) >0.0000001){
-            if(info==1) std::cout<< dbra.p<<dbra.q<<dket.p<<dket.q<<std::endl;
-        a[idx]=H2(ibra,iket);
-        idx+=1;}
-  // if(dket.p==5 and dket.q==5){
-  //   Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));}
-}
-}
-
-}
-
-
- for (int i = 0; i < 6; ++i) {
-        std::cout << a[i] << " "; // Print element and a space
-    }
-    std::cout << std::endl;
-
-}
-
-
-
-Operator  Generator::GetVSEOM_ladder_part(Operator& H , int herm, int part)
-{
-
-  // Generate a (anti-)hermit operator, regardless the hermitian of operator of H
-  // int herm, 0 for hermit, and 1 for antihermit
-    Operator Hod = 0.0* H;
-    int herm_phase=1;
-
-  if(herm == 0){
-   Hod.SetHermitian();
-     herm_phase =1;
-}
-  if(herm == 1){
-   Hod.SetAntiHermitian();
-     herm_phase = -1 ;
-}
-   
-
-   // Two body piece only stored half channel, no need to change
-   for ( auto& iter : H.TwoBody.MatEl )
-   {
-      size_t ch_bra = iter.first[0];
-      size_t ch_ket = iter.first[1];
-      TwoBodyChannel& tbc_bra = H.modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = H.modelspace->GetTwoBodyChannel(ch_ket);
-
-      arma::mat& H2 =  iter.second;
-
-      arma::mat& Hod2 = Hod.TwoBody.GetMatrix(ch_bra,ch_ket);
-
-
-      if(part == 0){
-// PPHH
-//
-      for ( auto& iket : tbc_ket.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
-      {
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
-	{
-//Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
-}
-}}
-
-
-    if(part==1){
-// PPvq
-//
-      for ( auto& iket : tbc_ket.GetKetIndex_vc() ) // cc means core-core ('holes' refer to the reference state)
-      {
-        Ket & dket = tbc_ket.GetKet(iket);
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() )  )
-	{
-     Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
-}
-}
-}
-
-
-if(part==2){
-// PPvv
-//
-      for ( auto& iket : tbc_ket.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
-      {
-        Ket & dket = tbc_ket.GetKet(iket);
-
-         for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_qv() ) )
-	{
-     Hod.TwoBody.AddToTBME(ch_bra,ch_ket, ibra, iket, H2(ibra,iket));
-}
-}
-}
-
-}
-
-
-   return Hod;
 }
 
