@@ -1029,6 +1029,98 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 }
 
 //**************************************************************************
+/// Takes in an operator expressed in the Hartree-Fock basis,
+/// and returns that operator in the HO basis.
+/// \f[ t_{HO} = C t_{HF} C^{\dagger} \f]
+/// \f[ V_{HO}^{J} = D V^{J}_{HF} D^{\dagger} \f]
+/// The matrix \f$ D \f$ is defined as
+/// \f[ D_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} }  C_{a\alpha} C_{b\beta} \f]
+/// Now only works up to two-body terms
+//**************************************************************************
+Operator HartreeFock::TransformToHOBasis( Operator& Op_HF) 
+{
+
+   Operator Op_HO(Op_HF);
+   // Easy part:
+   //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
+   // where |i> is the original basis and |a> is the HF basis
+   if ( Op_HO.legs%2== 0)
+   {
+     Op_HO.OneBody = C * Op_HF.OneBody * C.t();
+   }
+   else
+   {
+     Op_HO.OneBody = C * Op_HF.OneBody ;
+   }
+
+   // Moderately difficult part:
+   // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
+   // for each channel J,p,Tz. Most of the effort here is in constructing D.
+
+   if ( Op_HO.legs%2== 0 and Op_HF.legs>3)
+   {
+     for ( auto& it : Op_HF.TwoBody.MatEl )
+     {
+        int ch_bra = it.first[0];
+        int ch_ket = it.first[1];
+        TwoBodyChannel& tbc_bra = Op_HO.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+        TwoBodyChannel& tbc_ket = Op_HO.GetModelSpace()->GetTwoBodyChannel(ch_ket);
+        int nbras = it.second.n_rows;
+        int nkets = it.second.n_cols;
+        arma::mat Dbra(nbras,nbras);
+        arma::mat Dket(nkets,nkets);
+        // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
+        // and all possible HF configurations |p'q'> in this J,p,Tz channel
+        // bra is in the original basis, ket is in the HF basis
+        // i and j are the indices of the matrix D for this channel
+        for (int i=0; i<nkets; ++i)
+        {
+           Ket & ket_ho = tbc_ket.GetKet(i);
+           for (int j=0; j<nkets; ++j)
+           {
+              Ket & ket_hf = tbc_ket.GetKet(j);
+              Dket(i,j) = C(ket_hf.p, ket_ho.p) * C(ket_hf.q, ket_ho.q);
+              if (ket_hf.p!=ket_hf.q)
+              {
+                 Dket(i,j) += C( ket_hf.p, ket_ho.q) * C(ket_hf.q, ket_ho.p) * ket_ho.Phase(tbc_ket.J);
+              }
+              if (ket_hf.p==ket_hf.q)    Dket(i,j) *= PhysConst::SQRT2;
+              if (ket_ho.p==ket_ho.q)    Dket(i,j) /= PhysConst::SQRT2;
+           }
+        }
+        if (ch_bra == ch_ket)
+        {
+          Dbra = Dket.t();
+        }
+        else
+        {
+          for (int i=0; i<nbras; ++i)
+          {
+             Ket & bra_hf = tbc_bra.GetKet(i);
+             for (int j=0; j<nbras; ++j)
+             {
+                Ket & bra_ho = tbc_bra.GetKet(j);
+                Dbra(i,j) = C(bra_hf.p, bra_ho.p) * C(bra_hf.q, bra_ho.q);
+                if (bra_hf.p!=bra_hf.q)
+                {
+                   Dbra(i,j) += C( bra_hf.p, bra_ho.q ) * C( bra_hf.q, bra_ho.p) * bra_ho.Phase(tbc_bra.J);
+                }
+                if (bra_hf.p==bra_hf.q)    Dbra(i,j) *= PhysConst::SQRT2;
+                if (bra_ho.p==bra_ho.q)    Dbra(i,j) /= PhysConst::SQRT2;
+             }
+          }
+        }
+        auto& IN  =  it.second;
+        auto& OUT =  Op_HO.TwoBody.GetMatrix(ch_bra,ch_ket);
+        OUT  =    Dbra * IN * Dket;
+
+     }
+   }
+
+   return Op_HO;
+}
+
+//**************************************************************************
 /// If the lowest orbits are different from our previous guess, we should update the reference.
 //**************************************************************************
 void HartreeFock::UpdateReference()

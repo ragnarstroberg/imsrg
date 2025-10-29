@@ -534,6 +534,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def(py::init<Operator &>())
           .def("Solve", &HartreeFock::Solve)
           .def("TransformToHFBasis", &HartreeFock::TransformToHFBasis)
+          .def("TransformToHOBasis", &HartreeFock::TransformToHOBasis)
           .def("GetHbare", &HartreeFock::GetHbare)
           //      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
           //      .def("GetNormalOrderedH",&HF_GetNormalOrderedH, py::arg("particle_rank")=2 )
@@ -870,6 +871,12 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm223_232_BruteForce", &ReferenceImplementations::comm223_232_BruteForce);
        ReferenceImplementations.def("comm223_231", &ReferenceImplementations::comm223_231);
        ReferenceImplementations.def("comm223_232", &ReferenceImplementations::comm223_232);
+       ReferenceImplementations.def("comm223_231_f_I", &ReferenceImplementations::comm223_231_f_I);
+       ReferenceImplementations.def("Compute_Chi_a_fI", &ReferenceImplementations::Compute_Chi_a_fI);
+       ReferenceImplementations.def("comm223_231_f_II", &ReferenceImplementations::comm223_231_f_II);
+       ReferenceImplementations.def("Compute_Chi_b_fII", &ReferenceImplementations::Compute_Chi_b_fII);
+       ReferenceImplementations.def("comm223_231_f_III", &ReferenceImplementations::comm223_231_f_III);
+
 
        ReferenceImplementations.def("comm331st", &ReferenceImplementations::comm331st);
        ReferenceImplementations.def("comm223st", &ReferenceImplementations::comm223st);
