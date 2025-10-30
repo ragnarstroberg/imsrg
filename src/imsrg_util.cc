@@ -532,6 +532,31 @@ namespace imsrg_util
         std::istringstream(opnamesplit[1]) >> r12;
         theop = M0nu::DGT_R_SurfaceLocalization(modelspace, r12);
       }
+      else if (opnamesplit[0] == "FM0p") {
+        // M form factor for protons
+        // momentum transfer q in MeV, e.g. FM0p_200.0
+        double rr;
+        std::istringstream(opnamesplit[1]) >> rr;
+        theop = sqrt(4 * M_PI) * DM_NREFT::M(modelspace, "p", 0, rr);
+      } else if (opnamesplit[0] == "FM0n") {
+        // M form factor for neutrons
+        // momentum transfer q in MeV, e.g. FM0n_200.0
+        double rr;
+        std::istringstream(opnamesplit[1]) >> rr;
+        theop = sqrt(4 * M_PI) * DM_NREFT::M(modelspace, "n", 0, rr);
+      } else if (opnamesplit[0] == "FPhipp0p") {
+        // Phipp form factor for protons
+        // momentum transfer q in MeV, e.g. FPhipp0p_200.0
+        double rr;
+        std::istringstream(opnamesplit[1]) >> rr;
+        theop = sqrt(4 * M_PI) * DM_NREFT::Phipp(modelspace, "p", 0, rr);
+      } else if (opnamesplit[0] == "FPhipp0n") {
+        // Phipp form factor for neutrons
+        // momentum transfer q in MeV, e.g. FPhipp0n_200.0
+        double rr;
+        std::istringstream(opnamesplit[1]) >> rr;
+        theop = sqrt(4 * M_PI) * DM_NREFT::Phipp(modelspace, "n", 0, rr);
+      }
       else //need to remove from the list
       {
          std::cout << "Unknown operator: " << opname << std::endl;
