@@ -742,11 +742,21 @@ namespace imsrg_util
  Operator Charge_Density_Op(ModelSpace& modelspace)
  {
    // in unit of e
-   Operator rho(modelspace,0,0,0,2);
-   for ( auto a : modelspace.proton_orbits )
+  Operator rho(modelspace,0,0,0,2);
+  //  for ( auto a : modelspace.proton_orbits )
+  //  {
+  //     // Orbit & oa = modelspace.GetOrbit(a);
+  //     rho.OneBody(a,a) = 1.; 
+  //  }
+
+   for ( auto a : modelspace.all_orbits )
    {
-      // Orbit & oa = modelspace.GetOrbit(a);
+      Orbit & oa = modelspace.GetOrbit(a);
       rho.OneBody(a,a) = 1.; 
+      for ( auto b : rho.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+        rho.OneBody(a,b) = 1.; 
+      }
    }
    return rho;
  }
