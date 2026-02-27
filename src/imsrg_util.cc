@@ -100,6 +100,12 @@ namespace imsrg_util
       else if (opname == "M1L")           theop =  MagneticMultipoleOp_pn(modelspace,1,"orbit") ;
       else if (opname == "Fermi")         theop =  AllowedFermi_Op(modelspace) ;
       else if (opname == "GamowTeller")   theop =  AllowedGamowTeller_Op(modelspace) ;
+      else if (opnamesplit[0] == "ForbidenBetaDecay") // Forbidden Beta Decay Operators   format e.g.  ForbidenBetaDecay_K
+      {      
+        int K;
+        std::istringstream(opnamesplit[1]) >> K;
+        theop =  UniqueForbidden_ChargeExchange_CS(modelspace,K);
+      }
       else if (opname == "Iso2")          theop =  Isospin2_Op(modelspace) ;
       else if (opname == "Tz2")           theop =  TzSquared_Op(modelspace) ;
       else if (opname == "R2CM")          theop =  R2CM_Op(modelspace) ;
@@ -2475,19 +2481,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
     Operator Fermi(modelspace,0,1,0,2);
     Fermi.SetHermitian();
     int norbits = modelspace.GetNumberOrbits();
-//    for (int i=0; i<norbits; ++i)
+    //    for (int i=0; i<norbits; ++i)
     for ( auto i : modelspace.proton_orbits )
     {
       Orbit& oi = modelspace.GetOrbit(i);
       int j = modelspace.GetOrbitIndex( oi.n, oi.l, oi.j2, -oi.tz2);
       Fermi.OneBody(i,j) = sqrt(oi.j2+1); // Reduced matrix element
       Fermi.OneBody(j,i) = Fermi.OneBody(i,j); // Hermitian
-//      for (int j : Fermi.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
-//      {
-//        Orbit& oj = modelspace.GetOrbit(j);
-//        if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
-//        Fermi.OneBody(i,j) = sqrt(oi.j2+1.0);  // Reduced matrix element
-//      }
+      //      for (int j : Fermi.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      //      {
+      //        Orbit& oj = modelspace.GetOrbit(j);
+      //        if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
+      //        Fermi.OneBody(i,j) = sqrt(oi.j2+1.0);  // Reduced matrix element
+      //      }
     }
     return Fermi;
   }
@@ -2518,6 +2524,85 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
     }
     return GT;
   }
+
+// Kth-forbidden unique beta decay
+// Suhonen Eq. (7.189) for m^(Ku)(ab), CS phase convention only. 
+static double mKu_ab_CS(const Orbit& oa, const Orbit& ob, int K)
+{
+  const int la = oa.l;
+  const int lb = ob.l;
+  const int ja = oa.j2;
+  const int jb = ob.j2;
+
+  // Selection factor: (1 + (-1)^{la+lb+K})
+  const int sel = (1 + AngMom::phase(la + lb + K));
+  if (sel == 0) return 0.0;
+
+  // Overall phase: (-1)^{la + ja + jb + K + 1}
+  const int exp1 = la + (ja + jb) / 2 + K + 1;
+  const double ph1 = AngMom::phase(exp1);
+
+  const double pref = 0.5 / std::sqrt((K + 1.0) * (2.0 * K + 3.0));
+  const double jhat_a = std::sqrt(ja + 1.0);
+  const double jhat_b = std::sqrt(jb + 1.0);
+
+  // 3j: (ja jb K+1; 1/2 -1/2 0)
+  const double threej = AngMom::ThreeJ(ja * 0.5, jb * 0.5, K + 1.0, 0.5, -0.5, 0.0);
+
+  // bracket terms in Eq. (7.189)
+  const double termA = AngMom::phase(K) * ( ja + 1.0 ); // (-1)^K * jhat_a^2
+
+  const int exp_jsum = (ja + jb) / 2 + 1;
+  const double termB = AngMom::phase(exp_jsum) * ( jb + 1.0 ); // (-1)^{ja+jb+1} * jhat_b^2
+
+  // (-1)^{la+ja+K-1/2} is integer exponent (half + half + integer)
+  const int expC = la + K + ( ja  - 1 ) /2;
+  const double termC_phase = AngMom::phase(expC);
+
+  // Your RadialIntegral returns the scaled (b=1) Suhonen integral \tilde R^{(K)}_{ab}
+  const double Rtilde = RadialIntegral(oa.n, oa.l, ob.n, ob.l, K);
+  // const double Rtilde = RadialIntegral_Numerical(oa.n, oa.l, ob.n, ob.l, K);
+
+  const double termC = 2.0 * (K + 1.0) * termC_phase;
+
+  const double bracket = termA + termB + termC;
+
+  return pref * ph1 * sel / 2.0 * jhat_a * jhat_b * threej * bracket * Rtilde;
+}
+
+// Hermitian charge-exchange operator for Kth-forbidden unique decay, CS phase only.
+// M(1u)(ab)=2.990 × 10−3 × b[fm]× m(1u)(ab)
+Operator UniqueForbidden_ChargeExchange_CS(ModelSpace& modelspace, int K)
+{
+  if (K < 1)
+  {
+    std::cout<<"The order K must be larger than 1! " << std::endl;
+    exit(0);
+  }
+
+  const int J = K + 1; // unique forbidden: rank ΔJ=ΔK+1 (max ΔJ) 
+
+  // Jrank=ΔJ, Trank=1, Parity=L%2, particle-rank=2
+  Operator Op(modelspace, J, 1, (K % 2), 2);
+  Op.SetHermitian(); // label only in your codebase
+  int norbits = modelspace.GetNumberOrbits();
+
+  // oscillator length b [fm]
+  const double b = std::sqrt(HBARC * HBARC / M_NUCLEON / modelspace.GetHbarOmega());
+  const double scale = std::pow(2.990e-3 * b, K); // Eq. (7.188) 
+  for (int i=0; i<norbits; ++i)
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    for (int j : Op.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+    {
+      Orbit& oj = modelspace.GetOrbit(j);
+      const double m_ku = mKu_ab_CS(oi, oj, K);
+      if ( fabs(m_ku) < 1.e-5 ) continue;
+      Op.OneBody(i,j) = m_ku; // scale * 
+    }
+  }
+  return Op;
+}
 
 
 

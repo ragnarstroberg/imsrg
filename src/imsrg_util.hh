@@ -84,6 +84,7 @@ namespace imsrg_util
  Operator TzSquared_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
+ Operator UniqueForbidden_ChargeExchange_CS(ModelSpace& modelspace, int K);
  Operator Sigma_Op(ModelSpace& modelspace);
  Operator Sigma_Op_pn(ModelSpace& modelspace, std::string pn);
  Operator RadialOverlap(ModelSpace& modelspace);

@@ -1079,13 +1079,13 @@ Operator HartreeFock::TransformToHOBasis( Operator& Op_HF)
            for (int j=0; j<nkets; ++j)
            {
               Ket & ket_hf = tbc_ket.GetKet(j);
-              Dket(i,j) = C(ket_hf.p, ket_ho.p) * C(ket_hf.q, ket_ho.q);
-              if (ket_hf.p!=ket_hf.q)
+              Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
+              if (ket_ho.p!=ket_ho.q)
               {
-                 Dket(i,j) += C( ket_hf.p, ket_ho.q) * C(ket_hf.q, ket_ho.p) * ket_ho.Phase(tbc_ket.J);
+                 Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
               }
-              if (ket_hf.p==ket_hf.q)    Dket(i,j) *= PhysConst::SQRT2;
-              if (ket_ho.p==ket_ho.q)    Dket(i,j) /= PhysConst::SQRT2;
+              if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
+              if (ket_hf.p==ket_hf.q)    Dket(i,j) /= PhysConst::SQRT2;
            }
         }
         if (ch_bra == ch_ket)
@@ -1100,19 +1100,21 @@ Operator HartreeFock::TransformToHOBasis( Operator& Op_HF)
              for (int j=0; j<nbras; ++j)
              {
                 Ket & bra_ho = tbc_bra.GetKet(j);
-                Dbra(i,j) = C(bra_hf.p, bra_ho.p) * C(bra_hf.q, bra_ho.q);
-                if (bra_hf.p!=bra_hf.q)
+                Dbra(i,j) = C(bra_ho.p,bra_hf.p) * C(bra_ho.q,bra_hf.q);
+                if (bra_ho.p!=bra_ho.q)
                 {
-                   Dbra(i,j) += C( bra_hf.p, bra_ho.q ) * C( bra_hf.q, bra_ho.p) * bra_ho.Phase(tbc_bra.J);
+                   Dbra(i,j) += C(bra_ho.q, bra_hf.p) * C(bra_ho.p, bra_hf.q) * bra_ho.Phase(tbc_bra.J);
                 }
-                if (bra_hf.p==bra_hf.q)    Dbra(i,j) *= PhysConst::SQRT2;
-                if (bra_ho.p==bra_ho.q)    Dbra(i,j) /= PhysConst::SQRT2;
+                if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= PhysConst::SQRT2;
+                if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= PhysConst::SQRT2;
              }
           }
+
         }
         auto& IN  =  it.second;
         auto& OUT =  Op_HO.TwoBody.GetMatrix(ch_bra,ch_ket);
-        OUT  =    Dbra * IN * Dket;
+        // OUT  =    Dbra * IN * Dket;
+        OUT = Dbra.t() * IN * Dket.t();
 
      }
    }
