@@ -61,6 +61,11 @@ add_subdirectory(extern/boost_src)
 
 
 if(IMSRG_BUILD_PYTHON_BINDINGS)
+    set(PYBIND11_FINDPYTHON ON)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    message(STATUS "Using Python3 executable: ${Python3_EXECUTABLE}")
+    message(STATUS "Using Python3 version: ${Python3_VERSION}")
+    message(STATUS "Using Python3 include dirs: ${Python3_INCLUDE_DIRS}")
     add_subdirectory(extern/pybind11)
 endif()
 
@@ -742,6 +747,7 @@ if(IMSRG_BUILD_PYTHON_BINDINGS)
         pyIMSRG
         PRIVATE
         IMSRG
+        Python3::Python
     )
     set_target_properties(pyIMSRG PROPERTIES SUFFIX ".so")
 endif()
@@ -765,9 +771,9 @@ install(FILES ${HEADERS}
 include(CTest)
 list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
 # Unit Tests
-add_test(NAME Commutators2 COMMAND  python3 ../test/UnitTestCommutators2.py )
-add_test(NAME Commutators3 COMMAND  python3 ../test/UnitTestCommutators3.py )
-add_test(NAME Factorized   COMMAND  python3 ../test/UnitTestFactorized.py )
-add_test(NAME Triples      COMMAND  python3 ../test/UnitTestTriples.py )
-add_test(NAME Tensor       COMMAND  python3 ../test/UnitTestTensor.py )
-add_test(NAME NormalOrdering    COMMAND  python3 ../test/UnitTestNormalOrdering.py )
+add_test(NAME Commutators2 COMMAND ${Python3_EXECUTABLE} ../test/UnitTestCommutators2.py)
+add_test(NAME Commutators3 COMMAND ${Python3_EXECUTABLE} ../test/UnitTestCommutators3.py)
+add_test(NAME Factorized   COMMAND ${Python3_EXECUTABLE} ../test/UnitTestFactorized.py)
+add_test(NAME Triples      COMMAND ${Python3_EXECUTABLE} ../test/UnitTestTriples.py)
+add_test(NAME Tensor       COMMAND ${Python3_EXECUTABLE} ../test/UnitTestTensor.py)
+add_test(NAME NormalOrdering COMMAND ${Python3_EXECUTABLE} ../test/UnitTestNormalOrdering.py)

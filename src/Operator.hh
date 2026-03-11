@@ -226,6 +226,9 @@ class Operator
   void PrintTwoBody(int ch_bra, int ch_ket) const {TwoBody.PrintMatrix(ch_bra,ch_ket);};
   void PrintThreeBody() const {ThreeBody.Print();};
 
+  
+  Operator GetMultipole(int j, int p, int t) const;
+
 //  arma::vec GetMP2_Impacts() const;
 };
 

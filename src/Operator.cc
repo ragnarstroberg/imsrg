@@ -1918,3 +1918,102 @@ arma::vec Operator::GetMP2_Impacts() const
    return orbit_impacts;
 }
 */
+
+
+#include "Commutator.hh"
+using namespace Commutator;
+
+//********************************************
+/// GetMultipole only two-body terms only
+/// A corresponding ModelSpace object must be
+/// created at the appropriate scope.
+//********************************************
+Operator Operator::GetMultipole(int j, int p, int t) const
+{
+  auto &Op = *this;
+  Operator OpNew(*modelspace, rank_J, rank_T, parity, particle_rank);
+  OpNew.ZeroBody = 0.;
+  OpNew.hermitian = hermitian;
+  OpNew.antihermitian = antihermitian;
+  OpNew.is_reduced = is_reduced; 
+
+  // Create Pandya-transformed hp and ph matrix elements
+  double t_start = omp_get_wtime();
+  if (j >= 0 && j <= modelspace->GetTwoBodyJmax() &&
+      (p == 0 || p == 1) &&
+      (t == 0 || t == 1))
+  {
+    // Construct the intermediate matrix Z_bar
+    size_t ch_cc = modelspace->GetTwoBodyChannelIndex(j, p, t);
+
+    // Construct the intermediate matrix Z_bar
+    size_t nch = modelspace->GetNumberTwoBodyChannels_CC();
+    std::deque<arma::mat> Z_bar(nch);
+    for (size_t ch = 0; ch < nch; ch++)
+    {
+      size_t nKets_cc = modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
+      Z_bar[ch].zeros(2 * nKets_cc, 2 * nKets_cc);
+    }
+    size_t nKets_cc_jpt = modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
+
+
+    if (nKets_cc_jpt > 0 and ch_cc >= 0 and ch_cc < nch )
+    {
+      // DoPandyaTransformation_SingleChannel(Op, Z_bar[ch_cc], ch_cc, "transpose");
+      TwoBodyChannel_CC &tbc_cc_bra = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int J_cc = tbc_cc_bra.J;
+      // loop over cross-coupled ph bras <ab| in this channel
+      // (this is the side that gets summed over in the matrix multiplication)
+      for (int ibra = 0; ibra < nKets_cc_jpt; ++ibra)
+      {
+        Ket &bra_cc = tbc_cc_bra.GetKet(ibra);
+        // we want to evaluate a<=b and a>=b, so to avoid code duplication, we turn this into a loop over the two orderings
+        std::vector<size_t> ab_switcheroo = {bra_cc.p, bra_cc.q};
+        for (int ab_case = 0; ab_case <= 1; ab_case++)
+        {
+          int a = ab_switcheroo[ab_case]; // this little bit gives us a,b if ab_case=0 and b,a if ab_case=1
+          int b = ab_switcheroo[1 - ab_case];
+          size_t bra_shift = ab_case * nKets_cc_jpt; // if we switch a<->b, we offset the bra index by nKets_cc_jpt
+
+          Orbit &oa = modelspace->GetOrbit(a);
+          Orbit &ob = modelspace->GetOrbit(b);
+          double ja = oa.j2 * 0.5;
+          double jb = ob.j2 * 0.5;
+
+          // loop over cross-coupled kets |cd> in this channel
+          for (int iket_cc = 0; iket_cc < nKets_cc_jpt; ++iket_cc)
+          {
+            Ket &ket_cc = tbc_cc_bra.GetKet(iket_cc % nKets_cc_jpt);
+            int c = iket_cc < nKets_cc_jpt ? ket_cc.p : ket_cc.q;
+            int d = iket_cc < nKets_cc_jpt ? ket_cc.q : ket_cc.p;
+            Orbit &oc = modelspace->GetOrbit(c);
+            Orbit &od = modelspace->GetOrbit(d);
+            double jc = oc.j2 * 0.5;
+            double jd = od.j2 * 0.5;
+
+            int jmin = std::max(std::abs(ja - jd), std::abs(jc - jb));
+            int jmax = std::min(ja + jd, jc + jb);
+            double Xbar = 0;
+            for (int J_std = jmin; J_std <= jmax; ++J_std)
+            {
+              double sixj = modelspace->GetSixJ(ja, jb, J_cc, jc, jd, J_std);
+              if (std::abs(sixj) < 1e-8)
+                continue;
+              double tbme = TwoBody.GetTBME_J(J_std, a, d, c, b);
+              Xbar -= (2 * J_std + 1) * sixj * tbme;
+            }
+            Z_bar[ch_cc](iket_cc, ibra + bra_shift) = -0.5*Xbar ; 
+          }
+        }
+      }
+  
+
+
+      // Anti- Pandya
+      AddInversePandyaTransformation(Z_bar, OpNew);
+    }
+  }
+  this->profiler.timer[__func__] += omp_get_wtime() - t_start;
+  return OpNew;
+}
+

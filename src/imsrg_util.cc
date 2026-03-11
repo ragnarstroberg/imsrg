@@ -2572,6 +2572,7 @@ static double mKu_ab_CS(const Orbit& oa, const Orbit& ob, int K)
 
 // Hermitian charge-exchange operator for Kth-forbidden unique decay, CS phase only.
 // M(1u)(ab)=2.990 × 10−3 × b[fm]× m(1u)(ab)
+// the factor 2.990 × 10−3 × b[fm] is not included
 Operator UniqueForbidden_ChargeExchange_CS(ModelSpace& modelspace, int K)
 {
   if (K < 1)

@@ -1113,7 +1113,6 @@ Operator HartreeFock::TransformToHOBasis( Operator& Op_HF)
         }
         auto& IN  =  it.second;
         auto& OUT =  Op_HO.TwoBody.GetMatrix(ch_bra,ch_ket);
-        // OUT  =    Dbra * IN * Dket;
         OUT = Dbra.t() * IN * Dket.t();
 
      }

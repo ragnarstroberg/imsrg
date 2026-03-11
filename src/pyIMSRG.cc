@@ -191,6 +191,8 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("ClearVectors", &ModelSpace::ClearVectors)
           .def("Print", &ModelSpace::Print)
 //          .def("Print_CC", &ModelSpace::Print_CC)
+          .def("GetTwoBodyJmax",&ModelSpace::GetTwoBodyJmax)
+          .def("GetThreeBodyJmax",&ModelSpace::GetThreeBodyJmax)
           .def_readwrite("holes", &ModelSpace::holes)
           .def_readwrite("particles", &ModelSpace::particles)
           .def_readwrite("core", &ModelSpace::core)
@@ -291,6 +293,7 @@ PYBIND11_MODULE(pyIMSRG, m)
               "WriteBinary", [](Operator &self, std::string fname)
               { std::ofstream ofs(fname,std::ios::binary);  self.WriteBinary(ofs); },
               py::arg("filename"))
+          .def("GetMultipole", &Operator::GetMultipole, py::arg("j"), py::arg("p"), py::arg("t"))
           //      .def("IsospinProject", &Operator::IsospinProject)
           ;
 
