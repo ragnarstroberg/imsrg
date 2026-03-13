@@ -388,6 +388,11 @@ PYBIND11_MODULE(pyIMSRG, m)
               "GetChannelMatrix", [](TwoBodyME &self, int J, int p, int Tz)
               { size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); return self.GetMatrix(ch,ch); },
               py::arg("J"), py::arg("parity"), py::arg("Tz"))
+          .def(
+               "SetChannelMatrix",
+               [](TwoBodyME &self, int J, int p, int Tz, const arma::mat &M)
+               { size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); 
+                 self.GetMatrix(ch,ch) = M;})
           .def("PrintAll", [](TwoBodyME &self)
                { for (auto& it : self.MatEl){ if (it.second.n_rows>0) { std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;};  } ; })
           .def("PrintMatrix", &TwoBodyME::PrintMatrix, py::arg("ch_bra"), py::arg("ch_ket"))
