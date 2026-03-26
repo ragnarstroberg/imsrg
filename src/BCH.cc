@@ -333,7 +333,10 @@ namespace BCH
 
       k++;
       if (k >= bernoulli.size())
+      {
+        std::cout << "Warning: BCH_Product didn't coverge after " << bernoulli.size() << " nested commutators" << std::endl;
         break; // don't evaluate the commutator if we're not going to use it
+      }
       if (2 * ny * nxy < bch_product_threshold)
         break;
 
