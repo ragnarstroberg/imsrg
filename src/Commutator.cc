@@ -196,6 +196,12 @@ namespace Commutator
     imsrg3_valence_2b = tf;
   }
 
+  void SetPertTripNovvv(bool tf)
+  {
+    pert_trip_novvv = tf;
+  }
+
+
   void SetSingleThread(bool tf)
   {
     single_thread = tf;

@@ -31,6 +31,7 @@ namespace Commutator
     extern bool use_imsrg3_mp4;
 
     extern bool perturbative_triples;
+    extern bool pert_trip_novvv;
 
     extern bool imsrg3_no_qqq;
     extern bool imsrg3_only_vvv;
@@ -49,6 +50,7 @@ namespace Commutator
     void SetIMSRG3Noqqq(bool tf);
     void SetIMSRG3Onlyvvv(bool tf);
     void SetIMSRG3valence2b(bool tf);
+    void SetPertTripNovvv(bool tf);
 //    void SetIMSRG3Verbose(bool tf);
     void SetSingleThread(bool tf); 
   

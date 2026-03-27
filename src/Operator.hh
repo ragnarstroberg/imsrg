@@ -185,6 +185,7 @@ class Operator
   Operator DoNormalOrderingDagger(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered dagger operator
   Operator UndoNormalOrdering() const; ///< Returns the operator normal-ordered wrt the vacuum
   Operator UndoNormalOrderingCore() const; ///< Returns the operator normal-ordered wrt the vacuum
+  Operator ReNormalOrderCore() const;
   //  Operator UndoNormalOrdering2() const; ///< Returns the operator normal-ordered wrt the vacuum
   //  Operator UndoNormalOrdering2() const;  ///< Returns the operator normal-ordered wrt the vacuum
   //  Operator UndoNormalOrdering3() const;  ///< Returns the operator normal-ordered wrt the vacuum

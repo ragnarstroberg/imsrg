@@ -150,7 +150,7 @@ struct TwoBodyChannel_base
    TwoBodyChannel_base(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel_base(int ch, ModelSpace* ms);
    void Initialize();
-   void UnpackTwoBodyChannel_Index(int ch, int J,int parity, int Tz);
+//   void UnpackTwoBodyChannel_Index(int ch, int J,int parity, int Tz); // WHY DOES THIS EXIST???
 
 
    //Methods

@@ -133,7 +133,8 @@ TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
 
 TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
 {
-   ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
+   ms->UnpackTwoBodyChannelIndex(N, J,parity,Tz);
+//   ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
    Initialize();
 }
 

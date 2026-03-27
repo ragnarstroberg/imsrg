@@ -2,6 +2,7 @@
 #include "TwoBodyME.hh"
 #include "AngMom.hh"
 #include "PhysicalConstants.hh" // for SQRT2
+#include <iomanip> // for std::setw
 //#ifndef SQRT2
 //  #define SQRT2 1.4142135623730950488
 //#endif

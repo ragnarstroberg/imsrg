@@ -423,6 +423,29 @@ Operator Operator::UndoNormalOrderingCore() const
     return DoNormalOrdering2(-1, modelspace->core);
 }
 
+// Re-normal order with respect to the core in one step
+// This amounts to running the normal ordering routing
+// with a negative occupation on all hole orbits that aren't in the core.
+Operator Operator::ReNormalOrderCore() const
+{
+  auto orbit_set = modelspace->holes;
+  for (auto c : modelspace->core)
+  {
+     auto it = orbit_set.find(c);
+     if (it != orbit_set.end() )
+     {
+        orbit_set.erase(it);
+     }
+  }
+  
+  if (not this->IsNumberConserving())
+    return DoNormalOrderingDagger(-1, orbit_set );
+  if (this->GetParticleRank() >= 3)
+    return DoNormalOrdering3(-1, orbit_set);
+  else
+    return DoNormalOrdering2(-1, orbit_set);
+}
+
 // Operator Operator::UndoNormalOrdering2() const
 //{
 //    return this->DoNormalOrdering2(-1, modelspace->holes);

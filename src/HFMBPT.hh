@@ -57,6 +57,12 @@ class HFMBPT : public HartreeFock
     void UseNATOccupations( bool tf=true ){ use_NAT_occupations=tf;}; // Choose whether to use occupations from rho.
     void OrderNATBy( std::string order ){ NAT_order = order;}; // Choose how to label orbits ("occupation", "energy", "mp2")
 
+    double GetMP2_Energy(Operator& H);
+    double GetMP3_pp(Operator& H);
+    double GetMP3_hh(Operator& H);
+    double GetMP3_ph(Operator& H);
+    double GetMP3_Energy(Operator& H);
+
     arma::vec GetMP2_Impacts(Operator& OpIn) const;
 
 };

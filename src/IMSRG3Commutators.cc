@@ -16,6 +16,7 @@ namespace Commutator
   bool discard_2b_from_3b = false;
 //  bool Commutator::verbose = false;
   bool perturbative_triples = false;
+  bool pert_trip_novvv = false;
 
   double imsrg3_dE6max = 1e20;
   double threebody_threshold = 0;
@@ -5073,6 +5074,8 @@ namespace Commutator
           continue;
 
         if (perturbative_triples and (std::abs(occ_ijk*unocc_lmn - unocc_ijk*occ_lmn)<1e-8) )
+          continue;
+        if ( perturbative_triples and pert_trip_novvv and oi.cvq==1 and oj.cvq==1 and ok.cvq==1 and ol.cvq==1 and om.cvq==1 and on.cvq==1 )
           continue;
         if (imsrg3_no_qqq and (ol.cvq + om.cvq + on.cvq) > 5)
           continue;

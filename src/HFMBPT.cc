@@ -2,6 +2,7 @@
 #include "HFMBPT.hh"
 #include "HartreeFock.hh"
 #include "PhysicalConstants.hh"
+#include "AngMom.hh"
 
 #include <omp.h>
 
@@ -988,4 +989,292 @@ arma::vec HFMBPT::GetMP2_Impacts(Operator& OpIn) const
    return orbit_impacts;
 }
 
+
+
+/// Calculate the second-order perturbation theory correction to the energy
+/// \f[
+/// E^{(2)} = \sum_{ia} (2 j_a +1) \frac{|f_{ia}|^2}{f_{aa}-f_{ii}}
+/// +  \sum_{\substack{i\leq j // a\leq b}}\sum_{J} (2J+1)\frac{|\Gamma_{ijab}^{J}|^2}{f_{aa}+f_{bb}-f_{ii}-f_{jj}}
+/// \f]
+///
+double HFMBPT::GetMP2_Energy(Operator& H)
+{
+  double t_start = omp_get_wtime();
+  double Emp2 = 0;
+  int nparticles = H.modelspace->particles.size();
+  std::vector<index_t> particles_vec(H.modelspace->particles.begin(), H.modelspace->particles.end()); // convert set to vector for OMP looping
+  #pragma omp parallel for reduction(+:Emp2)
+  for (int ii = 0; ii < nparticles; ++ii)
+  {
+    index_t i = particles_vec[ii];
+    double ei = H.OneBody(i, i);
+    Orbit &oi = H.modelspace->GetOrbit(i);
+    for (auto &a : H.modelspace->holes)
+    {
+      Orbit &oa = H.modelspace->GetOrbit(a);
+      double ea = H.OneBody(a, a);
+      if (abs(H.OneBody(i, a)) > 1e-9)
+        Emp2 += (oa.j2 + 1) * oa.occ * H.OneBody(i, a) * H.OneBody(a, i) / (ea-ei) ;
+      for (index_t j : H.modelspace->particles)
+      {
+        if (j < i)
+          continue;
+        double ej = H.OneBody(j, j);
+        Orbit &oj = H.modelspace->GetOrbit(j);
+        for (auto &b : H.modelspace->holes)
+        {
+          if (b < a)
+            continue;
+          Orbit &ob = H.modelspace->GetOrbit(b);
+          if ((oi.l + oj.l + oa.l + ob.l) % 2 > 0)
+            continue;
+          if ((oi.tz2 + oj.tz2) != (oa.tz2 + ob.tz2))
+            continue;
+          double eb = H.OneBody(b, b);
+          double denom = ea + eb - ei - ej;
+//          int Jmin = std::max(std::abs(oi.j2 - oj.j2), std::abs(oa.j2 - ob.j2)) / 2;
+//          int Jmax = std::min(oi.j2 + oj.j2, oa.j2 + ob.j2) / 2;
+          int Jmin = AngMom::Jmin({ {oi.j2,oj.j2}, {oa.j2,ob.j2} }) /2;
+          int Jmax = AngMom::Jmax({ {oi.j2,oj.j2}, {oa.j2,ob.j2} }) /2;
+          int dJ = 1;
+          if (a == b or i == j)
+          {
+            Jmin += Jmin % 2;
+            dJ = 2;
+          }
+          for (int J = Jmin; J <= Jmax; J += dJ)
+          {
+            double tbme = H.TwoBody.GetTBME_J_norm(J, a, b, i, j);
+            if (std::abs(tbme) > 1e-9)
+            {
+              Emp2 += (2 * J + 1) * oa.occ * ob.occ * tbme * tbme / denom; // no factor 1/4 because of the restricted sum
+            }
+          }
+        }
+      }
+    }
+  }
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  return Emp2;
+}
+
+double HFMBPT::GetMP3_pp(Operator& H)
+{
+  double t_start = omp_get_wtime();
+  double Epp = 0;
+  // This can certainly be optimized, but I'll wait until this is the bottleneck.
+  int nch = modelspace->GetNumberTwoBodyChannels();
+
+  //   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
+#pragma omp parallel for schedule(dynamic, 1) reduction(+ : Epp)
+  for (int ich = 0; ich < nch; ++ich)
+  {
+    TwoBodyChannel &tbc = H.modelspace->GetTwoBodyChannel(ich);
+    auto &Mat = H.TwoBody.GetMatrix(ich, ich);
+
+    size_t n_pp = tbc.GetKetIndex_pp().size();
+    size_t n_hh = tbc.GetKetIndex_hh().size();
+    arma::mat M_hhpp(n_hh, n_pp, arma::fill::zeros);
+    arma::mat M_pppp(n_pp, n_pp, arma::fill::zeros);
+
+    size_t I_hh = 0;
+    for (auto iket_ij : tbc.GetKetIndex_hh())
+    {
+      Ket &ket_ij = tbc.GetKet(iket_ij);
+      index_t i = ket_ij.p;
+      index_t j = ket_ij.q;
+
+      size_t II_pp = 0;
+      for (auto iket_ab : tbc.GetKetIndex_pp())
+      {
+        Ket &ket_ab = tbc.GetKet(iket_ab);
+        index_t a = ket_ab.p;
+        index_t b = ket_ab.q;
+        double Delta_ijab = H.OneBody(i, i) + H.OneBody(j, j) - H.OneBody(a, a) - H.OneBody(b, b);
+        M_hhpp(I_hh, II_pp) = Mat(iket_ij, iket_ab) / Delta_ijab;
+        II_pp++;
+      }
+      I_hh++;
+    }
+
+    size_t I_pp = 0;
+    for (auto iket_ab : tbc.GetKetIndex_pp())
+    {
+      size_t II_pp = 0;
+      for (auto iket_cd : tbc.GetKetIndex_pp())
+      {
+        M_pppp(I_pp, II_pp) = Mat(iket_ab, iket_cd);
+        II_pp++;
+      }
+      I_pp++;
+    }
+
+    int J = tbc.J;
+    Epp += (2 * J + 1) * arma::trace(M_hhpp * M_pppp * M_hhpp.t());
+
+  } // for ich
+
+  
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  return Epp;
+
+}
+
+
+double HFMBPT::GetMP3_hh(Operator& H)
+{
+  double t_start = omp_get_wtime();
+  double Ehh = 0;
+  int nch = modelspace->GetNumberTwoBodyChannels();
+
+#pragma omp parallel for schedule(dynamic, 1) reduction(+ : Ehh)
+  for (int ich = 0; ich < nch; ++ich)
+  {
+    TwoBodyChannel &tbc = H.modelspace->GetTwoBodyChannel(ich);
+    auto &Mat = H.TwoBody.GetMatrix(ich, ich);
+
+    size_t n_hh = tbc.GetKetIndex_hh().size();
+    size_t n_pp = tbc.GetKetIndex_pp().size();
+    arma::mat M_hhpp(n_hh, n_pp, arma::fill::zeros);
+    arma::mat M_hhhh(n_hh, n_hh, arma::fill::zeros);
+
+    size_t I_hh = 0;
+    for (auto iket_ij : tbc.GetKetIndex_hh())
+    {
+      Ket &ket_ij = tbc.GetKet(iket_ij);
+      index_t i = ket_ij.p;
+      index_t j = ket_ij.q;
+
+      size_t II_pp = 0;
+      for (auto iket_ab : tbc.GetKetIndex_pp())
+      {
+        Ket &ket_ab = tbc.GetKet(iket_ab);
+        index_t a = ket_ab.p;
+        index_t b = ket_ab.q;
+        double Delta_ijab = H.OneBody(i, i) + H.OneBody(j, j) - H.OneBody(a, a) - H.OneBody(b, b);
+        M_hhpp(I_hh, II_pp) = Mat(iket_ij, iket_ab) / Delta_ijab;
+        II_pp++;
+      }
+      size_t II_hh = 0;
+      for (auto iket_kl : tbc.GetKetIndex_hh())
+      {
+        M_hhhh(I_hh, II_hh) = Mat(iket_ij, iket_kl);
+        II_hh++;
+      }
+      I_hh++;
+    }
+    int J = tbc.J;
+    Ehh += (2 * J + 1) * arma::trace(M_hhpp.t() * M_hhhh * M_hhpp);
+  } // for ich
+
+
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  return Ehh;
+}
+
+double HFMBPT::GetMP3_ph(Operator& H)
+{
+  double t_start = omp_get_wtime();
+  double Eph = 0;
+
+  H.modelspace->PreCalculateSixJ();
+
+  int nch_CC = modelspace->GetNumberTwoBodyChannels_CC();
+
+#pragma omp parallel for schedule(dynamic, 1) reduction(+ : Eph)
+  for (int ich_CC = 0; ich_CC < nch_CC; ++ich_CC)
+  {
+    TwoBodyChannel_CC &tbc_CC = H.modelspace->GetTwoBodyChannel_CC(ich_CC);
+    size_t nkets_ph = tbc_CC.GetKetIndex_ph().size();
+    arma::mat Vbar_iabj(nkets_ph, nkets_ph, arma::fill::zeros);
+    arma::mat Vbar_bjck(nkets_ph, nkets_ph, arma::fill::zeros);
+    int Jph = tbc_CC.J;
+
+    size_t I_ph = 0;
+    for (auto iket_ai : tbc_CC.GetKetIndex_ph())
+    {
+      Ket &ket_ai = tbc_CC.GetKet(iket_ai);
+      index_t a = ket_ai.p;
+      index_t i = ket_ai.q;
+      double ja = 0.5 * H.modelspace->GetOrbit(a).j2;
+      double ji = 0.5 * H.modelspace->GetOrbit(i).j2;
+
+      int phase_ai = 1;
+      int phase_ia = -AngMom::phase(ja + ji - Jph);
+      if (ket_ai.op->occ < ket_ai.oq->occ)
+      {
+        std::swap(a, i);
+        std::swap(ja, ji);
+        std::swap(phase_ai, phase_ia);
+      }
+
+      size_t II_ph = 0;
+      for (auto iket_bj : tbc_CC.GetKetIndex_ph())
+      {
+        Ket &ket_bj = tbc_CC.GetKet(iket_bj);
+        index_t b = ket_bj.p;
+        index_t j = ket_bj.q;
+
+        double jb = 0.5 * H.modelspace->GetOrbit(b).j2;
+        double jj = 0.5 * H.modelspace->GetOrbit(j).j2;
+
+        int phase_bj = 1;
+        int phase_jb = -AngMom::phase(jb + jj - Jph);
+        if (ket_bj.op->occ < ket_bj.oq->occ)
+        {
+          std::swap(b, j);
+          std::swap(jb, jj);
+          std::swap(phase_bj, phase_jb);
+        }
+
+        double Delta_ijab = H.OneBody(i, i) + H.OneBody(j, j) - H.OneBody(a, a) - H.OneBody(b, b);
+        int J1min = std::max(std::abs(ja - jb), std::abs(ji - jj));
+        int J1max = std::min(ja + jb, ji + jj);
+        double tbme_iabj = 0;
+        double tbme_bjck = 0;
+        //         double tbme_ckia = 0;
+
+        if (AngMom::Triangle(jj, jb, Jph) and AngMom::Triangle(ji, ja, Jph))
+        {
+          for (int J1 = J1min; J1 <= J1max; ++J1) // Pandya 1: <ai`| V |jb`>_Jtot
+          {
+            tbme_iabj -= H.modelspace->GetSixJ(ja, ji, Jph, jj, jb, J1) * (2 * J1 + 1) * H.TwoBody.GetTBME_J(J1, i, j, b, a);
+          }
+        }
+
+        J1min = std::max(std::abs(ji - jb), std::abs(ja - jj));
+        J1max = std::min(ji + jb, ja + jj);
+
+        if (AngMom::Triangle(jj, jb, Jph) and AngMom::Triangle(ji, ja, Jph))
+        {
+          for (int J1 = J1min; J1 <= J1max; ++J1) // Pandya 1: <ai`| V |jb`>_Jtot
+          {
+            tbme_bjck -= H.modelspace->GetSixJ(jb, jj, Jph, ja, ji, J1) * (2 * J1 + 1) * H.TwoBody.GetTBME_J(J1, b, i, a, j);
+          }
+        }
+
+        Vbar_iabj(I_ph, II_ph) = tbme_iabj * phase_ia * phase_bj / Delta_ijab;
+        Vbar_bjck(II_ph, I_ph) = tbme_bjck * phase_bj * phase_ai;
+        II_ph++;
+      }
+      I_ph++;
+    }
+    auto Vbar_ckia = Vbar_iabj.t();
+    Eph += (2 * Jph + 1) * arma::trace(Vbar_iabj * Vbar_bjck * Vbar_ckia);
+
+  } // for ich_CC
+
+
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  return Eph;
+}
+
+
+double HFMBPT::GetMP3_Energy(Operator& H)
+{
+  double Epp = GetMP3_pp(H);
+  double Ehh = GetMP3_hh(H);
+  double Eph = GetMP3_ph(H);
+  return Epp + Ehh + Eph;
+}
 
