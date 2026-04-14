@@ -1,9 +1,0 @@
-add_library(
-    HalfPrecision
-    INTERFACE
-)
-target_include_directories(
-    HalfPrecision
-    INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)

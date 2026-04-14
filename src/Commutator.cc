@@ -1,6 +1,6 @@
 
 #include "Commutator.hh"
-#include "Commutator232.hh"
+//#include "Commutator232.hh"
 #include "ModelSpace.hh"
 #include "Operator.hh"
 #include "TwoBodyME.hh"
@@ -702,6 +702,27 @@ namespace Commutator
       return;
     }
 
+//    for (int ch = 0; ch < Y.nChannels; ++ch)
+//    {
+//      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+//      auto hh = tbc.GetKetIndex_hh();
+//      if (hh.size() == 0) continue;
+//      auto ph = tbc.GetKetIndex_ph();
+//      auto pp = tbc.GetKetIndex_pp();
+//      arma::uvec nbar_indices = arma::join_cols(hh, ph);
+//      nbar_indices = arma::join_cols(nbar_indices, pp);
+//      if (hh.size() == 0)
+//        continue;
+//      auto nn = tbc.Ket_occ_hh;
+//      arma::vec nbarnbar = arma::join_cols(tbc.Ket_unocc_hh, tbc.Ket_unocc_ph);
+//      auto &X2 = X.TwoBody.GetMatrix(ch).submat(hh, nbar_indices);
+//      arma::mat Y2 = Y.TwoBody.GetMatrix(ch).submat(nbar_indices, hh);
+//      Y2.head_rows(nbarnbar.size()).each_col() %= nbarnbar;
+//      Z.ZeroBody += 2 * (2 * tbc.J + 1) * arma::sum(arma::diagvec(X2 * Y2) % nn); // This could be made more efficient, but who cares?
+//    }
+
+
+    
     std::vector<size_t> ch_bra_list, ch_ket_list;
     auto ch_iter = X.TwoBody.MatEl;
     for (auto &iter : ch_iter)
@@ -771,6 +792,7 @@ namespace Commutator
       }
     }
     Z.ZeroBody += z0;
+    
     // std::cout<<"Z0="<< Z.ZeroBody <<std::endl;
     Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
     // std::cout << "End comm220ss " << std::endl;

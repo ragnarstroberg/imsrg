@@ -2,7 +2,7 @@
 #ifndef PhysicalConstants_h
 #define PhysicalConstants_h
 
-#include <cmath>
+//#include <cmath>
 
 
 // This is where we define all the physical and mathematical constants that we will use
@@ -33,15 +33,16 @@ const double NEUTRON_RCH2	= -0.1161;			  // neutron charge radius squared. From 
 const double DARWIN_FOLDY	= 0.033172;			  // Darwin-Foldy relativistic correction to charge radii  = 3hbar^2/4 mp^2 c^2
 
 // Math constants
-const double SQRT2    = sqrt(2.0);
-const double INVSQRT2 = 1.0 / SQRT2;
-const double LOG2     = log(2.0)  ;                           // natural logarithm of 2
-const double PI       = 4.0*atan(1.0) ;
-const double SQRTPI   = sqrt(PI) ;
-//const double SQRT2 =  1.41421356237309505                  // square root of 2
-//const double INVSQRT2 = 0.7071067811865                  // 1 / sqrt(2)
-//const double PI     = 3.14159265358979324                  // pi, the ratio of circumference to diameter
-//const double SQRTPI = 1.7724538509055160                  // square root of pi
+//const double SQRT2    = sqrt(2.0);
+//const double INVSQRT2 = 1.0 / SQRT2;
+//const double LOG2     = log(2.0)  ;                           // natural logarithm of 2
+//const double PI       = 4.0*atan(1.0) ;
+//const double SQRTPI   = sqrt(PI) ;
+const double SQRT2    =  1.41421356237309505  ;                // square root of 2
+const double INVSQRT2 = 0.7071067811865       ;                // 1 / sqrt(2)
+const double LOG2     = 0.69314718055994530942;                // nautral logarithm of 2
+const double PI       = 3.14159265358979324   ;               // pi, the ratio of circumference to diameter
+const double SQRTPI   = 1.7724538509055160    ;              // square root of pi
 
 // I can't remember why I originally wanted these to be long doubles. It sort of seems like overkill...
 //const long double SQRT2 = 1.4142135623730950488L         // square root of 2

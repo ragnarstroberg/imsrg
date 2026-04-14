@@ -1,4 +1,4 @@
-HALF-PRECISION FLOATING-POINT LIBRARY (Version 2.2.0)
+HALF-PRECISION FLOATING-POINT LIBRARY (Version 2.2.1)
 -----------------------------------------------------
 
 This is a C++ header-only library to provide an IEEE 754 conformant 16-bit 
@@ -128,7 +128,7 @@ int will involve the usual warnings arising when implicitly converting those to
 float because of the lost precision. On the one hand those warnings are 
 intentional, because converting those types to half neccessarily also reduces 
 precision. But on the other hand they are raised for explicit conversions from 
-those types, when the user knows what he is doing. So if those warnings keep 
+those types, when the user knows what they are doing. So if those warnings keep 
 bugging you, then you won't get around first explicitly converting to float 
 before converting to half, or use the 'half_cast' described below. In addition 
 you can also directly assign float values to halfs.

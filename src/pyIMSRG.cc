@@ -738,6 +738,7 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("SetVerbose", &Commutator::SetVerbose, py::arg("tf"));
        Commutator.def("SetSingleThread", &Commutator::SetSingleThread, py::arg("tf"));
        Commutator.def("PrintSettings", &Commutator::PrintSettings );
+       Commutator.def("SetPerturbativeTriples", [](bool tf){ Commutator::perturbative_triples = tf;} );
 
        Commutator.def("DoPandyaTransformation_SingleChannel", &Commutator::DoPandyaTransformation_SingleChannel, py::arg("OpIn"), py::arg("M_CC"), py::arg("ch_cc"), py::arg("orientation"));
 
@@ -1059,9 +1060,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       m.def("LdotS_Op", imsrg_util::LdotS_Op);
       m.def("HO_density", imsrg_util::HO_density);
       m.def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
-      m.def("GetOccupations", imsrg_util::GetOccupations);
+//      m.def("GetOccupations", imsrg_util::GetOccupations);
       m.def("GetDensity", imsrg_util::GetDensity);
-      m.def("CommutatorTest", imsrg_util::CommutatorTest);
+//      m.def("CommutatorTest", imsrg_util::CommutatorTest);
       m.def("Calculate_p1p2_all", imsrg_util::Calculate_p1p2_all);
       m.def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
       m.def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
