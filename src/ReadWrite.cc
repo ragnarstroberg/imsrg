@@ -4691,8 +4691,56 @@ void ReadWrite::WriteTwoBody_Takayuki(std::string filename, Operator& Hbare)
 
 }
 
+// Build a map from NuHamil 1-based orbit indices to IMSRG 0-based orbit indices.
+//
+// NuHamil (SingleParticleState.F90, InitOrbits default mode) orders
+// single-particle orbits with tz as the INNERMOST loop, producing an
+// interleaved proton/neutron sequence:
+//   (e=0, l=0, j=1, tz=-1), (e=0, l=0, j=1, tz=+1),   <- 0s1/2 p, n
+//   (e=1, l=1, j=1, tz=-1), (e=1, l=1, j=1, tz=+1),   <- 0p1/2 p, n
+//   (e=1, l=1, j=3, tz=-1), (e=1, l=1, j=3, tz=+1),   <- 0p3/2 p, n
+//   ...
+//
+// The resulting vector has length equal to the number of NuHamil orbits and
+// nuhamil_to_imsrg[nh-1] gives the IMSRG 0-based index for NuHamil orbit nh
+// (1-based), or -1 if that orbit is not present in the IMSRG model space.
+static std::vector<int> BuildNuHamilToImsrgOrbitMap(ModelSpace* ms)
+{
+  int emax = ms->GetEmax();
+  std::vector<int> nuhamil_to_imsrg;
+  // NuHamil iterates tz as the innermost loop, interleaving proton and neutron
+  // orbits for each (e, l, j) shell.
+  for (int e = 0; e <= emax; e++)
+  {
+    for (int l = 0; l <= e; l++)
+    {
+      if ((e - l) % 2 != 0) continue;
+      int n = (e - l) / 2;
+      for (int s : {-1, +1})
+      {
+        int j2 = 2 * l + s;
+        if (j2 < 1) continue;
+        for (int tz2 : {-1, +1})
+        {
+          size_t imsrg_idx = ms->GetOrbitIndex(n, l, j2, tz2);
+          nuhamil_to_imsrg.push_back(
+            (imsrg_idx == static_cast<size_t>(ModelSpace::NOT_AN_ORBIT)) ? -1
+                                                                          : static_cast<int>(imsrg_idx));
+        }
+      }
+    }
+  }
+  return nuhamil_to_imsrg;
+}
+
 // Write .myg.bin format twobody files for NuHamil
-// B.C. 
+// B.C.
+//
+// NuHamil reads the binary file as an unformatted Fortran stream:
+//   read(unit) cnt              ! int32
+//   read(unit) ia,ib,ic,id,jj,v2   ! arrays
+// No text header is present.  Orbit indices are 1-based and follow
+// NuHamil's internal ordering (see BuildNuHamilToImsrgOrbitMap above).
 void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
 {
   using fortran_int = int32_t;
@@ -4701,7 +4749,18 @@ void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
   ModelSpace* modelspace = Hbare.GetModelSpace();
   if (modelspace == nullptr)
   {
-    throw std::runtime_error("WriteTwoBody_Binary_MyG: null ModelSpace pointer.");
+    throw std::runtime_error("WriteTwoBody_Binary_myg: null ModelSpace pointer.");
+  }
+
+  // Build IMSRG → NuHamil orbit map (1-based NuHamil indices)
+  std::vector<int> nuhamil_to_imsrg = BuildNuHamilToImsrgOrbitMap(modelspace);
+  int norb = static_cast<int>(modelspace->GetNumberOrbits());
+  std::vector<int> imsrg_to_nuhamil(norb, -1);
+  for (int nh = 0; nh < static_cast<int>(nuhamil_to_imsrg.size()); nh++)
+  {
+    int im = nuhamil_to_imsrg[nh];
+    if (im >= 0 && im < norb)
+      imsrg_to_nuhamil[im] = nh + 1; // 1-based NuHamil index
   }
 
   std::vector<fortran_int> ia;
@@ -4711,12 +4770,12 @@ void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
   std::vector<fortran_int> jj;
   std::vector<fortran_real8> v2;
 
-  // Optional: reserve approximate size
   size_t total_nelts = 0;
   for (auto& itmat : Hbare.TwoBody.MatEl)
   {
-    int ch_ket = itmat.first[1];
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch_ket);
+    if (itmat.first[0] != itmat.first[1]) continue;
+    int ch = itmat.first[0];
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
     int nkets = tbc.GetNumberKets();
     total_nelts += static_cast<size_t>(nkets) * static_cast<size_t>(nkets + 1) / 2;
   }
@@ -4730,26 +4789,60 @@ void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
 
   for (auto& itmat : Hbare.TwoBody.MatEl)
   {
-    int ch_ket = itmat.first[1];
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch_ket);
+    // Only diagonal channels carry non-zero elements for a scalar operator.
+    if (itmat.first[0] != itmat.first[1]) continue;
+
+    int ch = itmat.first[0];
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
     int J = tbc.J;
     int nkets = tbc.GetNumberKets();
 
     for (int ibra = 0; ibra < nkets; ++ibra)
     {
       Ket& bra = tbc.GetKet(ibra);
+      int nh_a = imsrg_to_nuhamil[bra.p];
+      int nh_b = imsrg_to_nuhamil[bra.q];
+      if (nh_a < 0 || nh_b < 0) continue; // orbit not present in NuHamil space
+
+      // NuHamil stores pn pairs only in (proton, neutron) canonical order.
+      // If the IMSRG canonical ket has neutron-first (bra.p is neutron, bra.q
+      // is proton), swap the NuHamil indices and apply the exchange phase so
+      // that NuHamil's SetTBME finds the correct canonical state.
+      double bra_phase = 1.0;
+      {
+        Orbit& oa = modelspace->GetOrbit(bra.p);
+        Orbit& ob = modelspace->GetOrbit(bra.q);
+        if (oa.tz2 == +1 && ob.tz2 == -1) // neutron-first pn pair
+        {
+          std::swap(nh_a, nh_b);
+          bra_phase = static_cast<double>(bra.Phase(J));
+        }
+      }
+
       for (int iket = 0; iket <= ibra; ++iket)
       {
         Ket& ket = tbc.GetKet(iket);
+        int nh_c = imsrg_to_nuhamil[ket.p];
+        int nh_d = imsrg_to_nuhamil[ket.q];
+        if (nh_c < 0 || nh_d < 0) continue;
 
-        // Fortran writer stores everything, including zeros.
-        // So do NOT skip tiny matrix elements here.
-        double tbme = itmat.second(ibra, iket);
+        double ket_phase = 1.0;
+        {
+          Orbit& oc = modelspace->GetOrbit(ket.p);
+          Orbit& od = modelspace->GetOrbit(ket.q);
+          if (oc.tz2 == +1 && od.tz2 == -1) // neutron-first pn pair
+          {
+            std::swap(nh_c, nh_d);
+            ket_phase = static_cast<double>(ket.Phase(J));
+          }
+        }
 
-        ia.push_back(static_cast<fortran_int>(bra.p));
-        ib.push_back(static_cast<fortran_int>(bra.q));
-        ic.push_back(static_cast<fortran_int>(ket.p));
-        id.push_back(static_cast<fortran_int>(ket.q));
+        double tbme = itmat.second(ibra, iket) * bra_phase * ket_phase;
+
+        ia.push_back(static_cast<fortran_int>(nh_a));
+        ib.push_back(static_cast<fortran_int>(nh_b));
+        ic.push_back(static_cast<fortran_int>(nh_c));
+        id.push_back(static_cast<fortran_int>(nh_d));
         jj.push_back(static_cast<fortran_int>(J));
         v2.push_back(static_cast<fortran_real8>(tbme));
       }
@@ -4758,7 +4851,7 @@ void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
 
   if (ia.size() > static_cast<size_t>(std::numeric_limits<fortran_int>::max()))
   {
-    throw std::runtime_error("WriteTwoBody_Binary_MyG: element count exceeds int32 range.");
+    throw std::runtime_error("WriteTwoBody_Binary_myg: element count exceeds int32 range.");
   }
 
   fortran_int cnt = static_cast<fortran_int>(ia.size());
@@ -4766,29 +4859,14 @@ void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
   std::ofstream outfile(filename, std::ios::binary);
   if (!outfile)
   {
-    throw std::runtime_error("WriteTwoBody_Binary_MyG: cannot open file " + filename);
+    throw std::runtime_error("WriteTwoBody_Binary_myg: cannot open file " + filename);
   }
 
-  // Match the Fortran header as closely as practical.
-  // Fortran:
-  //   header = "# " // OpName // " operator generated by NuHamil (Tokyo code), "
-  // Here we use a fixed operator name since your IMSRG Operator class name getter
-  // is not shown in the snippet.
-  std::string opname = "Operator";
-  std::string header = "# " + opname + " operator generated by NuHamil (Tokyo code), ";
-
-  // In the Fortran code, the header is written first.
-  // We write plain character bytes, followed by '\n', which is the most practical match.
-  outfile.write(header.data(), static_cast<std::streamsize>(header.size()));
-  {
-    const char nl = '\n';
-    outfile.write(&nl, 1);
-  }
-
-  // Write cnt
+  // NuHamil's Fortran reader (read_scalar_operator_binary_myg) opens the file as
+  // form='unformatted', access='stream' and reads cnt then the arrays directly,
+  // with no text header.  We match that format exactly.
   outfile.write(reinterpret_cast<const char*>(&cnt), sizeof(cnt));
 
-  // Write ia, ib, ic, id, jj, v2
   if (cnt > 0)
   {
     outfile.write(reinterpret_cast<const char*>(ia.data()),
@@ -4807,12 +4885,24 @@ void ReadWrite::WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare)
 
   if (!outfile)
   {
-    throw std::runtime_error("WriteTwoBody_Binary_MyG: error while writing file " + filename);
+    throw std::runtime_error("WriteTwoBody_Binary_myg: error while writing file " + filename);
   }
 
   outfile.close();
 }
 
+// Read .myg.bin format twobody files generated by NuHamil
+// (write_scalar_operator_binary_myg in TwoBodyLabOps.F90).
+//
+// Binary layout (Fortran unformatted stream, no record markers):
+//   [optional text header line ending in '\n']   -- only when compiled with ifort
+//   cnt          : int32
+//   ia(1..cnt)   : int32   -- bra orbit a (1-based NuHamil index)
+//   ib(1..cnt)   : int32   -- bra orbit b
+//   ic(1..cnt)   : int32   -- ket orbit c
+//   id(1..cnt)   : int32   -- ket orbit d
+//   jj(1..cnt)   : int32   -- coupled angular momentum J
+//   v2(1..cnt)   : real64  -- matrix element <ab|V|cd>_J
 void ReadWrite::ReadTwoBody_Binary_myg(std::string filename, Operator& op)
 {
   using fortran_int = int32_t;
@@ -4830,54 +4920,71 @@ void ReadWrite::ReadTwoBody_Binary_myg(std::string filename, Operator& op)
   ModelSpace* modelspace = op.GetModelSpace();
   if (modelspace == nullptr)
   {
-    std::cerr << "ReadTokyoBinaryMyg: null ModelSpace pointer." << std::endl;
+    std::cerr << "ReadTwoBody_Binary_myg: null ModelSpace pointer." << std::endl;
     return;
   }
 
-  // ------------------------------------------------------------------
-  // Read header
-  // ------------------------------------------------------------------
+  // Build NuHamil (1-based) → IMSRG (0-based) orbit map
+  std::vector<int> nuhamil_to_imsrg = BuildNuHamilToImsrgOrbitMap(modelspace);
+  int nh_norb = static_cast<int>(nuhamil_to_imsrg.size());
+
+  // Detect an optional text header written by ifort-compiled NuHamil.
+  // The Fortran writer does:  write(unit,"(a)") trim(header)
+  // which (on ifort) prepends a printable-ASCII line ending in '\n' before
+  // the binary data.  gfortran rejects that statement at runtime and leaves
+  // an empty file.
   //
-  // This assumes the Fortran header write produced a newline-terminated
-  // text line. That matches the practical convention we discussed.
-  // If your compiler wrote the header differently, this part may need
-  // to be adjusted.
-  //
-  std::string header;
-  std::getline(infile, header);
-  if (!infile.good())
+  // Heuristic: if all 4 leading bytes are printable ASCII (0x20–0x7E) the
+  // file starts with a text header.  For any realistic TBME count the
+  // little-endian int32 contains at least one zero byte, so there is no
+  // false-positive for cnt values below ~539 million.
   {
-    std::cerr << "ReadTokyoBinaryMyg: failed to read header from " << filename << std::endl;
-    return;
+    char probe[4] = {};
+    std::streampos start_pos = infile.tellg();
+    std::streamsize n = infile.read(probe, 4).gcount();
+    infile.seekg(start_pos); // always seek back
+
+    if (n < 4)
+    {
+      std::cerr << "ReadTwoBody_Binary_myg: file too short (< 4 bytes): "
+                << filename << std::endl;
+      return;
+    }
+
+    bool looks_like_text = true;
+    for (int i = 0; i < 4; ++i)
+    {
+      unsigned char c = static_cast<unsigned char>(probe[i]);
+      if (c < 0x20 || c > 0x7E) { looks_like_text = false; break; }
+    }
+
+    if (looks_like_text)
+    {
+      // Skip the text header line (reads up to and including the '\n')
+      std::string hdr_line;
+      std::getline(infile, hdr_line);
+    }
   }
 
-//  std::cout << __func__ << " header = " << header << std::endl;
-
-  // ------------------------------------------------------------------
-  // Read cnt
-  // ------------------------------------------------------------------
+  // Read cnt directly from the binary stream (no record markers for stream access)
   fortran_int cnt = 0;
   infile.read(reinterpret_cast<char*>(&cnt), sizeof(cnt));
-  if (!infile.good())
+  if (infile.fail())
   {
-    std::cerr << "ReadTokyoBinaryMyg: failed to read cnt from " << filename << std::endl;
+    std::cerr << "ReadTwoBody_Binary_myg: failed to read cnt from "
+              << filename << std::endl;
     return;
   }
 
   if (cnt < 0)
   {
-    std::cerr << "ReadTokyoBinaryMyg: invalid negative cnt = " << cnt << std::endl;
+    std::cerr << "ReadTwoBody_Binary_myg: invalid negative cnt = " << cnt << std::endl;
     return;
   }
-
-//  std::cout << __func__ << " cnt = " << cnt << std::endl;
 
   std::vector<fortran_int> ia(cnt), ib(cnt), ic(cnt), id(cnt), jj(cnt);
   std::vector<fortran_real8> v2(cnt);
 
-  // ------------------------------------------------------------------
-  // Read arrays
-  // ------------------------------------------------------------------
   if (cnt > 0)
   {
     infile.read(reinterpret_cast<char*>(ia.data()), sizeof(fortran_int) * cnt);
@@ -4888,50 +4995,129 @@ void ReadWrite::ReadTwoBody_Binary_myg(std::string filename, Operator& op)
     infile.read(reinterpret_cast<char*>(v2.data()), sizeof(fortran_real8) * cnt);
   }
 
-  if (!infile.good())
+  if (infile.fail())
   {
-    std::cerr << "ReadTokyoBinaryMyg: failed while reading data arrays from "
+    std::cerr << "ReadTwoBody_Binary_myg: failed while reading data arrays from "
               << filename << std::endl;
     return;
   }
 
   infile.close();
 
-  // ------------------------------------------------------------------
-  // Load into Operator
-  // ------------------------------------------------------------------
-  //
-  // This file contains only two-body matrix elements.
-  // No zero-body or one-body part is stored.
-  //
-  int norb = modelspace->GetNumberOrbits();
-
   for (int n = 0; n < cnt; n++)
   {
-    int io = ia[n];
-    int jo = ib[n];
-    int ko = ic[n];
-    int lo = id[n];
-    int J  = jj[n];
+    // NuHamil orbit indices are 1-based; remap to IMSRG 0-based indices
+    int nh_a = ia[n];
+    int nh_b = ib[n];
+    int nh_c = ic[n];
+    int nh_d = id[n];
+    int J    = jj[n];
     double tbme = v2[n];
 
-    // Basic sanity checks
-    if (io < 0 || io >= norb) continue;
-    if (jo < 0 || jo >= norb) continue;
-    if (ko < 0 || ko >= norb) continue;
-    if (lo < 0 || lo >= norb) continue;
+    // Bounds check against our orbit map
+    if (nh_a < 1 || nh_a > nh_norb) continue;
+    if (nh_b < 1 || nh_b > nh_norb) continue;
+    if (nh_c < 1 || nh_c > nh_norb) continue;
+    if (nh_d < 1 || nh_d > nh_norb) continue;
 
-    // Same check as your text reader
+    int io = nuhamil_to_imsrg[nh_a - 1];
+    int jo = nuhamil_to_imsrg[nh_b - 1];
+    int ko = nuhamil_to_imsrg[nh_c - 1];
+    int lo = nuhamil_to_imsrg[nh_d - 1];
+
+    // -1 means the orbit is not in this IMSRG modelspace
+    if (io < 0 || jo < 0 || ko < 0 || lo < 0) continue;
+
     if ((io == jo || ko == lo) && (J % 2) > 0) continue;
 
-    // Optional skip for tiny values
     if (std::abs(tbme) < 1e-12) continue;
 
     op.TwoBody.SetTBME_J(J, io, jo, ko, lo, tbme);
-
-//    std::cout << io << " " << jo << " " << ko << " " << lo
-//              << " " << J << " " << tbme << std::endl;
   }
+}
+
+// Read .myg ASCII format twobody files generated by NuHamil
+// (write_scalar_operator_ascii_myg in TwoBodyLabOps.F90).
+//
+// ASCII layout:
+//   # header comment line
+//   cnt
+//   #### column header comment
+//   a  b  c  d  J  v    (repeated cnt times)
+//
+// Orbit indices are 1-based NuHamil indices.
+void ReadWrite::ReadTwoBody_Ascii_myg(std::string filename, Operator& op)
+{
+  std::ifstream infile(filename);
+  if (!infile.good())
+  {
+    std::cerr << "************************************" << std::endl
+              << "** Trouble reading file !!! ** " << filename << std::endl
+              << "************************************" << std::endl;
+    return;
+  }
+
+  ModelSpace* modelspace = op.GetModelSpace();
+  if (modelspace == nullptr)
+  {
+    std::cerr << "ReadTwoBody_Ascii_myg: null ModelSpace pointer." << std::endl;
+    return;
+  }
+
+  // Build NuHamil (1-based) → IMSRG (0-based) orbit map
+  std::vector<int> nuhamil_to_imsrg = BuildNuHamilToImsrgOrbitMap(modelspace);
+  int nh_norb = static_cast<int>(nuhamil_to_imsrg.size());
+
+  // Skip leading comment lines (lines whose first non-whitespace char is '#' or '!')
+  skip_comments(infile);
+
+  // Read cnt
+  int cnt = 0;
+  {
+    std::string line;
+    std::getline(infile, line);
+    std::istringstream(line) >> cnt;
+  }
+
+  if (cnt < 0)
+  {
+    std::cerr << "ReadTwoBody_Ascii_myg: invalid cnt = " << cnt << " in " << filename << std::endl;
+    return;
+  }
+
+  // Skip the column header comment line (####...)
+  skip_comments(infile);
+
+  for (int n = 0; n < cnt; n++)
+  {
+    std::string line;
+    if (!std::getline(infile, line)) break;
+
+    int nh_a, nh_b, nh_c, nh_d, J;
+    double tbme;
+    std::istringstream(line) >> nh_a >> nh_b >> nh_c >> nh_d >> J >> tbme;
+
+    // Bounds check against our orbit map
+    if (nh_a < 1 || nh_a > nh_norb) continue;
+    if (nh_b < 1 || nh_b > nh_norb) continue;
+    if (nh_c < 1 || nh_c > nh_norb) continue;
+    if (nh_d < 1 || nh_d > nh_norb) continue;
+
+    int io = nuhamil_to_imsrg[nh_a - 1];
+    int jo = nuhamil_to_imsrg[nh_b - 1];
+    int ko = nuhamil_to_imsrg[nh_c - 1];
+    int lo = nuhamil_to_imsrg[nh_d - 1];
+
+    if (io < 0 || jo < 0 || ko < 0 || lo < 0) continue;
+
+    if ((io == jo || ko == lo) && (J % 2) > 0) continue;
+
+    if (std::abs(tbme) < 1e-12) continue;
+
+    op.TwoBody.SetTBME_J(J, io, jo, ko, lo, tbme);
+  }
+
+  infile.close();
 }
 
 

@@ -86,6 +86,7 @@ class ReadWrite
 
    void WriteTwoBody_Binary_myg(std::string filename, Operator& Hbare);
    void ReadTwoBody_Binary_myg(std::string filename, Operator& op);
+   void ReadTwoBody_Ascii_myg(std::string filename, Operator& op);
 
 //   void WriteValence3body( ThreeBodyMEpn& threeBME, std::string filename );
    void WriteValence3body( ThreeBodyME& threeBME, std::string filename );
