@@ -279,6 +279,51 @@ namespace BCH
   /// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
   /// \f[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \f]
   //*****************************************************************************************
+  constexpr size_t n_bernoulli_max = 30;  // B_0 through B_max
+
+  const std::vector<double>& BCH_Bernoulli_Coefficients()
+  {
+    static const std::vector<double> bernoulli_over_factorial = []()
+    {
+      std::vector<double> bernoulli_work_array(n_bernoulli_max + 1, 0.0);
+      std::vector<double> bernoulli_coefficients(n_bernoulli_max + 1, 0.0);
+
+      double factorial_n = 1.0;
+
+      for (size_t n = 0; n <= n_bernoulli_max; ++n)
+      {
+        if (n > 0)
+          factorial_n *= static_cast<double>(n);
+
+        bernoulli_work_array[n] = 1.0 / static_cast<double>(n + 1);
+
+        for (size_t j = n; j > 0; --j)
+        {
+          bernoulli_work_array[j - 1] =
+              static_cast<double>(j) *
+              (bernoulli_work_array[j - 1] - bernoulli_work_array[j]);
+        }
+
+        double bernoulli_number = bernoulli_work_array[0];
+
+        // Akiyama-Tanigawa gives B_1 = +1/2.
+        // BCH/Magnus uses x/(exp(x)-1), so B_1 = -1/2.
+        if (n == 1)
+          bernoulli_number = -bernoulli_number;
+
+        // Odd Bernoulli numbers above B_1 vanish exactly.
+        if (n > 1 && (n % 2 == 1))
+          bernoulli_number = 0.0;
+
+        bernoulli_coefficients[n] = bernoulli_number / factorial_n;
+      }
+
+      return bernoulli_coefficients;
+    }();
+
+    return bernoulli_over_factorial;
+  }
+
   Operator BCH_Product(Operator &X, Operator &Y)
   {
     double tstart = omp_get_wtime();
@@ -286,54 +331,7 @@ namespace BCH
     double ny = Y.Norm();
     // std::vector<double> bernoulli = {1.0, -0.5, 1. / 6, 0.0, -1. / 30, 0.0, 1. / 42, 0., -1. / 30, 0.0, 5. / 66, 0.0, -691/2730, 0.0,  7/6};
     // std::vector<double> factorial = {1.0, 1.0, 2.0, 6.0, 24., 120., 720., 5040., 40320., 362880., 3628800., 39916800., 479001600., 6227020800., 87178291200.};
-    std::vector<double> bernoulli = {
-        1.0,
-        -1.0 / 2.0,
-        1.0 / 6.0,
-        0.0,
-        -1.0 / 30.0,
-        0.0,
-        1.0 / 42.0,
-        0.0,
-        -1.0 / 30.0,
-        0.0,
-        5.0 / 66.0,
-        0.0,
-        -691.0 / 2730.0,
-        0.0,
-        7.0 / 6.0,
-        0.0,
-        -3617.0 / 510.0,
-        0.0,
-        43867.0 / 798.0,
-        0.0,
-        -174611.0 / 330.0
-    };
-
-    std::vector<double> factorial = {
-        1.0,
-        1.0,
-        2.0,
-        6.0,
-        24.0,
-        120.0,
-        720.0,
-        5040.0,
-        40320.0,
-        362880.0,
-        3628800.0,
-        39916800.0,
-        479001600.0,
-        6227020800.0,
-        87178291200.0,
-        1307674368000.0,
-        20922789888000.0,
-        355687428096000.0,
-        6402373705728000.0,
-        121645100408832000.0,
-        2432902008176640000.0
-    };
-
+    const auto& bch_coeff = BCH_Bernoulli_Coefficients();
 
     Operator Z = X + Y;
   
@@ -376,13 +374,16 @@ namespace BCH
     {
       if ((k < 2) or (k % 2 == 0))
       {
-        Z += (bernoulli[k] / factorial[k]) * Nested;
+        // Z += (bernoulli[k] / factorial[k]) * Nested;
+        Z += bch_coeff[k] * Nested;
       }
 
       k++;
-      if (k >= bernoulli.size())
+      // if (k >= bernoulli.size())
+      if (k >= bch_coeff.size())
       {
-        std::cout << "Warning: BCH_Product didn't coverge after " << bernoulli.size() << " nested commutators" << std::endl;
+        // std::cout << "Warning: BCH_Product didn't converge after " << bernoulli.size() << " nested commutators" << std::endl;
+        std::cout << "Warning: BCH_Product didn't converge after "<< bch_coeff.size() << " nested commutators" << std::endl;
         break; // don't evaluate the commutator if we're not going to use it
       }
       if (2 * ny * nxy < bch_product_threshold)
