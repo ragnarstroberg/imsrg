@@ -72,6 +72,7 @@ class HartreeFock
    Jacobi3BME* jacobi3bme;  ///< pointer to 3-body matrix elements in jacobi basis, if we want to use that
    bool use_jacobi_3body;
    bool freeze_occupations;
+   int target_reference_parity; ///< 0 = unconstrained, +1/-1 = constrain total reference parity in FillLowestOrbits().
    bool discard_NO2B_from_3N; // This should generally be false for any production runs.
 
 // Methods
@@ -109,6 +110,9 @@ class HartreeFock
    double GetAverageHFPotential( double r, double rprime);
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
+   void SetReferenceParity(int parity){target_reference_parity = (parity < 0) ? -1 : +1;};
+   void ClearReferenceParity(){target_reference_parity = 0;};
+   int GetReferenceParityConstraint() const {return target_reference_parity;};
    uint64_t Vmon3JacobiHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t E12, uint64_t alpha, uint64_t Ncm, uint64_t Lcm);
    void Vmon3JacobiUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& E12, uint64_t& alpha, uint64_t& Ncm, uint64_t& Lcm);
    static uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);

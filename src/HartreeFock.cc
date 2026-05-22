@@ -7,6 +7,9 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
 #include <utility> // for make_pair
 //#include "gsl/gsl_sf_gamma.h" // for radial wave function
 #include "gsl/gsl_sf_laguerre.h" // for radial wave function
@@ -19,7 +22,8 @@
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), ms_for_output_3N(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true),discard_NO2B_from_3N(false)
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0),
+    freeze_occupations(true), target_reference_parity(0), discard_NO2B_from_3N(false)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -684,56 +688,283 @@ void HartreeFock::UpdateDensityMatrix_DIIS()
 //********************************************************************
 void HartreeFock::FillLowestOrbits()
 {
-  // vector of indices such that they point to elements of F(i,i)
-  // in ascending order of energy
   arma::mat F_hfbasis = C.t() * F * C;
-  arma::uvec sorted_indices = arma::stable_sort_index( F_hfbasis.diag() );
-  double refereceZ = modelspace->GetZref();
-  double refereceN = modelspace->GetAref() - refereceZ;
-  double placedZ = 0;
-  double placedN = 0;
+  arma::vec spe = F_hfbasis.diag();
+  arma::uvec sorted_indices = arma::stable_sort_index(spe);
+
+  double referenceZ = modelspace->GetZref();
+  double referenceN = modelspace->GetAref() - referenceZ;
+
+  // Old behavior: unconstrained filling by single-particle energy.
+  if (target_reference_parity == 0)
+  {
+    double placedZ = 0;
+    double placedN = 0;
+    std::vector<index_t> holeorbs_tmp;
+    std::vector<double> hole_occ_tmp;
+
+    for (auto i : sorted_indices)
+    {
+      Orbit& oi = modelspace->GetOrbit(i);
+
+      if (oi.tz2 < 0 and (placedZ < referenceZ))
+      {
+        holeorbs_tmp.push_back(i);
+        hole_occ_tmp.push_back(std::min(1.0, double(referenceZ - placedZ) / (oi.j2 + 1.0)));
+        placedZ = std::min(placedZ + oi.j2 + 1.0, referenceZ);
+      }
+      else if (oi.tz2 > 0 and (placedN < referenceN))
+      {
+        holeorbs_tmp.push_back(i);
+        hole_occ_tmp.push_back(std::min(1.0, double(referenceN - placedN) / (oi.j2 + 1.0)));
+        placedN = std::min(placedN + oi.j2 + 1.0, referenceN);
+      }
+
+      if ((placedZ >= referenceZ) and (placedN >= referenceN)) break;
+    }
+
+    std::set<index_t> newholes;
+    std::set<index_t> oldholes;
+
+    for (auto i : holeorbs_tmp) newholes.insert(i);
+    for (auto i : holeorbs) oldholes.insert(i);
+
+    if (oldholes != newholes)
+    {
+      std::cout << "Changing hole orbits. New holes:" << std::endl;
+      for (auto i : holeorbs_tmp) std::cout << i << " ";
+      std::cout << std::endl;
+
+      std::cout << "                     Old holes:" << std::endl;
+      for (auto i : holeorbs) std::cout << i << " ";
+      std::cout << std::endl;
+    }
+
+    holeorbs = arma::uvec(holeorbs_tmp);
+    hole_occ = arma::rowvec(hole_occ_tmp);
+
+    return;
+  }
+
+  // New behavior: choose the lowest spherical ensemble filling with
+  // the requested total reference parity.
+  //
+  // Minimize sum_i n_i e_i subject to fixed Z, fixed N, and
+  // (-1)^{sum_i n_i l_i} = target_reference_parity.
+  // Here 0 <= n_i <= 2j_i+1 is the integer particle count in orbit i.
+  // The result is converted to occ_i = n_i/(2j_i+1).
+  const double integer_tol = 1e-8;
+
+  int Zint = std::lround(referenceZ);
+  int Nint = std::lround(referenceN);
+
+  if (std::abs(referenceZ - Zint) > integer_tol or
+      std::abs(referenceN - Nint) > integer_tol)
+  {
+    throw std::runtime_error(
+        "HartreeFock::FillLowestOrbits: reference parity constraint requires integer Zref and Nref.");
+  }
+
+  struct FillingSolution
+  {
+    bool valid = false;
+    double energy = std::numeric_limits<double>::infinity();
+    std::vector<int> n_occ;
+  };
+
+  auto solve_species = [&](int tz2, int nparticles) -> std::array<FillingSolution, 2>
+  {
+    std::vector<index_t> species_orbits;
+
+    for (auto i : sorted_indices)
+    {
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 == tz2) species_orbits.push_back(i);
+    }
+
+    size_t norb = species_orbits.size();
+
+    struct Parent
+    {
+      int prev_n = -1;
+      int prev_parity = -1;
+      int k = -1;
+    };
+
+    const double INF = std::numeric_limits<double>::infinity();
+
+    std::vector<std::array<double, 2>> dp_old(nparticles + 1);
+    std::vector<std::array<double, 2>> dp_new(nparticles + 1);
+
+    for (int n = 0; n <= nparticles; ++n)
+    {
+      dp_old[n] = {INF, INF};
+      dp_new[n] = {INF, INF};
+    }
+
+    dp_old[0][0] = 0.0;
+
+    std::vector<std::vector<std::array<Parent, 2>>> parent(
+        norb + 1, std::vector<std::array<Parent, 2>>(nparticles + 1));
+
+    for (size_t io = 0; io < norb; ++io)
+    {
+      index_t orb_index = species_orbits[io];
+      Orbit& oi = modelspace->GetOrbit(orb_index);
+
+      int degeneracy = oi.j2 + 1;
+      int orbit_parity_bit = oi.l % 2;
+
+      for (int n = 0; n <= nparticles; ++n)
+      {
+        dp_new[n] = {INF, INF};
+      }
+
+      for (int n = 0; n <= nparticles; ++n)
+      {
+        for (int pi = 0; pi < 2; ++pi)
+        {
+          if (not std::isfinite(dp_old[n][pi])) continue;
+
+          int max_k = std::min(degeneracy, nparticles - n);
+
+          for (int k = 0; k <= max_k; ++k)
+          {
+            int n2 = n + k;
+            int pi2 = pi;
+
+            if (orbit_parity_bit == 1 and (k % 2 == 1))
+            {
+              pi2 ^= 1;
+            }
+
+            double e2 = dp_old[n][pi] + k * spe(orb_index);
+
+            if (e2 < dp_new[n2][pi2])
+            {
+              dp_new[n2][pi2] = e2;
+              parent[io + 1][n2][pi2] = Parent{n, pi, k};
+            }
+          }
+        }
+      }
+
+      dp_old.swap(dp_new);
+    }
+
+    std::array<FillingSolution, 2> out;
+
+    for (int target_bit = 0; target_bit < 2; ++target_bit)
+    {
+      if (not std::isfinite(dp_old[nparticles][target_bit])) continue;
+
+      FillingSolution sol;
+      sol.valid = true;
+      sol.energy = dp_old[nparticles][target_bit];
+      sol.n_occ.assign(modelspace->GetNumberOrbits(), 0);
+
+      int n = nparticles;
+      int pi = target_bit;
+
+      for (int io = int(norb); io > 0; --io)
+      {
+        Parent p = parent[io][n][pi];
+        index_t orb_index = species_orbits[io - 1];
+
+        sol.n_occ[orb_index] = p.k;
+
+        n = p.prev_n;
+        pi = p.prev_parity;
+      }
+
+      out[target_bit] = sol;
+    }
+
+    return out;
+  };
+
+  auto proton_solutions = solve_species(-1, Zint);
+  auto neutron_solutions = solve_species(+1, Nint);
+
+  int target_bit = (target_reference_parity < 0) ? 1 : 0;
+
+  double best_energy = std::numeric_limits<double>::infinity();
+  int best_p_bit = -1;
+  int best_n_bit = -1;
+
+  for (int p_bit = 0; p_bit < 2; ++p_bit)
+  {
+    for (int n_bit = 0; n_bit < 2; ++n_bit)
+    {
+      if ((p_bit ^ n_bit) != target_bit) continue;
+      if (not proton_solutions[p_bit].valid) continue;
+      if (not neutron_solutions[n_bit].valid) continue;
+
+      double e = proton_solutions[p_bit].energy + neutron_solutions[n_bit].energy;
+
+      if (e < best_energy)
+      {
+        best_energy = e;
+        best_p_bit = p_bit;
+        best_n_bit = n_bit;
+      }
+    }
+  }
+
+  if (best_p_bit < 0 or best_n_bit < 0)
+  {
+    throw std::runtime_error(
+        "HartreeFock::FillLowestOrbits: no valid filling found for requested reference parity.");
+  }
+
+  std::vector<int> n_occ(modelspace->GetNumberOrbits(), 0);
+
+  for (index_t i = 0; i < n_occ.size(); ++i)
+  {
+    n_occ[i] = proton_solutions[best_p_bit].n_occ[i]
+             + neutron_solutions[best_n_bit].n_occ[i];
+  }
+
   std::vector<index_t> holeorbs_tmp;
   std::vector<double> hole_occ_tmp;
 
   for (auto i : sorted_indices)
   {
+    int ni = n_occ[i];
+    if (ni == 0) continue;
 
     Orbit& oi = modelspace->GetOrbit(i);
-    if (oi.tz2 < 0 and (placedZ<refereceZ))
-    {
-      holeorbs_tmp.push_back(i);
-      hole_occ_tmp.push_back( std::min(1.0,double(refereceZ-placedZ)/(oi.j2+1.) ) );
-      placedZ = std::min(placedZ+oi.j2+1.,refereceZ);
-    }
-    else if (oi.tz2 > 0 and (placedN<refereceN))
-    {
-      holeorbs_tmp.push_back(i);
-      hole_occ_tmp.push_back( std::min(1.0,double(refereceN-placedN)/(oi.j2+1.) ) );
-      placedN = std::min(placedN+oi.j2+1.,refereceN);
-    }
+    double occ = double(ni) / double(oi.j2 + 1);
 
-    if((placedZ >= refereceZ) and (placedN >= refereceN) ) break;
+    holeorbs_tmp.push_back(i);
+    hole_occ_tmp.push_back(occ);
   }
 
   std::set<index_t> newholes;
   std::set<index_t> oldholes;
 
-  for (auto i : holeorbs_tmp ) newholes.insert(i);
-  for (auto i : holeorbs ) oldholes.insert(i);
-  if ( oldholes != newholes )
+  for (auto i : holeorbs_tmp) newholes.insert(i);
+  for (auto i : holeorbs) oldholes.insert(i);
+
+  if (oldholes != newholes)
   {
-     std::cout << "Changing hole orbits. New holes:" << std::endl;
-     for (auto i : holeorbs_tmp ) std::cout << i << " ";
-     std::cout << std::endl;
-     std::cout << "                     Old holes:" << std::endl;
-     for (auto i : holeorbs ) std::cout << i << " ";
-     std::cout << std::endl;
+    std::cout << "Changing hole orbits with parity-constrained filling." << std::endl;
+    std::cout << "Requested reference parity = " << target_reference_parity << std::endl;
+    std::cout << "Selected proton parity bit = " << best_p_bit
+              << " neutron parity bit = " << best_n_bit << std::endl;
+
+    std::cout << "New holes:" << std::endl;
+    for (auto i : holeorbs_tmp) std::cout << i << " ";
+    std::cout << std::endl;
+
+    std::cout << "Old holes:" << std::endl;
+    for (auto i : holeorbs) std::cout << i << " ";
+    std::cout << std::endl;
   }
 
-  holeorbs = arma::uvec( holeorbs_tmp );
-  hole_occ = arma::rowvec( hole_occ_tmp );
+  holeorbs = arma::uvec(holeorbs_tmp);
+  hole_occ = arma::rowvec(hole_occ_tmp);
 }
-
 
 
 

@@ -279,7 +279,7 @@ namespace BCH
   /// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
   /// \f[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \f]
   //*****************************************************************************************
-  constexpr size_t n_bernoulli_max = 30;  // B_0 through B_max
+  constexpr size_t n_bernoulli_max = 20;  // B_0 through B_max
 
   const std::vector<double>& BCH_Bernoulli_Coefficients()
   {
@@ -389,6 +389,9 @@ namespace BCH
       if (2 * ny * nxy < bch_product_threshold)
         break;
 
+      if ( ( k % 2 == 0 ) and  (2 * ny * nxy * bch_coeff[k] < bch_product_threshold * 1.e-2 ) )
+        break;
+      
       if (use_factorized_correction_BCH_Product)
       {
         chi2 = chi;   // keep nested commutator from two steps ago
