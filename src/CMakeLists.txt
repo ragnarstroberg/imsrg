@@ -1,6 +1,25 @@
 cmake_minimum_required(VERSION 3.18)
 set(INSTDIR $ENV{HOME})
-# set(BLA_VENDOR OpenBLAS)
+
+# -----------------------------------------------------------------------------
+# BLAS/LAPACK selection
+# -----------------------------------------------------------------------------
+# Default to OpenBLAS to avoid Intel MKL runtime-symbol/OpenMP conflicts on
+# heterogeneous clusters.  You can still override this at configure time, e.g.
+#
+#   cmake .. -DIMSRG_BLAS_VENDOR=Intel10_64lp_seq
+#
+# or provide explicit libraries, e.g.
+#
+#   cmake .. \
+#     -DIMSRG_BLAS_VENDOR=OpenBLAS \
+#     -DBLAS_LIBRARIES=/usr/lib/x86_64-linux-gnu/libopenblas.so \
+#     -DLAPACK_LIBRARIES=/usr/lib/x86_64-linux-gnu/libopenblas.so
+#
+set(IMSRG_BLAS_VENDOR "OpenBLAS" CACHE STRING "BLAS/LAPACK vendor used by CMake FindBLAS/FindLAPACK")
+set(BLA_VENDOR ${IMSRG_BLAS_VENDOR} CACHE STRING "CMake BLAS vendor" FORCE)
+set(BLA_PREFER_PKGCONFIG ON CACHE BOOL "Prefer pkg-config when finding BLAS/LAPACK")
+
 # set(CMAKE_SKIP_INSTALL_RPATH ON)
 # set(CMAKE_SYSTEM_PREFIX_PATH $ENV{EBROOTGENTOO})
 set(CMAKE_CURRENT_BINARY_DIR "../build")
@@ -33,6 +52,11 @@ project(imsrg++ VERSION 0.1.0)
 
 find_package(OpenMP REQUIRED)
 find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+message(STATUS "IMSRG_BLAS_VENDOR = ${IMSRG_BLAS_VENDOR}")
+message(STATUS "BLA_VENDOR = ${BLA_VENDOR}")
+message(STATUS "BLAS_LIBRARIES = ${BLAS_LIBRARIES}")
+message(STATUS "LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}")
 find_package(GSL REQUIRED)
 find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -496,6 +520,8 @@ target_link_libraries(
     ReferenceImplementations
     PhysicalConstants
     RPA
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
 )
 set_target_properties(IMSRG PROPERTIES SUFFIX ".so")
 set_target_properties(IMSRG PROPERTIES LINKER_LANGUAGE CXX)
