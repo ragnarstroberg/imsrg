@@ -278,7 +278,8 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
       {
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = etafunc( H->OneBody(i,a), denominator);
-         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+         Eta->OneBody(a,i) = etafunc( H->OneBody(a,i), -denominator);  // this also handles the non-scalar case where we get a phase
+//         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
    if (only_1b_eta)
@@ -298,9 +299,10 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
          {
             double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
             ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
-            Ket& bra = tbc_bra.GetKet(ibra);
-            Ket& ket = tbc_ket.GetKet(iket);
+            if (ch_bra == ch_ket ) // if ch_bra != ch_ket, we don't store the <ket|bra> matrix element.
+            {
+               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+            }
          }
       }
       /// For operators that aren't channel diagonal, we need to check if the pp and hh orbits sit in the other channels
@@ -312,9 +314,7 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
            {
               double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
               ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
-              ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
-              Ket& bra = tbc_bra.GetKet(ibra);
-              Ket& ket = tbc_ket.GetKet(iket);
+//              ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
            }
         }
       }
@@ -433,7 +433,8 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = etafunc(H->OneBody(i,a), denominator);
-         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+         Eta->OneBody(a,i) = etafunc(H->OneBody(a,i), -denominator); // This includes possible phase from reduced matrix element
+//         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
 
@@ -457,7 +458,10 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
          {
             double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
             ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+            if (ch_bra==ch_ket)
+            {
+              ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric. If ch_bra==ch_ket, the Wigner-Eckart phase is (-1)^(J-J)=+1
+            }
          }
       }
       // Decouple the valence space
@@ -467,7 +471,10 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
          {
             double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
             ETA2(ibra,iket) = etafunc(H2(ibra,iket) , denominator);
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+            if (ch_bra==ch_ket)
+            {
+               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+            }
          }
       }
       /// For operators that aren't channel diagonal, we need to check if the pp and hh orbits sit in the other channels
@@ -479,7 +486,7 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
             {
                double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
                ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
-               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
             }
          }
          // Decouple the valence space
@@ -489,7 +496,7 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
             {
                double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
                ETA2(ibra,iket) = etafunc(H2(ibra,iket) , denominator);
-               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
             }
          }
       }
@@ -812,8 +819,21 @@ Operator  Generator::GetHod_SingleRef(Operator& H )
          for ( auto& ibra : VectorUnion(tbc_bra.GetKetIndex_qq(), tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv() ) )
          {
             Hod2(ibra,iket) =  H2(ibra,iket);
-            Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+            if ( ch_bra==ch_ket)
+            {
+               Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+            }
          }
+      }
+      if (ch_bra != ch_ket)
+      {
+        for ( auto& ibra : tbc_bra.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
+        {
+           for ( auto& iket : VectorUnion(tbc_ket.GetKetIndex_qq(), tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv() ) )
+           {
+              Hod2(ibra,iket) =  H2(ibra,iket);
+           }
+        }
       }
     }
 
@@ -884,7 +904,10 @@ Operator Generator::GetHod_ShellModel(Operator& H)
          for ( auto& ibra :  VectorUnion( tbc_bra.GetKetIndex_vv(), tbc_bra.GetKetIndex_qv(), tbc_bra.GetKetIndex_qq() ) )
          {
             Hod2(ibra,iket) =  H2(ibra,iket);
-            Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+            if ( ch_bra == ch_ket )
+            {
+               Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+            }
          }
       }
 
@@ -894,9 +917,34 @@ Operator Generator::GetHod_ShellModel(Operator& H)
          for ( auto& ibra :  VectorUnion( tbc_bra.GetKetIndex_qv(), tbc_bra.GetKetIndex_qq() ) )
          {
             Hod2(ibra,iket) =  H2(ibra,iket);
-            Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+            if ( ch_bra == ch_ket )
+            {
+               Hod2(iket,ibra) =  H2(iket,ibra) ; // Eta needs to be antisymmetric
+            }
          }
       }
+
+      if ( ch_bra != ch_ket )
+      {
+        for ( auto& ibra : VectorUnion( tbc_bra.GetKetIndex_cc(), tbc_bra.GetKetIndex_vc() ) ) // cc means core-core ('holes' refer to the reference state)
+        {
+           for ( auto& iket :  VectorUnion( tbc_ket.GetKetIndex_vv(), tbc_ket.GetKetIndex_qv(), tbc_ket.GetKetIndex_qq() ) )
+           {
+              Hod2(ibra,iket) =  H2(ibra,iket);
+           }
+        }
+  
+        // Decouple the valence space
+        for ( auto& ibra :  tbc_bra.GetKetIndex_vv() ) // cc means core-core ('holes' refer to the reference state)
+        {
+           for ( auto& iket :  VectorUnion( tbc_ket.GetKetIndex_qv(), tbc_ket.GetKetIndex_qq() ) )
+           {
+              Hod2(ibra,iket) =  H2(ibra,iket);
+           }
+        }
+      }
+
+
 
     }
 
