@@ -1397,6 +1397,11 @@ double Operator::GetMP2_3BEnergy()
   //   if ( not ThreeBody.is_allocated ) return 0;
   if (not ThreeBody.IsAllocated())
     return 0;
+  if (not ThreeBody.Is_PN_Mode() )
+  {
+     std::cout << __FILE__ << " " << __func__ << "  needs 3N in pn format. Returning zero." << std::endl;
+     return 0;
+  }
   size_t nch3 = modelspace->GetNumberThreeBodyChannels();
 #pragma omp parallel for schedule(dynamic, 1) reduction(+ : Emp2)
   for (size_t ch3 = 0; ch3 < nch3; ch3++)

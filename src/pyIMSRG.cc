@@ -12,26 +12,9 @@
 
 namespace py = pybind11;
 
-//  Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
-//  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
-//  TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
+std::vector<size_t> ArmaToSTL_uint( const arma::uvec& IN) { std::vector<size_t> OUT(IN.begin(),IN.end()); return OUT;};
+std::vector<double> ArmaToSTL_double( const arma::vec& IN) { std::vector<double> OUT(IN.begin(),IN.end()); return OUT;};
 
-//  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
-//  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
-
-//  size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
-
-//  void ArmaMatPrint( arma::mat& self){ self.print();};
-//  void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
-
-//  void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
-//  void MS_SetRef(ModelSpace& self, const std::set<index_t>& ref){ self.SetReference( ref);};
-
-//  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
-//  Operator HF_GetNormalOrderedH(HartreeFock& self, int particle_rank=2){ return self.GetNormalOrderedH(particle_rank);};
-
-// BOOST_PYTHON_MODULE(pyIMSRG)
-// PYBIND11_PLUGIN(pyIMSRG)
 PYBIND11_MODULE(pyIMSRG, m)
 {
       m.doc() = "python bindings for IMSRG code";
@@ -49,30 +32,37 @@ PYBIND11_MODULE(pyIMSRG, m)
       py::class_<TwoBodyChannel>(m, "TwoBodyChannel")
           .def(py::init<>())
           .def("GetNumberKets", &TwoBodyChannel::GetNumberKets)
-          //      .def("GetLocalIndex",&TBCGetLocalIndex)
-          .def("GetLocalIndex", [](TwoBodyChannel &self, int p, int q)
-               { return self.GetLocalIndex(p, q); })
+          .def("GetLocalIndex", [](TwoBodyChannel &self, int p, int q)  { return self.GetLocalIndex(p, q); })
           .def("GetKetIndex", &TwoBodyChannel::GetKetIndex)
-          .def("GetKet", [](TwoBodyChannel &self, int i)
-               { return self.GetKet(i); })
-          .def("GetKetIndex_pp", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_pp(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_hh", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_hh(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_ph", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_ph(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_cc", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_cc(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_vc", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_vc(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_qc", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_qc(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_vv", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_vv(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_qv", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_qv(); std::vector<size_t> v(x.begin(),x.end()); return v; })
-          .def("GetKetIndex_qq", [](TwoBodyChannel &self)
-               { auto& x=self.GetKetIndex_qq(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+          .def("GetKet", [](TwoBodyChannel &self, int i)  { return self.GetKet(i); })
+          .def("GetKetIndex_pp", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_pp()); })
+          .def("GetKetIndex_hh", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_hh()); })
+          .def("GetKetIndex_ph", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_ph()); })
+          .def("GetKetIndex_cc", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_cc()); })
+          .def("GetKetIndex_vc", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_vc()); })
+          .def("GetKetIndex_qc", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_qc()); })
+          .def("GetKetIndex_vv", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_vv()); })
+          .def("GetKetIndex_qv", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_qv()); })
+          .def("GetKetIndex_qq", [](TwoBodyChannel &self) { return ArmaToSTL_uint( self.GetKetIndex_qq()); })
+//          .def("GetKetIndex_pp", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_pp(); std::vector<size_t> v(x.begin(),x.end()); return v; }
+//           )
+//          .def("GetKetIndex_hh", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_hh(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_ph", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_ph(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_cc", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_cc(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_vc", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_vc(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_qc", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_qc(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_vv", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_vv(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_qv", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_qv(); std::vector<size_t> v(x.begin(),x.end()); return v; })
+//          .def("GetKetIndex_qq", [](TwoBodyChannel &self)
+//               { auto& x=self.GetKetIndex_qq(); std::vector<size_t> v(x.begin(),x.end()); return v; })
           .def_readwrite("J", &TwoBodyChannel::J)
           .def_readwrite("parity", &TwoBodyChannel::parity)
           .def_readwrite("Tz", &TwoBodyChannel::Tz);
@@ -114,10 +104,9 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
           .def("SetTargetMass", &ModelSpace::SetTargetMass)
           .def("SetTargetZ", &ModelSpace::SetTargetZ)
-          .def(
-              "AddOrbit", [](ModelSpace &self, int n, int l, int j2, int tz2, double occ, int cvq)
-              { self.AddOrbit(n, l, j2, tz2, occ, cvq); },
-              py::arg("n"), py::arg("l"), py::arg("j2"), py::arg("tz2"), py::arg("occ"), py::arg("cvq"))
+          .def("AddOrbit", [](ModelSpace &self, int n, int l, int j2, int tz2, double occ, int cvq)
+              { self.AddOrbit(n, l, j2, tz2, occ, cvq); },      py::arg("n"), py::arg("l"), py::arg("j2"), py::arg("tz2"), py::arg("occ"), py::arg("cvq")
+           )
           .def("SetupKets", &ModelSpace::SetupKets)
           .def("Setup3bKets", &ModelSpace::Setup3bKets)
           .def("SetOcc", &ModelSpace::SetOcc, py::arg("n"), py::arg("l"), py::arg("j2"), py::arg("tz2"), py::arg("occ"))
@@ -143,40 +132,26 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetEmax",  &ModelSpace::GetEmax)
           .def("GetE2max", &ModelSpace::GetE2max)
           .def("GetE3max", &ModelSpace::GetE3max)
-          //      .def("GetOrbit", &MS_GetOrbit)
-          .def("GetOrbit", [](ModelSpace &self, int i)
-               { return self.GetOrbit(i); })
-          .def("GetKet", [](ModelSpace &self, int i)
-               { return self.GetKet(i); })
-          .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
-          .def("GetTwoBodyChannel", [](ModelSpace &self, int ch)
-               { return self.GetTwoBodyChannel(ch); })
+          .def("GetOrbit", [](ModelSpace &self, int i)  { return self.GetOrbit(i); })
+          .def("GetKet",   [](ModelSpace &self, int i)  { return self.GetKet(i); })
+          .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex, py::arg("J"),py::arg("parity"),py::arg("Tz"))
+          .def("GetTwoBodyChannel", [](ModelSpace &self, int ch)  { return self.GetTwoBodyChannel(ch); })
           .def("GetThreeBodyChannel", &ModelSpace::GetThreeBodyChannel)
           .def("GetThreeBodyChannelIndex", &ModelSpace::GetThreeBodyChannelIndex, py::arg("twoJ"), py::arg("parity"), py::arg("twoTz"))
           .def("Index2String", &ModelSpace::Index2String)
           .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
-          //      .def("SetReference", &MS_SetRef)
-          .def("SetReference", [](ModelSpace &self, const std::set<index_t> &ref)
-               { self.SetReference(ref); })
-          .def("SetReferenceStr", [](ModelSpace &self, std::string s)
-               { self.SetReference(s); })
-          .def("SetReferenceOcc", [](ModelSpace &self, std::map<index_t,double> &ref)
-               { self.SetReference(ref); })
+          .def("SetReference", [](ModelSpace &self, const std::set<index_t> &ref)  { self.SetReference(ref); })
+          .def("SetReferenceStr", [](ModelSpace &self, std::string s)   { self.SetReference(s); })
+          .def("SetReferenceOcc", [](ModelSpace &self, std::map<index_t,double> &ref)  { self.SetReference(ref); })
           .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
           .def("InitSingleSpecies", &ModelSpace::InitSingleSpecies)
-          .def(
-              "GetOrbitIndex", [](ModelSpace &self, int n, int l, int j, int tz)
-              { return self.GetOrbitIndex(n, l, j, tz); },
-              py::arg("n"), py::arg("l"), py::arg("j2"), py::arg("tz2"))
-          .def(
-              "GetOrbitIndex_fromString", [](ModelSpace &self, std::string s)
-              { return self.GetOrbitIndex(s); },
-              py::arg("orbstring"))
-          .def(
-              "GetOneBodyChannels", [](ModelSpace &self, int l, int j, int tz)
-              { return self.OneBodyChannels.at({l, j, tz}); },
-              py::arg("l"), py::arg("j2"), py::arg("tz2"))
-          //      .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
+          .def("GetOrbitIndex", [](ModelSpace &self, int n, int l, int j, int tz)
+              { return self.GetOrbitIndex(n, l, j, tz); },    py::arg("n"), py::arg("l"), py::arg("j2"), py::arg("tz2")
+           )
+          .def("GetOrbitIndex_fromString", [](ModelSpace &self, std::string s) { return self.GetOrbitIndex(s); },py::arg("orbstring") )
+          .def("GetOneBodyChannels", [](ModelSpace &self, int l, int j, int tz)
+              { return self.OneBodyChannels.at({l, j, tz}); },     py::arg("l"), py::arg("j2"), py::arg("tz2")
+           )
           .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
           .def("PreCalculateNineJ", &ModelSpace::PreCalculateNineJ)
           .def("PreCalculateMoshinsky",&ModelSpace::PreCalculateMoshinsky)
@@ -184,19 +159,20 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetSixJ",&ModelSpace::GetSixJ)
           .def("GetNineJ",&ModelSpace::GetNineJ)
           .def("NineJHash",&ModelSpace::NineJHash)
-//          .def("NineJUnHash",&ModelSpace::NineJUnHash)
-          .def("NineJUnHash",[](ModelSpace &self, uint64_t key){ uint64_t k1,k2,k3,k4,k5,k6,k7,k8,k9; self.NineJUnHash(key,k1,k2,k3,k4,k5,k6,k7,k8,k9); return py::make_tuple(k1,k2,k3,k4,k5,k6,k7,k8,k9);  }     )
+          .def("NineJUnHash",[](ModelSpace &self, uint64_t key)
+              { uint64_t k1,k2,k3,k4,k5,k6,k7,k8,k9; self.NineJUnHash(key,k1,k2,k3,k4,k5,k6,k7,k8,k9); return py::make_tuple(k1,k2,k3,k4,k5,k6,k7,k8,k9);  }
+           )
           .def("SetScalarFirstPass", &ModelSpace::SetScalarFirstPass)
           .def("SetScalar3bFirstPass", &ModelSpace::SetScalar3bFirstPass)
           .def("ClearVectors", &ModelSpace::ClearVectors)
           .def("Print", &ModelSpace::Print)
-//          .def("Print_CC", &ModelSpace::Print_CC)
           .def_readwrite("holes", &ModelSpace::holes)
           .def_readwrite("particles", &ModelSpace::particles)
           .def_readwrite("core", &ModelSpace::core)
           .def_readwrite("valence", &ModelSpace::valence)
           .def_readwrite("qspace", &ModelSpace::qspace)
           .def_readwrite("all_orbits", &ModelSpace::all_orbits);
+
 
       py::class_<Operator>(m, "Operator")
           .def(py::init<>())
@@ -251,14 +227,10 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("IsAntiHermitian", &Operator::IsAntiHermitian)
           .def("IsReduced", &Operator::IsReduced)
           .def("PrintOneBody", &Operator::PrintOneBody)
-          .def("PrintTwoBody", [](Operator &self)
-               { self.PrintTwoBody(); })
-          .def("PrintTwoBody_ch", [](Operator &self, int ch)
-               { self.PrintTwoBody(ch); })
-          .def("PrintTwoBody_chch", [](Operator &self, int ch_bra, int ch_ket)
-               { self.PrintTwoBody(ch_bra, ch_ket); })
+          .def("PrintTwoBody",      [](Operator &self) { self.PrintTwoBody(); } )
+          .def("PrintTwoBody_ch",   [](Operator &self, int ch) { self.PrintTwoBody(ch); })
+          .def("PrintTwoBody_chch", [](Operator &self, int ch_bra, int ch_ket)  { self.PrintTwoBody(ch_bra, ch_ket); })
           .def("PrintThreeBody", &Operator::PrintThreeBody )
-          //      .def("PrintTwoBody_ch", &Operator::PrintTwoBody)
           .def("MakeReduced", &Operator::MakeReduced)
           .def("MakeNotReduced", &Operator::MakeNotReduced)
           .def("MakeNormalized", &Operator::MakeNormalized)
@@ -269,130 +241,78 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetTRank", &Operator::GetTRank)
           .def("GetParity", &Operator::GetParity)
           .def("GetNumberLegs", &Operator::GetNumberLegs)
-//          .def("GetE3max", &Operator::GetE3max)
-//          .def("SetE3max", &Operator::SetE3max)
           .def("PrintTimes", &Operator::PrintTimes)
           .def("Size", &Operator::Size)
           .def("MakeNormalized", &Operator::MakeNormalized)
           .def("MakeUnNormalized", &Operator::MakeUnNormalized)
           .def("GetOneBodyChannel", &Operator::GetOneBodyChannel, py::arg("l"), py::arg("j2"), py::arg("tz2"))
-          //      .def("SetOneBodyME", &OpSetOneBodyME)
-          .def("SetOneBodyME", [](Operator &self, int i, int j, double v)
-               { self.OneBody(i, j) = v; })
+          .def("SetOneBodyME", [](Operator &self, int i, int j, double v) { self.OneBody(i, j) = v; }, py::arg("i"),py::arg("j"),py::arg("V") )
           .def("GetMP2_Energy", &Operator::GetMP2_Energy)
-          .def("GetMP2_3BEnergy", &Operator::GetMP2_Energy)
+          .def("GetMP2_3BEnergy", &Operator::GetMP2_3BEnergy)
           .def("GetMP3_Energy", &Operator::GetMP3_Energy)
           .def("GetPPHH_Ladders", &Operator::GetPPHH_Ladders)
-          .def(
-              "ReadBinary", [](Operator &self, std::string fname)
-              { std::ifstream ifs(fname,std::ios::binary);  self.ReadBinary(ifs); },
-              py::arg("filename"))
-          .def(
-              "WriteBinary", [](Operator &self, std::string fname)
-              { std::ofstream ofs(fname,std::ios::binary);  self.WriteBinary(ofs); },
-              py::arg("filename"))
-          //      .def("IsospinProject", &Operator::IsospinProject)
+          .def("ReadBinary",  [](Operator &self, std::string fname) { std::ifstream ifs(fname,std::ios::binary);  self.ReadBinary(ifs); },  py::arg("filename"))
+          .def("WriteBinary", [](Operator &self, std::string fname) { std::ofstream ofs(fname,std::ios::binary);  self.WriteBinary(ofs); }, py::arg("filename"))
           ;
 
       py::class_<arma::mat>(m, "ArmaMat")
           .def(py::init<>())
-          .def(
-              "zeros", [](arma::mat &self, int nrows, int ncols)
-              { self.zeros(nrows, ncols); },
-              py::arg("nrows"), py::arg("ncols"))
-          .def("Print", [](arma::mat &self)
-               { self.print(); }) //   &ArmaMatPrint)
-          .def("__str__", [](arma::mat &self)
-               { std::ostringstream oss; oss << self; return oss.str(); }) //   &ArmaMatPrint)
-          .def(
-              "save", [](arma::mat &self, std::string fname)
-              { self.save(fname); },
-              py::arg("filename"))
-          .def(
-              "load", [](arma::mat &self, std::string fname)
-              { self.load(fname); },
-              py::arg("filename"))
-          //      .def("t", &arma::mat::t) // transpose
-          .def("t", [](arma::mat &self)
-               {arma::mat x = self.t(); return x; }) // transpose
+          .def("zeros", [](arma::mat &self, int nrows, int ncols)  { self.zeros(nrows, ncols); },   py::arg("nrows"), py::arg("ncols"))
+          .def("Print", [](arma::mat &self)  { self.print(); })
+          .def("__str__", [](arma::mat &self)  { std::ostringstream oss; oss << self; return oss.str(); })
+          .def("save", [](arma::mat &self, std::string fname)  { self.save(fname); }, py::arg("filename"))
+          .def("load", [](arma::mat &self, std::string fname) { self.load(fname); },  py::arg("filename"))
+          .def("t", [](arma::mat &self) {arma::mat x = self.t(); return x; }) // transpose
           .def(py::self *= double())
-          //      .def(py::self * double())
-          //      .def(double() * py::self)
-          //      .def(double() * py::self, [](double x, arma::mat& self){arma::mat out = x * self; return out;} )
           .def(py::self /= double())
           .def(py::self / double())
-          //      .def(py::self += ArmaMat())
-          //      .def(py::self + ArmaMat())
-          //      .def(py::self -= ArmaMat())
-          //      .def(py::self - ArmaMat())
-          .def(
-              "__mul__", [](const arma::mat &A, const arma::mat &B)
-              {arma::mat C = A * B; return C; },
-              py::is_operator())
-          .def(
-              "__mul__", [](const arma::mat &B, float A)
-              {arma::mat C = A * B; return C; },
-              py::is_operator())
-          //      .def("__mul__", [](float A, const arma::mat& B){arma::mat C = A * B; return C;}, py::is_operator() )
-          .def(
-              "__add__", [](const arma::mat &A, const arma::mat &B)
-              {arma::mat C = A + B; return C; },
-              py::is_operator())
-          .def(
-              "__sub__", [](const arma::mat &A, const arma::mat &B)
-              {arma::mat C = A - B; return C; },
-              py::is_operator())
-          .def(
-              "__call__", [](arma::mat &self, const int i, const int j)
-              { return &self(i, j); },
-              py::is_operator())
-          .def(
-              "Set", [](arma::mat &self, const int i, const int j, double x)
-              { self(i, j) = x; },
-              py::arg("i"), py::arg("j"), py::arg("matel"))
-          .def("Getn_rows", [](arma::mat &self)
-               { return self.n_rows; })
-          .def("Getn_cols", [](arma::mat &self)
-               { return self.n_cols; })
-          .def("Schur_Prod", [](arma::mat &self, arma::mat &other)
-               { arma::mat out = self % other;return out; })
-          .def("Norm", [](arma::mat &self)
-               { return arma::norm(self, "fro"); })
-          .def("trace", [](arma::mat &self)
-               { double t =arma::trace(self); return t; })
-          .def("sum", [](arma::mat &self)
-               {double s= arma::accu(self); return s; });
+          .def("__mul__", [](const arma::mat &A, const arma::mat &B) {arma::mat C = A * B; return C; },  py::is_operator())
+          .def("__mul__", [](const arma::mat &B, float A) {arma::mat C = A * B; return C; }, py::is_operator())
+          .def("__add__", [](const arma::mat &A, const arma::mat &B){arma::mat C = A + B; return C; },  py::is_operator())
+          .def("__sub__", [](const arma::mat &A, const arma::mat &B) {arma::mat C = A - B; return C; },  py::is_operator())
+          .def("__call__", [](arma::mat &self, const int i, const int j) { return &self(i, j); },  py::is_operator())
+          .def("Set", [](arma::mat &self, const int i, const int j, double x) { self(i, j) = x; },  py::arg("i"), py::arg("j"), py::arg("matel"))
+          .def("Getn_rows", [](arma::mat &self)  { return self.n_rows; })
+          .def("Getn_cols", [](arma::mat &self)  { return self.n_cols; })
+          .def("Schur_Prod", [](arma::mat &self, arma::mat &other) { arma::mat out = self % other;return out; })
+          .def("Norm", [](arma::mat &self)  { return arma::norm(self, "fro"); })
+          .def("trace", [](arma::mat &self) { double t =arma::trace(self); return t; })
+          .def("sum", [](arma::mat &self)   { double s= arma::accu(self); return s; })
+          ;
 
       py::class_<TwoBodyME>(m, "TwoBodyME")
           .def(py::init<>())
-          //      .def("GetTBME_J", TB_GetTBME_J)
-          //      .def("GetTBME_J_norm", TB_GetTBME_J_norm)
           .def("GetTBME_J", [](TwoBodyME &self, int Jbra, int Jket, int a, int b, int c, int d)
-               { return self.GetTBME_J(Jbra, Jket, a, b, c, d); })
+               { return self.GetTBME_J(Jbra, Jket, a, b, c, d); }
+           )
           .def("GetTBME_J_norm", [](TwoBodyME &self, int Jbra, int Jket, int a, int b, int c, int d)
-               { return self.GetTBME_J_norm(Jbra, Jket, a, b, c, d); })
-          .def(
-              "GetTBMEmonopole", [](TwoBodyME &self, int a, int b, int c, int d)
-              { return self.GetTBMEmonopole(a, b, c, d); },
-              py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"))
+               { return self.GetTBME_J_norm(Jbra, Jket, a, b, c, d); }
+           )
+          .def("GetTBMEmonopole", [](TwoBodyME &self, int a, int b, int c, int d)
+              { return self.GetTBMEmonopole(a, b, c, d); },     py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d")
+           )
           .def("GetTBME_norm", [](TwoBodyME &self, int ch_bra, int ch_ket, int a, int b, int c, int d)
-               { return self.GetTBME_norm(ch_bra, ch_ket, a, b, c, d); })
-          .def(
-              "GetTBMEmonopole_norm", [](TwoBodyME &self, int a, int b, int c, int d)
-              { return self.GetTBMEmonopole_norm(a, b, c, d); },
-              py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"))
-          .def(
-              "GetChannelMatrix", [](TwoBodyME &self, int J, int p, int Tz)
+               { return self.GetTBME_norm(ch_bra, ch_ket, a, b, c, d); }
+           )
+          .def("GetTBMEmonopole_norm", [](TwoBodyME &self, int a, int b, int c, int d)
+              { return self.GetTBMEmonopole_norm(a, b, c, d); },      py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d")
+           )
+          .def("GetChannelMatrix", [](TwoBodyME &self, int J, int p, int Tz)
               { size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); return self.GetMatrix(ch,ch); },
-              py::arg("J"), py::arg("parity"), py::arg("Tz"))
-          .def("PrintAll", [](TwoBodyME &self)
-               { for (auto& it : self.MatEl){ if (it.second.n_rows>0) { std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;};  } ; })
+              py::arg("J"), py::arg("parity"), py::arg("Tz")
+           )
+          .def("GetTBMEnorm_chij", [](TwoBodyME &self, int ch_bra, int ch_ket, size_t ibra, size_t iket)
+              { return self.GetTBME_norm(ch_bra, ch_ket, ibra, iket); }
+           )
+          .def("SetTBME_chij", [](TwoBodyME &self, int ch_bra, int ch_ket, size_t ibra, size_t iket, double tbme)
+               { self.SetTBME(ch_bra, ch_ket, ibra, iket, tbme); }
+           )
+          .def("PrintAll", &TwoBodyME::PrintAllMatricesTerse )
+//          .def("PrintAll", [](TwoBodyME &self)
+//               { for (auto& it : self.MatEl){ if (it.second.n_rows>0) { std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;};  } ; }
+//           )
           .def("PrintMatrix", &TwoBodyME::PrintMatrix, py::arg("ch_bra"), py::arg("ch_ket"))
           .def("Erase", &TwoBodyME::Erase)
-          .def("GetTBMEnorm_chij", [](TwoBodyME &self, int ch_bra, int ch_ket, size_t ibra, size_t iket)
-               { return self.GetTBME_norm(ch_bra, ch_ket, ibra, iket); })
-          .def("SetTBME_chij", [](TwoBodyME &self, int ch_bra, int ch_ket, size_t ibra, size_t iket, double tbme)
-               { self.SetTBME(ch_bra, ch_ket, ibra, iket, tbme); })
           .def("Norm", &TwoBodyME::Norm)
           .def(py::self *= double())
           .def(double() * py::self)
@@ -400,45 +320,25 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def(py::self + TwoBodyME())
           .def(py::self += TwoBodyME())
           .def(py::self - TwoBodyME())
-          .def(py::self -= TwoBodyME());
+          .def(py::self -= TwoBodyME())
+          ;
 
-      //   py::class_<ThreeBodyME>(m,"ThreeBodyME")
-      //      .def(py::init<>())
-      //      .def("SetME", &ThreeBodyME::SetME)
-      //      .def("GetME", &ThreeBodyME::GetME)
-      //      .def("GetME_pn", &ThreeBodyME::GetME_pn)
-      //      .def("RecouplingCoefficient",&ThreeBodyME::RecouplingCoefficient)
-      //      .def_readonly_static("ABC",&ThreeBodyME::ABC)
-      //      .def_readonly_static("BCA",&ThreeBodyME::BCA)
-      //      .def_readonly_static("CAB",&ThreeBodyME::CAB)
-      //      .def_readonly_static("ACB",&ThreeBodyME::ACB)
-      //      .def_readonly_static("CBA",&ThreeBodyME::CBA)
-      //      .def_readonly_static("BAC",&ThreeBodyME::BAC)
-      //   ;
 
-      //   py::class_<ThreeBodyMEpn>(m,"ThreeBodyMEpn")
       py::class_<ThreeBodyME>(m, "ThreeBodyME")
           .def(py::init<>())
-          //      .def("SetME", &ThreeBodyMEpn::SetME)
-          //      .def("GetME", &ThreeBodyME::GetME)
-          .def(
-              "GetME_iso", [](ThreeBodyME &self, int Jab, int Jde, int twoJ, int tab, int tde, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f)
+          .def("GetME_iso",
+              [](ThreeBodyME &self, int Jab, int Jde, int twoJ, int tab, int tde, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f)
               { return self.GetME_iso(Jab, Jde, twoJ, tab, tde, twoTabc, twoTdef, a, b, c, d, e, f); },
-              py::arg("Jab"), py::arg("Jde"), py::arg("twoJ"), py::arg("tab"), py::arg("tde"), py::arg("twoTabc"), py::arg("twoTdef"), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f"))
-          //      .def("SetME_pn", &ThreeBodyME::SetME_pn)
-          // .def("GetME_pn", &ThreeBodyME::GetME_pn)
-            .def(
-                "GetME_pn", 
-                [](ThreeBodyME &self, int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) {
-                    return self.GetME_pn(Jab_in, Jde_in, twoJ, a, b, c, d, e, f);
-                },
+              py::arg("Jab"), py::arg("Jde"), py::arg("twoJ"), py::arg("tab"), py::arg("tde"), py::arg("twoTabc"), py::arg("twoTdef"),
+              py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f")
+           )
+          .def("GetME_pn", 
+                [](ThreeBodyME &self, int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f)
+                { return self.GetME_pn(Jab_in, Jde_in, twoJ, a, b, c, d, e, f);},
                 py::arg("Jab_in"), py::arg("Jde_in"), py::arg("twoJ"), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f")
-            )
-            .def(
-                "GetME_pn_tensor", 
-                [](ThreeBodyME &self, int Jab_in, int j0, int Jde_in, int j1, int a, int b, int c, int d, int e, int f) {
-                 return self.GetME_pn(Jab_in, j0, Jde_in, j1, a, b, c, d, e, f);
-              },
+           )
+          .def("GetME_pn_tensor", [](ThreeBodyME &self, int Jab_in, int j0, int Jde_in, int j1, int a, int b, int c, int d, int e, int f)
+               {return self.GetME_pn(Jab_in, j0, Jde_in, j1, a, b, c, d, e, f); },
               py::arg("Jab_in"), py::arg("j0"), py::arg("Jde_in"), py::arg("j1"), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"), py::arg("e"), py::arg("f")
            )
           .def("SetME_pn_ch", &ThreeBodyME::SetME_pn_ch) // Hopefully not a bad idea to expose this...
@@ -446,8 +346,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("RecouplingCoefficient", &ThreeBodyME::RecouplingCoefficient)
           .def("TransformToPN", &ThreeBodyME::TransformToPN)
           .def("SwitchToPN_and_discard", &ThreeBodyME::SwitchToPN_and_discard)
-          //      .def("Print",&ThreeBodyME::Print)
-          //      .def("PrintAll",&ThreeBodyME::PrintAll)
           .def("Erase", &ThreeBodyME::Erase)
           .def("SetMode", &ThreeBodyME::SetMode)
           .def("IsAllocated",&ThreeBodyME::IsAllocated)
@@ -458,13 +356,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def(py::self -= ThreeBodyME(), py::is_operator() )
           .def(py::self *= double())
           .def(py::self + ThreeBodyME(), py::is_operator() )
-//          .def(py::self - ThreeBodyME())
-          //      .def_readonly_static("ABC",&ThreeBodyME::ABC)
-          //      .def_readonly_static("BCA",&ThreeBodyME::BCA)
-          //      .def_readonly_static("CAB",&ThreeBodyME::CAB)
-          //      .def_readonly_static("ACB",&ThreeBodyME::ACB)
-          //      .def_readonly_static("CBA",&ThreeBodyME::CBA)
-          //      .def_readonly_static("BAC",&ThreeBodyME::BAC)
           ;
 
       py::class_<ReadWrite>(m, "ReadWrite")
@@ -504,14 +395,8 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("WriteTensorTwoBody", &ReadWrite::WriteTensorTwoBody)
           .def("WriteTokyo", &ReadWrite::WriteTokyo, py::arg("op"), py::arg("filename"), py::arg("mode"))
           .def("WriteTensorTokyo", &ReadWrite::WriteTensorTokyo, py::arg("filename"), py::arg("op"))
-          .def(
-              "ReadTokyo", [](ReadWrite &self, std::string s, Operator &op)
-              { self.ReadTokyo(s, op); },
-              py::arg("file_in"), py::arg("op"))
-          .def(
-              "ReadTensorTokyo", [](ReadWrite &self, std::string s, Operator &op)
-              { self.ReadTensorTokyo(s, op); },
-              py::arg("file_in"), py::arg("op"))
+          .def("ReadTokyo", [](ReadWrite &self, std::string s, Operator &op) { self.ReadTokyo(s, op); }, py::arg("file_in"), py::arg("op"))
+          .def("ReadTensorTokyo", [](ReadWrite &self, std::string s, Operator &op) { self.ReadTensorTokyo(s, op); },  py::arg("file_in"), py::arg("op"))
           .def("ReadOperator2b_Miyagi", &ReadWrite::ReadOperator2b_Miyagi, py::arg("filename"), py::arg("modelspace") )
           .def("WriteOneBody_Oslo", &ReadWrite::WriteOneBody_Oslo)
           .def("WriteTwoBody_Oslo", &ReadWrite::WriteTwoBody_Oslo)
@@ -530,7 +415,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("ReadDarmstadt_2bodyRel", &ReadWrite::ReadDarmstadt_2bodyRel)
           .def("ReadH2_2body", &ReadWrite::ReadH2_2body)
           .def("Read2bCurrent_Navratil", &ReadWrite::Read2bCurrent_Navratil, py::arg("filename"),py::arg("Op"))
-          //      .def("WriteOmega",&ReadWrite::WriteOmega, py::arg("basename"),py::arg("scratch_dir"),py::arg("nOmegas"))
           ;
 
       py::class_<HartreeFock>(m, "HartreeFock")
@@ -538,16 +422,10 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Solve", &HartreeFock::Solve)
           .def("TransformToHFBasis", &HartreeFock::TransformToHFBasis)
           .def("GetHbare", &HartreeFock::GetHbare)
-          //      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
-          //      .def("GetNormalOrderedH",&HF_GetNormalOrderedH, py::arg("particle_rank")=2 )
-          .def(
-              "GetNormalOrderedH", [](HartreeFock &self, int pRank)
-              { return self.GetNormalOrderedH(pRank); },
-              py::arg("particle_rank") = 2)
-          .def(
-              "GetNormalOrderedH_Cin", [](HartreeFock &self, arma::mat &C, int pRank)
-              { return self.GetNormalOrderedH(C, pRank); },
-              py::arg("C"), py::arg("particle_rank") = 2)
+          .def("GetNormalOrderedH", [](HartreeFock &self, int pRank) { return self.GetNormalOrderedH(pRank); }, py::arg("particle_rank") = 2)
+          .def("GetNormalOrderedH_Cin", [](HartreeFock &self, arma::mat &C, int pRank) { return self.GetNormalOrderedH(C, pRank); },
+                py::arg("C"), py::arg("particle_rank") = 2
+           )
           .def("GetOmega", &HartreeFock::GetOmega)
           .def("PrintSPE", &HartreeFock::PrintSPE)
           .def("PrintSPEandWF", &HartreeFock::PrintSPEandWF)
@@ -567,12 +445,10 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("UnFreezeOccupations", &HartreeFock::UnFreezeOccupations)
           .def_static("Vmon3Hash", &HartreeFock::Vmon3Hash)
           // Modifying arguments which were passed by reference causes trouble in python, so instead we bind a lambda function and return a tuple
-          .def_static("Vmon3UnHash", [](uint64_t key)
-                      { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f); })
+          .def_static("Vmon3UnHash", [](uint64_t key) { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f); })
           .def_readonly("EHF", &HartreeFock::EHF)
           .def_readonly("F", &HartreeFock::F)     // Fock matrix
           .def_readonly("rho", &HartreeFock::rho) // density matrix
-                                                  //      .def_readonly("C",&HartreeFock::C) // Unitary transformation
           .def_readwrite("C", &HartreeFock::C)    // Unitary transformation
           .def_readwrite("Vmon3_keys", &HartreeFock::Vmon3_keys)
           .def_readwrite("Vmon3", &HartreeFock::Vmon3);
@@ -595,15 +471,11 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def_readwrite("C_HF2NAT", &HFMBPT::C_HF2NAT) // Unitary transformation
           ;
 
-      // Define which overloaded version of IMSRGSolver::Transform I want to expose
-      //   Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
 
       py::class_<IMSRGSolver>(m, "IMSRGSolver")
           .def(py::init<Operator &>())
           .def("Solve", &IMSRGSolver::Solve)
-          //      .def("Transform",Transform_ref)
-          .def("Transform", [](IMSRGSolver &self, Operator &op)
-               { return self.Transform(op); })
+          .def("Transform", [](IMSRGSolver &self, Operator &op)  { return self.Transform(op); })
           .def("InverseTransform", &IMSRGSolver::InverseTransform)
           .def("SetFlowFile", &IMSRGSolver::SetFlowFile)
           .def("SetMethod", &IMSRGSolver::SetMethod)
@@ -617,20 +489,15 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetODETolerance", &IMSRGSolver::SetODETolerance)
           .def("Reset", &IMSRGSolver::Reset)
           .def("SetGenerator", &IMSRGSolver::SetGenerator)
-          .def("SetOnly2bEta", [](IMSRGSolver &self, bool tf)
-               { self.GetGenerator().SetOnly2bEta(tf); })
+          .def("SetOnly2bEta", [](IMSRGSolver &self, bool tf) { self.GetGenerator().SetOnly2bEta(tf); })
           .def("SetDenominatorCutoff", &IMSRGSolver::SetDenominatorCutoff)
           .def("SetDenominatorDelta", &IMSRGSolver::SetDenominatorDelta)
           .def("SetDenominatorDeltaOrbit", &IMSRGSolver::SetDenominatorDeltaOrbit)
           .def("SetDenominatorPartitioning", &IMSRGSolver::SetDenominatorPartitioning) // Can be Epstein_Nesbet (default) or Moller_Plesset
           .def("GetSystemDimension", &IMSRGSolver::GetSystemDimension)
-          // .def("GetOmega", &IMSRGSolver::GetOmega)
-          .def("GetOmega", py::overload_cast<int>(&IMSRGSolver::GetOmega), py::arg("index"),
-               "Get an Operator at a specific index")
-          .def("GetOmega", py::overload_cast<>(&IMSRGSolver::GetOmega),
-               "Get the entire deque of Operators")
+          .def("GetOmega", py::overload_cast<int>(&IMSRGSolver::GetOmega), py::arg("index"), "Get an Operator at a specific index")
+          .def("GetOmega", py::overload_cast<>(&IMSRGSolver::GetOmega),  "Get the entire deque of Operators")
           .def("SetOmega", &IMSRGSolver::SetOmega, py::arg("index"), py::arg("Omega") )
-          //      .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
           .def("GetEta", &IMSRGSolver::GetEta)
           .def("GetH_s", &IMSRGSolver::GetH_s)
           .def("SetH_s", &IMSRGSolver::SetH_s)
@@ -638,9 +505,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetMagnusAdaptive", &IMSRGSolver::SetMagnusAdaptive)
           .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
           .def("SetHunterGatherer", &IMSRGSolver::SetHunterGatherer)
-          //          .def("SetPerturbativeTriples", &IMSRGSolver::SetPerturbativeTriples)
-          //          .def("GetPerturbativeTriples", &IMSRGSolver::GetPerturbativeTriples)
-          //          .def("CalculatePerturbativeTriples", &IMSRGSolver::CalculatePerturbativeTriples)
           .def("CalculatePerturbativeTriples", py::overload_cast<>(&IMSRGSolver::CalculatePerturbativeTriples))
           .def("CalculatePerturbativeTriples", py::overload_cast<Operator &>(&IMSRGSolver::CalculatePerturbativeTriples))
           .def("AddOperator", &IMSRGSolver::AddOperator)
@@ -649,15 +513,13 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("UpdateEta", &IMSRGSolver::UpdateEta)
           .def("GetNOmegaWritten", &IMSRGSolver::GetNOmegaWritten)
           .def("GetOmegaSize", &IMSRGSolver::GetOmegaSize)
-          //      .def("GetScratchDir",[](IMSRGSolver& self){ return self.rw->GetScratchDir();} )
-          .def("GetScratchDir", [](IMSRGSolver &self)
-               { return self.scratchdir; })
+          .def("GetScratchDir", [](IMSRGSolver &self)  { return self.scratchdir; })
           .def("FlushOmegaToScratch", &IMSRGSolver::FlushOmegaToScratch)
           .def_readwrite("generator", &IMSRGSolver::generator)
           .def_readwrite("Eta", &IMSRGSolver::Eta)
           .def_readwrite("n_omega_written", &IMSRGSolver::n_omega_written) // I'm not sure I like just directly exposing this...
-          .def("SetOnly1bEta", [](IMSRGSolver &self, bool tf)
-               { self.GetGenerator().SetOnly1bEta(tf); });
+          .def("SetOnly1bEta", [](IMSRGSolver &self, bool tf) { self.GetGenerator().SetOnly1bEta(tf); })
+          ;
 
       py::class_<IMSRGSolverPV, IMSRGSolver>(m, "IMSRGSolverPV")
           .def(py::init<Operator &, Operator &>())
@@ -780,14 +642,6 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("comm133st", &Commutator::comm133st);
        Commutator.def("comm132st", &Commutator::comm132st);
 
-//      Commutator.def("comm223_231_Factorization", &Commutator::comm223_231_Factorization);
-//      Commutator.def("comm223_232_Factorization", &Commutator::comm223_232_Factorization);
-
-//      Commutator.def("comm223_231_Factorization_slow", &Commutator::comm223_231_Factorization_slow);
-//      Commutator.def("comm223_232_Factorization_slow", &Commutator::comm223_232_Factorization_slow);
-
-
-//       BCH.def("EstimateBCHError", &BCH::EstimateBCHError); // This doesn't really work
 
        py::module FactorizedDoubleCommutator = Commutator.def_submodule("FactorizedDoubleCommutator", "FactorizedDoubleCommutator namespace");
         FactorizedDoubleCommutator.def("comm223_231",      &Commutator::FactorizedDoubleCommutator::comm223_231);
@@ -798,9 +652,6 @@ PYBIND11_MODULE(pyIMSRG, m)
         FactorizedDoubleCommutator.def("comm223_232_chi2b",        &Commutator::FactorizedDoubleCommutator::comm223_232_chi2b);
         FactorizedDoubleCommutator.def("comm223_232_chi1b",        &Commutator::FactorizedDoubleCommutator::comm223_232_chi1b);
 
-//        FactorizedDoubleCommutator.def("comm223_231_slow", &Commutator::FactorizedDoubleCommutator::comm223_231_slow);
-//        FactorizedDoubleCommutator.def("comm223_232_slow", &Commutator::FactorizedDoubleCommutator::comm223_232_slow);
-//        FactorizedDoubleCommutator.def("UseSlowVersion",   &Commutator::FactorizedDoubleCommutator::UseSlowVersion);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_1b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_1b);
         FactorizedDoubleCommutator.def("SetUse_GooseTank_2b",      &Commutator::FactorizedDoubleCommutator::SetUse_GooseTank_2b);
         FactorizedDoubleCommutator.def("SetUse_1b_Intermediates",      &Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates);
@@ -906,27 +757,29 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SolveRPA", &RPA::SolveRPA)
           .def("TransitionToGroundState", &RPA::TransitionToGroundState, py::arg("OpIn"), py::arg("mu"))
           .def("PVCouplingEffectiveCharge", &RPA::PVCouplingEffectiveCharge, py::arg("OpIn"), py::arg("k"), py::arg("l"))
-          .def("GetEnergies", [](RPA &self)
-               {arma::vec vals = self.GetEnergies(); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec; })
-          .def("GetX", [](RPA &self, size_t i)
-               {arma::vec vals = self.GetX(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec; })
-          .def("GetY", [](RPA &self, size_t i)
-               {arma::vec vals = self.GetY(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec; })
-          .def("PrintA", [](RPA &self)
-               { std::cout << self.A << std::endl; })
-          .def("PrintB", [](RPA &self)
-               { std::cout << self.B << std::endl; })
+          .def("GetEnergies", [](RPA &self) { return ArmaToSTL_double( self.GetEnergies() ); } )
+          .def("GetX", [](RPA &self, size_t i) { return ArmaToSTL_double( self.GetX(i) ); } )
+          .def("GetY", [](RPA &self, size_t i) { return ArmaToSTL_double( self.GetY(i) ); } )
+//          .def("GetEnergies", [](RPA &self)
+//               {arma::vec vals = self.GetEnergies(); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec; }
+//           )
+//          .def("GetX", [](RPA &self, size_t i)
+//               {arma::vec vals = self.GetX(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec; }
+//           )
+//          .def("GetY", [](RPA &self, size_t i)
+//               {arma::vec vals = self.GetY(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec; }
+//           )
+          .def("PrintA", [](RPA &self) { std::cout << self.A << std::endl; })
+          .def("PrintB", [](RPA &self) { std::cout << self.B << std::endl; })
           .def("GetEgs", &RPA::GetEgs)
           .def("StraightforwardCPEffectiveCharge", &RPA::StraightforwardCPEffectiveCharge, py::arg("OpIn"), py::arg("i"), py::arg("j"));
           ;
 
       py::class_<UnitTest>(m, "UnitTest")
-          //      .def(py::init<>())
           .def(py::init<ModelSpace &>())
           .def("SetRandomSeed", &UnitTest::SetRandomSeed)
           .def("RandomOp", &UnitTest::RandomOp, py::arg("modelspace"), py::arg("jrank"), py::arg("tz"), py::arg("parity"), py::arg("particle_rank"), py::arg("hermitian"))
           .def("TestCommutators", &UnitTest::TestCommutators)
-//          .def("TestCommutators_Tensor", &UnitTest::TestCommutators_Tensor)
           .def("TestCommutators_Tensor", &UnitTest::TestCommutators_Tensor, py::arg("X"),py::arg("Y") )
           .def("TestCommutators_IsospinChanging", &UnitTest::TestCommutators_IsospinChanging)
           .def("TestCommutators_ParityChanging", &UnitTest::TestCommutators_ParityChanging)
@@ -980,10 +833,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm222_pp_hhss", &UnitTest::Mscheme_Test_comm222_pp_hhss)
           .def("Mscheme_Test_comm222_phss", &UnitTest::Mscheme_Test_comm222_phss)
 
-//          .def("Mscheme_Test_comm122st", &UnitTest::Mscheme_Test_comm122st)
-          //
-          //      .def("Mscheme_Test_comm222_pp_hh_221ss", &UnitTest::Mscheme_Test_comm222_pp_hh_221ss)
-          ///
           .def("Mscheme_Test_comm330ss", &UnitTest::Mscheme_Test_comm330ss)
           .def("Mscheme_Test_comm331ss", &UnitTest::Mscheme_Test_comm331ss)
           .def("Mscheme_Test_comm231ss", &UnitTest::Mscheme_Test_comm231ss)
@@ -997,7 +846,6 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm233_phss", &UnitTest::Mscheme_Test_comm233_phss)
           .def("Mscheme_Test_comm333_ppp_hhhss", &UnitTest::Mscheme_Test_comm333_ppp_hhhss)
           .def("Mscheme_Test_comm333_pph_hhpss", &UnitTest::Mscheme_Test_comm333_pph_hhpss)
-          //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
 
           // Tensor commutator with 3b
           .def("Mscheme_Test_comm331st", &UnitTest::Mscheme_Test_comm331st)
@@ -1014,19 +862,11 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("Mscheme_Test_comm333_ppp_hhhst", &UnitTest::Mscheme_Test_comm333_ppp_hhhst)
           .def("Mscheme_Test_comm333_pph_hhpst", &UnitTest::Mscheme_Test_comm333_pph_hhpst)
 
-          .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) // Op, a,ma, b,mb...
-          .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)                                                                          // Op, a,ma, b,mb...
-          .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b)                                                                          // Op, a,ma, b,mb...
-
+          .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) 
+          .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)  
+          .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) 
           ;
 
-      //  py::class_<SymmMatrix<double>>(m,"SymmMatrix")
-      //     .def(py::init<size_t>())
-      //     .def(py::init<size_t,int>())
-      //     .def("Get",&SymmMatrix<double>::Get)
-      //     .def("Put",&SymmMatrix<double>::Put)
-      //     .def("FullMatrix",&SymmMatrix<double>::FullMatrix)
-      //  ;
 
       m.def("BuildVersion", version::BuildVersion);
 
@@ -1048,9 +888,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       m.def("LdotS_Op", imsrg_util::LdotS_Op);
       m.def("HO_density", imsrg_util::HO_density);
       m.def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
-//      m.def("GetOccupations", imsrg_util::GetOccupations);
       m.def("GetDensity", imsrg_util::GetDensity);
-//      m.def("CommutatorTest", imsrg_util::CommutatorTest);
       m.def("Calculate_p1p2_all", imsrg_util::Calculate_p1p2_all);
       m.def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
       m.def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
