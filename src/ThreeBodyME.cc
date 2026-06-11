@@ -18,17 +18,17 @@
 //{}
 
 ThreeBodyME::ThreeBodyME()
-: threebody_storage(new ThreeBodyStorage_iso()),   modelspace(NULL),E3max(0),herm(1)
+: threebody_storage(new ThreeBodyStorage_iso()),   modelspace(NULL),E3max(0),herm(1), storage_mode("iso")
 {
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1)
+: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1), storage_mode("iso")
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
  : threebody_storage(new ThreeBodyStorage_iso(ms,rJ,rT,p)),
- modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1),  rank_J(rJ), rank_T(rT), parity(p)
+ modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1),  rank_J(rJ), rank_T(rT), parity(p), storage_mode("iso")
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -36,12 +36,12 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()), herm(1)
+: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()), herm(1), storage_mode("iso")
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
 : threebody_storage(new ThreeBodyStorage_iso(ms,e3max,rJ,rT,p)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()),
-    herm(1), rank_J(rJ), rank_T(rT), parity(p)
+    herm(1), rank_J(rJ), rank_T(rT), parity(p), storage_mode("iso")
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -52,7 +52,7 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
 : threebody_storage( Tbme.threebody_storage->Clone()), modelspace(Tbme.modelspace), 
 //:  modelspace(Tbme.modelspace), 
     E3max(Tbme.E3max), emax(Tbme.emax), herm(Tbme.herm),
-   rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity)
+   rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity), storage_mode(Tbme.storage_mode)
 {
 //   *threebody_storage = *(Tbme.threebody_storage);
 }
@@ -78,6 +78,14 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
  {
    threebody_storage->Multiply(rhs);
    return *this;
+ }
+
+ ThreeBodyME ThreeBodyME::operator*(const double rhs) const
+ {
+   return ThreeBodyME(*this) *=rhs;
+//   ThreeBodyME out(*this);
+//   out *=rhs;
+//   return out;
  }
 
  ThreeBodyME& ThreeBodyME::operator+=(const ThreeBodyME& rhs)
@@ -352,6 +360,16 @@ void ThreeBodyME::SwitchToPN_and_discard()
 void ThreeBodyME::SetMode(std::string mode)
 {
   double t_start = omp_get_wtime();
+  // Without this check, if we call SetMode("pn") on something that is already in pn mode,
+  // it will erase all the stored 3N matrix elements. This is probably not the behavior
+  // one would expect, so instead if you call SetMode and it was already that mode, we
+  // print a message and do nothing.
+  if ( storage_mode == mode)
+  {
+     std::cout << "In " << __func__ << " but mode is already " << storage_mode << ". Doing nothing." << std::endl;
+     return;
+  }
+
   if (mode == "isospin" )
   {
 //      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_iso( modelspace, E3max, rank_J, rank_T, parity)  );
@@ -383,6 +401,7 @@ void ThreeBodyME::SetMode(std::string mode)
   }
   threebody_storage->SetHerm( this->herm );
   threebody_storage->Allocate();
+  storage_mode = mode;
 //  storage_mode = pn;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
@@ -531,4 +550,24 @@ std::string ThreeBodyME::GetStorageMode() const
 void ThreeBodyME::Print() const
 {
    threebody_storage->Print();
+}
+
+
+
+///////
+
+// non-member operator overloads
+
+ThreeBodyME operator+(const ThreeBodyME& lhs, const ThreeBodyME& rhs)
+{
+   return ThreeBodyME(lhs)+= rhs;
+}
+
+ThreeBodyME operator-(const ThreeBodyME& lhs, const ThreeBodyME& rhs)
+{
+   return ThreeBodyME(lhs)-= rhs;
+}
+ThreeBodyME operator*(const double& lhs, const ThreeBodyME& rhs)
+{
+   return rhs * lhs;
 }

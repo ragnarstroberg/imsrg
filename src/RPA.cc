@@ -533,3 +533,43 @@ arma::vec RPA::GetEnergies()
 }
 
 
+double RPA::StraightforwardCPEffectiveCharge( Operator& OpIn, size_t i, size_t j)
+{
+   int lambda = OpIn.GetJRank();
+   double Oij = 0;
+   Orbit& oi = modelspace->GetOrbit(i);
+   Orbit& oj = modelspace->GetOrbit(j);
+   for (auto a : modelspace->particles )
+   {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : OpIn.GetOneBodyChannel( oa.l, oa.j2, oa.tz2) )
+     {
+        Orbit& ob = modelspace->GetOrbit(b);
+        if ( ob.occ < 0.9 ) continue; // it should be a hole
+
+        double Vbarijba = 0;
+        int Jmin = AngMom::Jmin({ {oi.j2, oa.j2}, {oj.j2,ob.j2} } )/2;
+        int Jmax = AngMom::Jmax({ {oi.j2, oa.j2}, {oj.j2,ob.j2} } )/2;
+        for (int J=Jmin; J<=Jmax; J++)
+        {
+          Vbarijba -= (2*J+1) * modelspace->GetSixJ( oi.j2/2., oj.j2/2., lambda, ob.j2/2., oa.j2/2., J) * H.TwoBody.GetTBME_J(J,J, i,a,b,j) ;
+        }
+
+        double Vbarijab = 0;
+        Jmin = AngMom::Jmin({ {oi.j2, ob.j2}, {oj.j2,oa.j2} } )/2;
+        Jmax = AngMom::Jmax({ {oi.j2, ob.j2}, {oj.j2,oa.j2} } )/2;
+        for (int J=Jmin; J<=Jmax; J++)
+        {
+          Vbarijab -= (2*J+1) * modelspace->GetSixJ( oi.j2/2., oj.j2/2., lambda, oa.j2/2., ob.j2/2., J) * H.TwoBody.GetTBME_J(J,J, i,b,a,j) ;
+        }
+
+        double Diabj = H.OneBody(i,i) + H.OneBody(a,a) - H.OneBody(b,b) - H.OneBody(j,j);
+        double Dibaj = H.OneBody(i,i) + H.OneBody(b,b) - H.OneBody(a,a) - H.OneBody(j,j);
+        double Oab = OpIn.OneBody(a,b);
+        double Oba = OpIn.OneBody(b,a);
+        Oij += Vbarijba * Oba / Diabj - Vbarijab * Oab / Dibaj;
+     }
+   }
+   return Oij;
+
+}
