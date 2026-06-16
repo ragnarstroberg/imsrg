@@ -29,7 +29,6 @@
 #include <gsl/gsl_math.h>
 #include <vector>
 #include <array>
-#include <cmath>
 
 
 namespace imsrg_util
@@ -84,32 +83,7 @@ namespace imsrg_util
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator TzSquared_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
-
- /// Return the allowed Fermi charge-exchange operators separated into beta+
- /// and beta- directions. The return order is {beta_plus, beta_minus}.
- /// beta_minus converts neutron -> proton, beta_plus converts proton -> neutron.
- inline std::array<Operator,2> AllowedFermi_pm_Op(ModelSpace& modelspace)
- {
-   Operator Fermi_beta_plus(modelspace,0,1,0,2);
-   Operator Fermi_beta_minus(modelspace,0,1,0,2);
-
-   Fermi_beta_plus.hermitian = false;
-   Fermi_beta_plus.antihermitian = false;
-   Fermi_beta_minus.hermitian = false;
-   Fermi_beta_minus.antihermitian = false;
-
-   for ( auto i : modelspace.proton_orbits )
-   {
-     Orbit& oi = modelspace.GetOrbit(i);
-     int j = modelspace.GetOrbitIndex( oi.n, oi.l, oi.j2, -oi.tz2);
-     double me = std::sqrt(oi.j2+1.0); // Reduced matrix element
-
-     Fermi_beta_minus.OneBody(i,j) = me; // neutron -> proton
-     Fermi_beta_plus.OneBody(j,i) = me;  // proton  -> neutron
-   }
-   return {{Fermi_beta_plus, Fermi_beta_minus}};
- }
-
+ Operator AllowedFermi_pm_Op(ModelSpace& modelspace, std::string beta_type);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
  Operator UniqueForbidden_ChargeExchange_CS(ModelSpace& modelspace, int K);
  Operator Sigma_Op(ModelSpace& modelspace);
@@ -251,6 +225,7 @@ namespace imsrg_util
 */
 
 }
+
 
 
 

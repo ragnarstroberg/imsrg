@@ -99,6 +99,8 @@ namespace imsrg_util
       else if (opname == "M1S")           theop =  MagneticMultipoleOp_pn(modelspace,1,"spin") ;
       else if (opname == "M1L")           theop =  MagneticMultipoleOp_pn(modelspace,1,"orbit") ;
       else if (opname == "Fermi")         theop =  AllowedFermi_Op(modelspace) ;
+      else if (opname == "beta+")         theop =  AllowedFermi_pm_Op(modelspace, "beta+") ;
+      else if (opname == "beta-")         theop =  AllowedFermi_pm_Op(modelspace, "beta-") ;
       else if (opname == "GamowTeller")   theop =  AllowedGamowTeller_Op(modelspace) ;
       else if (opnamesplit[0] == "ForbidenBetaDecay") // Forbidden Beta Decay Operators   format e.g.  ForbidenBetaDecay_K
       {      
@@ -2500,6 +2502,36 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
       //        Fermi.OneBody(i,j) = sqrt(oi.j2+1.0);  // Reduced matrix element
       //      }
     }
+    return Fermi;
+  }
+
+  Operator AllowedFermi_pm_Op(ModelSpace& modelspace, std::string beta_type)
+  {
+    Operator Fermi(modelspace,0,1,0,2);
+    Fermi.SetNonHermitian();
+
+    for ( auto i : modelspace.proton_orbits )
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      int j = modelspace.GetOrbitIndex( oi.n, oi.l, oi.j2, -oi.tz2);
+      double M_F = sqrt(oi.j2+1.0); // Reduced matrix element
+
+      if (beta_type == "beta-")
+      {
+        Fermi.OneBody(i,j) = M_F; // neutron -> proton
+      }
+      else if (beta_type == "beta+")
+      {
+        Fermi.OneBody(j,i) = M_F; // proton -> neutron
+      }
+      else
+      {
+        std::cout << "Unknown beta type in " << __func__
+                  << ": " << beta_type
+                  << ". Use beta+ or beta-." << std::endl;
+      }
+    }
+
     return Fermi;
   }
 
