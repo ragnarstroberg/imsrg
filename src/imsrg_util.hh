@@ -232,7 +232,7 @@ namespace imsrg_util
  }
  
  template <typename T, typename... Args>
- T VectorUnion(const T& v1, const T& v2, const T&... args)
+ T VectorUnion(const T& v1, const T& v2, Args... args)
  {
    T vec(v1.size()+v2.size());
    std::copy(v1.begin(),v1.end(),vec.begin());
