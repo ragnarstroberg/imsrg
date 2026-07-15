@@ -2669,8 +2669,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
 
  // < ij J || Q * Q || kl J > where Q is the quadrupole operator (possibly up to overall factors like square roots of pi, etc...)
- // We use equation (A5) of Caurier et al Rev Mod Phys 2005
- // S
  Operator QdotQ_Op(ModelSpace& modelspace)
  {
     
@@ -2679,20 +2677,24 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    Operator E2op = ElectricMultipoleOp(modelspace,2) + NeutronElectricMultipoleOp(modelspace,2);
    auto& Qmat = E2op.OneBody;
 
-   std::cout << "Oops! This operator is still under construction! " << __FILE__ << "  line " << __LINE__ << std::endl;
+//   std::cout << "Oops! This operator is still under construction! " << __FILE__ << "  line " << __LINE__ << std::endl;
 
-   // The one-body piece should be
-   // < i | Q*Q | j > = sqrt(2*2+1)/(2*ji+1) * sum_k <k||Q||i><k||Q||j>
-//   QdotQ_op.OneBody =  Qmat*Qmat.t() / sqrt(2);
-//   for (auto i : modelspace.all_orbits)
-//   {
-//      Orbit& oi = modelspace.GetOrbit(i);
-//      QdotQ_op.OneBody.row(i) /= oi.j2+1;
-//   }
+   // One-body piece:
+   // < i | Q*Q | j > = sum_a <i||Q||a> <j||Q||a> /(2i+1)
+   for ( auto& i : modelspace.all_orbits )
+   {
+      Orbit& oi = modelspace.GetOrbit(i);
+      for (auto& j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      {
+        double QdQ = 0;
+        for (auto& a : E2op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+        {
+           QdQ += Qmat(i,a) * Qmat(j,a) / (oi.j2+1);
+        }
+        QdotQ_op.OneBody(i,j) = QdQ ; 
+      }
+   }
 
-//   // We subtract off the one-body piece acting in the two-body space
-//   Embed1BodyIn2Body( QdotQ_op, 2);
-//   QdotQ_op.TwoBody *= -1;
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
 
