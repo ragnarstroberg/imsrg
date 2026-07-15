@@ -5103,8 +5103,10 @@ namespace Commutator
           int j1pmax = J1;
           if (index_perms[perm_ijk] != ThreeBodyStorage::ABC)
           {
-            j1pmin = std::max(std::abs(o1.j2 - o2.j2), std::abs(twoJ - o3.j2)) / 2;
-            j1pmax = std::min(o1.j2 + o2.j2, twoJ + o3.j2) / 2;
+//            j1pmin = std::max(std::abs(o1.j2 - o2.j2), std::abs(twoJ - o3.j2)) / 2;
+//            j1pmax = std::min(o1.j2 + o2.j2, twoJ + o3.j2) / 2;
+            j1pmin = AngMom::Jmin( { {o1.j2,o2.j2}, {twoJ,o3.j2} }) / 2;
+            j1pmax = AngMom::Jmax( { {o1.j2,o2.j2}, {twoJ,o3.j2} }) / 2;
           }
 
           double j3 = 0.5 * o3.j2;
@@ -5114,7 +5116,7 @@ namespace Commutator
 
             double rec_ijk = Z3.RecouplingCoefficient(index_perms[perm_ijk], ji, jj, jk, J1p, J1, twoJ);
             rec_ijk *= Z3.PermutationPhase(index_perms[perm_ijk]); // do we get a fermionic minus sign?
-            if (I1 == I2)
+            if (I1 == I2)  // sqrt(2) factor for converting to un-normalized TBMEs. See below.
               rec_ijk *= PhysConst::SQRT2;
             int ch12 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l + o2.l) % 2, (o1.tz2 + o2.tz2) / 2);
 
@@ -5162,8 +5164,10 @@ namespace Commutator
                   int j2pmax = J2;
                   if (index_perms[perm_lmn] != ThreeBodyStorage::ABC)
                   {
-                    j2pmin = std::max(std::abs(o4.j2 - o5.j2), std::abs(twoJ - o6.j2)) / 2;
-                    j2pmax = std::min(o4.j2 + o5.j2, twoJ + o6.j2) / 2;
+//                    j2pmin = std::max(std::abs(o4.j2 - o5.j2), std::abs(twoJ - o6.j2)) / 2;
+//                    j2pmax = std::min(o4.j2 + o5.j2, twoJ + o6.j2) / 2;
+                    j2pmin = AngMom::Jmin({ {o4.j2,o5.j2}, {twoJ,o6.j2} }) / 2;
+                    j2pmax = AngMom::Jmax({ {o4.j2,o5.j2}, {twoJ,o6.j2} }) / 2;
                   }
 
                   for (int J2p = j2pmin; J2p <= j2pmax; J2p++)
@@ -5171,7 +5175,7 @@ namespace Commutator
 
                     double rec_lmn = Z3.RecouplingCoefficient(index_perms[perm_lmn], jl, jm, jn, J2p, J2, twoJ);
                     rec_lmn *= Z3.PermutationPhase(index_perms[perm_lmn]); // do we get a fermionic minus sign?
-                    if (I4 == I5)
+                    if (I4 == I5)// sqrt(2) factor for converting to un-normalized TBMEs. See below.
                       rec_lmn *= PhysConst::SQRT2;
 
                     //                 int ch2 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
@@ -5196,8 +5200,10 @@ namespace Commutator
 
                     double hat_factor = sqrt((2 * J1p + 1) * (2 * J2p + 1));
 
-                    int j2a_min = std::max(std::abs(o6.j2 - 2 * J1p), std::abs(o3.j2 - 2 * J2p));
-                    int j2a_max = std::min(o6.j2 + 2 * J1p, o3.j2 + 2 * J2p);
+//                    int j2a_min = std::max(std::abs(o6.j2 - 2 * J1p), std::abs(o3.j2 - 2 * J2p));
+//                    int j2a_max = std::min(o6.j2 + 2 * J1p, o3.j2 + 2 * J2p);
+                    int j2a_min = AngMom::Jmin({ {o6.j2,2*J1p}, {o3.j2,2*J2p} }) ;
+                    int j2a_max = AngMom::Jmax({ {o6.j2,2*J1p}, {o3.j2,2*J2p} }) ;
 
                     for (auto &it_obc : Z.modelspace->OneBodyChannels)
                     {
@@ -5229,11 +5235,14 @@ namespace Commutator
                         // This should be the straighforward but maybe less efficient way to do it.
                         double phase_6a = phase_12;
                         double phase_3a = phase_45;
-                        if (I3 == a)
+                        if (I3 == a)// sqrt(2) factor for converting to un-normalized TBMEs. See below.
                           phase_3a *= PhysConst::SQRT2;
-                        if (I6 == a)
+                        if (I6 == a)// sqrt(2) factor for converting to un-normalized TBMEs. See below.
                           phase_6a *= PhysConst::SQRT2;
 
+                        // We want un-normalized TBMEs. But since GetTBME just calls GetTBME_norm and adds the sqrt(2) factors
+                        // for this routine we figure out the sqrt(2) factors in the outer loops to speed up the look up
+                        // in the deeply nested loop.
                         double x_126a = X_126a_good ? X.TwoBody.GetTBME_norm(ch12, ch6a, I1, I2, I6, a) : 0;
                         double y_126a = Y_126a_good ? Y.TwoBody.GetTBME_norm(ch12, ch6a, I1, I2, I6, a) : 0;
                         double x_3a45 = X_3a45_good ? X.TwoBody.GetTBME_norm(ch3a, ch45, I3, a, I4, I5) : 0;

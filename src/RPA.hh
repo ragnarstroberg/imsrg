@@ -65,6 +65,8 @@ class RPA
   arma::vec GetY(size_t i);
   arma::vec GetEnergies();
 
+  double StraightforwardCPEffectiveCharge( Operator& OpIn, size_t i, size_t j);
+
 };
 
 

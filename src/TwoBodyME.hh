@@ -71,6 +71,9 @@ class TwoBodyME
   TwoBodyME operator*(const double) const;
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
+  friend TwoBodyME operator+(const TwoBodyME& lhs, const TwoBodyME& rhs);
+  friend TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs);
+  friend TwoBodyME operator*(const double lhs, const TwoBodyME& rhs);
 
 //  void Copy(const TwoBodyME&);
   void Allocate();

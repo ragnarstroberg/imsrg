@@ -29,6 +29,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <memory> // for shared_ptr
+#include <string>
 
 typedef double ThreeBME_type;
 //typedef float ThreeBME_type;
@@ -45,18 +46,10 @@ class ThreeBodyME
 {
  private:
 
-//  std::shared_ptr<ThreeBodyStorage> threebody_storage;
   std::unique_ptr<ThreeBodyStorage> threebody_storage;
-
   ModelSpace * modelspace;
-//  enum Storage_Mode {isospin,pn};
-//  Storage_Mode storage_mode = isospin; // default to isospin
 
  public:
-
-  // It seems like it should be possible to make these two private, but why bother?
-//  std::map<std::array<size_t,2>,size_t> ch_start; // relates {ch_bra,ch_ket} to location in MatEl_pn
-//  std::vector<size_t> ch_dim;  // number of 3-body kets in each 3-body channel
 
   int E3max=0;
   int emax=0; // usually, this should be the emax of the modelspace, but we might want something smaller.
@@ -67,16 +60,10 @@ class ThreeBodyME
   int rank_T=0;
   int parity=0;
   int ISOSPIN_BLOCK_DIMENSION=5; //default is 5, but can be different for charge-changing operators
+  std::string storage_mode;
 
-//  bool isospin_is_allocated = false;
-//  bool pn_is_allocated = false;
-//  static bool none_allocated;
-
-//  enum Permutation {ABC,BCA,CAB,ACB,BAC,CBA};
-  
 
   // Constructors
-//  ~ThreeBodyME(); // dont think we explicitly need this?
   ThreeBodyME(); //
   ThreeBodyME(ModelSpace*); //
   ThreeBodyME(ModelSpace* ms, int e3max);
@@ -87,10 +74,12 @@ class ThreeBodyME
   // Overloaded operators
   ThreeBodyME& operator=(const ThreeBodyME&);
   ThreeBodyME& operator*=(const double);
+  ThreeBodyME operator*(const double) const;
   ThreeBodyME& operator+=(const ThreeBodyME&);
   ThreeBodyME& operator-=(const ThreeBodyME&);
-  // TODO Maybe also implmeent * + and - ?
-
+  friend ThreeBodyME operator+(const ThreeBodyME&, const ThreeBodyME&);
+  friend ThreeBodyME operator-(const ThreeBodyME&, const ThreeBodyME&);
+  friend ThreeBodyME operator*(const double&, const ThreeBodyME&);
 
   void Allocate();
 
@@ -164,8 +153,6 @@ class ThreeBodyME
   void SetAntiHermitian();
   bool IsHermitian() const { return herm==1;};
 
-//  bool Is_PN_Mode() const {return (storage_mode == pn);};
-//  bool Is_Isospin_Mode()const {return (storage_mode == isospin);};
   bool Is_PN_Mode() const {return (threebody_storage->GetStorageMode() == "pn");};
   bool Is_Isospin_Mode() const {return (threebody_storage->GetStorageMode() == "isospin");};
   bool IsAllocated() const {return threebody_storage->IsAllocated();};
@@ -188,6 +175,13 @@ class ThreeBodyME
   void ReadFile( std::vector<std::string> StringInputs, std::vector<int> IntInputs );
 
 };
+
+
+// non-member operator overloads
+ThreeBodyME operator+(const ThreeBodyME&, const ThreeBodyME&);
+ThreeBodyME operator-(const ThreeBodyME&, const ThreeBodyME&);
+ThreeBodyME operator*(const double&, const ThreeBodyME&);
+
 
 
 #endif

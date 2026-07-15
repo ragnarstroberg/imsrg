@@ -30,6 +30,7 @@ class Generator
 {
  protected: //DK: Was private. Changed to inherit into GeneratorPV 
   Operator * H;
+  Operator * H_denom; // Hamiltonian to be used for the denominators. Can be the same as H.
   Operator * Eta;
 
  public:
@@ -61,7 +62,9 @@ class Generator
   void SetDenominatorPartitioning(std::string dp); 
   std::string GetType(){return generator_type;};
   void Update(Operator& H_s, Operator& Eta_s);
-  void AddToEta(Operator& H_s, Operator& Eta_s);
+  void UpdateGeneral(Operator& H_s, Operator& H_denom,  Operator& Eta_s);
+//  void AddToEta(Operator& H_s, Operator& Eta_s);
+  void AddToEta(Operator& H_s, Operator& H_denom, Operator& Eta_s);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
   void SetDenominatorDelta(double d){denominator_delta=d;};         // call SetDenominatorDeltaIndex(-12345) to use it
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};  

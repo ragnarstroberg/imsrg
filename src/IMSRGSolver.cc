@@ -518,7 +518,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
     H_temp = FlowingOps[0] + ds * Commutator::Commutator(Eta, FlowingOps[0]);
     //      generator.AddToEta(&H_temp,&Eta);
-    generator.AddToEta(H_temp, Eta);
+    generator.AddToEta(H_temp, H_temp, Eta);
 
     Eta *= ds * 0.5; // Here's the modified Euler step.
 
