@@ -178,6 +178,11 @@ Operator &Operator::operator+=(const Operator &rhs)
   int rank_lhs = this->GetParticleRank();
   int rank_rhs = rhs.GetParticleRank();
   int maxrank = std::max( rank_lhs, rank_rhs );
+  if (this->IsReduced() != rhs.IsReduced() )
+  {
+     std::cout << "!!!!   Danger! Adding operators that aren't both reduced! Dying   !!!!!!!" << std::endl;
+     std::exit(EXIT_FAILURE);
+  }
   ZeroBody += rhs.ZeroBody;
   OneBody += rhs.OneBody;
   TwoBody += rhs.TwoBody;
