@@ -97,6 +97,12 @@ namespace imsrg_util
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCoulomb_IsospinTensor_Op(ModelSpace& modelspace, int T_rank, int lmax=99999);
+  Operator VCoulomb_Tq0_Op(ModelSpace& modelspace, int T_rank, int lmax=99999);
+  Operator VCoulomb_T0q0_Op(ModelSpace& modelspace, int lmax=99999);
+  Operator VCoulomb_T1q0_Op(ModelSpace& modelspace, int lmax=99999);
+  Operator VCoulomb_T2q0_Op(ModelSpace& modelspace, int lmax=99999);
+  double CheckVCoulomb_Tq0_Decomposition(ModelSpace& modelspace, int lmax=99999);
+
 
  Operator Charge_Density_Op( ModelSpace& modelspace );
 
