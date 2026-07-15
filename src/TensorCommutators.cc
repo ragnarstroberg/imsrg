@@ -2793,7 +2793,8 @@ namespace Commutator
     }
     int nmat = bra_channels.size();
     int nch = Z.modelspace->GetNumberTwoBodyChannels();
-    #pragma omp parallel for schedule(dynamic, 1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//    #pragma omp parallel for schedule(dynamic, 1) if (not Z.modelspace->scalar3b_transform_first_pass)
+    #pragma omp parallel for schedule(dynamic, 1)
     for (int ch = 0; ch < nmat; ch++) // loop bra and ket channels
     {
       int ch_bra = bra_channels[ch];

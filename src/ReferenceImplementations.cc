@@ -3,6 +3,7 @@
 #include "ModelSpace.hh"
 #include "PhysicalConstants.hh"
 #include "AngMom.hh"
+#include <deque>
 
 
 /// Straightforward implementation of J-coupled commutator expressions

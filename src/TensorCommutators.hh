@@ -21,6 +21,7 @@
 #define TensorCommutators_hh 1
 
 #include "Operator.hh"
+#include <deque>
 #include <map>
 #include <array>
 #include <armadillo>
