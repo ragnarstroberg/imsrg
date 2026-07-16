@@ -2733,10 +2733,14 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
             QdQ = Aabcd - modelspace.phase(jc+jd+J)*Aabdc;  // pppp or nnnn
             if (a==b) QdQ /= sqrt(2.0);
             if (c==d) QdQ /= sqrt(2.0);
+            // Now we need an extra factor of 2 compared with Suhonen section 8.2.1, because
+            // this is not a 2b potential. For a 2b potential there arises a factor 1/2 to avoid double counting
+            // the interaction between pairs (see Suhonen 4.26). In the present case, there are two Q operators
+            // and we do not need to correct for any double counting.
+            QdQ *= 2;
 
+            QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
 
-//            QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
-            QdotQ_op.TwoBody.AddToTBME(ch,ibra,iket,QdQ);
          }
 
       }
