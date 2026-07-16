@@ -1877,7 +1877,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   {
     Operator As(modelspace, 1, 0, 1, 2);
     As.SetAntiHermitian();
-    As.MakeReduced();
+    if (not As.IsReduced())
+        As.MakeReduced();
     double bL = pow(HBARC * HBARC / M_NUCLEON / modelspace.GetHbarOmega(), 0.5 * 1); // b^L where b=sqrt(hbar/mw)
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
@@ -1906,7 +1907,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator MultipoleResponseOp(ModelSpace& modelspace, int rL, int YL, int isospin)
   {
     Operator EL(modelspace, YL,0,YL%2,2);
-    EL.MakeReduced(); // The below expressions give reduced matrix elements, even if YL=0 (scalar). By default, scalars are stored as not reduced, so change the flag.
+    if (not EL.IsReduced())
+       EL.MakeReduced(); // The below expressions give reduced matrix elements, even if YL=0 (scalar). By default, scalars are stored as not reduced, so change the flag.
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
@@ -1933,7 +1935,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator IVDipoleOp(ModelSpace& modelspace, int rL, int YL)
   {
     Operator EL(modelspace, YL,0,YL%2,2);
-    EL.MakeReduced();
+    if (not EL.IsReduced())
+         EL.MakeReduced();
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
@@ -1958,7 +1961,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator ISDipoleOp(ModelSpace& modelspace, int rL, int YL, double Rms)
   {
     Operator EL(modelspace, YL,0,YL%2,2);
-    EL.MakeReduced();
+    if (not EL.IsReduced())
+       EL.MakeReduced();
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
     double bLp = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*1);
     int norbits = modelspace.GetNumberOrbits();
@@ -1986,7 +1990,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator SchiffOp(ModelSpace& modelspace, int rL, int YL, double Rms)
   {   
     Operator EL(modelspace, YL,0,YL%2,2);
-    EL.MakeReduced();
+    if (not IsReduced())
+       EL.MakeReduced();
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
     double bLp = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*1);
     // int norbits = modelspace.GetNumberOrbits();
@@ -2017,7 +2022,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator ElectricMultipoleOp(ModelSpace& modelspace, int L)
   {
     Operator EL(modelspace, L,0,L%2,2);
-    EL.MakeReduced();
+    if (not EL.IsReduced())
+       EL.MakeReduced();
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
     for (int i : modelspace.proton_orbits)
     {
@@ -2041,7 +2047,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator NeutronElectricMultipoleOp(ModelSpace& modelspace, int L)
   {
     Operator EL(modelspace, L,0,L%2,2);
-    EL.MakeReduced();
+    if (not EL.IsReduced())
+       EL.MakeReduced();
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
     for (int i : modelspace.neutron_orbits)
     {
@@ -2073,7 +2080,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   {
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
     Operator ML(modelspace, L,0,(L+1)%2,2);
-    ML.MakeReduced();
+    if (not ML.IsReduced())
+       ML.MakeReduced();
     if (L<1)
     {
       std::cout << "A magnetic monopole operator??? Setting it to zero..." << std::endl;
@@ -2118,7 +2126,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator IntrinsicElectricMultipoleOp(ModelSpace& modelspace, int L)
   {
     Operator EL(modelspace, L,0,L%2,2);
-    EL.MakeReduced();
+    if (not EL.IsReduced())
+       EL.MakeReduced();
     double bL = pow( HBARC*HBARC/(0.5*M_NUCLEON)/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
 
     int emax = modelspace.GetEmax();
