@@ -1990,7 +1990,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   Operator SchiffOp(ModelSpace& modelspace, int rL, int YL, double Rms)
   {   
     Operator EL(modelspace, YL,0,YL%2,2);
-    if (not IsReduced())
+    if (not EL.IsReduced())
        EL.MakeReduced();
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
     double bLp = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*1);
