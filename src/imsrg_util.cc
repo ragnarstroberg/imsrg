@@ -113,7 +113,9 @@ namespace imsrg_util
       else if (opname == "Sigma_p")       theop =  Sigma_Op_pn(modelspace,"proton");
       else if (opname == "Sigma_n")       theop =  Sigma_Op_pn(modelspace,"neutron");
       else if (opname == "L2rel")         theop =  L2rel_Op(modelspace); // Untested...
-      else if (opname == "QdotQ")         theop =  QdotQ_Op(modelspace); // Untested...
+      else if (opname == "QdotQ")         theop =  QdotQ_Op(modelspace,1,1); // Untested...
+      else if (opname == "QdotQp")        theop =  QdotQ_Op(modelspace,1,0); // Untested...
+      else if (opname == "QdotQn")        theop =  QdotQ_Op(modelspace,0,1); // Untested...
       else if (opname == "VQQ")           theop =  VQQ_Op(modelspace); 
       else if (opname == "VCoul")         theop =  VCoulomb_Op(modelspace); // Untested...
       else if (opname == "hfsNMS")        theop =  atomic_hfs::NormalMassShift(modelspace, 1);
@@ -2678,12 +2680,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
 
  // < ij J || Q * Q || kl J > where Q is the quadrupole operator (possibly up to overall factors like square roots of pi, etc...)
- Operator QdotQ_Op(ModelSpace& modelspace)
+// Operator QdotQ_Op(ModelSpace& modelspace)
+ Operator QdotQ_Op(ModelSpace& modelspace, double ep, double en)
  {
     
 //   // temporarily store <i||Q||j> in the one body part.
    Operator QdotQ_op(modelspace,0,0,0,2);
-   Operator E2op = ElectricMultipoleOp(modelspace,2) + NeutronElectricMultipoleOp(modelspace,2);
+   Operator E2op = ep*ElectricMultipoleOp(modelspace,2) + en*NeutronElectricMultipoleOp(modelspace,2);
    auto& Qmat = E2op.OneBody;
 
 //   std::cout << "Oops! This operator is still under construction! " << __FILE__ << "  line " << __LINE__ << std::endl;
