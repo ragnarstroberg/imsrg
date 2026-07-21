@@ -2847,6 +2847,895 @@ void ReadWrite::ReadH2_2body( std::string filename, Operator& Op )
   std::cout << "Read Vnn successful! num of Vnn " << count << std::endl << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+// WriteNO2BFiles_ORNL
+//
+// Write a scalar Hermitian Hamiltonian in the ASCII formats expected by the
+// ORNL M-scheme Hartree-Fock code.
+//
+// The input Operator must be a complete normal-ordered Hamiltonian truncated
+// at the normal-ordered two-body level:
+//
+//     H_NO2B = E0
+//            + sum_ab f_ab {a^+_a a_b}
+//            + 1/4 sum_abcd Gamma_abcd {a^+_a a^+_b a_d a_c}.
+//
+// This interface writes five mutually consistent files:
+//
+//   1. sp_energy_file
+//   2. kinetic_file
+//   3. no0b_file
+//   4. no1b_file
+//   5. no2b_file
+//
+// All five files use the same spherical-HO orbit ordering.
+//
+// =============================================================================
+// Orbit convention
+// =============================================================================
+//
+// The file orbit label is
+//
+//     i_file = i_IMSRG + 1,
+//
+// because IMSRG uses zero-based orbit indices and the Fortran HF code uses
+// one-based indices.
+//
+// Every occurrence of an orbit label in the SP, kinetic, one-body, and
+// two-body files must follow this mapping. The HF code does not identify an
+// orbit from n,l,j,tz when reading the NO1B and NO2B files; it uses the integer
+// labels directly.
+//
+// Therefore, these files must always be generated together. They must not be
+// mixed with files generated using a different orbit ordering or remapping.
+//
+// The ModelSpace orbit quantum numbers follow
+//
+//     n       radial HO quantum number,
+//     l       orbital angular momentum,
+//     j2      2*j,
+//     tz2     2*t_z,
+//             tz2 = -1 for proton,
+//             tz2 = +1 for neutron.
+//
+// Proton and neutron spherical orbits remain in the native IMSRG ModelSpace
+// ordering. No additional proton-first or neutron-first remapping is applied.
+//
+// =============================================================================
+// Single-particle energy file
+// =============================================================================
+//
+// Format:
+//
+//     hw
+//     i  n  l  2j  2tz  e_HO  0
+//
+// with
+//
+//     e_HO = (2*n + l + 3/2) * hw.
+//
+// This file defines the spherical orbit ordering used by all other files.
+//
+// =============================================================================
+// Kinetic file
+// =============================================================================
+//
+// Format:
+//
+//     i  j  <i|T_lab|j>  0  <i|H_HO|j>  <i|r^2|j>
+//
+// The matrix elements are evaluated in the spherical harmonic-oscillator
+// basis using the same phase convention as imsrg_util::KineticEnergy_Op() and
+// imsrg_util::RSquaredOp().
+//
+// The laboratory kinetic-energy matrix is written without an additional
+// factor of (1 - 1/A). Any intrinsic kinetic-energy correction required by
+// the HF calculation is handled by the HF code.
+//
+// The line order is not significant because i and j are explicitly stored,
+// but the integer orbit labels must match the SP file exactly.
+//
+// =============================================================================
+// Zero-body file
+// =============================================================================
+//
+// Format:
+//
+//     E0
+//
+// where E0 is H_NO2B.ZeroBody.
+//
+// =============================================================================
+// One-body file
+// =============================================================================
+//
+// Format:
+//
+//     i  j  f_ij
+//
+// where f_ij is H_NO2B.OneBody(i,j).
+//
+// This is a formatted ASCII indexed matrix. The HF reader initializes the
+// matrix to zero and assigns
+//
+//     f(i,j) = value
+//
+// for every record. Missing entries are therefore interpreted as zero.
+//
+// The HF reader does not automatically reconstruct f(j,i). This writer emits
+// the complete one-body matrix, including both Hermitian halves and zero
+// entries.
+//
+// =============================================================================
+// Two-body file
+// =============================================================================
+//
+// Format:
+//
+//     Tz  parity  J  a  b  c  d  Gamma_tilde
+//
+// where
+//
+//     Tz     = (tz2_a + tz2_b)/2 = -1, 0, or +1,
+//     parity = (l_a + l_b) mod 2,
+//     J      = coupled two-particle angular momentum.
+//
+// The two-particle states are normalized antisymmetrized J-coupled states in
+// IMSRG, but the HF (ORNL) NO2B reader expects the unnormalized interaction
+// convention
+//
+//     Gamma_tilde(ab,cd;J)
+//       = sqrt[(1 + delta_ab)(1 + delta_cd)]
+//         * Gamma_norm(ab,cd;J).
+//
+// This normalization conversion is essential. The raw matrices stored in
+// TwoBodyME::MatEl contain normalized antisymmetrized TBMEs.
+//
+// The stored pair convention is
+//
+//     a <= b,
+//     c <= d.
+//
+// Only one Hermitian bra-ket triangle is written:
+//
+//     iket >= ibra.
+//
+// The HF reader reconstructs:
+//
+//     (ab,cd),
+//     (ba,cd),
+//     (ab,dc),
+//     (ba,dc),
+//
+// using the fermionic pair-exchange phases, and it also reconstructs the
+// bra-ket transpose:
+//
+//     Gamma_tilde(ab,cd;J) = Gamma_tilde(cd,ab;J).
+//
+// -----------------------------------------------------------------------------
+void ReadWrite::WriteNO2BFiles_ORNL(
+    Operator& Hno2b,
+    const std::string& kinetic_fn,
+    const std::string& no0b_fn,
+    const std::string& no1b_fn,
+    const std::string& no2b_fn,
+    const std::string& sp_energy_fn)
+{
+    ModelSpace* modelspace = Hno2b.GetModelSpace();
+
+    // -------------------------------------------------------------------------
+    // Basic validation
+    // -------------------------------------------------------------------------
+    if (modelspace == nullptr)
+    {
+        std::cerr << __func__
+                  << ": the input operator has no associated ModelSpace."
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    if (Hno2b.GetJRank() != 0 ||
+        Hno2b.GetTRank() != 0 ||
+        Hno2b.GetParity() != 0)
+    {
+        std::cerr << __func__
+                  << ": the HF Hamiltonian interface requires a scalar, "
+                  << "parity-even operator. Received rank_J="
+                  << Hno2b.GetJRank()
+                  << ", rank_T=" << Hno2b.GetTRank()
+                  << ", parity=" << Hno2b.GetParity()
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    if (!Hno2b.IsHermitian())
+    {
+        std::cerr << __func__
+                  << ": the HF Hamiltonian must be Hermitian because the "
+                  << "two-body file stores only one bra-ket triangle."
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    if (Hno2b.IsReduced())
+    {
+        std::cerr << __func__
+                  << ": the HF Hamiltonian writer expects ordinary scalar "
+                  << "J-coupled matrix elements, not Wigner-Eckart-reduced "
+                  << "matrix elements."
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    if (Hno2b.GetParticleRank() > 2)
+    {
+        std::cerr << __func__
+                  << ": the supplied operator still has particle rank "
+                  << Hno2b.GetParticleRank()
+                  << ". Apply the NO2B truncation before writing these files."
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    const std::size_t norbits = modelspace->GetNumberOrbits();
+    const double hw = modelspace->GetHbarOmega();
+
+    if (hw <= 0.0)
+    {
+        std::cerr << __func__
+                  << ": invalid oscillator frequency hw=" << hw
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    if (Hno2b.OneBody.n_rows != norbits ||
+        Hno2b.OneBody.n_cols != norbits)
+    {
+        std::cerr << __func__
+                  << ": OneBody dimensions are inconsistent with the "
+                  << "associated ModelSpace."
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    // Define the file ordering. The index written to every file is
+    //
+    //     file_index = IMSRG orbit index + 1.
+    //
+    // Check that Orbit::index is consistent with its ModelSpace position.
+    for (std::size_t i = 0; i < norbits; ++i)
+    {
+        const Orbit& oi = modelspace->GetOrbit(i);
+
+        if (static_cast<std::size_t>(oi.index) != i)
+        {
+            std::cerr << __func__
+                      << ": non-contiguous or inconsistent ModelSpace orbit "
+                      << "index at position " << i
+                      << "; Orbit::index=" << oi.index
+                      << std::endl;
+            goodstate = false;
+            return;
+        }
+
+        if (oi.tz2 != -1 && oi.tz2 != 1)
+        {
+            std::cerr << __func__
+                      << ": unsupported tz2=" << oi.tz2
+                      << " for orbit " << i
+                      << ". The HF nuclear interface expects tz2=-1 or +1."
+                      << std::endl;
+            goodstate = false;
+            return;
+        }
+    }
+
+    // A scalar Hamiltonian should only have diagonal channel blocks.
+    for (const auto& block : Hno2b.TwoBody.MatEl)
+    {
+        const std::size_t ch_bra = block.first[0];
+        const std::size_t ch_ket = block.first[1];
+
+        if (ch_bra != ch_ket)
+        {
+            std::cerr << __func__
+                      << ": found a non-scalar two-body block ("
+                      << ch_bra << "," << ch_ket << ")."
+                      << std::endl;
+            goodstate = false;
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Open all files before writing anything substantial
+    // -------------------------------------------------------------------------
+    std::ofstream kinetic_file(kinetic_fn);
+    std::ofstream no0b_file(no0b_fn);
+    std::ofstream no1b_file(no1b_fn);
+    std::ofstream no2b_file(no2b_fn);
+    std::ofstream sp_file(sp_energy_fn);
+
+    if (!kinetic_file.good() ||
+        !no0b_file.good() ||
+        !no1b_file.good() ||
+        !no2b_file.good() ||
+        !sp_file.good())
+    {
+        std::cerr << __func__
+                  << ": could not open one or more output files:"
+                  << "\n  kinetic:  " << kinetic_fn
+                  << "\n  no0b:     " << no0b_fn
+                  << "\n  no1b:     " << no1b_fn
+                  << "\n  no2b:     " << no2b_fn
+                  << "\n  sp energy:" << sp_energy_fn
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    // Use sufficient precision for round-trip calculations.
+    kinetic_file << std::scientific << std::setprecision(16);
+    no0b_file    << std::scientific << std::setprecision(16);
+    no1b_file    << std::scientific << std::setprecision(16);
+    no2b_file    << std::scientific << std::setprecision(16);
+    sp_file      << std::scientific << std::setprecision(16);
+
+    // -------------------------------------------------------------------------
+    // 1. Spherical single-particle basis file
+    //
+    // Format:
+    //
+    //   hw
+    //   i  n  l  2j  2tz  (2n+l+3/2)hw  0
+    // -------------------------------------------------------------------------
+    sp_file << std::setw(24) << hw << '\n';
+
+    for (std::size_t i = 0; i < norbits; ++i)
+    {
+        const Orbit& oi = modelspace->GetOrbit(i);
+        const double e_ho =
+            (2.0 * oi.n + oi.l + 1.5) * hw;
+
+        sp_file
+            << std::setw(6)  << i + 1
+            << std::setw(6)  << oi.n
+            << std::setw(6)  << oi.l
+            << std::setw(6)  << oi.j2
+            << std::setw(6)  << oi.tz2
+            << std::setw(26) << e_ho
+            << std::setw(26) << 0.0
+            << '\n';
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. One-body kinetic/HO/r^2 file
+    //
+    // Format:
+    //
+    //   i  j  <i|T_lab|j>  0  <i|H_HO|j>  <i|r^2|j>
+    //
+    // T_lab is deliberately NOT multiplied by (1-1/A). The HF reader applies
+    // the intrinsic one-body mass correction itself.
+    //
+    // These formulas reproduce imsrg_util::KineticEnergy_Op() and
+    // imsrg_util::RSquaredOp() without constructing two additional full
+    // Operator objects.
+    // -------------------------------------------------------------------------
+    const double oscillator_b2 =
+        PhysConst::HBARC * PhysConst::HBARC /
+        (PhysConst::M_NUCLEON * hw);
+
+    for (std::size_t i = 0; i < norbits; ++i)
+    {
+        const Orbit& oi = modelspace->GetOrbit(i);
+
+        for (std::size_t j = 0; j < norbits; ++j)
+        {
+            const Orbit& oj = modelspace->GetOrbit(j);
+
+            double t_lab = 0.0;
+            double h_ho  = 0.0;
+            double r2    = 0.0;
+
+            const bool same_one_body_channel =
+                oi.l   == oj.l   &&
+                oi.j2  == oj.j2  &&
+                oi.tz2 == oj.tz2;
+
+            if (same_one_body_channel)
+            {
+                if (oi.n == oj.n)
+                {
+                    const double number = 2.0 * oi.n + oi.l + 1.5;
+                    t_lab = 0.5 * hw * number;
+                    h_ho  = hw * number;
+                    r2    = oscillator_b2 * number;
+                }
+                else if (std::abs(oi.n - oj.n) == 1)
+                {
+                    const int n_high = std::max(oi.n, oj.n);
+
+                    const double radial_factor =
+                        std::sqrt(
+                            static_cast<double>(n_high) *
+                            (n_high + oi.l + 0.5)
+                        );
+
+                    // The HO phase convention used in imsrg++ gives a
+                    // positive off-diagonal kinetic matrix element and a
+                    // negative off-diagonal r^2 matrix element.
+                    t_lab = 0.5 * hw * radial_factor;
+                    r2    = -oscillator_b2 * radial_factor;
+
+                    // T + (1/2)m omega^2 r^2 is diagonal in the HO basis.
+                    h_ho = 0.0;
+                }
+            }
+
+            kinetic_file
+                << std::setw(6)  << i + 1
+                << std::setw(6)  << j + 1
+                << std::setw(26) << t_lab
+                << std::setw(26) << 0.0
+                << std::setw(26) << h_ho
+                << std::setw(26) << r2
+                << '\n';
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. Zero-body normal-ordered contribution
+    // -------------------------------------------------------------------------
+    no0b_file << Hno2b.ZeroBody << '\n';
+
+    // -------------------------------------------------------------------------
+    // 4. Full one-body matrix
+    //
+    // Format:
+    //
+    //   i  j  f_ij
+    //
+    // Write all entries, including zeros, so the reader does not need to
+    // infer missing matrix elements.
+    // -------------------------------------------------------------------------
+    for (std::size_t i = 0; i < norbits; ++i)
+    {
+        for (std::size_t j = 0; j < norbits; ++j)
+        {
+            no1b_file
+                << std::setw(6)  << i + 1
+                << std::setw(6)  << j + 1
+                << std::setw(26) << Hno2b.OneBody(i, j)
+                << '\n';
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. Normalized antisymmetrized J-coupled two-body matrix elements
+    //
+    // Format:
+    //
+    //   Tz  parity  J  a  b  c  d  <(ab)J|Gamma|(cd)J>
+    //
+    // Contract:
+    //   a <= b
+    //   c <= d
+    //   iket >= ibra
+    //
+    // The raw matrices in TwoBodyME::MatEl contain normalized TBMEs.
+    // Do NOT use GetTBME(), because that returns the extra
+    // sqrt[(1+delta_ab)(1+delta_cd)] convention.
+    // -------------------------------------------------------------------------
+    const std::size_t nchannels =
+        modelspace->GetNumberTwoBodyChannels();
+
+    for (std::size_t ch = 0; ch < nchannels; ++ch)
+    {
+        TwoBodyChannel& tbc =
+            modelspace->GetTwoBodyChannel(static_cast<int>(ch));
+
+        const std::size_t nkets = tbc.GetNumberKets();
+        if (nkets == 0)
+            continue;
+
+        const std::array<std::size_t, 2> block_key = {ch, ch};
+        auto block_it = Hno2b.TwoBody.MatEl.find(block_key);
+
+        const arma::mat* matrix = nullptr;
+
+        if (block_it != Hno2b.TwoBody.MatEl.end())
+        {
+            matrix = &(block_it->second);
+
+            if (matrix->n_rows != nkets ||
+                matrix->n_cols != nkets)
+            {
+                std::cerr << __func__
+                          << ": two-body block dimension mismatch for channel "
+                          << ch
+                          << ". Channel has " << nkets
+                          << " kets, but matrix dimensions are "
+                          << matrix->n_rows << " x " << matrix->n_cols
+                          << std::endl;
+                goodstate = false;
+                return;
+            }
+        }
+
+        for (std::size_t ibra = 0; ibra < nkets; ++ibra)
+        {
+            Ket& bra = tbc.GetKet(static_cast<int>(ibra));
+
+            // ModelSpace stores canonical kets with p <= q.
+            if (bra.p > bra.q)
+            {
+                std::cerr << __func__
+                          << ": encountered noncanonical bra ket in channel "
+                          << ch << ": " << bra.p << " " << bra.q
+                          << std::endl;
+                goodstate = false;
+                return;
+            }
+
+            for (std::size_t iket = ibra; iket < nkets; ++iket)
+            {
+                Ket& ket = tbc.GetKet(static_cast<int>(iket));
+
+                if (ket.p > ket.q)
+                {
+                    std::cerr << __func__
+                              << ": encountered noncanonical ket in channel "
+                              << ch << ": " << ket.p << " " << ket.q
+                              << std::endl;
+                    goodstate = false;
+                    return;
+                }
+
+                // If a block is absent, its matrix elements are zero.
+                // const double tbme = (matrix == nullptr) ? 0.0 : (*matrix)(ibra, iket);
+                // Using the Unnormalization conversion
+                double tbme = 0.0;
+                if (matrix != nullptr)
+                {
+                    const double fnorm =
+                        std::sqrt(
+                            (1.0 + static_cast<double>(bra.delta_pq())) *
+                            (1.0 + static_cast<double>(ket.delta_pq()))
+                        );
+                    tbme = (*matrix)(ibra, iket) * fnorm;
+                }
+
+                no2b_file
+                    << std::setw(5)  << tbc.Tz
+                    << std::setw(5)  << tbc.parity
+                    << std::setw(5)  << tbc.J
+                    << std::setw(7)  << bra.p + 1
+                    << std::setw(7)  << bra.q + 1
+                    << std::setw(7)  << ket.p + 1
+                    << std::setw(7)  << ket.q + 1
+                    << std::setw(26) << tbme
+                    << '\n';
+            }
+        }
+    }
+
+    // Explicit checks catch delayed filesystem errors.
+    if (!kinetic_file.good() ||
+        !no0b_file.good() ||
+        !no1b_file.good() ||
+        !no2b_file.good() ||
+        !sp_file.good())
+    {
+        std::cerr << __func__
+                  << ": an output error occurred while writing the HF files."
+                  << std::endl;
+        goodstate = false;
+        return;
+    }
+
+    std::cout << __func__ << ": wrote HF/NO2B input files"
+              << "\n  " << kinetic_fn
+              << "\n  " << no0b_fn
+              << "\n  " << no1b_fn
+              << "\n  " << no2b_fn
+              << "\n  " << sp_energy_fn
+              << std::endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Write the Fermi, Gamow-Teller, and tensor 0nu-beta-beta operators in the
+// format used by the revised coupled-cluster reader:
+//
+//     a  b  c  d  J  GT  Fermi  Tensor
+//
+// Conventions
+// -----------
+//
+/*
+  * Write the 0nu-beta-beta operator for the current CC interface.
+  *
+  * BASIS CONVENTION
+  * ----------------
+  *
+  * The IMSRG operators are stored in the initial spherical
+  * J-coupled HO basis. They must remain in that basis in this file.
+  *
+  * The CC code subsequently performs
+  *
+  *     J-coupled HO
+  *         -> m-scheme HO
+  *         -> m-scheme HF
+  *
+  * using the initial HF orbit file and the HF coefficient matrix.
+  * Therefore, do not use the final HF single-particle indices from
+  * hf_output_file_orbits, and do not transform the operator to the
+  * HF basis in this writer.
+  *
+  * ORBIT-INDEX CONVENTION
+  * ----------------------
+  *
+  * The standard IMSRG ModelSpace uses zero-based, proton-neutron
+  * interleaved orbit indices:
+  *
+  *     0 = proton  0s1/2
+  *     1 = neutron 0s1/2
+  *     2 = proton  0p3/2
+  *     3 = neutron 0p3/2
+  *     ...
+  *
+  * The CC routine read_0vbb_imsrg expects one-based,
+  * species-independent spatial nlj indices:
+  *
+  *     1 = 0s1/2
+  *     2 = 0p3/2
+  *     3 = 0p1/2
+  *     ...
+  *
+  * Thus, for the current paired IMSRG model space,
+  *
+  *     CC_index = IMSRG_index / 2 + 1.
+  *
+  * Both proton and neutron partners consequently map to the same
+  * CC spatial orbit.
+  *
+  * MATRIX-ELEMENT CONVENTION
+  * -------------------------
+  *
+  * TwoBody.MatEl stores normalized antisymmetrized pair-state
+  * matrix elements. MakeNotReduced() converts the reduced scalar
+  * operator to the ordinary J-coupled convention by applying the
+  * required 1/sqrt(2J+1) factor to each channel block.
+  *
+  * No additional j-hat factor, pair normalization, or mass scaling
+  * is applied here.
+  *
+  * The current CC reader reconstructs:
+  *
+  *     (ab,cd), (ba,cd), (ab,dc), (ba,dc)
+  *
+  * and their bra-ket transposes. Therefore, only one spatial
+  * bra-ket triangle is written.
+  */
+//
+////////////////////////////////////////////////////////////////////////////////
+void ReadWrite::Write_0vbbOperators_ORNL(
+    Operator& FermiOp,
+    Operator& GamowTellerOp,
+    Operator& TensorOp,
+    std::string filename)
+{
+    ModelSpace* modelspace =
+        GamowTellerOp.GetModelSpace();
+
+    if (modelspace == nullptr)
+    {
+        std::cerr
+            << "Write0vbbOperator_CC: null ModelSpace."
+            << std::endl;
+
+        goodstate = false;
+        return;
+    }
+
+    if (FermiOp.GetModelSpace() != modelspace ||
+        TensorOp.GetModelSpace() != modelspace)
+    {
+        std::cerr
+            << "Write0vbbOperator_CC: operators have "
+            << "different ModelSpace objects."
+            << std::endl;
+
+        goodstate = false;
+        return;
+    }
+
+    std::ofstream outfile(filename);
+
+    if (!outfile.good())
+    {
+        std::cerr
+            << "Write0vbbOperator_CC: cannot open "
+            << filename
+            << std::endl;
+
+        goodstate = false;
+        return;
+    }
+
+    outfile
+        << std::scientific
+        << std::setprecision(16);
+
+    /*
+     * First line: total number of native IMSRG
+     * single-particle orbits.
+     */
+    const std::size_t norbits =
+        modelspace->GetNumberOrbits();
+
+    outfile << norbits << '\n';
+
+    /*
+     * Native IMSRG orbit table:
+     *
+     * index  n  l  2j  2tz
+     *
+     * The index written here is one-based.
+     */
+    for (std::size_t i = 0; i < norbits; ++i)
+    {
+        const Orbit& orbit =
+            modelspace->GetOrbit(i);
+
+        outfile
+            << std::setw(8) << i + 1
+            << std::setw(8) << orbit.n
+            << std::setw(8) << orbit.l
+            << std::setw(8) << orbit.j2
+            << std::setw(8) << orbit.tz2
+            << '\n';
+    }
+
+    /*
+     * Flat TBME section:
+     *
+     * aa bb cc dd J GT F T
+     *
+     * Iterate directly over the stored IMSRG matrices.
+     */
+   if (FermiOp.IsReduced())
+        FermiOp.MakeNotReduced();
+
+    if (GamowTellerOp.IsReduced())
+        GamowTellerOp.MakeNotReduced();
+
+    if (TensorOp.IsReduced())
+        TensorOp.MakeNotReduced();
+
+    for (const auto& gt_entry :
+         GamowTellerOp.TwoBody.MatEl)
+    {
+        const auto& channel_key =
+            gt_entry.first;
+
+        const std::size_t ch_bra =
+            channel_key[0];
+
+        const std::size_t ch_ket =
+            channel_key[1];
+
+        const auto f_iter =
+            FermiOp.TwoBody.MatEl.find(channel_key);
+
+        const auto t_iter =
+            TensorOp.TwoBody.MatEl.find(channel_key);
+
+        if (f_iter == FermiOp.TwoBody.MatEl.end() ||
+            t_iter == TensorOp.TwoBody.MatEl.end())
+        {
+            std::cerr
+                << "Write0vbbOperator_CC: missing matching "
+                << "Fermi or tensor block for channels "
+                << ch_bra << " " << ch_ket
+                << std::endl;
+
+            goodstate = false;
+            return;
+        }
+
+        const arma::mat& gt_matrix =
+            gt_entry.second;
+
+        const arma::mat& f_matrix =
+            f_iter->second;
+
+        const arma::mat& tensor_matrix =
+            t_iter->second;
+
+        if (gt_matrix.n_rows != f_matrix.n_rows ||
+            gt_matrix.n_cols != f_matrix.n_cols ||
+            gt_matrix.n_rows != tensor_matrix.n_rows ||
+            gt_matrix.n_cols != tensor_matrix.n_cols)
+        {
+            std::cerr
+                << "Write0vbbOperator_CC: inconsistent "
+                << "matrix dimensions for channels "
+                << ch_bra << " " << ch_ket
+                << std::endl;
+
+            goodstate = false;
+            return;
+        }
+
+        TwoBodyChannel& bra_channel =
+            modelspace->GetTwoBodyChannel(ch_bra);
+
+        TwoBodyChannel& ket_channel =
+            modelspace->GetTwoBodyChannel(ch_ket);
+
+        /*
+         * The 0vbb operators are scalar, so the bra and
+         * ket channels must have the same J.
+         */
+        if (bra_channel.J != ket_channel.J)
+        {
+            std::cerr
+                << "Write0vbbOperator_CC: J mismatch between "
+                << "channels "
+                << ch_bra << " " << ch_ket
+                << std::endl;
+
+            goodstate = false;
+            return;
+        }
+
+        const int J =
+            bra_channel.J;
+
+        for (arma::uword ibra = 0; ibra < gt_matrix.n_rows; ++ibra)
+        {
+            const Ket& bra = bra_channel.GetKet(static_cast<int>(ibra));
+            const int aa = static_cast<int>(bra.p) + 1;
+            const int bb = static_cast<int>(bra.q) + 1;
+
+            for (arma::uword iket = 0; iket < gt_matrix.n_cols; ++iket)
+            {
+                const Ket& ket = ket_channel.GetKet(static_cast<int>(iket));
+
+                const int cc = static_cast<int>(ket.p) + 1;
+                const int dd = static_cast<int>(ket.q) + 1;
+
+                /*
+                 * Direct access to the stored matrices.
+                 */
+                const double GT = gt_matrix(ibra,iket);
+                const double Fermi = f_matrix(ibra,iket);
+                const double Tensor = tensor_matrix(ibra,iket);
+                outfile
+                    << std::setw(8)  << aa
+                    << std::setw(8)  << bb
+                    << std::setw(8)  << cc
+                    << std::setw(8)  << dd
+                    << std::setw(8)  << J
+                    << std::setw(26) << GT
+                    << std::setw(26) << Fermi
+                    << std::setw(26) << Tensor
+                    << '\n';
+            }
+        }
+    }
+
+    outfile.close();
+}
 
 /*
 void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)

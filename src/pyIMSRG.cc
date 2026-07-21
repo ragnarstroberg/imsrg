@@ -404,6 +404,10 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("WriteTwoBody_Takayuki", &ReadWrite::WriteTwoBody_Takayuki)
           .def("WriteTwoBody_Binary_myg", &ReadWrite::WriteTwoBody_Binary_myg)
           .def("ReadTwoBody_Binary_myg", &ReadWrite::ReadTwoBody_Binary_myg)
+          .def("WriteNO2BFiles_ORNL", &ReadWrite::WriteNO2BFiles_ORNL, py::arg("Hno2b"),
+                    py::arg("kinetic_fn"), py::arg("no0b_fn"), py::arg("no1b_fn"), py::arg("no2b_fn"),
+                    py::arg("sp_energy_fn"))
+          .def("Write_0vbbOperators_ORNL", &ReadWrite::Write_0vbbOperators_ORNL, py::arg("FermiOp"), py::arg("GamowTellerOp"), py::arg("TensorOp"), py::arg("filename"))
           .def("WriteTensorOneBody", &ReadWrite::WriteTensorOneBody)
           .def("WriteTensorTwoBody", &ReadWrite::WriteTensorTwoBody)
           .def("WriteTokyo", &ReadWrite::WriteTokyo, py::arg("op"), py::arg("filename"), py::arg("mode"))

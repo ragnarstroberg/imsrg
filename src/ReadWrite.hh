@@ -88,6 +88,11 @@ class ReadWrite
    void ReadTwoBody_Binary_myg(std::string filename, Operator& op);
    void ReadTwoBody_Ascii_myg(std::string filename, Operator& op);
 
+   
+   void WriteNO2BFiles_ORNL( Operator& Hno2b, const std::string& kinetic_fn, const std::string& no0b_fn,
+                             const std::string& no1b_fn, const std::string& no2b_fn, const std::string& sp_energy_fn);
+   void Write_0vbbOperators_ORNL( Operator& FermiOp, Operator& GamowTellerOp, Operator& TensorOp, std::string filename);
+
 //   void WriteValence3body( ThreeBodyMEpn& threeBME, std::string filename );
    void WriteValence3body( ThreeBodyME& threeBME, std::string filename );
 
