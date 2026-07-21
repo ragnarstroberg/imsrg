@@ -832,6 +832,17 @@ void TwoBodyME::PrintMatrix(size_t chbra,size_t chket) const
 //   MatEl.at({chbra,chket}).print();
 }
 
+void TwoBodyME::PrintAllMatricesTerse() const
+{
+ for (auto& it : MatEl)
+ {
+    if (it.second.n_rows>0)
+    {
+      std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;
+    }
+ } 
+}
+
 void TwoBodyME::PrintAllMatrices() const
 {
   for ( auto& itmat : MatEl )

@@ -167,6 +167,7 @@ class TwoBodyME
   void Symmetrize();
   void AntiSymmetrize();
   void Eye();
+  void PrintAllMatricesTerse() const;
   void PrintAllMatrices() const;
   void PrintMatrix(size_t chbra,size_t chket) const;
 //  void PrintMatrix(size_t chbra,size_t chket) const {std::cout.precision(12); MatEl.at({chbra,chket}).raw_print();};
