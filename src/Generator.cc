@@ -124,8 +124,10 @@ double Generator::Get1bDenominator(int i, int j)
    double ni = H_denom->modelspace->GetOrbit(i).occ;
    double nj = H_denom->modelspace->GetOrbit(j).occ;
    
+   auto& h1 = H_denom->OneBody;
 //   double denominator = H->OneBody(i,i) - H->OneBody(j,j);
-   double denominator = H_denom->OneBody(i,i) - H->OneBody(j,j);
+//   double denominator = H_denom->OneBody(i,i) - H->OneBody(j,j);
+   double denominator = h1(i,i) - h1(j,j);
    if ( denominator_partitioning == Epstein_Nesbet)
    {
       denominator += ( ni-nj ) * H_denom->TwoBody.GetTBMEmonopole(i,j,i,j);
@@ -173,7 +175,9 @@ double Generator::Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket)
    int j = bra.q;
    int k = ket.p;
    int l = ket.q;
-   double denominator = H_denom->OneBody(i,i)+ H_denom->OneBody(j,j) - H_denom->OneBody(k,k) - H_denom->OneBody(l,l);
+   auto& h1 = H_denom->OneBody;
+   double denominator = h1(i,i)+ h1(j,j) - h1(k,k) - h1(l,l);
+//   double denominator = H_denom->OneBody(i,i)+ H_denom->OneBody(j,j) - H_denom->OneBody(k,k) - H_denom->OneBody(l,l);
 
    if ( denominator_partitioning == MP_isospin )
    {
@@ -186,7 +190,8 @@ double Generator::Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket)
       size_t jj = H_denom->modelspace->GetOrbitIndex( oj.n,oj.l,oj.j2,-oj.tz2);
       size_t kk = H_denom->modelspace->GetOrbitIndex( ok.n,ok.l,ok.j2,-ok.tz2);
       size_t ll = H_denom->modelspace->GetOrbitIndex( ol.n,ol.l,ol.j2,-ol.tz2);
-      denominator += H_denom->OneBody(ii,ii) + H_denom->OneBody(jj,jj) - H_denom->OneBody(kk,kk) - H_denom->OneBody(ll,ll);
+//      denominator += H_denom->OneBody(ii,ii) + H_denom->OneBody(jj,jj) - H_denom->OneBody(kk,kk) - H_denom->OneBody(ll,ll);
+      denominator +=  h1(ii,ii)+ h1(jj,jj) - h1(kk,kk) - h1(ll,ll);  
       denominator /=2;
    }
 
@@ -225,7 +230,7 @@ double Generator::Get2bDenominator(int ch_bra, int ch_ket, int ibra, int iket)
 
 double Generator::Get3bDenominator( int i, int j, int k, int l, int m, int n )
 {
-  auto h1 = H_denom->OneBody;
+  auto& h1 = H_denom->OneBody;
   double denominator = h1(i,i) + h1(j,j) + h1(k,k) - h1(l,l) - h1(m,m) - h1(n,n);
   if ( denominator_partitioning == Epstein_Nesbet)
   { // This  is unpleasant and almost certainly not necessary, so not implementing it yet...
@@ -434,7 +439,6 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = etafunc(H->OneBody(i,a), denominator);
          Eta->OneBody(a,i) = etafunc(H->OneBody(a,i), -denominator); // This includes possible phase from reduced matrix element
-//         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
 
@@ -486,7 +490,6 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
             {
                double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
                ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
-//               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
             }
          }
          // Decouple the valence space
@@ -496,7 +499,6 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
             {
                double denominator = Get2bDenominator(ch_bra,ch_ket,ibra,iket);
                ETA2(ibra,iket) = etafunc(H2(ibra,iket) , denominator);
-//               ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
             }
          }
       }
@@ -551,129 +553,56 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
       size_t nbras = Tbc_bra.GetNumberKets();
       size_t nkets = Tbc_ket.GetNumberKets();
 
-//      for (size_t ibra=0; ibra<nbras; ibra++)
-//      {
-        Ket3& bra = Tbc_bra.GetKet(ibra);
-         if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
 
 
-        double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
-        double d_eb = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
-        double d_ec = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
-        double occnat_a = bra.op->occ_nat;
-        double occnat_b = bra.oq->occ_nat;
-        double occnat_c = bra.oR->occ_nat;
-        if ( d_ea + d_eb + d_ec > H->modelspace->GetdE3max() ) continue;
-        if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H->modelspace->GetOccNat3Cut() ) continue ;
-        size_t a = bra.p;
-        size_t b = bra.q;
-        size_t c = bra.r;
+      double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+      double d_eb = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+      double d_ec = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+      double occnat_a = bra.op->occ_nat;
+      double occnat_b = bra.oq->occ_nat;
+      double occnat_c = bra.oR->occ_nat;
+      if ( d_ea + d_eb + d_ec > H->modelspace->GetdE3max() ) continue;
+      if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+      size_t a = bra.p;
+      size_t b = bra.q;
+      size_t c = bra.r;
 
-        for (size_t iket=0; iket<nkets; iket++)
-        {
-           Ket3& ket = Tbc_ket.GetKet(iket);
-           // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
-           if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
-                   or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
-                    ) ) continue;
-           if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
-                   
-//           if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
-           double d_ei = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
-           double d_ej = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
-           double d_ek = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
-           double occnat_i = ket.op->occ_nat;
-           double occnat_j = ket.oq->occ_nat;
-           double occnat_k = ket.oR->occ_nat;
-           if ( d_ei + d_ej + d_ek > H->modelspace->GetdE3max() ) continue;
-           if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H->modelspace->GetOccNat3Cut() ) continue ;
-           size_t i = ket.p;
-           size_t j = ket.q;
-           size_t k = ket.r;
+      for (size_t iket=0; iket<nkets; iket++)
+      {
+         Ket3& ket = Tbc_ket.GetKet(iket);
+         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
+         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
+                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
+                  ) ) continue;
+         if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+                 
+//         if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+         double d_ei = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+         double d_ej = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+         double d_ek = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+         double occnat_i = ket.op->occ_nat;
+         double occnat_j = ket.oq->occ_nat;
+         double occnat_k = ket.oR->occ_nat;
+         if ( d_ei + d_ej + d_ek > H->modelspace->GetdE3max() ) continue;
+         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+         size_t i = ket.p;
+         size_t j = ket.q;
+         size_t k = ket.r;
 
-           double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+         double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
 
-           double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
-           double eta =  etafunc( ME_od, denominator);
+         double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
+         double eta =  etafunc( ME_od, denominator);
 
-           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
-           
-        }// for iket
+         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+         
+      }// for iket
 
     }// for ch3bra, ch3ket,ibra  (all rolled together)
 
 }
-
-/*
-// off diagonal pieces are  ppp|ccc  ppp|ccv ppp|cvv  qpp|vvv   where p is either v or q
-void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double,double)>& etafunc )
-{
-   double t_start = omp_get_wtime();
-   std::vector<size_t> corevec;
-   for (auto a : H->modelspace->core) corevec.push_back(a);
-   std::map<int,double> e_fermi = H->modelspace->GetEFermi();
-   if (H->OneBodyNorm() < 1e-6)
-   {
-      std::cout << __func__ << "  WARNING: || H1b || is zero. This may cause trouble with the denominators." << std::endl;
-   }
-   //     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
-   size_t nch3 = H->modelspace->GetNumberThreeBodyChannels();
-   #pragma omp parallel for schedule(dynamic,1)
-   for (size_t ch3=0; ch3<nch3; ch3++)
-   {
-      ThreeBodyChannel& Tbc = H->modelspace->GetThreeBodyChannel(ch3);
-      size_t nkets3 = Tbc.GetNumberKets();
-      for (size_t ibra=0; ibra<nkets3; ibra++)
-      {
-         Ket3& bra = Tbc.GetKet(ibra);
-         if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
-         double d_ei = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
-         double d_ej = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
-         double d_ek = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
-         double occnat_i = bra.op->occ_nat;
-         double occnat_j = bra.oq->occ_nat;
-         double occnat_k = bra.oR->occ_nat;
-         if ( d_ei + d_ej + d_ek > H->modelspace->GetdE3max() ) continue;
-         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H->modelspace->GetOccNat3Cut() ) continue ;
-         size_t i = bra.p;
-         size_t j = bra.q;
-         size_t k = bra.r;
-         
-         for (size_t iket=0; iket<nkets3; iket++)
-         {
-            Ket3& ket = Tbc.GetKet(iket);
-            if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
-            if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
-
-            double d_ea = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
-            double d_eb = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
-            double d_ec = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
-            double occnat_a = ket.op->occ_nat;
-            double occnat_b = ket.oq->occ_nat;
-            double occnat_c = ket.oR->occ_nat;
-            if ( d_ea + d_eb + d_ec > H->modelspace->GetdE3max() ) continue;
-            if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H->modelspace->GetOccNat3Cut() ) continue ;
-            size_t a = ket.p;
-            size_t b = ket.q;
-            size_t c = ket.r;
-
-            double denominator = Get3bDenominator( i,j,k, a,b,c ) ;
-
-            double ME_od = H->ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
-            double eta =  etafunc( ME_od, denominator);
-
-            Eta->ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket,  eta); // hermitian conjugate automatically gets added
-            
-         }// for iket
-      }// for ibra
-
-   }// for ch3
-
-//    std::cout << "Norm of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
-    H->profiler.timer[__func__] += omp_get_wtime() - t_start;
-}
-
-*/
 
 
 void Generator::ConstructGenerator_ShellModel_NpNh(std::function<double(double,double)>& eta_func)
