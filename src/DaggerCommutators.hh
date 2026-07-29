@@ -23,6 +23,7 @@
 #include "Operator.hh"
 #include "ThreeLegME.hh"
 #include <armadillo>
+#include <deque>
 
 namespace Commutator
 {

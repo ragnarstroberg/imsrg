@@ -5922,7 +5922,7 @@ namespace Commutator
   {
 
     double tstart = omp_get_wtime();
-    if (Commutator::verbose or true)
+    if (Commutator::verbose)
       std::cout << __func__ << std::endl;
 
     if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )

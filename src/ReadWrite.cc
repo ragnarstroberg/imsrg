@@ -6080,6 +6080,8 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
    }
 
    int cnt_tbme = 0;
+   if ( op.TwoBodyNorm() > 1e-8 )
+   {
    for (auto& itmat : op.TwoBody.MatEl)
    {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(itmat.first[0]);
@@ -6088,11 +6090,13 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
      for (auto& ibra : tbc_bra.GetKetIndex_vv() ) {
        for (auto& iket : tbc_ket.GetKetIndex_vv() ) {
          double me = matrix(ibra,iket);
-         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+//         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+         if (std::abs(me) <  1e-9 )
            continue;
          cnt_tbme += 1;
        }
      }
+   }
    }
 
    outfile << "! reduced matrix elements" << std::endl;
@@ -6111,20 +6115,26 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
    }
 
    outfile << cnt_tbme << " " << 0 << " " << modelspace->GetHbarOmega() << std::endl; // w/o mass dependence
-   for (auto& itmat : op.TwoBody.MatEl) {
+   if ( op.TwoBodyNorm() > 1e-8 )
+   {
+   for (auto& itmat : op.TwoBody.MatEl)
+   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(itmat.first[0]);
      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(itmat.first[1]);
      auto& matrix = itmat.second;
-     for (auto& ibra : tbc_bra.GetKetIndex_vv() ) {
+     for (auto& ibra : tbc_bra.GetKetIndex_vv() )
+     {
        Ket& bra = tbc_bra.GetKet(ibra);
        int a_ind = orb2kshell[bra.p];
        int b_ind = orb2kshell[bra.q];
-       for (auto& iket : tbc_ket.GetKetIndex_vv() ) {
+       for (auto& iket : tbc_ket.GetKetIndex_vv() ) 
+       {
          Ket& ket = tbc_ket.GetKet(iket);
          int c_ind = orb2kshell[ket.p];
          int d_ind = orb2kshell[ket.q];
          double me = matrix(ibra,iket);
-         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+//         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+         if (std::abs(me) <  1e-9)
            continue;
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) <<
            c_ind << " " << std::setw(wint) << d_ind << "   " << std::setw(wint) << tbc_bra.J <<
@@ -6132,6 +6142,7 @@ void ReadWrite::WriteTensorTokyo(std::string filename, Operator& op)
            std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
        }
      }
+   }
    }
    outfile.close();
 }
@@ -6147,7 +6158,6 @@ void ReadWrite::skip_comments(std::ifstream& in)
     std::string com=line.substr(0,size_check);
     pos1=com.find('#');
     pos2=com.find('!');
-//    std::cout << " " << __func__ << "  line = " << line << "  pos1 , pos2 = " << pos1 << " " << pos2 << std::endl;
     if(pos1 > size_check and pos2 > size_check)
     {
       in.seekg (oldpos);
