@@ -3347,12 +3347,12 @@ namespace Commutator
   //
   // i|  j|
   //  |   |           Uncoupled expression:
-  //  *~~[X]~~~~*        Z_ijkl = 1/6 sum_abcd (nanbncn`d -n`an`bn`cnd)(X_ijdabc Y_abckld - Y_ijdabc Xabckld)
+  //  *~~[X]~~~~*        Z_ijkl = 1/6 sum_abcd (n`an`bn`cnd - nanbncn`d)(X_ijdabc Y_abckld - Y_ijdabc Xabckld)
   //  |   |     /\      .
   // a|  b|   c(  )d    .
   //  |   |     \/      .
   //  *~~[Y]~~~~*      Coupled expression:
-  //  |   |              Z_{ijkl}^{J} = 1/6 sum_abcd (nanbncn`d-n`an`bn`cnd) 1/(2J+1) sum_J1J' (2J'+1)(X_{ijdabc}^{J J1 J'} Y_{abckld}^{J1 J J'} - X<->Y )
+  //  |   |              Z_{ijkl}^{J} = 1/6 sum_abcd (n`an`bn`cnd - nanbncn`d) 1/(2J+1) sum_J1J' (2J'+1)(X_{ijdabc}^{J J1 J'} Y_{abckld}^{J1 J J'} - X<->Y )
   // k|  l|
   //
   //
