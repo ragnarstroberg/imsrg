@@ -6874,16 +6874,16 @@ namespace ReferenceImplementations
                   for (int J0 = J0min; J0 <= J0max; J0++)
                   {
                     zij += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, p, b, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, q);
-//                    zij += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, q, b, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, p);
+                    zij += (2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, q, b, e) * Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, p);
 
 
-                    if (p==0 and q==0 and a==0 and d==0 and c==0 and J0==0)
-                    {
-                        std::cout << "abcJ = " << a << " " << d << " " << c << " " << J0 << " Gamma = " << Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, q)
-                                  << "  chi = " << 0.25*(2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, p, b, e)
-                                  << " be = " << b << " " << e
-                                  <<  "    zij = " << zij << "=>  " <<  0.25*zij / (op.j2+1.0)<< std::endl;
-                    }
+//                    if (p==0 and q==0 and a==0 and d==0 and c==0 and J0==0)
+//                    {
+//                        std::cout << "abcJ = " << a << " " << d << " " << c << " " << J0 << " Gamma = " << Gamma.TwoBody.GetTBME_J(J0, J0, a, d, c, q)
+//                                  << "  chi = " << 0.25*(2 * J0 + 1) * occfactor * Eta.TwoBody.GetTBME_J(J0, J0, b, e, a, d) * Eta.TwoBody.GetTBME_J(J0, J0, c, p, b, e)
+//                                  << " be = " << b << " " << e
+//                                  <<  "    zij = " << zij << "=>  " <<  0.25*zij / (op.j2+1.0)<< std::endl;
+//                    }
 
                   } // J0
                 }
@@ -10290,7 +10290,7 @@ namespace ReferenceImplementations
       double n_d = od.occ;
       double nbar_d = 1.0 - n_d;
 
-      for (auto &e : Z.GetOneBodyChannel(od.l, od.j2, od.tz2)) // delta_jd je
+      for (auto &e : Eta.GetOneBodyChannel(od.l, od.j2, od.tz2)) // delta_jd je
       {
         if (e > d)
           continue;
@@ -10355,7 +10355,8 @@ namespace ReferenceImplementations
         for (auto &d : Z.modelspace->all_orbits)
         {
           Orbit &od = Z.modelspace->GetOrbit(d);
-          for (auto &e : Z.GetOneBodyChannel(od.l, od.j2, od.tz2)) // delta_jd je
+//          for (auto &e : Z.GetOneBodyChannel(od.l, od.j2, od.tz2)) // delta_jd je
+          for (auto &e : Eta.GetOneBodyChannel(od.l, od.j2, od.tz2)) // delta_jd je
           {
             Orbit &oe = Z.modelspace->GetOrbit(e);
 
@@ -13622,16 +13623,23 @@ namespace ReferenceImplementations
             for (int JJ=JJmin; JJ<=JJmax; JJ++)
             {
                 double sixj1 = Z.modelspace->GetSixJ( ji,jj,J,  jk,jl,JJ);
-                double sixj2 = Z.modelspace->GetSixJ( jj,ji,J,  jk,jl,JJ);
                 double Omega_ilkj = Eta.TwoBody.GetTBME_J(JJ,JJ,i,l,k,j);
-                double Omega_jlki = Eta.TwoBody.GetTBME_J(JJ,JJ,j,l,k,i);
-                double Omega_iklj = Eta.TwoBody.GetTBME_J(JJ,JJ,i,k,l,j);
                 double Omega_jkli = Eta.TwoBody.GetTBME_J(JJ,JJ,j,k,l,i);
                 omegabar_ijkl += -(2*JJ+1) * sixj1 * Omega_ilkj;
-                omegabar_jikl += -(2*JJ+1) * sixj2 * Omega_jlki;
-                omegabar_ijlk += -(2*JJ+1) * sixj2 * Omega_iklj;
                 omegabar_jilk += -(2*JJ+1) * sixj1 * Omega_jkli;
             }
+
+            JJmin = AngMom::Jmin({ {j2j,j2l} , {j2i,j2k}  }) / 2;
+            JJmax = AngMom::Jmax({ {j2j,j2l} , {j2i,j2k}  }) / 2;
+            for (int JJ=JJmin; JJ<=JJmax; JJ++)
+            {
+                double sixj2 = Z.modelspace->GetSixJ( jj,ji,J,  jk,jl,JJ);
+                double Omega_jlki = Eta.TwoBody.GetTBME_J(JJ,JJ,j,l,k,i);
+                double Omega_iklj = Eta.TwoBody.GetTBME_J(JJ,JJ,i,k,l,j);
+                omegabar_jikl += -(2*JJ+1) * sixj2 * Omega_jlki;
+                omegabar_ijlk += -(2*JJ+1) * sixj2 * Omega_iklj;
+            }
+
           Omega_bar(IJ,       KL    )  = omegabar_ijkl;
           Omega_bar(IJ+nkets, KL    )  = omegabar_jikl;
           Omega_bar(IJ,       KL+nkets) = omegabar_ijlk;
@@ -13676,16 +13684,21 @@ namespace ReferenceImplementations
                double OmegaBar_ablk = Omega_bar( AB, LK );
                double OmegaBar_balk = Omega_bar( BA, LK );
                chibar_ijkl += (2*J+1)  * occ_abkl * OmegaBar_ijab * OmegaBar_abkl; 
-               chibar_ijkl += (2*J+1)  * occ_bakl * OmegaBar_ijba * OmegaBar_bakl; 
 
                chibar_jikl += (2*J+1)  * occ_abkl * OmegaBar_jiab * OmegaBar_abkl; 
-               chibar_jikl += (2*J+1)  * occ_bakl * OmegaBar_jiba * OmegaBar_bakl; 
 
                chibar_ijlk += (2*J+1)  * occ_ablk * OmegaBar_ijab * OmegaBar_ablk; 
-               chibar_ijlk += (2*J+1)  * occ_balk * OmegaBar_ijba * OmegaBar_balk; 
 
                chibar_jilk += (2*J+1)  * occ_ablk * OmegaBar_jiab * OmegaBar_ablk; 
+
+
+               if ( ketab.p != ketab.q )
+               {
+               chibar_ijkl += (2*J+1)  * occ_bakl * OmegaBar_ijba * OmegaBar_bakl; 
+               chibar_jikl += (2*J+1)  * occ_bakl * OmegaBar_jiba * OmegaBar_bakl; 
+               chibar_ijlk += (2*J+1)  * occ_balk * OmegaBar_ijba * OmegaBar_balk; 
                chibar_jilk += (2*J+1)  * occ_balk * OmegaBar_jiba * OmegaBar_balk; 
+               }
 
             }
             chi_g[ch](IJ,KL) = chibar_ijkl;
@@ -13741,14 +13754,21 @@ namespace ReferenceImplementations
 
                        double Gammabar_abjc = 0;
                        double Gammabar_abci = 0;
-                       int JJmin = AngMom::Jmin({ {oa.j2,oi.j2} , {ob.j2,oc.j2} });
-                       int JJmax = AngMom::Jmin({ {oa.j2,oi.j2} , {ob.j2,oc.j2} });
+
+                       int JJmin = AngMom::Jmin({ {oa.j2,oi.j2} , {ob.j2,oc.j2} })/2;
+                       int JJmax = AngMom::Jmin({ {oa.j2,oi.j2} , {ob.j2,oc.j2} })/2;
+                       for (int JJ=JJmin; JJ<=JJmax; JJ++)
+                       {
+                          double sixj2 = Z.modelspace->GetSixJ( oa.j2*0.5, ob.j2*0.5, J,  oc.j2*0.5, oi.j2*0.5, JJ);
+                          Gammabar_abci -= (2*JJ+1) * sixj2 * Gamma.TwoBody.GetTBME_J(JJ,JJ,a,i,c,b);
+                       }
+
+                       JJmin = AngMom::Jmin({ {oa.j2,oc.j2} , {ob.j2,oj.j2} })/2;
+                       JJmax = AngMom::Jmin({ {oa.j2,oc.j2} , {ob.j2,oj.j2} })/2;
                        for (int JJ=JJmin; JJ<=JJmax; JJ++)
                        {
                           double sixj1 = Z.modelspace->GetSixJ( oa.j2*0.5, ob.j2*0.5, J,  oj.j2*0.5, oc.j2*0.5, JJ);
-                          double sixj2 = Z.modelspace->GetSixJ( oa.j2*0.5, ob.j2*0.5, J,  oc.j2*0.5, oi.j2*0.5, JJ);
                           Gammabar_abjc -= (2*JJ+1) * sixj1 * Gamma.TwoBody.GetTBME_J(JJ,JJ,a,c,j,b);
-                          Gammabar_abci -= (2*JJ+1) * sixj2 * Gamma.TwoBody.GetTBME_J(JJ,JJ,a,i,c,b);
                        }
 
                        
@@ -13832,6 +13852,8 @@ namespace ReferenceImplementations
        for (size_t ij=0; ij<nkets; ij++)
        {
           Ket& ketij = tbc.GetKet(ij);
+            double ni = ketij.op->occ;
+            double nj = ketij.oq->occ;
           for (size_t kl=0; kl<nkets; kl++)
           {
             Ket& ketkl = tbc.GetKet(kl);
@@ -13847,19 +13869,20 @@ namespace ReferenceImplementations
                double na = ketab.op->occ;
                double nb = ketab.oq->occ;
 //               double occ_factor = na*nb*(1-nk)*(1-nl) - (1-na)*(1-nb)*nk*nl;
-               double occ_factor = na*nb*(1-nk)*(1-nl) - (1-na)*(1-nb)*nk*nl;
+//               double occ_factor = na*nb*(1-nk)*(1-nl) - (1-na)*(1-nb)*nk*nl;
+               double occ_factor = na*nb*(1-ni)*(1-nj) - (1-na)*(1-nb)*ni*nj;
                double Omega_ijab = Eta.TwoBody.GetTBME_norm(ch,ch,ij,ab);
                double Omega_abkl = Eta.TwoBody.GetTBME_norm(ch,ch,ab,kl);
                chi_ijkl += 2 * (2*J+1) / 4.0 * occ_factor * Omega_ijab * Omega_abkl; // the extra factor of 2 is for a>b.
             }
             double normalization = 1.0;
-            if (ketij.p == ketij.q) normalization /= PhysConst::SQRT2;
-            if (ketkl.p == ketkl.q) normalization /= PhysConst::SQRT2;
+//            if (ketij.p == ketij.q) normalization /= PhysConst::SQRT2;
+//            if (ketkl.p == ketkl.q) normalization /= PhysConst::SQRT2;
             chi_d.SetTBME(ch,ch,ij,kl, chi_ijkl * normalization );
-            if ( J==0 and ketkl.p==0 and ketkl.q==0  )
-            {
-              std::cout << "      building chid   " << ketij.p << " " << ketij.q << " " << ketkl.p << " " << ketkl.q << "   " << chi_ijkl << std::endl;
-            }
+//            if ( J==0 and ketkl.p==0 and ketkl.q==0  )
+//            {
+//              std::cout << "      building chid   " << ketij.p << " " << ketij.q << " " << ketkl.p << " " << ketkl.q << "   " << chi_ijkl << std::endl;
+//            }
 
           }// for iket
        }// for ibra
@@ -13886,19 +13909,24 @@ namespace ReferenceImplementations
                 int Jmax = AngMom::Jmax({ {oa.j2,ob.j2}, {oi.j2,oc.j2}}) /2;
                 for (int J=Jmin; J<=Jmax; J++)
                 {
-                   double chi_ciab = chi_d.GetTBME_J(J,J,c,i,a,b);
-                   double chi_cjab = chi_d.GetTBME_J(J,J,c,j,a,b);
+//                   double chi_ciab = chi_d.GetTBME_J(J,J,c,i,a,b);
+//                   double chi_cjab = chi_d.GetTBME_J(J,J,c,j,a,b);
+
+                   double chi_abci = chi_d.GetTBME_J(J,J,a,b,c,i);
+                   double chi_abcj = chi_d.GetTBME_J(J,J,a,b,c,j);
+                   double Gamma_cjab = Gamma.TwoBody.GetTBME_J(J,J,c,j,a,b);
+                   double Gamma_ciab = Gamma.TwoBody.GetTBME_J(J,J,c,i,a,b);
 //                   double chi_abcj = chi_d.GetTBME_J(J,J,a,b,c,j);
-                   double Gamma_abcj = Gamma.TwoBody.GetTBME_J(J,J,a,b,c,j);
 //                   double Gamma_ciab = Gamma.TwoBody.GetTBME_J(J,J,c,j,a,b);
-                   double Gamma_abci = Gamma.TwoBody.GetTBME_J(J,J,a,b,c,i);
+//                   double Gamma_abcj = Gamma.TwoBody.GetTBME_J(J,J,a,b,c,j);
+//                   double Gamma_abci = Gamma.TwoBody.GetTBME_J(J,J,a,b,c,i);
 ////                   fIIIb_ij += 1/(oi.j2+1.0) * (chi_ciab * Gamma_abcj - chi_abcj * Gamma_ciab);
-//                   fIIIb_ij += 1/(oi.j2+1.0) * (chi_ciab * Gamma_abcj + chi_cjab * Gamma_abci);
-                   fIIIb_ij += 1/(oi.j2+1.0) * (chi_ciab * Gamma_abcj );
-                    if (i==0 and j==0 and std::abs(Gamma_abcj)>1e-6 and a==0 and b==0 and c==0 and J==0)
-                    {
-                        std::cout << "** abcJ = " << a << " " << b << " " << c << " " << J << " Gamma = " << Gamma_abcj << "  chi = " << chi_ciab <<  "    zij = " << fIIIb_ij << std::endl;
-                    }
+                   fIIIb_ij += 1/(oi.j2+1.0) * (chi_abcj * Gamma_ciab + chi_abci * Gamma_cjab);
+//                   fIIIb_ij += 1/(oi.j2+1.0) * (chi_ciab * Gamma_abcj );
+//                    if (i==0 and j==0 and std::abs(Gamma_abcj)>1e-6 and a==0 and b==0 and c==0 and J==0)
+//                    {
+//                        std::cout << "** abcJ = " << a << " " << b << " " << c << " " << J << " Gamma = " << Gamma_abcj << "  chi = " << chi_ciab <<  "    zij = " << fIIIb_ij << std::endl;
+//                    }
                 }// for J
               }// for c
            }// for b
