@@ -820,7 +820,7 @@ namespace Commutator
     index_t norbits = Z.modelspace->all_orbits.size();
     int hZ = Z.IsHermitian() ? 1 : -1;
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic,1)
     for (index_t indexi = 0; indexi < norbits; ++indexi)
     {
       auto i = indexi;
@@ -864,12 +864,12 @@ namespace Commutator
               zij += (oa.j2 + 1) * nanb * Y.OneBody(b, a) * X.TwoBody.GetTBMEmonopole(a, i, b, j);
             }
           }
-        }
+        }// for a
         Z.OneBody(i, j) += zij;
         if (jmin == i and j != i)
           Z.OneBody(j, i) += hZ * zij;
-      }
-    }
+      }// for j
+    }//for i
 
     X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
@@ -945,20 +945,18 @@ namespace Commutator
           double nbarc = 1.0 - nc;
           int Jmin = std::max(std::abs(oc.j2 - oi.j2), std::abs(oc.j2 - oj.j2)) / 2;
           int Jmax = (oc.j2 + std::min(oi.j2, oj.j2)) / 2;
-          //int parity_phase = hZ == 1 ? 1 : Z.modelspace->phase(oc.l);
-          int parity_phase = 1;
           if (std::abs(nc) > 1e-9)
           {
             for (int J = Jmin; J <= Jmax; J++)
             {
-              zij += (2 * J + 1) * nc * parity_phase * Mpp.GetTBME_J(J, c, i, c, j);
+              zij += (2 * J + 1) * nc * Mpp.GetTBME_J(J, c, i, c, j);
             }
           }
           if (std::abs(nbarc) > 1e-9)
           {
             for (int J = Jmin; J <= Jmax; J++)
             {
-              zij += (2 * J + 1) * parity_phase * nbarc * Mhh.GetTBME_J(J, c, i, c, j);
+              zij += (2 * J + 1) * nbarc * Mhh.GetTBME_J(J, c, i, c, j);
            }
           }
         }
@@ -1028,7 +1026,6 @@ namespace Commutator
         // there may be a more efficient way to find these
         std::vector<index_t> ind1_ia, ind1_ja, ind2_aj, ind2_ai;
         std::vector<double> factor_ia, factor_ja;
-        //         for (int a : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
         for (int a : Z.GetOneBodyChannel(oi.l, oi.j2, oi.tz2))
         {
           size_t ind2 = tbc.GetLocalIndex(std::min(a, j), std::max(a, j));
@@ -1040,7 +1037,6 @@ namespace Commutator
         }
         if (i != j)
         {
-          //           for (int a : Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
           for (int a : Z.GetOneBodyChannel(oj.l, oj.j2, oj.tz2))
           {
             size_t ind2 = tbc.GetLocalIndex(std::min(a, i), std::max(a, i));
@@ -1268,9 +1264,9 @@ namespace Commutator
       ch_ket_list.push_back(ch_ket);
     }
     int nch = ch_bra_list.size();
-    // #ifndef OPENBLAS_NOUSEOMP
-    // #pragma omp parallel for schedule(dynamic, 1)
-    // #endif
+    #ifndef OPENBLAS_NOUSEOMP
+      #pragma omp parallel for schedule(dynamic, 1)
+    #endif
     for (int ich = 0; ich < nch; ++ich)
     {
       int ch_bra = ch_bra_list[ich];
