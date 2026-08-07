@@ -542,7 +542,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetDenominatorPartitioning", &Generator::SetDenominatorPartitioning, py::arg("Moller_Plessett or Epstein_Nesbet"))
           .def("SetUseIsospinAveraging", &Generator::SetUseIsospinAveraging, py::arg("tf"))
           .def("Update", &Generator::Update, py::arg("H"), py::arg("Eta"))
-          .def("UpdateGeneral", &Generator::Update, py::arg("H"), py::arg("H_denom"), py::arg("Eta"))
+          .def("UpdateGeneral", &Generator::UpdateGeneral, py::arg("H"), py::arg("H_denom"), py::arg("Eta"))
           .def("GetHod_SingleRef", &Generator::GetHod_SingleRef, py::arg("H"))
           .def("GetHod", &Generator::GetHod, py::arg("H"))
       ;
