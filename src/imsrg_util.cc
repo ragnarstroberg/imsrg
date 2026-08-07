@@ -2453,6 +2453,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   {
     Operator Fermi(modelspace,0,1,0,2);
     Fermi.SetHermitian();
+    Fermi.MakeReduced();
     int norbits = modelspace.GetNumberOrbits();
 //    for (int i=0; i<norbits; ++i)
     for ( auto i : modelspace.proton_orbits )
