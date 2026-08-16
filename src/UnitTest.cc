@@ -3815,14 +3815,14 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
   Operator Z_J_old(Y);
   Z_J.SetHermitian();
   Z_J.Erase();
-  Z_J_old.SetHermitian();
-  Z_J_old.Erase();
+//  Z_J_old.SetHermitian();
+//  Z_J_old.Erase();
 
   //  Z_J.modelspace->SetOccNat3Cut(1e-5);
   //  Z_J.modelspace->SetdE3max(1);
 
   //  Commutator::comm332_pphhss_debug( X, Y, Z_J);
-  Commutator::comm332_pphhss_debug(X, Y, Z_J_old);
+//  Commutator::comm332_pphhss_debug(X, Y, Z_J_old);
   //  Z_J.Erase();
   Commutator::comm332_pphhss(X, Y, Z_J);
 
@@ -3962,7 +3962,7 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
                 } // for a
 
                 double ZJ_ijkl = GetMschemeMatrixElement_2b(Z_J, i, mi, j, mj, k, mk, l, ml);
-                double ZJ_old_ijkl = GetMschemeMatrixElement_2b(Z_J_old, i, mi, j, mj, k, mk, l, ml);
+//                double ZJ_old_ijkl = GetMschemeMatrixElement_2b(Z_J_old, i, mi, j, mj, k, mk, l, ml);
                 double err = Zm_ijkl - ZJ_ijkl;
                 //             if (std::abs(ZJ_ijkl-ZJ_old_ijkl)>1e-6)
                 if (std::abs(err) > 1e-6)
@@ -3970,8 +3970,8 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
                   std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
                             << " {m} = " << mi << " " << mj << " " << mk << " " << ml
                             //                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl;
-                            << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << " ZJ_old_ijkl " << ZJ_old_ijkl << "   err = " << err
-                            << "  J err = " << ZJ_ijkl - ZJ_old_ijkl << std::endl;
+                            << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl  << "   err = " << err
+                            <<  std::endl;
                 }
                 summed_error += err * err;
                 sum_m += Zm_ijkl * Zm_ijkl;
@@ -6049,11 +6049,12 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
 
   Commutator::FactorizedDoubleCommutator::comm223_231(eta, H, OpOut_factorized);
 //  Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates(true);
+//  Commutator::FactorizedDoubleCommutator::SetUse_2b_Intermediates(true);
   Commutator::FactorizedDoubleCommutator::comm223_232(eta, H, OpOut_factorized);
 
 //  ReferenceImplementations::comm223_231_BruteForce(eta, H, OpOut_factorized);
-//  ReferenceImplementations::comm223_232_BruteForce(eta, H, OpOut_factorized);
-//  OpOut_factorized.EraseOneBody();
+////  ReferenceImplementations::comm223_232_BruteForce(eta, H, OpOut_factorized);
+//////  OpOut_factorized.EraseOneBody();
 //  ReferenceImplementations::comm223_231_fI(eta, H, OpOut_factorized);
 //  ReferenceImplementations::comm223_231_fII(eta, H, OpOut_factorized);
 //  ReferenceImplementations::comm223_231_fIIIa(eta, H, OpOut_factorized);
