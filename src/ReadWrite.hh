@@ -75,7 +75,7 @@ class ReadWrite
    void WriteNuShellX_intfile( Operator& op, std::string filename, std::string mode);
    void WriteAntoine_int( Operator& op, std::string filename);
    void WriteAntoine_input( Operator& op, std::string filename, int A, int Z);
-   void WriteOperator(Operator& op, std::string filename);
+   void WriteOperator(Operator& op, std::string filename, double CHOP);
    void WriteOperatorHuman(Operator& op, std::string filename);
    void ReadOperator(Operator& op, std::string filename);
    void ReadOperatorHuman(Operator& op, std::string filename);
