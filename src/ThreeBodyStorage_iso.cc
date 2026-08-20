@@ -321,7 +321,8 @@ double ThreeBodyStorage_iso::Norm() const
 {
   double norm = 0;
   for (auto me : MatEl)  norm += me*me;
-  return norm;
+  return sqrt(norm);
+//  return norm;
 }
 
 // Set all elements to zero
