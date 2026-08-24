@@ -27,6 +27,13 @@
 #include <vector>
 #include <memory> // for shared_ptr
 
+// Anonymous namespace. All anonymous namespaces in the same file are treated as the
+// same namespace and all anonymous namespaces in different files are distinct.
+// This is just to avoid collisions with other things called hash_combine potentially
+// living elsewhere in the code.
+// The bizarre looking hash function is a copy of the implementation in the boost library.
+// The strange hex number is the golden ratio (which is just to generate a "random" set
+// of ones and zeros for the hash. Read more here https://burtleburtle.net/bob/hash/doobs.html
 namespace {
   inline size_t hash_combine( size_t lhs, size_t rhs ) {
     lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
@@ -170,6 +177,9 @@ class ThreeBodyStorage
   void SetHerm(int h) { herm = h; };
   void SetEmax(int e) { emax = e; };
   void SetE3max(int e) { E3max = e; };
+
+  virtual void MakeReduced(){NotImplemented(__func__);};
+  virtual void MakeNotReduced(){NotImplemented(__func__);};
 
 
   // We define SortOrbits here, but we use a modified definition for isospin, so we make this virtual

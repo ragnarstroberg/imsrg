@@ -18,17 +18,17 @@
 //{}
 
 ThreeBodyME::ThreeBodyME()
-: threebody_storage(new ThreeBodyStorage_iso()),   modelspace(NULL),E3max(0),herm(1), storage_mode("iso")
+: threebody_storage(new ThreeBodyStorage_iso()),   modelspace(NULL),E3max(0),herm(1) /*, storage_mode("iso")*/
 {
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1), storage_mode("iso")
+: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1) /*, storage_mode("iso")*/
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
  : threebody_storage(new ThreeBodyStorage_iso(ms,rJ,rT,p)),
- modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1),  rank_J(rJ), rank_T(rT), parity(p), storage_mode("iso")
+ modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1),  rank_J(rJ), rank_T(rT), parity(p) /*, storage_mode("iso") */
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -36,12 +36,12 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()), herm(1), storage_mode("iso")
+: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()), herm(1) /*, storage_mode("iso")*/
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
 : threebody_storage(new ThreeBodyStorage_iso(ms,e3max,rJ,rT,p)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()),
-    herm(1), rank_J(rJ), rank_T(rT), parity(p), storage_mode("iso")
+    herm(1), rank_J(rJ), rank_T(rT), parity(p) /*, storage_mode("iso")*/
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -52,7 +52,7 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
 : threebody_storage( Tbme.threebody_storage->Clone()), modelspace(Tbme.modelspace), 
 //:  modelspace(Tbme.modelspace), 
     E3max(Tbme.E3max), emax(Tbme.emax), herm(Tbme.herm),
-   rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity), storage_mode(Tbme.storage_mode)
+   rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity) /*, storage_mode(Tbme.storage_mode)*/
 {
 //   *threebody_storage = *(Tbme.threebody_storage);
 }
@@ -364,9 +364,10 @@ void ThreeBodyME::SetMode(std::string mode)
   // it will erase all the stored 3N matrix elements. This is probably not the behavior
   // one would expect, so instead if you call SetMode and it was already that mode, we
   // print a message and do nothing.
-  if ( storage_mode == mode)
+//  if ( storage_mode == mode)
+  if ( threebody_storage->GetStorageMode() == mode)
   {
-     std::cout << "In " << __func__ << " but mode is already " << storage_mode << ". Doing nothing." << std::endl;
+     std::cout << "In " << __func__ << " but mode is already " << mode << ". Doing nothing." << std::endl;
      return;
   }
 
@@ -401,7 +402,7 @@ void ThreeBodyME::SetMode(std::string mode)
   }
   threebody_storage->SetHerm( this->herm );
   threebody_storage->Allocate();
-  storage_mode = mode;
+//  storage_mode = mode;
 //  storage_mode = pn;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
@@ -432,6 +433,14 @@ size_t ThreeBodyME::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a_i
 }
 
 
+void ThreeBodyME::MakeReduced()
+{
+   threebody_storage->MakeReduced();
+}
+void ThreeBodyME::MakeNotReduced()
+{
+   threebody_storage->MakeNotReduced();
+}
 
 
 //*******************************************************************

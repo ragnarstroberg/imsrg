@@ -60,7 +60,7 @@ class ThreeBodyME
   int rank_T=0;
   int parity=0;
   int ISOSPIN_BLOCK_DIMENSION=5; //default is 5, but can be different for charge-changing operators
-  std::string storage_mode;
+//  std::string storage_mode;
 
 
   // Constructors
@@ -156,6 +156,9 @@ class ThreeBodyME
   bool Is_PN_Mode() const {return (threebody_storage->GetStorageMode() == "pn");};
   bool Is_Isospin_Mode() const {return (threebody_storage->GetStorageMode() == "isospin");};
   bool IsAllocated() const {return threebody_storage->IsAllocated();};
+  bool IsReduced() const {return threebody_storage->IsReduced();};
+  void MakeReduced() ;
+  void MakeNotReduced() ;
 
   std::unordered_map<ThreeBodyStorageChannel,size_t,ThreeBodyStorageChannelHash>& Get_ch_start() const;
   std::vector<size_t>& Get_ch_dim();
