@@ -4402,8 +4402,9 @@ void ReadWrite::ReadOperator(Operator &op, std::string filename)
    opfile >> tmpstr >> v;
    op.ZeroBody = v;
 
+   // Read OneBody
    getline(opfile, tmpstr);
-   getline(opfile, tmpstr);
+   getline(opfile, tmpstr); // $OneBody:
    getline(opfile, tmpstr);
    while (tmpstr[0] != '$')
    {
@@ -4415,12 +4416,44 @@ void ReadWrite::ReadOperator(Operator &op, std::string filename)
       else if ( op.IsAntiHermitian() )
          op.OneBody(j,i) = -v;
       getline(opfile, tmpstr);
+      if ( not opfile.good() ) break;
    }
 
-  while(opfile >> chbra >> chket >> i >> j >> v)
-  {
-    op.TwoBody.SetTBME(chbra,chket,i,j,v);
-  }
+  /// Read TwoBody
+   getline(opfile, tmpstr);
+   if ( opfile.good() )
+   {
+     while (tmpstr[0] != '$' )
+     {
+        std::stringstream ss(tmpstr);
+        ss >> chbra >> chket >> i >> j >> v;
+        op.TwoBody.SetTBME(chbra,chket,i,j,v);
+        getline(opfile, tmpstr);
+        if ( not opfile.good() ) break;
+     }
+   }
+   /// Read ThreeBody
+   getline(opfile, tmpstr);
+   if ( opfile.good() )
+   {
+//       getline(opfile, tmpstr);
+       while (tmpstr[0] != '$' )
+       {
+          std::stringstream ss(tmpstr);
+          ss >> chbra >> chket >> i >> j >> v;
+          op.ThreeBody.SetME_pn_ch(chbra,chket,i,j,v);
+          getline(opfile, tmpstr);
+          if ( not opfile.good() ) break;
+       }
+//     }
+   }
+
+
+
+//  while(opfile >> chbra >> chket >> i >> j >> v)
+//  {
+//    op.TwoBody.SetTBME(chbra,chket,i,j,v);
+//  }
 
    opfile.close();
 
