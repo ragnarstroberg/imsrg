@@ -1756,7 +1756,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    Operator T2 = Operator(modelspace,0,0,0,2);
    T2.OneBody.diag().fill(0.75);
 
-   for (int ch=0; ch<T2.nChannels; ++ch)
+   int nch = modelspace.GetNumberTwoBodyChannels();
+   for (int ch=0; ch<nch; ch++)
    {
      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
      arma::mat& TB = T2.TwoBody.GetMatrix(ch);
@@ -2453,6 +2454,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   {
     Operator Fermi(modelspace,0,1,0,2);
     Fermi.SetHermitian();
+    Fermi.MakeReduced();
     int norbits = modelspace.GetNumberOrbits();
 //    for (int i=0; i<norbits; ++i)
     for ( auto i : modelspace.proton_orbits )

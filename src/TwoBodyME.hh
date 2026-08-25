@@ -60,6 +60,7 @@ class TwoBodyME
   int rank_J;
   int rank_T;
   int parity;
+  bool is_reduced;
 
   ~TwoBodyME();
   TwoBodyME();
@@ -78,13 +79,16 @@ class TwoBodyME
 //  void Copy(const TwoBodyME&);
   void Allocate();
   void Deallocate();
-  bool IsHermitian(){return hermitian;};
-  bool IsAntiHermitian(){return antihermitian;};
-  bool IsNonHermitian(){return not (hermitian or antihermitian);};
+  bool IsHermitian()const {return hermitian;};
+  bool IsAntiHermitian()const {return antihermitian;};
+  bool IsNonHermitian()const {return not (hermitian or antihermitian);};
   void SetHermitian();
   void SetAntiHermitian();
   void SetNonHermitian();
   bool IsAllocated()const;
+  bool IsReduced()const {return is_reduced;};
+  void MakeReduced();
+  void MakeNotReduced();
 
   arma::mat& GetMatrix(size_t chbra, size_t chket){return MatEl.at({chbra,chket});};
   arma::mat& GetMatrix(size_t ch){return GetMatrix(ch,ch);};

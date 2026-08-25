@@ -4256,6 +4256,8 @@ void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
       }
    }
 
+
+
    opfile.close();
 
 }
@@ -4265,7 +4267,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
 
 
 /// Write an operator to a plain-text file
-void ReadWrite::WriteOperator(Operator& op, std::string filename)
+void ReadWrite::WriteOperator(Operator& op, std::string filename, double CHOP=1e-9)
 {
    std::ofstream opfile;
    opfile.open(filename, std::ofstream::out);
@@ -4300,7 +4302,7 @@ void ReadWrite::WriteOperator(Operator& op, std::string filename)
       int jmin = op.IsNonHermitian() ? 0 : i;
       for (int j=jmin;j<norb;++j)
       {
-         if (std::abs(op.OneBody(i,j)) > 0)
+         if (std::abs(op.OneBody(i,j)) > CHOP )
             opfile << i << "\t" << j << "\t" << std::setprecision(10) << op.OneBody(i,j) << std::endl;
       }
    }
@@ -4318,12 +4320,43 @@ void ReadWrite::WriteOperator(Operator& op, std::string filename)
         for (int iket=0; iket<nkets; ++iket)
         {
            double tbme = it.second(ibra,iket);
-           if ( std::abs(tbme) > 1e-7 )
+           if ( std::abs(tbme) > CHOP )
            {
              opfile << std::setw(4) << chbra << " " << std::setw(4) << chket << "   "
                   << std::setw(4) << ibra  << " " << std::setw(4) << iket  << "   "
-                  << std::setw(10) << std::setprecision(6) << tbme << std::endl;
+                  << std::setw(14) << std::setprecision(9) << tbme << std::endl;
            }
+        }
+      }
+   }
+
+
+   if ( op.ThreeBody.IsAllocated() )
+   {
+      opfile <<  "$ThreeBody:\t"  << std::endl;
+      for (auto iter : op.ThreeBody.Get_ch_start() )
+      {
+        size_t chbra = iter.first.ch_bra;
+        size_t chket = iter.first.ch_ket;
+        ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(chbra);
+        ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(chket);
+        int twoJ = Tbc_bra.twoJ;
+        size_t nbras = Tbc_bra.GetNumber3bKets();
+        size_t nkets = Tbc_ket.GetNumber3bKets();
+        for (size_t ibra=0; ibra<nbras; ibra++)
+        {
+          size_t iketmin = (chbra==chket) ? ibra : 0;
+          for (size_t iket=iketmin; iket<nkets; iket++)
+          {
+//            if ( (chbra==chket) and (ibra==iket) and (herm==-1) ) continue;
+            double thbme = op.ThreeBody.GetME_pn_ch( chbra, chket, ibra, iket);
+            if ( std::abs(thbme)> CHOP)
+            {
+                 opfile << std::setw(4) << chbra << " " << std::setw(4) << chket << "   "
+                      << std::setw(4) << ibra  << " " << std::setw(4) << iket  << "   "
+                      << std::setw(14) << std::setprecision(9) << thbme << std::endl;
+            }
+          }
         }
       }
    }
@@ -4369,8 +4402,9 @@ void ReadWrite::ReadOperator(Operator &op, std::string filename)
    opfile >> tmpstr >> v;
    op.ZeroBody = v;
 
+   // Read OneBody
    getline(opfile, tmpstr);
-   getline(opfile, tmpstr);
+   getline(opfile, tmpstr); // $OneBody:
    getline(opfile, tmpstr);
    while (tmpstr[0] != '$')
    {
@@ -4382,12 +4416,44 @@ void ReadWrite::ReadOperator(Operator &op, std::string filename)
       else if ( op.IsAntiHermitian() )
          op.OneBody(j,i) = -v;
       getline(opfile, tmpstr);
+      if ( not opfile.good() ) break;
    }
 
-  while(opfile >> chbra >> chket >> i >> j >> v)
-  {
-    op.TwoBody.SetTBME(chbra,chket,i,j,v);
-  }
+  /// Read TwoBody
+   getline(opfile, tmpstr);
+   if ( opfile.good() )
+   {
+     while (tmpstr[0] != '$' )
+     {
+        std::stringstream ss(tmpstr);
+        ss >> chbra >> chket >> i >> j >> v;
+        op.TwoBody.SetTBME(chbra,chket,i,j,v);
+        getline(opfile, tmpstr);
+        if ( not opfile.good() ) break;
+     }
+   }
+   /// Read ThreeBody
+   getline(opfile, tmpstr);
+   if ( opfile.good() )
+   {
+//       getline(opfile, tmpstr);
+       while (tmpstr[0] != '$' )
+       {
+          std::stringstream ss(tmpstr);
+          ss >> chbra >> chket >> i >> j >> v;
+          op.ThreeBody.SetME_pn_ch(chbra,chket,i,j,v);
+          getline(opfile, tmpstr);
+          if ( not opfile.good() ) break;
+       }
+//     }
+   }
+
+
+
+//  while(opfile >> chbra >> chket >> i >> j >> v)
+//  {
+//    op.TwoBody.SetTBME(chbra,chket,i,j,v);
+//  }
 
    opfile.close();
 
@@ -5822,11 +5888,14 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
    }
 
    int cnt_obme = 0;
+   double norm1b = op.OneBodyNorm();
+   double norm2b = op.TwoBodyNorm();
    for (auto a : modelspace->valence ) {
      for (auto b : modelspace->valence) {
        if(a < b) continue;
        double obme = op.OneBody(a,b);
-       if (std::abs(obme) < 1e-7 or op.OneBodyNorm() == 0)
+//       if (std::abs(obme) < 1e-7 or op.OneBodyNorm() == 0)
+       if (std::abs(obme) < 1e-7 * norm1b or norm1b< 1e-8)
          continue;
        cnt_obme += 1;
      }
@@ -5847,7 +5916,8 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
          int c = ket.p;
          int d = ket.q;
          double me = op.TwoBody.GetTBME_norm(ch, a, b, c, d);
-         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0) continue;
+         if (std::abs(me) < norm2b * 1e-7 or norm2b<1e-7) continue;
+//         if (std::abs(me) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0) continue;
          cnt_tbme += 1;
        }
      }
@@ -5861,7 +5931,8 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
        int b_ind = orb2kshell[b];
        if(a < b) continue;
        double obme = op.OneBody(a,b);
-       if (std::abs(obme) < op.OneBodyNorm() * 1e-7 or op.OneBodyNorm() == 0)
+//       if (std::abs(obme) < op.OneBodyNorm() * 1e-7 or op.OneBodyNorm() == 0)
+       if (std::abs(obme) < 1e-7 * norm1b or norm1b< 1e-8)
          continue;
        intfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind << "   "
            << std::setw(wdouble) << std::setiosflags(std::ios::fixed) << std::setprecision(pdouble) << obme
@@ -5904,7 +5975,8 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
            tbme += op.TwoBody.GetTBME_norm(ch,aa,bb,cc,dd); // looks like some isospin averaging for an operator file?
            tbme /= 2;
          }
-         if (std::abs(tbme) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+//         if (std::abs(tbme) < op.TwoBodyNorm() * 1e-7 or op.TwoBodyNorm() == 0)
+         if (std::abs(tbme) < norm2b * 1e-7 or norm2b<1e-7)
            continue;
          intfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind
            << std::setw(wint) << c_ind << std::setw(wint) << d_ind

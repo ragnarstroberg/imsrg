@@ -314,7 +314,8 @@ double ThreeBodyStorage_pn::Norm() const
 {
   double norm = 0;
   for (auto me : MatEl)  norm += me*me;
-  return norm;
+  return sqrt(norm);
+//  return norm;
 }
 
 
@@ -445,4 +446,54 @@ void ThreeBodyStorage_pn::Print()
 }
 
 
+
+void ThreeBodyStorage_pn::MakeReduced()
+{
+    if (is_reduced) return;
+    for (auto &it : ch_start )
+    {
+      size_t ThCH_bra = it.first.ch_bra;
+      size_t ThCH_ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
+      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
+      size_t nbras3 = Tbc_bra.GetNumberKets();
+      for (size_t ibra = 0; ibra < nbras3; ibra++)
+      {
+        size_t nket3 = Tbc_ket.GetNumberKets();
+        size_t iket_min = (ThCH_bra==ThCH_ket) ? ibra : 0;
+        for (size_t iket = iket_min; iket < nket3; iket++)
+        {
+          double ME3b =  GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
+          ME3b *= sqrt(Tbc_bra.twoJ + 1);
+          SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b );
+        }
+      }
+    }
+    is_reduced = true;
+}
+
+void ThreeBodyStorage_pn::MakeNotReduced()
+{
+    if (not is_reduced) return;
+    for (auto &it : ch_start )
+    {
+      size_t ThCH_bra = it.first.ch_bra;
+      size_t ThCH_ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ThCH_bra);
+      ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ThCH_ket);
+      size_t nbras3 = Tbc_bra.GetNumberKets();
+      for (size_t ibra = 0; ibra < nbras3; ibra++)
+      {
+        size_t nket3 = Tbc_ket.GetNumberKets();
+        size_t iket_min = (ThCH_bra==ThCH_ket) ? ibra : 0;
+        for (size_t iket = iket_min; iket < nket3; iket++)
+        {
+          double ME3b =  GetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket);
+          ME3b /= sqrt(Tbc_bra.twoJ + 1);
+          SetME_pn_ch(ThCH_bra, ThCH_ket, ibra, iket, ME3b );
+        }
+      }
+    }
+    is_reduced = false;
+}
 

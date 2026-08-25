@@ -3370,6 +3370,16 @@ namespace Commutator
     if (not(x3_allocated and y3_allocated))
       return;
 
+    if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
+    {
+      Operator Yred = Y;
+      Yred.MakeReduced();
+      Z.MakeReduced();
+      comm332_ppph_hhhpst(X,Yred,Z);
+      Z.MakeNotReduced();
+      return;
+    }
+
     int hX = X.IsHermitian() ? 1 : -1;
     int hY = Y.IsHermitian() ? 1 : -1;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
@@ -3632,6 +3642,16 @@ namespace Commutator
     bool y3_allocated = Y3.IsAllocated();
     if (not(x3_allocated and y3_allocated))
       return;
+
+    if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
+    {
+      Operator Yred = Y;
+      Yred.MakeReduced();
+      Z.MakeReduced();
+      comm332_pphhst(X,Yred,Z);
+      Z.MakeNotReduced();
+      return;
+    }
 
     size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
     size_t nch_CC = Z.modelspace->TwoBodyChannels_CC.size();
@@ -6885,6 +6905,17 @@ namespace Commutator
     if (not(x3_allocated and y3_allocated))
       return;
 
+    if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
+    {
+      Operator Yred = Y;
+      Yred.MakeReduced();
+      Z.MakeReduced();
+      comm333_ppp_hhhst(X,Yred,Z);
+      Z.MakeNotReduced();
+      return;
+    }
+
+
     size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 #pragma omp parallel for schedule(dynamic, 1)
     for (size_t ch3 = 0; ch3 < nch3; ch3++)
@@ -7012,6 +7043,16 @@ namespace Commutator
     bool y3_allocated = Y3.IsAllocated();
     if (not(x3_allocated and y3_allocated))
       return;
+
+    if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
+    {
+      Operator Yred = Y;
+      Yred.MakeReduced();
+      Z.MakeReduced();
+      comm333_pph_hhpst(X,Yred,Z);
+      Z.MakeNotReduced();
+      return;
+    }
 
     size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
     size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();

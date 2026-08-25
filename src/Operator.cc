@@ -505,7 +505,7 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
   if (IsNonHermitian()) herm =0;
 
   index_t norbits = modelspace->GetNumberOrbits();
-  if (TwoBody.Norm() > 1e-7)
+  if (true or TwoBody.Norm() > 1e-7)
   {
     for (auto &itmat : TwoBody.MatEl)
     {
@@ -582,7 +582,7 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
 Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
 {
   double t_start = omp_get_wtime();
-  std::cout << "begin " << __func__ << "   norm of 3b is " << ThreeBodyNorm() << std::endl;
+//  std::cout << "begin " << __func__ << "   norm of 3b is " << ThreeBodyNorm() << std::endl;
   if (rank_J > 0)
   {
     std::cout << " Uh oh. Trying to call " << __func__ << "  on an operator with rank_J = " << rank_J << "   you should probably implement that first..." << std::endl;
@@ -645,8 +645,8 @@ Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
   Operator opNO2 = opNO3.DoNormalOrdering2(sign, occupied);
   opNO2.ScaleZeroBody(1. / 3.);
   opNO2.ScaleOneBody(1. / 2.);
-  std::cout << __func__ << "  contributed " << opNO2.ZeroBody << "  to the zero body part" << std::endl;
-  std::cout << " Parent operator is reduced? " << IsReduced() << "  opNO2 is reduced? " << opNO2.IsReduced() << "   is opNO3 reduced? " << opNO3.IsReduced() << std::endl;
+//  std::cout << __func__ << "  contributed " << opNO2.ZeroBody << "  to the zero body part" << std::endl;
+//  std::cout << " Parent operator is reduced? " << IsReduced() << "  opNO2 is reduced? " << opNO2.IsReduced() << "   is opNO3 reduced? " << opNO3.IsReduced() << std::endl;
   // Also normal order the 1 and 2 body pieces
   opNO2 += DoNormalOrdering2(sign, occupied);
   opNO2.ThreeBody.SetMode("pn");
@@ -1042,7 +1042,18 @@ void Operator::MakeReduced()
     std::cout << "Trying to reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  ApplyWignerEckartJFactor( true ); // true means multiply by sqrt(2J+1)
+//  ApplyWignerEckartJFactor( true ); // true means multiply by sqrt(2J+1)
+
+  for ( auto& a : modelspace->all_orbits)
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    OneBody.row(a) *= sqrt(oa.j2+1);
+  }
+  TwoBody.MakeReduced();
+  if ( particle_rank > 2 )
+  {
+     ThreeBody.MakeReduced();
+  }
 
   is_reduced = true;
 }
@@ -1061,12 +1072,25 @@ void Operator::MakeNotReduced()
     std::cout << "Trying to un-reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  ApplyWignerEckartJFactor( false ); // false means divide rather than multiply by sqrt(2J+1).
+//  ApplyWignerEckartJFactor( false ); // false means divide rather than multiply by sqrt(2J+1).
+
+  for ( auto& a : modelspace->all_orbits)
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    OneBody.row(a) /= sqrt(oa.j2+1);
+  }
+  TwoBody.MakeNotReduced();
+  if ( particle_rank > 2 )
+  {
+     ThreeBody.MakeNotReduced();
+  }
 
   is_reduced = false;
 }
 
 
+
+/*
 // Multiply or divide by sqrt(2J+1) to convert between reduced/non-reduced matrix elements
 void Operator::ApplyWignerEckartJFactor( bool multiply )
 {
@@ -1112,7 +1136,7 @@ void Operator::ApplyWignerEckartJFactor( bool multiply )
     }
   }
 }
-
+*/
 
 
 

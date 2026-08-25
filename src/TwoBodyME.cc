@@ -13,15 +13,14 @@ TwoBodyME::~TwoBodyME()
 
 TwoBodyME::TwoBodyME()
 : modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),allocated(false),
-  rank_J(0), rank_T(0), parity(0)
+  rank_J(0), rank_T(0), parity(0) , is_reduced(false)
 {
-//  cout << "Default TwoBodyME constructor" << endl;
 }
 
 
 TwoBodyME::TwoBodyME(ModelSpace* ms)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
-  hermitian(true), antihermitian(false),allocated(false), rank_J(0), rank_T(0), parity(0)
+  hermitian(true), antihermitian(false),allocated(false), rank_J(0), rank_T(0), parity(0), is_reduced(false)
 {
   Allocate();
 }
@@ -29,7 +28,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms)
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
-  hermitian(true), antihermitian(false), allocated(false), rank_J(rJ), rank_T(rT), parity(p)
+  hermitian(true), antihermitian(false), allocated(false), rank_J(rJ), rank_T(rT), parity(p) , is_reduced((rJ+rT+p)>0)
 {
   Allocate();
 }
@@ -140,6 +139,32 @@ void TwoBodyME::SetNonHermitian()
 bool TwoBodyME::IsAllocated()const
 {
    return allocated;
+}
+
+
+void TwoBodyME::MakeReduced()
+{
+  std::cout << "HERE " <<__FILE__ << "  line " << __LINE__ << "  " <<__func__ << std::endl;
+  if (is_reduced) return;
+
+  for (auto &itmat : MatEl)
+  {
+    TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+    itmat.second *= sqrt(2 * tbc.J + 1);
+  }
+  is_reduced = true;
+}
+
+void TwoBodyME::MakeNotReduced()
+{
+  std::cout << "HERE " <<__FILE__ << "  line " << __LINE__ << "  " <<__func__ << std::endl;
+  if (not is_reduced) return;
+  for (auto &itmat : MatEl)
+  {
+    TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+    itmat.second /= sqrt(2 * tbc.J + 1);
+  }
+  is_reduced = false;
 }
 
 
@@ -764,7 +789,8 @@ double TwoBodyME::Norm() const
       const arma::mat& matrix = itmat.second;
       int Jbra = modelspace->GetTwoBodyChannel( itmat.first[0] ).J;
       int Jket = modelspace->GetTwoBodyChannel( itmat.first[1] ).J;
-      int degeneracy = (2*Jket+1) * (std::min(Jbra,Jket+rank_J) - std::max(-Jbra,Jket-rank_J)+1);
+      double degeneracy =  is_reduced ? 1.0/(2.0*rank_J+1)  :   (2*Jket+1);
+//      if  * (std::min(Jbra,Jket+rank_J) - std::max(-Jbra,Jket-rank_J)+1);
 //      int degeneracy = 1;//(2*Jket+1) * (std::min(Jbra,Jket+rank_J) - std::max(-Jbra,Jket-rank_J)+1);
 //      double n2 = arma::norm(matrix,"fro");
       double n2 = arma::norm(matrix,"fro") * degeneracy;

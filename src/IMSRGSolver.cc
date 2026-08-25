@@ -1197,9 +1197,16 @@ double IMSRGSolver::CalculatePerturbativeTriples()
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
 
+  // We want E3max= 3*emax when computing perturbative triples
+  // Usually, that would use way too much memory, but in this case we don't
+  // actually construct the 3b storage structure.
+  int E3max_save = Hs.modelspace->GetE3max();
+  int Emax = Hs.modelspace->GetEmax();
+  Hs.modelspace->SetE3max( 3*Emax );
   Commutator::perturbative_triples = true;
   Commutator::comm223ss(omega, Htilde, Wbar);
   Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations
+  Hs.modelspace->SetE3max( E3max_save );
 
   double pert_triples = Wbar.ZeroBody;
 

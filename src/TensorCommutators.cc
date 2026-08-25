@@ -2648,6 +2648,10 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
     int Lambda = Z.GetJRank();
+    if ( not (X3.IsAllocated() and Y3.IsAllocated()) )
+    {
+       return;
+    }
     Z.modelspace->PreCalculateSixJ();
     double tstart = omp_get_wtime();
     std::vector<int> bra_channels;
@@ -2780,6 +2784,10 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
     int Lambda = Z.GetJRank();
+    if ( not (X3.IsAllocated() and Y3.IsAllocated()) )
+    {
+       return;
+    }
     Z.modelspace->PreCalculateSixJ();
     double tstart = omp_get_wtime();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
@@ -3061,8 +3069,9 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
     int Lambda = Z.GetJRank();
+
     Z.modelspace->PreCalculateSixJ();
-    std::cout << __func__ << "  begin" << std::endl;
+//    std::cout << __func__ << "  begin" << std::endl;
 
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
@@ -3280,7 +3289,7 @@ namespace Commutator
         Z3.AddToME_pn_ch(ch3bra, ch3ket, ibra, iket, zijklmn); 
       } // for iket
     } // for ch3 and ibra
-    std::cout << __func__ << "  end" << std::endl;
+//    std::cout << __func__ << "  end" << std::endl;
 
     X.profiler.timer[__func__] += omp_get_wtime() - tstart;
   } // comm233_pp_hhst
@@ -3561,6 +3570,10 @@ namespace Commutator
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
+    if ( not (X3.IsAllocated() and Y3.IsAllocated()) )
+    {
+       return;
+    }
 
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
@@ -3649,6 +3662,10 @@ namespace Commutator
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
+    if ( not (X3.IsAllocated() and Y3.IsAllocated()) )
+    {
+       return;
+    }
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
     double tstart = omp_get_wtime();
     Z.modelspace->PreCalculateSixJ();

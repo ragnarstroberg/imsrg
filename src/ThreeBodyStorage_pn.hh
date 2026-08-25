@@ -61,6 +61,9 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   int CountAllocations() const override {return number_allocated;};
   void Print() override ;
 
+  void MakeReduced() override;
+  void MakeNotReduced() override;
+
 //  void SetHerm(int h) { herm = h; std::cout << __FILE__ << "  setting herm to " << herm; };
 
 
