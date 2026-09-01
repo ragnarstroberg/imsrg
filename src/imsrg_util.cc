@@ -1508,7 +1508,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
  {
    Operator Rp2Op(modelspace,0,0,0,2);
 
-   std::cout << __func__ << " begin" << std::endl;
+//   std::cout << __func__ << " begin" << std::endl;
    int nchan = modelspace.GetNumberTwoBodyChannels();
    if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
    modelspace.PreCalculateMoshinsky();
