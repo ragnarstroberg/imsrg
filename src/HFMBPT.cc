@@ -3,6 +3,7 @@
 #include "HartreeFock.hh"
 #include "PhysicalConstants.hh"
 #include "AngMom.hh"
+#include "Commutator.hh"
 
 #include <omp.h>
 
@@ -13,8 +14,11 @@ HFMBPT::HFMBPT(Operator& hbare)
   : HartreeFock(hbare),
     C_HO2NAT(modelspace->GetNumberOrbits(),modelspace->GetNumberOrbits(),arma::fill::eye),
     C_HF2NAT(modelspace->GetNumberOrbits(),modelspace->GetNumberOrbits(),arma::fill::eye),
-    use_NAT_occupations(false), NAT_order("occupation")
-{}
+    use_NAT_occupations(false), NAT_order("occupation"),vv_approx("imsrg2")
+{
+   vv_gen.SetType("white");
+   vv_gen.SetDenominatorPartitioning("Moller_Plesset");
+}
 
 //*********************************************************************
 // post Hartree-Fock method
@@ -1277,4 +1281,236 @@ double HFMBPT::GetMP3_Energy(Operator& H)
   double Eph = GetMP3_ph(H);
   return Epp + Ehh + Eph;
 }
+
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+//// Implement Van Vleck Perturbation Theory  ////
+
+void HFMBPT::SetVVApprox( std::string apr)
+{
+   vv_approx = apr;
+}
+
+std::vector<Operator>& HFMBPT::GetVVOmegas()
+{
+   return vv_omegas;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+/// Solve order-by-order for the generator Omega
+/// in Van Vleck perturbation theory.
+/// cf eq (41) in  J. Chem. Phys. 73, 5711–5717 (1980)
+///  https://doi-org/10.1063/1.440050
+void HFMBPT::SolveVanVleck(Operator& HNO, int order)
+{
+   vv_omegas.resize(order);
+   for (int i=0; i<order; i++)
+   {
+      vv_omegas[i] = 0*HNO;
+      vv_omegas[i].SetAntiHermitian();
+   }
+   Operator H0 = Operator(HNO);
+   Operator V1 = Operator(HNO);
+   H0.EraseTwoBody();
+   H0.EraseThreeBody();
+   V1.ZeroBody = 0;
+   V1.EraseOneBody();
+
+   // 1st order
+   vv_gen.UpdateGeneral( V1, H0, vv_omegas[0] ); // first order Omega
+
+   if ( order <2 )   return ;
+
+   if ( vv_approx == "imsrg3n7")
+   {
+       Commutator::SetUseIMSRG3(true);
+       Commutator::SetUseIMSRG3N7(true);
+       for (int i=1;i<order;i++)
+       {
+          vv_omegas[i].ThreeBody.SetMode("pn");
+          vv_omegas[i].SetParticleRank(3);
+       }
+   }
+
+   // 2nd order [for a 2-body V, this goes up to 3-body]
+   Operator O1V1 = Commutator::Commutator( vv_omegas[0], V1 );
+   vv_gen.UpdateGeneral( O1V1, H0, vv_omegas[1] ); // second order Omega
+   if ( order <3 )   return ;
+
+   // 3rd order [for a 2-body V, this should go up to 4-body]
+   Operator O1O1V1 = Commutator::Commutator( vv_omegas[0], O1V1 );
+   if ( vv_approx == "imsrg3f2")
+   {
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],V1, O1O1V1);
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],V1, O1O1V1);
+   }
+   Operator O2V1 = Commutator::Commutator( vv_omegas[1], V1);
+   Operator Hod = O2V1 + +1./3*O1O1V1;
+   vv_gen.UpdateGeneral( Hod,  H0, vv_omegas[2] ); // third order Omega
+   if ( order <4 )   return ;
+
+   // 4th order [for a 2-body V, this should go up to 5-body]
+   Operator O3V1   = Commutator::Commutator(vv_omegas[2],V1);
+   Operator O2O1V1 = Commutator::Commutator(vv_omegas[1],O1V1);
+   O2O1V1 += Commutator::Commutator(vv_omegas[0],O2V1); // Add in [O1,[O2,V]]
+   if ( vv_approx == "imsrg3f2")
+   {
+      // To capture the cross terms [O1,[O2,V]], we do [O1+O2,[O1+O2,V]]
+      // = [O1,[O1,V]] + [O1,[O2,V]] + [O2,[O1,V]] + [O2,[O2,V]].
+      // We want the middle 2 terms, and we can subtract off the 1st and 4th.
+      // In principle, we've already computed the [O1,[O1,V]] so we could
+      // reuse it. But for simplicity I didn't bother.
+      Operator O1O2 = vv_omegas[0]+vv_omegas[1]; // Omega_1 + Omega_2
+      Commutator::FactorizedDoubleCommutator::comm223_231(O1O2,V1, O2O1V1);
+      Commutator::FactorizedDoubleCommutator::comm223_232(O1O2,V1, O2O1V1);
+
+      Operator nV = -V1;
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],nV, O2O1V1); // -[O1,[O1,V]]
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],nV, O2O1V1);
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[1],nV, O2O1V1); // -[O2,[O2,V]]
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[1],nV, O2O1V1);
+   }
+
+   Hod = O3V1 + 1./3*O2O1V1;
+   vv_gen.UpdateGeneral( Hod, H0, vv_omegas[3]); // 4th order Omega
+   if ( order <5 )   return ;
+   if ( order >=5 )
+   {
+      std::cout << "Orders beyond 4 not yet implemented. So you get up to 4th order." << std::endl;
+   }
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+// The Hamiltonian is special because parts of it are driven to be diagonal
+// We return H2,H3,H4,...
+// In principle, H2 has a 3-body piece, H3 has a 4-body piece, H4 has as 5-body piece.
+// To get the 0b-part correct to 4th order, we need 3f2 corrections for O1O1V and O1O1O1V
+// As well as the perturbative triples, which accounts for contributions from the 3b part of O2
+// to the 2b part of O3, which then contribute to H4 here. We can't use 3f2 for that because of
+// the presence of energy denominators which spoil factorization.
+// cf eq (46) in  J. Chem. Phys. 73, 5711–5717 (1980)
+///  https://doi-org/10.1063/1.440050
+std::vector<Operator> HFMBPT::VV_TransformH( Operator& HNO, int order, bool singleref=true)
+{
+   std::vector<Operator> Hout;
+   if ( vv_approx == "imsrg3n7")
+   {
+       Commutator::SetUseIMSRG3(true);
+       Commutator::SetUseIMSRG3N7(true);
+   }
+   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[0],HNO) ); // Hout[0] = H2
+   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[1],HNO) ); // Hout[1] = H3
+   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[2],HNO) ); // Hout[2] = H4
+   Operator O1O1V1 = Commutator::Commutator( 2*vv_omegas[0],Hout[0] ); 
+   if (vv_approx == "imsrg3f2")
+   {
+     Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],HNO, O1O1V1);
+     if (not singleref)
+        Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],HNO, O1O1V1);
+   }
+   Operator O1O1O1V1 = Commutator::Commutator(vv_omegas[0], O1O1V1 );
+   // This part doesn't matter for the 4th order energy
+   if (vv_approx == "imsrg3f2" and (not singleref))
+   {
+     Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],Hout[0], O1O1O1V1);
+     Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],Hout[0], O1O1O1V1);
+   }
+   Hout[2] -= 1./24 * O1O1O1V1; 
+   
+   if ( vv_approx == "imsrg3f2")
+   {
+      Operator Wbar(HNO);
+      Wbar.ZeroBody =0;
+      int emax = HNO.modelspace->GetEmax();
+      int E3maxsave = HNO.modelspace->GetE3max();
+      HNO.modelspace->SetE3max(3*emax);
+      Commutator::perturbative_triples = true;
+      Commutator::comm223ss(vv_omegas[0], HNO, Wbar);
+      Commutator::perturbative_triples = false;
+      HNO.modelspace->SetE3max(E3maxsave);
+      std::cout << "4th order triples = " << Wbar.ZeroBody << std::endl;
+      Hout[2].ZeroBody += Wbar.ZeroBody;
+   }
+
+   return Hout;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// We implement the BCH transformation A' = A + [O,A] + 1/2[O,[O,A]] + ... order by order
+//
+//
+std::vector<Operator> HFMBPT::VV_Transform(Operator& Xin, int order)
+{
+  if (order > vv_omegas.size() )
+  {
+     std::cout << "Uh oh. I only have Omega calculated to order " << vv_omegas.size()-1 << "  and you're asking for " << order << std::endl;
+     order = vv_omegas.size();
+  }
+  std::vector<Operator> Xout;
+  std::cout << "About to call my first commutator" << std::endl;
+  std::cout << "Particle ranks " << vv_omegas[0].GetParticleRank() << "  " << Xin.GetParticleRank() << std::endl;
+//  if ( vv_approx == "imsrg3n7")
+//  {
+//      Commutator::SetUseIMSRG3(true);
+//      Commutator::SetUseIMSRG3N7(true);
+//      for (int i=1;i<order;i++)
+//      {
+//         vv_omegas[i].ThreeBody.SetMode("pn");
+//         vv_omegas[i].SetParticleRank(3);
+//      }
+//  }
+
+  // 1st order [O1,X]
+  Operator O1X = Commutator::Commutator(vv_omegas[0], Xin );
+  std::cout << "O1X partice rank = "<< O1X.GetParticleRank() << std::endl;
+  Xout.push_back( O1X );
+  if (order<2) return Xout;
+
+  // 2nd order [O2,X] + 1/2 [O1,[O1,X]]
+  Operator O2X = Commutator::Commutator(vv_omegas[1], Xin );
+  Operator O1O1X = Commutator::Commutator(vv_omegas[0],O1X );
+
+  if (vv_approx == "imsrg3f2")
+  {
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],Xin, O1O1X);
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],Xin, O1O1X);
+  }
+  Xout.push_back( O2X + 1./2*O1O1X );
+  if (order<3) return Xout;
+
+  // 3rd order [O3,X] + 1/2 [O2,[O1,X]] + 1/2[O1,[O2,X]] + 1/6[O1,[O1,[O1,X]]]
+  Operator O3X = Commutator::Commutator(vv_omegas[2], Xin );
+  Operator O2O1X = Commutator::Commutator(vv_omegas[1], O1X );
+  Operator O1O2X = Commutator::Commutator(vv_omegas[0], O2X );
+  Operator O1O1O1X = Commutator::Commutator(vv_omegas[0], O1O1X );
+
+  if (vv_approx == "imsrg3f2")
+  {
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],O1X, O1O1O1X);
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],O1X, O1O1O1X);
+      Operator O1O2 = vv_omegas[0]+vv_omegas[1]; // Omega_1 + Omega_2
+      Commutator::FactorizedDoubleCommutator::comm223_231(O1O2,Xin, O2O1X);
+      Commutator::FactorizedDoubleCommutator::comm223_232(O1O2,Xin, O2O1X);
+
+      Operator nX = -Xin;
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],nX, O2O1X); // -[O1,[O1,V]]
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],nX, O2O1X);
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[1],nX, O2O1X); // -[O2,[O2,V]]
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[1],nX, O2O1X);
+  }
+
+  Xout.push_back( O3X + 1./2*(O2O1X+O1O2X) + 1./6*O1O1O1X );
+
+//  // 4th order. dont do this for now
+
+
+
+  return Xout;
+
+}
+
 

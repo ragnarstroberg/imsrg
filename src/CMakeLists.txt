@@ -402,7 +402,10 @@ target_link_libraries(
     PRIVATE
     PhysicalConstants
     OpenMP::OpenMP_CXX
+    Commutator
 )
+
+
 
 add_library(
     RPA OBJECT
