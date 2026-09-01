@@ -296,6 +296,21 @@ size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_
 std::vector<ThreeBodyStorage::ME_type> ThreeBodyStorage::GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyStorage& X, const ThreeBodyStorage& Y) const
 {
   std::vector<double> me_out( 2, 0.0 );
+  if ( not this->IsAllocated()  ) // maybe one of the 3b ops is not allocated, and we called this method using the wrong operator. Attempt to fix things.
+  {
+     if ( X.IsAllocated() )
+     {
+	return X.GetME_pn_TwoOps(Jab,Jde,twoJ,a,b,c,d,e,f,X,Y);
+     }
+     else if (Y.IsAllocated() )
+     {
+	return Y.GetME_pn_TwoOps(Jab,Jde,twoJ,a,b,c,d,e,f,X,Y);
+     }
+     else
+     {
+        return me_out;
+     }
+  }
   if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return me_out;
   std::vector<double> recouple_bra;
   std::vector<double> recouple_ket;
