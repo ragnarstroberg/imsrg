@@ -69,6 +69,8 @@ class HFMBPT : public HartreeFock
     double GetMP3_Energy(Operator& H);
 
     void SetVVApprox( std::string apr);
+    void SetVVGenerator_type( std::string g);
+    void SetVVGenerator_partitioning( std::string p);
     std::vector<Operator>& GetVVOmegas();
     void SolveVanVleck(Operator& HNO, int order);
     std::vector<Operator> VV_TransformH( Operator& HNO, int order, bool singleref);

@@ -1292,6 +1292,15 @@ void HFMBPT::SetVVApprox( std::string apr)
    vv_approx = apr;
 }
 
+void HFMBPT::SetVVGenerator_type( std::string g)
+{
+   vv_gen.SetType(g);
+}
+void HFMBPT::SetVVGenerator_partitioning( std::string p)
+{
+   vv_gen.SetDenominatorPartitioning(p);
+}
+
 std::vector<Operator>& HFMBPT::GetVVOmegas()
 {
    return vv_omegas;
