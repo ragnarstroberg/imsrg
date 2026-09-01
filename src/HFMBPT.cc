@@ -1451,22 +1451,10 @@ std::vector<Operator> HFMBPT::VV_Transform(Operator& Xin, int order)
      order = vv_omegas.size();
   }
   std::vector<Operator> Xout;
-  std::cout << "About to call my first commutator" << std::endl;
-  std::cout << "Particle ranks " << vv_omegas[0].GetParticleRank() << "  " << Xin.GetParticleRank() << std::endl;
-//  if ( vv_approx == "imsrg3n7")
-//  {
-//      Commutator::SetUseIMSRG3(true);
-//      Commutator::SetUseIMSRG3N7(true);
-//      for (int i=1;i<order;i++)
-//      {
-//         vv_omegas[i].ThreeBody.SetMode("pn");
-//         vv_omegas[i].SetParticleRank(3);
-//      }
-//  }
+
 
   // 1st order [O1,X]
   Operator O1X = Commutator::Commutator(vv_omegas[0], Xin );
-  std::cout << "O1X partice rank = "<< O1X.GetParticleRank() << std::endl;
   Xout.push_back( O1X );
   if (order<2) return Xout;
 
