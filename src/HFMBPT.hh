@@ -57,13 +57,56 @@ class HFMBPT : public HartreeFock
     void UseNATOccupations( bool tf=true ){ use_NAT_occupations=tf;}; // Choose whether to use occupations from rho.
     void OrderNATBy( std::string order ){ NAT_order = order;}; // Choose how to label orbits ("occupation", "energy", "mp2")
 
-    double GetMP2_Energy(Operator& H);
-    double GetMP3_pp(Operator& H);
-    double GetMP3_hh(Operator& H);
-    double GetMP3_ph(Operator& H);
-    double GetMP3_Energy(Operator& H);
+    double GetMP2_Energy(const Operator& H) const;
+    double GetMP3_pp(const Operator& H) const;
+    double GetMP3_hh(const Operator& H) const;
+    double GetMP3_ph(const Operator& H)const ;
+    double GetMP3_Energy(const Operator& H)const ;
+    double GetMP4_Diagram(int id, const Operator& H) const ;
 
     arma::vec GetMP2_Impacts(Operator& OpIn) const;
+
+
+    double GetDenom(const Operator& H, const std::vector<index_t>& holes, const std::vector<index_t>& particles) const;
+    double GetMP4_F1( const Operator& H) const ;
+    double GetMP4_F2( const Operator& H) const ;
+    double GetMP4_F3( const Operator& H) const ;
+    double GetMP4_F4( const Operator& H) const ;
+    double GetMP4_F5( const Operator& H) const ;
+    double GetMP4_F6( const Operator& H) const ;
+    double GetMP4_F7( const Operator& H) const ;
+    double GetMP4_F8( const Operator& H) const ;
+    double GetMP4_F9( const Operator& H) const ;
+    double GetMP4_F10( const Operator& H) const ;
+    double GetMP4_F11( const Operator& H) const ;
+    double GetMP4_F12( const Operator& H) const ;
+    double GetMP4_F13( const Operator& H) const ;
+    double GetMP4_F14( const Operator& H) const ;
+    double GetMP4_F15( const Operator& H) const ;
+    double GetMP4_F16( const Operator& H) const ;
+    double GetMP4_F17( const Operator& H) const ;
+    double GetMP4_F18( const Operator& H) const ;
+    double GetMP4_F19( const Operator& H) const ;
+    double GetMP4_F20( const Operator& H) const ;
+    double GetMP4_F21( const Operator& H) const ;
+    double GetMP4_F22( const Operator& H) const ;
+    double GetMP4_F23( const Operator& H) const ;
+    double GetMP4_F24( const Operator& H) const ;
+    double GetMP4_F25( const Operator& H) const ;
+    double GetMP4_F26( const Operator& H) const ;
+    double GetMP4_F27( const Operator& H) const ;
+    double GetMP4_F28( const Operator& H) const ;
+    double GetMP4_F29( const Operator& H) const ;
+    double GetMP4_F30( const Operator& H) const ;
+    double GetMP4_F31( const Operator& H) const ;
+    double GetMP4_F32( const Operator& H) const ;
+    double GetMP4_F33( const Operator& H) const ;
+    double GetMP4_F34( const Operator& H) const ;
+    double GetMP4_F35( const Operator& H) const ;
+    double GetMP4_F36( const Operator& H) const ;
+    double GetMP4_F37( const Operator& H) const ;
+    double GetMP4_F38( const Operator& H) const ;
+    double GetMP4_F39( const Operator& H) const ;
 
 };
 #endif

@@ -997,7 +997,7 @@ arma::vec HFMBPT::GetMP2_Impacts(Operator& OpIn) const
 /// +  \sum_{\substack{i\leq j // a\leq b}}\sum_{J} (2J+1)\frac{|\Gamma_{ijab}^{J}|^2}{f_{aa}+f_{bb}-f_{ii}-f_{jj}}
 /// \f]
 ///
-double HFMBPT::GetMP2_Energy(Operator& H)
+double HFMBPT::GetMP2_Energy(const Operator& H) const
 {
   double t_start = omp_get_wtime();
   double Emp2 = 0;
@@ -1058,7 +1058,7 @@ double HFMBPT::GetMP2_Energy(Operator& H)
   return Emp2;
 }
 
-double HFMBPT::GetMP3_pp(Operator& H)
+double HFMBPT::GetMP3_pp(const Operator& H) const
 {
   double t_start = omp_get_wtime();
   double Epp = 0;
@@ -1121,7 +1121,7 @@ double HFMBPT::GetMP3_pp(Operator& H)
 }
 
 
-double HFMBPT::GetMP3_hh(Operator& H)
+double HFMBPT::GetMP3_hh(const Operator& H) const
 {
   double t_start = omp_get_wtime();
   double Ehh = 0;
@@ -1172,7 +1172,7 @@ double HFMBPT::GetMP3_hh(Operator& H)
   return Ehh;
 }
 
-double HFMBPT::GetMP3_ph(Operator& H)
+double HFMBPT::GetMP3_ph(const Operator& H) const
 {
   double t_start = omp_get_wtime();
   double Eph = 0;
@@ -1270,7 +1270,7 @@ double HFMBPT::GetMP3_ph(Operator& H)
 }
 
 
-double HFMBPT::GetMP3_Energy(Operator& H)
+double HFMBPT::GetMP3_Energy(const Operator& H) const
 {
   double Epp = GetMP3_pp(H);
   double Ehh = GetMP3_hh(H);
