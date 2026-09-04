@@ -1508,7 +1508,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
  {
    Operator Rp2Op(modelspace,0,0,0,2);
 
-   std::cout << __func__ << " begin" << std::endl;
+//   std::cout << __func__ << " begin" << std::endl;
    int nchan = modelspace.GetNumberTwoBodyChannels();
    if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
    modelspace.PreCalculateMoshinsky();
@@ -1894,7 +1894,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
       {
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
-        if (oi.tz2 != oj.tz2) continue;
+        if (oi.tz2 != oj.tz2) continue; // This should be unnecessary, since we're looping over 1b channels of As.
         double jj = 0.5 * oj.j2; 
         double r2int = RadialIntegral(oi.n, oi.l, oj.n, oj.l, 1) * bL ;
         double nineJ = AngMom::NineJ(oi.l, 0.5, ji, oj.l, 0.5, jj, 1, 1, 1);

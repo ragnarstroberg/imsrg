@@ -23,7 +23,7 @@ ThreeBodyME::ThreeBodyME()
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1) /*, storage_mode("iso")*/
+: threebody_storage(new ThreeBodyStorage_iso(ms)), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1) /*, storage_mode("iso")*/
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)

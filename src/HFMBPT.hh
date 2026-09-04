@@ -21,6 +21,7 @@
 #define NaturalOrbital_h
 
 #include "HartreeFock.hh"
+#include "Generator.hh"
 #include <armadillo>
 #include <map>
 //#define OCC_CUT 1e-6
@@ -35,6 +36,10 @@ class HFMBPT : public HartreeFock
 
     bool use_NAT_occupations; // Option to use occupations from (if true) density matrix, or (if false) use naive filling.
     std::string NAT_order; // The default is to order by occupation
+
+    std::vector<Operator> vv_omegas;
+    std::string vv_approx;
+    Generator vv_gen;
 
     ~HFMBPT();
     HFMBPT(Operator& hbare); // same as HartreeFock constructor
@@ -63,6 +68,15 @@ class HFMBPT : public HartreeFock
     double GetMP3_ph(const Operator& H)const ;
     double GetMP3_Energy(const Operator& H)const ;
     double GetMP4_Diagram(int id, const Operator& H) const ;
+
+    void SetVVApprox( std::string apr);
+    void SetVVGenerator_type( std::string g);
+    void SetVVGenerator_partitioning( std::string p);
+    std::vector<Operator>& GetVVOmegas();
+    void SolveVanVleck(Operator& HNO, int order);
+    std::vector<Operator> VV_TransformH( Operator& HNO, int order, bool singleref);
+    std::vector<Operator> VV_Transform(Operator& OpIn, int order);
+    std::vector<double> VV_Transformed0b(Operator& OpIn, int order);
 
     arma::vec GetMP2_Impacts(Operator& OpIn) const;
 

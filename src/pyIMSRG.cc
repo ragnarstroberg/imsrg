@@ -468,6 +468,12 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetMP3_pp", &HFMBPT::GetMP3_pp)
           .def("GetMP3_hh", &HFMBPT::GetMP3_hh)
           .def("GetMP3_ph", &HFMBPT::GetMP3_ph)
+          .def("SetVVApprox", &HFMBPT::SetVVApprox )
+          .def("SetVVGenerator_type", &HFMBPT::SetVVGenerator_type )
+          .def("SetVVGenerator_partitioning", &HFMBPT::SetVVGenerator_partitioning )
+          .def("SolveVanVleck", &HFMBPT::SolveVanVleck )
+          .def("VV_TransformH", &HFMBPT::VV_TransformH, py::arg("HNO"), py::arg("order"), py::arg("singleref")=true )
+          .def("VV_Transform", &HFMBPT::VV_Transform )
 //          .def("GetMP4_Diagram", &HFMBPT::GetMP4_Diagram, py::arg("id"), py::arg("H") )
           .def_readwrite("C_HO2NAT", &HFMBPT::C_HO2NAT) // Unitary transformation
           .def_readwrite("C_HF2NAT", &HFMBPT::C_HF2NAT) // Unitary transformation
