@@ -4509,15 +4509,15 @@ namespace Commutator
     std::vector<std::array<size_t, 4>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
     {
-      // By default, assume X is channell diagonal, so the internal channel matches the outer channel for X.
+      // By default, assume X is channel diagonal, so the internal channel matches the outer channel for X.
       size_t ch_internal_xy = it.first.ch_bra;
       size_t ch_internal_yx = it.first.ch_ket;
       if (not x_channel_diag) // if X is not channel-diagonal, check if Y is.
       {
         if (y_channel_diag)
         {
-          size_t ch_internal_xy = it.first.ch_ket;
-          size_t ch_internal_yx = it.first.ch_bra;
+          ch_internal_xy = it.first.ch_ket; // bugfix Sept 2026. These were redefined in this scope, which then had no effect.
+          ch_internal_yx = it.first.ch_bra;
         }
         else
         {
