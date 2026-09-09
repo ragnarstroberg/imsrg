@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,16 +19,14 @@
 //! \addtogroup mtSpOp
 //! @{
 
-// Class for delayed multi-type sparse operations.  These are operations where
-// the resulting type is different than the stored type.
 
+
+struct mtSpOp_dual_aux_indicator {};
 
 
 template<typename out_eT, typename T1, typename spop_type>
-class mtSpOp : public SpBase< out_eT, mtSpOp<out_eT, T1, spop_type> >
+struct mtSpOp : public SpBase< out_eT, mtSpOp<out_eT, T1, spop_type> >
   {
-  public:
-  
   typedef          out_eT                       elem_type;
   typedef typename get_pod_type<out_eT>::result pod_type;
   
@@ -36,18 +36,23 @@ class mtSpOp : public SpBase< out_eT, mtSpOp<out_eT, T1, spop_type> >
   static constexpr bool is_col  = spop_type::template traits<T1>::is_col;
   static constexpr bool is_xvec = spop_type::template traits<T1>::is_xvec;
   
+  static constexpr bool has_subview = T1::has_subview;
+  
   inline explicit  mtSpOp(const T1& in_m);
+  inline           mtSpOp(const T1& in_m, const in_eT in_aux);
   inline           mtSpOp(const T1& in_m, const uword aux_uword_a, const uword aux_uword_b);
   inline           mtSpOp(const char junk, const T1& in_m, const out_eT in_aux);
+  inline           mtSpOp(const mtSpOp_dual_aux_indicator&, const T1& in_m, const in_eT in_aux_a, const out_eT in_aux_b);
   inline          ~mtSpOp();
   
   template<typename eT2>
   arma_inline bool is_alias(const SpMat<eT2>& X) const;
   
-  arma_aligned const T1&    m;            //!< the operand; must be derived from SpBase
-  arma_aligned       out_eT aux_out_eT;   //!< auxiliary data, using the element type as specified by the out_eT template parameter
-  arma_aligned       uword  aux_uword_a;
-  arma_aligned       uword  aux_uword_b;
+  const T1&    m;            //!< the operand; must be derived from SpBase
+        in_eT  aux;          //!< auxiliary data, using the element type as used by T1
+        out_eT aux_out_eT;   //!< auxiliary data, using the element type as specified by the out_eT template parameter
+        uword  aux_uword_a;
+        uword  aux_uword_b;
   };
 
 

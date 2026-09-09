@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,18 +26,18 @@ inline
 CubeToMatOp<T1, op_type>::CubeToMatOp(const T1& in_m)
   : m(in_m)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
 
 template<typename T1, typename op_type>
 inline
-CubeToMatOp<T1, op_type>::CubeToMatOp(const T1& in_m, const typename T1::elem_type in_aux)
+CubeToMatOp<T1, op_type>::CubeToMatOp(const T1& in_m, const uword in_aux_uword)
   : m(in_m)
-  , aux(in_aux)
+  , aux_uword(in_aux_uword)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -44,7 +46,7 @@ template<typename T1, typename op_type>
 inline
 CubeToMatOp<T1, op_type>::~CubeToMatOp()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 

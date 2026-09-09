@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ SizeMat::SizeMat(const uword in_n_rows, const uword in_n_cols)
   : n_rows(in_n_rows)
   , n_cols(in_n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -48,7 +50,7 @@ SizeMat::operator()(const uword dim) const
   if(dim == 0)  { return n_rows; }
   if(dim == 1)  { return n_cols; }
   
-  arma_debug_check_bounds(true, "size(): index out of bounds");
+  arma_conform_check_bounds(true, "size(): index out of bounds");
   
   return uword(1);
   }

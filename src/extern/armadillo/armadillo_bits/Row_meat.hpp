@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 Row<eT>::Row()
   : Mat<eT>(arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -34,7 +36,7 @@ inline
 Row<eT>::Row(const Row<eT>& X)
   : Mat<eT>(arma_vec_indicator(), 1, X.n_elem, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   arrayops::copy((*this).memptr(), X.memptr(), X.n_elem);
   }
@@ -47,14 +49,11 @@ inline
 Row<eT>::Row(const uword in_n_elem)
   : Mat<eT>(arma_vec_indicator(), 1, in_n_elem, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  #if (!defined(ARMA_DONT_ZERO_INIT))
-    {
-    arma_extra_debug_print("Row::constructor: zeroing memory");
-    arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
-    }
-  #endif
+  arma_debug_print("Row::constructor: zeroing memory");
+  
+  arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
   }
 
 
@@ -64,16 +63,13 @@ inline
 Row<eT>::Row(const uword in_n_rows, const uword in_n_cols)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(in_n_rows, in_n_cols);
   
-  #if (!defined(ARMA_DONT_ZERO_INIT))
-    {
-    arma_extra_debug_print("Row::constructor: zeroing memory");
-    arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
-    }
-  #endif
+  arma_debug_print("Row::constructor: zeroing memory");
+  
+  arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
   }
 
 
@@ -83,16 +79,13 @@ inline
 Row<eT>::Row(const SizeMat& s)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(s.n_rows, s.n_cols);
   
-  #if (!defined(ARMA_DONT_ZERO_INIT))
-    {
-    arma_extra_debug_print("Row::constructor: zeroing memory");
-    arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
-    }
-  #endif
+  arma_debug_print("Row::constructor: zeroing memory");
+  
+  arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
   }
 
 
@@ -104,12 +97,16 @@ inline
 Row<eT>::Row(const uword in_n_elem, const arma_initmode_indicator<do_zeros>&)
   : Mat<eT>(arma_vec_indicator(), 1, in_n_elem, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(do_zeros)
     {
-    arma_extra_debug_print("Row::constructor: zeroing memory");
+    arma_debug_print("Row::constructor: zeroing memory");
     arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
+    }
+  else
+    {
+    arma_debug_print("Row::constructor: not zeroing memory");
     }
   }
 
@@ -122,14 +119,18 @@ inline
 Row<eT>::Row(const uword in_n_rows, const uword in_n_cols, const arma_initmode_indicator<do_zeros>&)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(in_n_rows, in_n_cols);
   
   if(do_zeros)
     {
-    arma_extra_debug_print("Row::constructor: zeroing memory");
+    arma_debug_print("Row::constructor: zeroing memory");
     arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
+    }
+  else
+    {
+    arma_debug_print("Row::constructor: not zeroing memory");
     }
   }
 
@@ -142,14 +143,18 @@ inline
 Row<eT>::Row(const SizeMat& s, const arma_initmode_indicator<do_zeros>&)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(s.n_rows, s.n_cols);
   
   if(do_zeros)
     {
-    arma_extra_debug_print("Row::constructor: zeroing memory");
+    arma_debug_print("Row::constructor: zeroing memory");
     arrayops::fill_zeros(Mat<eT>::memptr(), Mat<eT>::n_elem);
+    }
+  else
+    {
+    arma_debug_print("Row::constructor: not zeroing memory");
     }
   }
 
@@ -161,7 +166,7 @@ inline
 Row<eT>::Row(const uword in_n_elem, const fill::fill_class<fill_type>& f)
   : Mat<eT>(arma_vec_indicator(), 1, in_n_elem, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).fill(f);
   }
@@ -174,7 +179,7 @@ inline
 Row<eT>::Row(const uword in_n_rows, const uword in_n_cols, const fill::fill_class<fill_type>& f)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(in_n_rows, in_n_cols);
   
@@ -189,7 +194,7 @@ inline
 Row<eT>::Row(const SizeMat& s, const fill::fill_class<fill_type>& f)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(s.n_rows, s.n_cols);
   
@@ -203,7 +208,7 @@ inline
 Row<eT>::Row(const uword in_n_elem, const fill::scalar_holder<eT> f)
   : Mat<eT>(arma_vec_indicator(), 1, in_n_elem, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).fill(f.scalar);
   }
@@ -215,7 +220,7 @@ inline
 Row<eT>::Row(const uword in_n_rows, const uword in_n_cols, const fill::scalar_holder<eT> f)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(in_n_rows, in_n_cols);
   
@@ -229,7 +234,7 @@ inline
 Row<eT>::Row(const SizeMat& s, const fill::scalar_holder<eT> f)
   : Mat<eT>(arma_vec_indicator(), 0, 0, 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::init_warm(s.n_rows, s.n_cols);
   
@@ -243,7 +248,7 @@ inline
 Row<eT>::Row(const char* text)
   : Mat<eT>(arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).operator=(text);
   }
@@ -255,11 +260,11 @@ inline
 Row<eT>&
 Row<eT>::operator=(const char* text)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> tmp(text);
   
-  arma_debug_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with row vector layout" );
+  arma_conform_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with row vector layout" );
   
   access::rw(tmp.n_rows) = 1;
   access::rw(tmp.n_cols) = tmp.n_elem;
@@ -276,7 +281,7 @@ inline
 Row<eT>::Row(const std::string& text)
   : Mat<eT>(arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).operator=(text);
   }
@@ -288,11 +293,11 @@ inline
 Row<eT>&
 Row<eT>::operator=(const std::string& text)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> tmp(text);
   
-  arma_debug_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with row vector layout" );
+  arma_conform_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with row vector layout" );
   
   access::rw(tmp.n_rows) = 1;
   access::rw(tmp.n_cols) = tmp.n_elem;
@@ -310,12 +315,11 @@ inline
 Row<eT>::Row(const std::vector<eT>& x)
   : Mat<eT>(arma_vec_indicator(), 1, uword(x.size()), 2)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
-  if(x.size() > 0)
-    {
-    arrayops::copy( Mat<eT>::memptr(), &(x[0]), uword(x.size()) );
-    }
+  const uword N = uword(x.size());
+  
+  if(N > 0)  { arrayops::copy( Mat<eT>::memptr(), &(x[0]), N ); }
   }
   
   
@@ -326,14 +330,13 @@ inline
 Row<eT>&
 Row<eT>::operator=(const std::vector<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  Mat<eT>::init_warm(1, uword(x.size()));
+  const uword N = uword(x.size());
   
-  if(x.size() > 0)
-    {
-    arrayops::copy( Mat<eT>::memptr(), &(x[0]), uword(x.size()) );
-    }
+  Mat<eT>::init_warm(1, N);
+  
+  if(N > 0)  { arrayops::copy( Mat<eT>::memptr(), &(x[0]), N ); }
   
   return *this;
   }
@@ -343,11 +346,13 @@ Row<eT>::operator=(const std::vector<eT>& x)
 template<typename eT>
 inline
 Row<eT>::Row(const std::initializer_list<eT>& list)
-  : Mat<eT>(arma_vec_indicator(), 2)
+  : Mat<eT>(arma_vec_indicator(), 1, uword(list.size()), 2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint_this(this);
   
-  (*this).operator=(list);
+  const uword N = uword(list.size());
+  
+  if(N > 0)  { arrayops::copy( Mat<eT>::memptr(), list.begin(), N ); }
   }
 
 
@@ -357,16 +362,13 @@ inline
 Row<eT>&
 Row<eT>::operator=(const std::initializer_list<eT>& list)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  Mat<eT> tmp(list);
+  const uword N = uword(list.size());
   
-  arma_debug_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with row vector layout" );
+  Mat<eT>::init_warm(1, N);
   
-  access::rw(tmp.n_rows) = 1;
-  access::rw(tmp.n_cols) = tmp.n_elem;
-  
-  (*this).steal_mem(tmp);
+  if(N > 0)  { arrayops::copy( Mat<eT>::memptr(), list.begin(), N ); }
   
   return *this;
   }
@@ -378,7 +380,7 @@ inline
 Row<eT>::Row(Row<eT>&& X)
   : Mat<eT>(arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint(arma_str::format("this = %x   X = %x") % this % &X);
+  arma_debug_sigprint(arma_str::format("this: %x; X: %x") % this % &X);
   
   access::rw(Mat<eT>::n_rows)  = 1;
   access::rw(Mat<eT>::n_cols)  = X.n_cols;
@@ -420,17 +422,9 @@ inline
 Row<eT>&
 Row<eT>::operator=(Row<eT>&& X)
   {
-  arma_extra_debug_sigprint(arma_str::format("this = %x   X = %x") % this % &X);
+  arma_debug_sigprint(arma_str::format("this: %x; X: %x") % this % &X);
   
-  (*this).steal_mem(X);
-  
-  if( (X.mem_state == 0) && (X.n_alloc <= arma_config::mat_prealloc) && (this != &X) )
-    {
-    access::rw(X.n_rows)  = 1;
-    access::rw(X.n_cols)  = 0;
-    access::rw(X.n_elem)  = 0;
-    access::rw(X.mem)     = nullptr;
-    }
+  (*this).steal_mem(X, true);
   
   return *this;
   }
@@ -442,7 +436,7 @@ inline
 Row<eT>&
 Row<eT>::operator=(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::operator=(val);
   
@@ -456,7 +450,7 @@ inline
 Row<eT>&
 Row<eT>::operator=(const Row<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::operator=(X);
   
@@ -469,11 +463,9 @@ template<typename eT>
 template<typename T1>
 inline
 Row<eT>::Row(const Base<eT,T1>& X)
-  : Mat<eT>(arma_vec_indicator(), 2)
+  : Mat<eT>(X.get_ref(), arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
-  
-  Mat<eT>::operator=(X.get_ref());
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -484,7 +476,7 @@ inline
 Row<eT>&
 Row<eT>::operator=(const Base<eT,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::operator=(X.get_ref());
   
@@ -497,11 +489,9 @@ template<typename eT>
 template<typename T1>
 inline
 Row<eT>::Row(const SpBase<eT,T1>& X)
-  : Mat<eT>(arma_vec_indicator(), 2)
+  : Mat<eT>(X.get_ref(), arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
-  
-  Mat<eT>::operator=(X.get_ref());
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -512,7 +502,7 @@ inline
 Row<eT>&
 Row<eT>::operator=(const SpBase<eT,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::operator=(X.get_ref());
   
@@ -527,7 +517,7 @@ inline
 Row<eT>::Row(eT* aux_mem, const uword aux_length, const bool copy_aux_mem, const bool strict)
   : Mat<eT>(aux_mem, 1, aux_length, copy_aux_mem, strict)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   access::rw(Mat<eT>::vec_state) = 2;
   }
@@ -540,7 +530,7 @@ inline
 Row<eT>::Row(const eT* aux_mem, const uword aux_length)
   : Mat<eT>(aux_mem, 1, aux_length)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   access::rw(Mat<eT>::vec_state) = 2;
   }
@@ -555,12 +545,9 @@ Row<eT>::Row
   const Base<typename Row<eT>::pod_type, T1>& A,
   const Base<typename Row<eT>::pod_type, T2>& B
   )
+  : Mat<eT>(A.get_ref(), B.get_ref(), arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
-  
-  access::rw(Mat<eT>::vec_state) = 2;
-  
-  Mat<eT>::init(A,B);
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -569,12 +556,9 @@ template<typename eT>
 template<typename T1>
 inline
 Row<eT>::Row(const BaseCube<eT,T1>& X)
+  : Mat<eT>(X.get_ref(), arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
-  
-  access::rw(Mat<eT>::vec_state) = 2;
-  
-  Mat<eT>::operator=(X);
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -585,7 +569,7 @@ inline
 Row<eT>&
 Row<eT>::operator=(const BaseCube<eT,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::operator=(X);
   
@@ -597,12 +581,9 @@ Row<eT>::operator=(const BaseCube<eT,T1>& X)
 template<typename eT>
 inline
 Row<eT>::Row(const subview_cube<eT>& X)
+  : Mat<eT>(X, arma_vec_indicator(), 2)
   {
-  arma_extra_debug_sigprint();
-  
-  access::rw(Mat<eT>::vec_state) = 2;
-  
-  Mat<eT>::operator=(X);
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -612,7 +593,7 @@ inline
 Row<eT>&
 Row<eT>::operator=(const subview_cube<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::operator=(X);
   
@@ -623,7 +604,6 @@ Row<eT>::operator=(const subview_cube<eT>& X)
 
 template<typename eT>
 inline
-arma_cold
 mat_injector< Row<eT> >
 Row<eT>::operator<<(const eT val)
   {
@@ -677,9 +657,9 @@ arma_inline
 subview_row<eT>
 Row<eT>::col(const uword in_col1)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (in_col1 >= Mat<eT>::n_cols), "Row::col(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( (in_col1 >= Mat<eT>::n_cols), "Row::col(): indices out of bounds or incorrectly used" );
   
   return subview_row<eT>(*this, 0, in_col1, 1);
   }
@@ -691,9 +671,9 @@ arma_inline
 const subview_row<eT>
 Row<eT>::col(const uword in_col1) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (in_col1 >= Mat<eT>::n_cols), "Row::col(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( (in_col1 >= Mat<eT>::n_cols), "Row::col(): indices out of bounds or incorrectly used" );
   
   return subview_row<eT>(*this, 0, in_col1, 1);
   }
@@ -705,9 +685,9 @@ arma_inline
 subview_row<eT>
 Row<eT>::cols(const uword in_col1, const uword in_col2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::cols(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::cols(): indices out of bounds or incorrectly used" );
   
   const uword subview_n_cols = in_col2 - in_col1 + 1;
   
@@ -721,9 +701,9 @@ arma_inline
 const subview_row<eT>
 Row<eT>::cols(const uword in_col1, const uword in_col2) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::cols(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::cols(): indices out of bounds or incorrectly used" );
   
   const uword subview_n_cols = in_col2 - in_col1 + 1;
   
@@ -737,9 +717,9 @@ arma_inline
 subview_row<eT>
 Row<eT>::subvec(const uword in_col1, const uword in_col2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::subvec(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::subvec(): indices out of bounds or incorrectly used" );
   
   const uword subview_n_cols = in_col2 - in_col1 + 1;
   
@@ -753,9 +733,9 @@ arma_inline
 const subview_row<eT>
 Row<eT>::subvec(const uword in_col1, const uword in_col2) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::subvec(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( ( (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols) ), "Row::subvec(): indices out of bounds or incorrectly used" );
   
   const uword subview_n_cols = in_col2 - in_col1 + 1;
   
@@ -769,7 +749,7 @@ arma_inline
 subview_row<eT>
 Row<eT>::cols(const span& col_span)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return subvec(col_span);
   }
@@ -781,7 +761,7 @@ arma_inline
 const subview_row<eT>
 Row<eT>::cols(const span& col_span) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return subvec(col_span);
   }
@@ -793,7 +773,7 @@ arma_inline
 subview_row<eT>
 Row<eT>::subvec(const span& col_span)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool col_all = col_span.whole;
 
@@ -803,7 +783,7 @@ Row<eT>::subvec(const span& col_span)
   const uword in_col2       =                          col_span.b;
   const uword subvec_n_cols = col_all ? local_n_cols : in_col2 - in_col1 + 1;
 
-  arma_debug_check_bounds( ( col_all ? false : ((in_col1 > in_col2) || (in_col2 >= local_n_cols)) ), "Row::subvec(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( ( col_all ? false : ((in_col1 > in_col2) || (in_col2 >= local_n_cols)) ), "Row::subvec(): indices out of bounds or incorrectly used" );
   
   return subview_row<eT>(*this, 0, in_col1, subvec_n_cols);
   }
@@ -815,7 +795,7 @@ arma_inline
 const subview_row<eT>
 Row<eT>::subvec(const span& col_span) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool col_all = col_span.whole;
 
@@ -825,7 +805,7 @@ Row<eT>::subvec(const span& col_span) const
   const uword in_col2       =                          col_span.b;
   const uword subvec_n_cols = col_all ? local_n_cols : in_col2 - in_col1 + 1;
 
-  arma_debug_check_bounds( ( col_all ? false : ((in_col1 > in_col2) || (in_col2 >= local_n_cols)) ), "Row::subvec(): indices out of bounds or incorrectly used" );
+  arma_conform_check_bounds( ( col_all ? false : ((in_col1 > in_col2) || (in_col2 >= local_n_cols)) ), "Row::subvec(): indices out of bounds or incorrectly used" );
   
   return subview_row<eT>(*this, 0, in_col1, subvec_n_cols);
   }
@@ -837,7 +817,7 @@ arma_inline
 subview_row<eT>
 Row<eT>::operator()(const span& col_span)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return subvec(col_span);
   }
@@ -849,7 +829,7 @@ arma_inline
 const subview_row<eT>
 Row<eT>::operator()(const span& col_span) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return subvec(col_span);
   }
@@ -861,11 +841,11 @@ arma_inline
 subview_row<eT>
 Row<eT>::subvec(const uword start_col, const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (s.n_rows != 1), "Row::subvec(): given size does not specify a row vector" );
+  arma_conform_check( (s.n_rows != 1), "Row::subvec(): given size does not specify a row vector" );
   
-  arma_debug_check_bounds( ( (start_col >= Mat<eT>::n_cols) || ((start_col + s.n_cols) > Mat<eT>::n_cols) ), "Row::subvec(): size out of bounds" );
+  arma_conform_check_bounds( ( (start_col >= Mat<eT>::n_cols) || ((start_col + s.n_cols) > Mat<eT>::n_cols) ), "Row::subvec(): size out of bounds" );
   
   return subview_row<eT>(*this, 0, start_col, s.n_cols);
   }
@@ -877,11 +857,11 @@ arma_inline
 const subview_row<eT>
 Row<eT>::subvec(const uword start_col, const SizeMat& s) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (s.n_rows != 1), "Row::subvec(): given size does not specify a row vector" );
+  arma_conform_check( (s.n_rows != 1), "Row::subvec(): given size does not specify a row vector" );
   
-  arma_debug_check_bounds( ( (start_col >= Mat<eT>::n_cols) || ((start_col + s.n_cols) > Mat<eT>::n_cols) ), "Row::subvec(): size out of bounds" );
+  arma_conform_check_bounds( ( (start_col >= Mat<eT>::n_cols) || ((start_col + s.n_cols) > Mat<eT>::n_cols) ), "Row::subvec(): size out of bounds" );
   
   return subview_row<eT>(*this, 0, start_col, s.n_cols);
   }
@@ -893,9 +873,9 @@ arma_inline
 subview_row<eT>
 Row<eT>::head(const uword N)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (N > Mat<eT>::n_cols), "Row::head(): size out of bounds" );
+  arma_conform_check_bounds( (N > Mat<eT>::n_cols), "Row::head(): size out of bounds" );
   
   return subview_row<eT>(*this, 0, 0, N);
   }
@@ -907,9 +887,9 @@ arma_inline
 const subview_row<eT>
 Row<eT>::head(const uword N) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (N > Mat<eT>::n_cols), "Row::head(): size out of bounds" );
+  arma_conform_check_bounds( (N > Mat<eT>::n_cols), "Row::head(): size out of bounds" );
   
   return subview_row<eT>(*this, 0, 0, N);
   }
@@ -921,9 +901,9 @@ arma_inline
 subview_row<eT>
 Row<eT>::tail(const uword N)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (N > Mat<eT>::n_cols), "Row::tail(): size out of bounds" );
+  arma_conform_check_bounds( (N > Mat<eT>::n_cols), "Row::tail(): size out of bounds" );
   
   const uword start_col = Mat<eT>::n_cols - N;
   
@@ -937,9 +917,9 @@ arma_inline
 const subview_row<eT>
 Row<eT>::tail(const uword N) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (N > Mat<eT>::n_cols), "Row::tail(): size out of bounds" );
+  arma_conform_check_bounds( (N > Mat<eT>::n_cols), "Row::tail(): size out of bounds" );
   
   const uword start_col = Mat<eT>::n_cols - N;
   
@@ -953,7 +933,7 @@ arma_inline
 subview_row<eT>
 Row<eT>::head_cols(const uword N)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return (*this).head(N);
   }
@@ -965,7 +945,7 @@ arma_inline
 const subview_row<eT>
 Row<eT>::head_cols(const uword N) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return (*this).head(N);
   }
@@ -977,7 +957,7 @@ arma_inline
 subview_row<eT>
 Row<eT>::tail_cols(const uword N)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return (*this).tail(N);
   }
@@ -989,7 +969,7 @@ arma_inline
 const subview_row<eT>
 Row<eT>::tail_cols(const uword N) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return (*this).tail(N);
   }
@@ -1002,9 +982,9 @@ inline
 void
 Row<eT>::shed_col(const uword col_num)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( col_num >= Mat<eT>::n_cols, "Row::shed_col(): index out of bounds" );
+  arma_conform_check_bounds( col_num >= Mat<eT>::n_cols, "Row::shed_col(): index out of bounds" );
   
   shed_cols(col_num, col_num);
   }
@@ -1017,9 +997,9 @@ inline
 void
 Row<eT>::shed_cols(const uword in_col1, const uword in_col2)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds
+  arma_conform_check_bounds
     (
     (in_col1 > in_col2) || (in_col2 >= Mat<eT>::n_cols),
     "Row::shed_cols(): indices out of bounds or incorrectly used"
@@ -1055,21 +1035,33 @@ inline
 void
 Row<eT>::shed_cols(const Base<uword, T1>& indices)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::shed_cols(indices);
   }
 
 
 
-//! insert N cols at the specified col position,
-//! optionally setting the elements of the inserted cols to zero
 template<typename eT>
 inline
 void
 Row<eT>::insert_cols(const uword col_num, const uword N, const bool set_to_zero)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
+  
+  arma_ignore(set_to_zero);
+  
+  (*this).insert_cols(col_num, N);
+  }
+
+
+
+template<typename eT>
+inline
+void
+Row<eT>::insert_cols(const uword col_num, const uword N)
+  {
+  arma_debug_sigprint();
   
   const uword t_n_cols = Mat<eT>::n_cols;
   
@@ -1077,32 +1069,28 @@ Row<eT>::insert_cols(const uword col_num, const uword N, const bool set_to_zero)
   const uword B_n_cols = t_n_cols - col_num;
   
   // insertion at col_num == n_cols is in effect an append operation
-  arma_debug_check_bounds( (col_num > t_n_cols), "Row::insert_cols(): index out of bounds" );
+  arma_conform_check_bounds( (col_num > t_n_cols), "Row::insert_cols(): index out of bounds" );
   
-  if(N > 0)
+  if(N == 0)  { return; }
+  
+  Row<eT> out(t_n_cols + N, arma_nozeros_indicator());
+  
+        eT* out_mem = out.memptr();
+  const eT*   t_mem = (*this).memptr();
+  
+  if(A_n_cols > 0)
     {
-    Row<eT> out(t_n_cols + N, arma_nozeros_indicator());
-    
-          eT* out_mem = out.memptr();
-    const eT*   t_mem = (*this).memptr();
-    
-    if(A_n_cols > 0)
-      {
-      arrayops::copy( out_mem, t_mem, A_n_cols );
-      }
-    
-    if(B_n_cols > 0)
-      {
-      arrayops::copy( &(out_mem[col_num + N]), &(t_mem[col_num]), B_n_cols );
-      }
-    
-    if(set_to_zero)
-      {
-      arrayops::inplace_set( &(out_mem[col_num]), eT(0), N );
-      }
-    
-    Mat<eT>::steal_mem(out);
+    arrayops::copy( out_mem, t_mem, A_n_cols );
     }
+  
+  if(B_n_cols > 0)
+    {
+    arrayops::copy( &(out_mem[col_num + N]), &(t_mem[col_num]), B_n_cols );
+    }
+  
+  arrayops::fill_zeros( &(out_mem[col_num]), N );
+  
+  Mat<eT>::steal_mem(out);
   }
 
 
@@ -1115,7 +1103,7 @@ inline
 void
 Row<eT>::insert_cols(const uword col_num, const Base<eT,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT>::insert_cols(col_num, X);
   }
@@ -1124,7 +1112,6 @@ Row<eT>::insert_cols(const uword col_num, const Base<eT,T1>& X)
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::at(const uword i)
   {
@@ -1135,7 +1122,6 @@ Row<eT>::at(const uword i)
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::at(const uword i) const
   {
@@ -1146,7 +1132,6 @@ Row<eT>::at(const uword i) const
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::at(const uword, const uword in_col)
   {
@@ -1157,7 +1142,6 @@ Row<eT>::at(const uword, const uword in_col)
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::at(const uword, const uword in_col) const
   {
@@ -1168,12 +1152,31 @@ Row<eT>::at(const uword, const uword in_col) const
 
 template<typename eT>
 inline
+void
+Row<eT>::push_back(const eT val)
+  {
+  arma_debug_sigprint();
+  
+  if(Mat<eT>::mem_state != 0)
+    {
+    arma_conform_check(true, "Row::push_back(): unsupported operation as auxiliary memory is in use");
+    
+    return;
+    }
+  
+  Mat<eT>::vec_push_back(val, arma_rowvec_indicator());
+  }
+
+
+
+template<typename eT>
+inline
 typename Row<eT>::row_iterator
 Row<eT>::begin_row(const uword row_num)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::begin_row(): index out of bounds" );
+  arma_conform_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::begin_row(): index out of bounds" );
   
   return Mat<eT>::memptr();
   }
@@ -1185,9 +1188,9 @@ inline
 typename Row<eT>::const_row_iterator
 Row<eT>::begin_row(const uword row_num) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::begin_row(): index out of bounds" );
+  arma_conform_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::begin_row(): index out of bounds" );
   
   return Mat<eT>::memptr();
   }
@@ -1199,9 +1202,9 @@ inline
 typename Row<eT>::row_iterator
 Row<eT>::end_row(const uword row_num)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::end_row(): index out of bounds" );
+  arma_conform_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::end_row(): index out of bounds" );
   
   return Mat<eT>::memptr() + Mat<eT>::n_cols;
   }
@@ -1213,12 +1216,26 @@ inline
 typename Row<eT>::const_row_iterator
 Row<eT>::end_row(const uword row_num) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::end_row(): index out of bounds" );
+  arma_conform_check_bounds( (row_num >= Mat<eT>::n_rows), "Row::end_row(): index out of bounds" );
   
   return Mat<eT>::memptr() + Mat<eT>::n_cols;
   }
+
+
+
+template<typename eT>
+inline
+Row<eT>::Row(const subview<eT>& X, const bool reuse_mem)
+  : Mat<eT>(X, reuse_mem)
+  {
+  arma_debug_sigprint_this(this);
+  }
+
+
+
+//
 
 
 
@@ -1228,17 +1245,13 @@ arma_inline
 Row<eT>::fixed<fixed_n_elem>::fixed()
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
-  #if (!defined(ARMA_DONT_ZERO_INIT))
-    {
-    arma_extra_debug_print("Row::fixed::constructor: zeroing memory");
-    
-    eT* mem_use = (use_extra) ? &(mem_local_extra[0]) : &(Mat<eT>::mem_local[0]);
-    
-    arrayops::inplace_set_fixed<eT,fixed_n_elem>( mem_use, eT(0) );
-    }
-  #endif
+  arma_debug_print("Row::fixed::constructor: zeroing memory");
+  
+  eT* mem_use = (use_extra) ? &(mem_local_extra[0]) : &(Mat<eT>::mem_local[0]);
+  
+  arrayops::inplace_set_fixed<eT,fixed_n_elem>( mem_use, eT(0) );
   }
 
 
@@ -1249,7 +1262,7 @@ arma_inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const fixed<fixed_n_elem>& X)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
         eT* dest = (use_extra) ?   mem_local_extra : Mat<eT>::mem_local;
   const eT* src  = (use_extra) ? X.mem_local_extra :        X.mem_local;
@@ -1265,7 +1278,7 @@ arma_inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const subview_cube<eT>& X)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   Row<eT>::operator=(X);
   }
@@ -1278,7 +1291,7 @@ inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const fill::scalar_holder<eT> f)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   (*this).fill(f.scalar);
   }
@@ -1292,13 +1305,17 @@ inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const fill::fill_class<fill_type>&)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
-  if(is_same_type<fill_type, fill::fill_zeros>::yes)  { (*this).zeros(); }
-  if(is_same_type<fill_type, fill::fill_ones >::yes)  { (*this).ones();  }
-  if(is_same_type<fill_type, fill::fill_eye  >::yes)  { (*this).eye();   }
-  if(is_same_type<fill_type, fill::fill_randu>::yes)  { (*this).randu(); }
-  if(is_same_type<fill_type, fill::fill_randn>::yes)  { (*this).randn(); }
+  if(is_same_type<fill_type, fill::fill_zeros>::yes)  {  (*this).zeros(); }
+  if(is_same_type<fill_type, fill::fill_ones >::yes)  {  (*this).ones();  }
+  if(is_same_type<fill_type, fill::fill_eye  >::yes)  { Mat<eT>::eye();   }
+  if(is_same_type<fill_type, fill::fill_randu>::yes)  { Mat<eT>::randu(); }
+  if(is_same_type<fill_type, fill::fill_randn>::yes)  { Mat<eT>::randn(); }
+  
+  if(is_same_type<fill_type, fill::fill_nan    >::yes)  { (*this).fill( priv::Datum_helper::nan    <eT>() ); }
+  if(is_same_type<fill_type, fill::fill_pos_inf>::yes)  { (*this).fill( priv::Datum_helper::pos_inf<eT>() ); }
+  if(is_same_type<fill_type, fill::fill_neg_inf>::yes)  { (*this).fill( priv::Datum_helper::neg_inf<eT>() ); }
   }
 
 
@@ -1310,7 +1327,7 @@ arma_inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const Base<eT,T1>& A)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   Row<eT>::operator=(A.get_ref());
   }
@@ -1324,7 +1341,7 @@ arma_inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const Base<pod_type,T1>& A, const Base<pod_type,T2>& B)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   Row<eT>::init(A,B);
   }
@@ -1337,7 +1354,7 @@ inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const eT* aux_mem)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   eT* dest = (use_extra) ? mem_local_extra : Mat<eT>::mem_local;
   
@@ -1352,7 +1369,7 @@ inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const char* text)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   Row<eT>::operator=(text);
   }
@@ -1365,7 +1382,7 @@ inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const std::string& text)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   Row<eT>::operator=(text);
   }
@@ -1378,7 +1395,7 @@ template<typename T1>
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const Base<eT,T1>& A)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Row<eT>::operator=(A.get_ref());
   
@@ -1392,7 +1409,7 @@ template<uword fixed_n_elem>
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Row<eT>::operator=(val);
   
@@ -1406,7 +1423,7 @@ template<uword fixed_n_elem>
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const char* text)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Row<eT>::operator=(text);
   
@@ -1420,7 +1437,7 @@ template<uword fixed_n_elem>
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const std::string& text)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Row<eT>::operator=(text);
   
@@ -1434,7 +1451,7 @@ template<uword fixed_n_elem>
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const subview_cube<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Row<eT>::operator=(X);
   
@@ -1449,7 +1466,7 @@ inline
 Row<eT>::fixed<fixed_n_elem>::fixed(const std::initializer_list<eT>& list)
   : Row<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   (*this).operator=(list);
   }
@@ -1462,11 +1479,11 @@ inline
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const std::initializer_list<eT>& list)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword N = uword(list.size());
   
-  arma_debug_check( (N > fixed_n_elem), "Row::fixed: initialiser list is too long" );
+  arma_conform_check( (N > fixed_n_elem), "Row::fixed: initialiser list is too long" );
   
   eT* this_mem = (*this).memptr();
   
@@ -1485,7 +1502,7 @@ arma_inline
 Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(this != &X)
     {
@@ -1509,7 +1526,7 @@ Row<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   Row<eT>&
   Row<eT>::fixed<fixed_n_elem>::operator=(const eOp<T1, eop_type>& X)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
     
@@ -1517,13 +1534,13 @@ Row<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
     
     if(bad_alias == false)
       {
-      arma_debug_assert_same_size(uword(1), fixed_n_elem, X.get_n_rows(), X.get_n_cols(), "Row::fixed::operator=");
+      arma_conform_assert_same_size(uword(1), fixed_n_elem, X.get_n_rows(), X.get_n_cols(), "Row::fixed::operator=");
       
       eop_type::apply(*this, X);
       }
     else
       {
-      arma_extra_debug_print("bad_alias = true");
+      arma_debug_print("bad_alias = true");
       
       Row<eT> tmp(X);
       
@@ -1542,7 +1559,7 @@ Row<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   Row<eT>&
   Row<eT>::fixed<fixed_n_elem>::operator=(const eGlue<T1, T2, eglue_type>& X)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
     arma_type_check(( is_same_type< eT, typename T2::elem_type >::no ));
@@ -1556,13 +1573,13 @@ Row<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
     
     if(bad_alias == false)
       {
-      arma_debug_assert_same_size(uword(1), fixed_n_elem, X.get_n_rows(), X.get_n_cols(), "Row::fixed::operator=");
+      arma_conform_assert_same_size(uword(1), fixed_n_elem, X.get_n_rows(), X.get_n_cols(), "Row::fixed::operator=");
       
       eglue_type::apply(*this, X);
       }
     else
       {
-      arma_extra_debug_print("bad_alias = true");
+      arma_debug_print("bad_alias = true");
       
       Row<eT> tmp(X);
       
@@ -1612,7 +1629,6 @@ Row<eT>::fixed<fixed_n_elem>::st() const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::fixed<fixed_n_elem>::at_alt(const uword ii) const
   {
@@ -1634,7 +1650,6 @@ Row<eT>::fixed<fixed_n_elem>::at_alt(const uword ii) const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::fixed<fixed_n_elem>::operator[] (const uword ii)
   {
@@ -1646,7 +1661,6 @@ Row<eT>::fixed<fixed_n_elem>::operator[] (const uword ii)
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::fixed<fixed_n_elem>::operator[] (const uword ii) const
   {
@@ -1658,7 +1672,6 @@ Row<eT>::fixed<fixed_n_elem>::operator[] (const uword ii) const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::fixed<fixed_n_elem>::at(const uword ii)
   {
@@ -1670,7 +1683,6 @@ Row<eT>::fixed<fixed_n_elem>::at(const uword ii)
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::fixed<fixed_n_elem>::at(const uword ii) const
   {
@@ -1682,11 +1694,10 @@ Row<eT>::fixed<fixed_n_elem>::at(const uword ii) const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::fixed<fixed_n_elem>::operator() (const uword ii)
   {
-  arma_debug_check_bounds( (ii >= fixed_n_elem), "Row::operator(): index out of bounds" );
+  arma_conform_check_bounds( (ii >= fixed_n_elem), "Row::operator(): index out of bounds" );
   
   return (use_extra) ? mem_local_extra[ii] : Mat<eT>::mem_local[ii];
   }
@@ -1696,11 +1707,10 @@ Row<eT>::fixed<fixed_n_elem>::operator() (const uword ii)
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::fixed<fixed_n_elem>::operator() (const uword ii) const
   {
-  arma_debug_check_bounds( (ii >= fixed_n_elem), "Row::operator(): index out of bounds" );
+  arma_conform_check_bounds( (ii >= fixed_n_elem), "Row::operator(): index out of bounds" );
   
   return (use_extra) ? mem_local_extra[ii] : Mat<eT>::mem_local[ii];
   }
@@ -1710,7 +1720,6 @@ Row<eT>::fixed<fixed_n_elem>::operator() (const uword ii) const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::fixed<fixed_n_elem>::at(const uword, const uword in_col)
   {
@@ -1722,7 +1731,6 @@ Row<eT>::fixed<fixed_n_elem>::at(const uword, const uword in_col)
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::fixed<fixed_n_elem>::at(const uword, const uword in_col) const
   {
@@ -1734,11 +1742,10 @@ Row<eT>::fixed<fixed_n_elem>::at(const uword, const uword in_col) const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 eT&
 Row<eT>::fixed<fixed_n_elem>::operator() (const uword in_row, const uword in_col)
   {
-  arma_debug_check_bounds( ((in_row > 0) || (in_col >= fixed_n_elem)), "Row::operator(): index out of bounds" );
+  arma_conform_check_bounds( ((in_row > 0) || (in_col >= fixed_n_elem)), "Row::operator(): index out of bounds" );
   
   return (use_extra) ? mem_local_extra[in_col] : Mat<eT>::mem_local[in_col];
   }
@@ -1748,11 +1755,10 @@ Row<eT>::fixed<fixed_n_elem>::operator() (const uword in_row, const uword in_col
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT&
 Row<eT>::fixed<fixed_n_elem>::operator() (const uword in_row, const uword in_col) const
   {
-  arma_debug_check_bounds( ((in_row > 0) || (in_col >= fixed_n_elem)), "Row::operator(): index out of bounds" );
+  arma_conform_check_bounds( ((in_row > 0) || (in_col >= fixed_n_elem)), "Row::operator(): index out of bounds" );
   
   return (use_extra) ? mem_local_extra[in_col] : Mat<eT>::mem_local[in_col];
   }
@@ -1762,7 +1768,6 @@ Row<eT>::fixed<fixed_n_elem>::operator() (const uword in_row, const uword in_col
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 eT*
 Row<eT>::fixed<fixed_n_elem>::memptr()
   {
@@ -1774,7 +1779,6 @@ Row<eT>::fixed<fixed_n_elem>::memptr()
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-arma_warn_unused
 const eT*
 Row<eT>::fixed<fixed_n_elem>::memptr() const
   {
@@ -1785,12 +1789,11 @@ Row<eT>::fixed<fixed_n_elem>::memptr() const
 
 template<typename eT>
 template<uword fixed_n_elem>
-arma_hot
 inline
 const Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::fill(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   eT* mem_use = (use_extra) ? &(mem_local_extra[0]) : &(Mat<eT>::mem_local[0]);
   
@@ -1803,12 +1806,11 @@ Row<eT>::fixed<fixed_n_elem>::fill(const eT val)
 
 template<typename eT>
 template<uword fixed_n_elem>
-arma_hot
 inline
 const Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::zeros()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   eT* mem_use = (use_extra) ? &(mem_local_extra[0]) : &(Mat<eT>::mem_local[0]);
   
@@ -1821,12 +1823,11 @@ Row<eT>::fixed<fixed_n_elem>::zeros()
 
 template<typename eT>
 template<uword fixed_n_elem>
-arma_hot
 inline
 const Row<eT>&
 Row<eT>::fixed<fixed_n_elem>::ones()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   eT* mem_use = (use_extra) ? &(mem_local_extra[0]) : &(Mat<eT>::mem_local[0]);
   
@@ -1837,17 +1838,21 @@ Row<eT>::fixed<fixed_n_elem>::ones()
 
 
 
+//
+
+
+
 template<typename eT>
 inline
 Row<eT>::Row(const arma_fixed_indicator&, const uword in_n_elem, const eT* in_mem)
   : Mat<eT>(arma_fixed_indicator(), 1, in_n_elem, 2, in_mem)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   }
 
 
 
-#ifdef ARMA_EXTRA_ROW_MEAT
+#if defined(ARMA_EXTRA_ROW_MEAT)
   #include ARMA_INCFILE_WRAP(ARMA_EXTRA_ROW_MEAT)
 #endif
 

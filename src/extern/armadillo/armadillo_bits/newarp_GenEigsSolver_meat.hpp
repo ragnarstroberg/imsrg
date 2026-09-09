@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,9 +23,27 @@ namespace newarp
 template<typename eT, int SelectionRule, typename OpType>
 inline
 void
+GenEigsSolver<eT, SelectionRule, OpType>::fill_rand(eT* dest, const uword N, const uword seed_val)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename std::mt19937_64::result_type seed_type;
+  
+  local_rng.seed( seed_type(seed_val) );
+  
+  std::uniform_real_distribution<double> dist(-1.0, +1.0);
+  
+  for(uword i=0; i < N; ++i)  { dest[i] = eT(dist(local_rng)); }
+  }
+
+
+
+template<typename eT, int SelectionRule, typename OpType>
+inline
+void
 GenEigsSolver<eT, SelectionRule, OpType>::factorise_from(uword from_k, uword to_m, const Col<eT>& fk)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(to_m <= from_k) { return; }
 
@@ -42,12 +62,16 @@ GenEigsSolver<eT, SelectionRule, OpType>::factorise_from(uword from_k, uword to_
     // to the current V, which we call a restart
     if(beta < eps)
       {
+      // // Generate new random vector for fac_f
+      // blas_int idist = 2;
+      // blas_int iseed[4] = {1, 3, 5, 7};
+      // iseed[0] = (i + 100) % 4095;
+      // blas_int n = dim_n;
+      // lapack::larnv(&idist, &iseed[0], &n, fac_f.memptr());
+      
       // Generate new random vector for fac_f
-      blas_int idist = 2;
-      blas_int iseed[4] = {1, 3, 5, 7};
-      iseed[0] = (i + 100) % 4095;
-      blas_int n = dim_n;
-      lapack::larnv(&idist, &iseed[0], &n, fac_f.memptr());
+      fill_rand(fac_f.memptr(), dim_n, i+1);
+      
       // f <- f - V * V' * f, so that f is orthogonal to V
       Mat<eT> Vs(fac_V.memptr(), dim_n, i, false); // First i columns
       Col<eT> Vf = Vs.t() * fac_f;
@@ -108,7 +132,7 @@ inline
 void
 GenEigsSolver<eT, SelectionRule, OpType>::restart(uword k)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(k >= ncv) { return; }
 
@@ -181,7 +205,7 @@ inline
 uword
 GenEigsSolver<eT, SelectionRule, OpType>::num_converged(eT tol)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // thresh = tol * max(prec, abs(theta)), theta for ritz value
   const eT f_norm = arma::norm(fac_f);
@@ -202,7 +226,7 @@ inline
 uword
 GenEigsSolver<eT, SelectionRule, OpType>::nev_adjusted(uword nconv)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   uword nev_new = nev;
 
@@ -241,7 +265,7 @@ inline
 void
 GenEigsSolver<eT, SelectionRule, OpType>::retrieve_ritzpair()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   UpperHessenbergEigen<eT> decomp(fac_H);
   
@@ -270,7 +294,7 @@ inline
 void
 GenEigsSolver<eT, SelectionRule, OpType>::sort_ritzpair()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // SortEigenvalue< std::complex<eT>, EigsSelect::LARGEST_MAGN > sorting(ritz_val.memptr(), nev);
   
@@ -309,10 +333,10 @@ GenEigsSolver<eT, SelectionRule, OpType>::GenEigsSolver(const OpType& op_, uword
   , eps(std::numeric_limits<eT>::epsilon())
   , approx0(std::pow(eps, eT(2.0) / 3))
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (nev_ < 1 || nev_ > dim_n - 2),    "newarp::GenEigsSolver: nev must satisfy 1 <= nev <= n - 2, n is the size of matrix" );
-  arma_debug_check( (ncv_ < nev_ + 2 || ncv_ > dim_n), "newarp::GenEigsSolver: ncv must satisfy nev + 2 <= ncv <= n, n is the size of matrix" );
+  arma_conform_check( (nev_ < 1 || nev_ > dim_n - 2),    "newarp::GenEigsSolver: nev must satisfy 1 <= nev <= n - 2, n is the size of matrix" );
+  arma_conform_check( (ncv_ < nev_ + 2 || ncv_ > dim_n), "newarp::GenEigsSolver: ncv must satisfy nev + 2 <= ncv <= n, n is the size of matrix" );
   }
 
 
@@ -322,7 +346,7 @@ inline
 void
 GenEigsSolver<eT, SelectionRule, OpType>::init(eT* init_resid)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // Reset all matrices/vectors to zero
   fac_V.zeros(dim_n, ncv);
@@ -358,13 +382,19 @@ inline
 void
 GenEigsSolver<eT, SelectionRule, OpType>::init()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
+  
+  // podarray<eT> init_resid(dim_n);
+  // blas_int idist = 2;                // Uniform(-1, 1)
+  // blas_int iseed[4] = {1, 3, 5, 7};  // Fixed random seed
+  // blas_int n = dim_n;
+  // lapack::larnv(&idist, &iseed[0], &n, init_resid.memptr());
+  // init(init_resid.memptr());
   
   podarray<eT> init_resid(dim_n);
-  blas_int idist = 2;                // Uniform(-1, 1)
-  blas_int iseed[4] = {1, 3, 5, 7};  // Fixed random seed
-  blas_int n = dim_n;
-  lapack::larnv(&idist, &iseed[0], &n, init_resid.memptr());
+  
+  fill_rand(init_resid.memptr(), dim_n, 0);
+  
   init(init_resid.memptr());
   }
 
@@ -375,7 +405,7 @@ inline
 uword
 GenEigsSolver<eT, SelectionRule, OpType>::compute(uword maxit, eT tol)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // The m-step Arnoldi factorisation
   factorise_from(1, ncv, fac_f);
@@ -405,7 +435,7 @@ inline
 Col< std::complex<eT> >
 GenEigsSolver<eT, SelectionRule, OpType>::eigenvalues()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   uword nconv = std::count(ritz_conv.begin(), ritz_conv.end(), true);
   Col< std::complex<eT> > res(nconv, arma_zeros_indicator());
@@ -433,7 +463,7 @@ inline
 Mat< std::complex<eT> >
 GenEigsSolver<eT, SelectionRule, OpType>::eigenvectors(uword nvec)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   uword nconv = std::count(ritz_conv.begin(), ritz_conv.end(), true);
   nvec = (std::min)(nvec, nconv);

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +24,7 @@ template<typename oT>
 inline
 subview_field<oT>::~subview_field()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -46,7 +48,7 @@ subview_field<oT>::subview_field
   , n_slices( (in_f.n_slices > 0) ? uword(1) : uword(0) )
   , n_elem(in_n_rows*in_n_cols*n_slices)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -72,7 +74,7 @@ subview_field<oT>::subview_field
   , n_slices(in_n_slices)
   , n_elem(in_n_rows*in_n_cols*in_n_slices)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -82,11 +84,11 @@ inline
 void
 subview_field<oT>::operator= (const field<oT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   subview_field<oT>& t = *this;
   
-  arma_debug_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions" );
+  arma_conform_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions" );
   
   if(t.n_slices == 1)
     {
@@ -115,7 +117,7 @@ inline
 void
 subview_field<oT>::operator= (const subview_field<oT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(check_overlap(x))
     {
@@ -128,7 +130,7 @@ subview_field<oT>::operator= (const subview_field<oT>& x)
   
   subview_field<oT>& t = *this;
   
-  arma_debug_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions" );
+  arma_conform_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions" );
   
   if(t.n_slices == 1)
     {
@@ -198,7 +200,7 @@ arma_inline
 oT&
 subview_field<oT>::operator()(const uword i)
   {
-  arma_debug_check_bounds( (i >= n_elem), "subview_field::operator(): index out of bounds" );
+  arma_conform_check_bounds( (i >= n_elem), "subview_field::operator(): index out of bounds" );
   
   return operator[](i);
   }
@@ -210,7 +212,7 @@ arma_inline
 const oT&
 subview_field<oT>::operator()(const uword i) const
   {
-  arma_debug_check_bounds( (i >= n_elem), "subview_field::operator(): index out of bounds" );
+  arma_conform_check_bounds( (i >= n_elem), "subview_field::operator(): index out of bounds" );
   
   return operator[](i);
   }
@@ -242,7 +244,7 @@ arma_inline
 oT&
 subview_field<oT>::operator()(const uword in_row, const uword in_col, const uword in_slice)
   {
-  arma_debug_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds" );
+  arma_conform_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds" );
   
   const uword index = (in_slice + aux_slice1)*(f.n_rows*f.n_cols) + (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
@@ -256,7 +258,7 @@ arma_inline
 const oT&
 subview_field<oT>::operator()(const uword in_row, const uword in_col, const uword in_slice) const
   {
-  arma_debug_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds" );
+  arma_conform_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds" );
   
   const uword index = (in_slice + aux_slice1)*(f.n_rows*f.n_cols) + (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
@@ -372,7 +374,7 @@ inline
 void
 subview_field<oT>::print(const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(extra_text.length() != 0)
     {
@@ -393,7 +395,7 @@ inline
 void
 subview_field<oT>::print(std::ostream& user_stream, const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(extra_text.length() != 0)
     {
@@ -415,7 +417,7 @@ inline
 void
 subview_field<oT>::for_each(functor F)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   subview_field<oT>& t = *this;
   
@@ -446,7 +448,7 @@ inline
 void
 subview_field<oT>::for_each(functor F) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const subview_field<oT>& t = *this;
   
@@ -476,7 +478,7 @@ inline
 void
 subview_field<oT>::fill(const oT& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   subview_field<oT>& t = *this;
   
@@ -505,25 +507,18 @@ subview_field<oT>::fill(const oT& x)
 template<typename oT>
 inline
 void
-subview_field<oT>::extract(field<oT>& actual_out, const subview_field<oT>& in)
+subview_field<oT>::extract(field<oT>& out, const subview_field<oT>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  //
-  const bool alias = (&actual_out == &in.f);
-  
-  field<oT>* tmp = (alias) ? new field<oT> : 0;
-  field<oT>& out = (alias) ? (*tmp)        : actual_out;
-  
-  //
+  // NOTE: we're assuming that the field has already been set to the correct size and there is no aliasing;
+  // size setting and alias checking is done by either the field constructor or operator=()
   
   const uword n_rows   = in.n_rows;
   const uword n_cols   = in.n_cols;
   const uword n_slices = in.n_slices;
   
-  out.set_size(n_rows, n_cols, n_slices);
-  
-  arma_extra_debug_print(arma_str::format("out.n_rows = %d   out.n_cols = %d   out.n_slices = %d    in.m.n_rows = %d  in.m.n_cols = %d  in.m.n_slices = %d") % out.n_rows % out.n_cols % out.n_slices % in.f.n_rows % in.f.n_cols % in.f.n_slices);
+  arma_debug_print(arma_str::format("out.n_rows: %u; out.n_cols: %u; out.n_slices: %u; in.f.n_rows: %u; in.f.n_cols: %u; in.f.n_slices: %u") % out.n_rows % out.n_cols % out.n_slices % in.f.n_rows % in.f.n_cols % in.f.n_slices);
   
   if(n_slices == 1)
     {
@@ -542,13 +537,6 @@ subview_field<oT>::extract(field<oT>& actual_out, const subview_field<oT>& in)
       out.at(row,col,slice) = in.at(row,col,slice);
       }
     }
-  
-  if(alias)
-    {
-    actual_out = out;
-    delete tmp;
-    }
-  
   }
 
 

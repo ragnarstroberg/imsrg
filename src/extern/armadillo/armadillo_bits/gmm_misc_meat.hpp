@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +30,7 @@ running_mean_scalar<eT>::running_mean_scalar()
   : counter(uword(0))
   , r_mean (   eT(0))
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -39,7 +41,7 @@ running_mean_scalar<eT>::running_mean_scalar(const running_mean_scalar<eT>& in)
   : counter(in.counter)
   , r_mean (in.r_mean )
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   }
 
 
@@ -49,7 +51,7 @@ inline
 const running_mean_scalar<eT>&
 running_mean_scalar<eT>::operator=(const running_mean_scalar<eT>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   counter = in.counter;
   r_mean  = in.r_mean;
@@ -60,12 +62,11 @@ running_mean_scalar<eT>::operator=(const running_mean_scalar<eT>& in)
 
 
 template<typename eT>
-arma_hot
 inline
 void
 running_mean_scalar<eT>::operator() (const eT X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   counter++;
   
@@ -88,7 +89,7 @@ inline
 void
 running_mean_scalar<eT>::reset()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   counter = 0;
   r_mean  = eT(0);

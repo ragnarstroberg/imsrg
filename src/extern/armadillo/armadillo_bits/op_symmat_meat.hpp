@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,14 +26,14 @@ inline
 void
 op_symmatu::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_symmatu>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const unwrap<T1>   tmp(in.m);
-  const Mat<eT>& A = tmp.M;
+  const plain_unwrap<T1> tmp(in.m);
+  const Mat<eT>& A     = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "symmatu(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "symmatu(): given matrix must be square sized" );
   
   const uword N = A.n_rows;
   
@@ -75,14 +77,14 @@ inline
 void
 op_symmatl::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_symmatl>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const unwrap<T1>   tmp(in.m);
-  const Mat<eT>& A = tmp.M;
+  const plain_unwrap<T1> tmp(in.m);
+  const Mat<eT>& A     = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "symmatl(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "symmatl(): given matrix must be square sized" );
   
   const uword N = A.n_rows;
   
@@ -130,14 +132,14 @@ inline
 void
 op_symmatu_cx::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_symmatu_cx>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const unwrap<T1>   tmp(in.m);
-  const Mat<eT>& A = tmp.M;
+  const plain_unwrap<T1> tmp(in.m);
+  const Mat<eT>& A     = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "symmatu(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "symmatu(): given matrix must be square sized" );
   
   const uword N  = A.n_rows;
   
@@ -204,14 +206,14 @@ inline
 void
 op_symmatl_cx::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_symmatl_cx>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const unwrap<T1>   tmp(in.m);
-  const Mat<eT>& A = tmp.M;
+  const plain_unwrap<T1> tmp(in.m);
+  const Mat<eT>& A     = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "symmatl(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "symmatl(): given matrix must be square sized" );
   
   const uword N  = A.n_rows;
   

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +22,7 @@
 
 template<typename T1>
 arma_warn_unused
-arma_inline
+inline
 typename
 enable_if2
   <
@@ -29,7 +31,7 @@ enable_if2
   >::result
 hist(const T1& A, const uword n_bins = 10)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword,T1,op_hist>(A, n_bins, 0);
   }
@@ -38,7 +40,7 @@ hist(const T1& A, const uword n_bins = 10)
 
 template<typename T1, typename T2>
 arma_warn_unused
-arma_inline
+inline
 typename
 enable_if2
   <
@@ -47,7 +49,7 @@ enable_if2
   >::result
 hist(const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword,T1,T2,glue_hist_default>(X, Y);
   }
@@ -56,7 +58,7 @@ hist(const T1& X, const T2& Y)
 
 template<typename T1, typename T2>
 arma_warn_unused
-arma_inline
+inline
 typename
 enable_if2
   <
@@ -65,7 +67,7 @@ enable_if2
   >::result
 hist(const T1& X, const T2& Y, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword,T1,T2,glue_hist>(X, Y, dim);
   }

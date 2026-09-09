@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,12 +25,12 @@ inline
 void
 op_prod::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword X_n_rows = X.n_rows;
   const uword X_n_cols = X.n_cols;
     
-  if(dim == 0)  // traverse across rows (i.e. find the product in each column)
+  if(dim == 0)  // traverse across rows (ie. find the product in each column)
     {
     out.set_size(1, X_n_cols);
     
@@ -39,7 +41,7 @@ op_prod::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword dim)
       out_mem[col] = arrayops::product(X.colptr(col), X_n_rows);
       }
     }
-  else  // traverse across columns (i.e. find the product in each row)
+  else  // traverse across columns (ie. find the product in each row)
     {
     out.ones(X_n_rows, 1);
     
@@ -64,13 +66,13 @@ inline
 void
 op_prod::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_prod>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword dim = in.aux_uword_a;
   
-  arma_debug_check( (dim > 1), "prod(): parameter 'dim' must be 0 or 1" );
+  arma_conform_check( (dim > 1), "prod(): parameter 'dim' must be 0 or 1" );
   
   const quasi_unwrap<T1> U(in.m);
   
@@ -95,7 +97,7 @@ inline
 eT
 op_prod::prod(const subview<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   eT val = eT(1);
   
@@ -141,7 +143,7 @@ inline
 typename T1::elem_type
 op_prod::prod(const Base<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,13 +28,13 @@ typename
 enable_if2
   <
   is_arma_type<T1>::value,
-  const mtOp<uword, T1, op_find_simple>
+  const mtOp<uword, T1, op_find_default>
   >::result
 find(const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  return mtOp<uword, T1, op_find_simple>(X);
+  return mtOp<uword, T1, op_find_default>(X);
   }
 
 
@@ -40,14 +42,14 @@ find(const T1& X)
 template<typename T1>
 arma_warn_unused
 inline
-const mtOp<uword, T1, op_find>
+const mtOp<uword, T1, op_find_generic>
 find(const Base<typename T1::elem_type,T1>& X, const uword k, const char* direction = "first")
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const char sig = (direction != nullptr) ? direction[0] : char(0);
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (sig != 'f') && (sig != 'F') && (sig != 'l') && (sig != 'L') ),
     "find(): direction must be \"first\" or \"last\""
@@ -55,7 +57,7 @@ find(const Base<typename T1::elem_type,T1>& X, const uword k, const char* direct
   
   const uword type = ( (sig == 'f') || (sig == 'F') ) ? 0 : 1;
   
-  return mtOp<uword, T1, op_find>(X.get_ref(), k, type);
+  return mtOp<uword, T1, op_find_generic>(X.get_ref(), k, type);
   }
 
 
@@ -70,7 +72,7 @@ inline
 uvec
 find(const BaseCube<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -89,7 +91,7 @@ inline
 uvec
 find(const BaseCube<typename T1::elem_type,T1>& X, const uword k, const char* direction = "first")
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -108,7 +110,7 @@ inline
 uvec
 find(const mtOpCube<uword, T1, op_rel_type>& X, const uword k = 0, const char* direction = "first")
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -127,7 +129,7 @@ inline
 uvec
 find(const mtGlueCube<uword, T1, T2, glue_rel_type>& X, const uword k = 0, const char* direction = "first")
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT1;
   typedef typename T2::elem_type eT2;
@@ -135,7 +137,7 @@ find(const mtGlueCube<uword, T1, T2, glue_rel_type>& X, const uword k = 0, const
   const unwrap_cube<T1> tmp1(X.A);
   const unwrap_cube<T2> tmp2(X.B);
   
-  arma_debug_assert_same_size( tmp1.M, tmp2.M, "relational operator" );
+  arma_conform_assert_same_size( tmp1.M, tmp2.M, "relational operator" );
   
   const Mat<eT1> R1( const_cast< eT1* >(tmp1.M.memptr()), tmp1.M.n_elem, 1, false );
   const Mat<eT2> R2( const_cast< eT2* >(tmp2.M.memptr()), tmp2.M.n_elem, 1, false );
@@ -155,7 +157,7 @@ inline
 Col<uword>
 find(const SpBase<typename T1::elem_type,T1>& X, const uword k = 0)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy<T1> P(X.get_ref());
   
@@ -194,7 +196,7 @@ inline
 Col<uword>
 find(const SpBase<typename T1::elem_type,T1>& X, const uword k, const char* direction)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   arma_ignore(X);
   arma_ignore(k);
@@ -224,7 +226,7 @@ enable_if2
   >::result
 find_finite(const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_find_finite>(X);
   }
@@ -242,9 +244,44 @@ enable_if2
   >::result
 find_nonfinite(const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_find_nonfinite>(X);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+typename
+enable_if2
+  <
+  is_arma_type<T1>::value,
+  const mtOp<uword, T1, op_find_nan>
+  >::result
+find_nan(const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtOp<uword, T1, op_find_nan>(X);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+typename enable_if2
+  <
+  is_arma_type<T1>::value,
+  const mtOp<uword, T1, op_find_nonnan>
+  >::result
+find_nonnan(const T1& X)
+  {
+  arma_debug_sigprint();
+
+  return mtOp<uword, T1, op_find_nonnan>(X);
   }
 
 
@@ -259,7 +296,7 @@ inline
 uvec
 find_finite(const BaseCube<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -278,7 +315,7 @@ inline
 uvec
 find_nonfinite(const BaseCube<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -287,6 +324,44 @@ find_nonfinite(const BaseCube<typename T1::elem_type,T1>& X)
   const Mat<eT> R( const_cast< eT* >(tmp.M.memptr()), tmp.M.n_elem, 1, false );
   
   return find_nonfinite(R);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+uvec
+find_nan(const BaseCube<typename T1::elem_type,T1>& X)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_cube<T1> tmp(X.get_ref());
+  
+  const Mat<eT> R( const_cast< eT* >(tmp.M.memptr()), tmp.M.n_elem, 1, false );
+  
+  return find_nan(R);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+uvec
+find_nonnan(const BaseCube<typename T1::elem_type,T1>& X)
+  {
+  arma_debug_sigprint();
+
+  typedef typename T1::elem_type eT;
+
+  const unwrap_cube<T1> tmp(X.get_ref());
+
+  const Mat<eT> R( const_cast< eT* >(tmp.M.memptr()), tmp.M.n_elem, 1, false );
+
+  return find_nonnan(R);
   }
 
 
@@ -301,7 +376,7 @@ inline
 Col<uword>
 find_finite(const SpBase<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy<T1> P(X.get_ref());
   
@@ -345,7 +420,7 @@ inline
 Col<uword>
 find_nonfinite(const SpBase<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy<T1> P(X.get_ref());
   
@@ -362,7 +437,7 @@ find_nonfinite(const SpBase<typename T1::elem_type,T1>& X)
   
   for(uword i=0; i<n_nz; ++i)
     {
-    if(arma_isfinite(*it) == false)
+    if(arma_isnonfinite(*it))
       {
       const uword index = it.row() + it.col()*n_rows;
       
@@ -378,6 +453,94 @@ find_nonfinite(const SpBase<typename T1::elem_type,T1>& X)
   
   if(count > 0)  { out.steal_mem_col(tmp, count); }
   
+  return out;
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+Col<uword>
+find_nan(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_debug_sigprint();
+  
+  const SpProxy<T1> P(X.get_ref());
+  
+  const uword n_rows = P.get_n_rows();
+  const uword n_nz   = P.get_n_nonzero();
+  
+  Mat<uword> tmp(n_nz, 1, arma_nozeros_indicator());
+  
+  uword* tmp_mem = tmp.memptr();
+  
+  typename SpProxy<T1>::const_iterator_type it = P.begin();
+  
+  uword count = 0;
+  
+  for(uword i=0; i<n_nz; ++i)
+    {
+    if(arma_isnan(*it))
+      {
+      const uword index = it.row() + it.col()*n_rows;
+      
+      tmp_mem[count] = index;
+      
+      ++count;
+      }
+    
+    ++it;
+    }
+  
+  Col<uword> out;
+  
+  if(count > 0)  { out.steal_mem_col(tmp, count); }
+  
+  return out;
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+Col<uword>
+find_nonnan(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_debug_sigprint();
+
+  const SpProxy<T1> P(X.get_ref());
+
+  const uword n_rows = P.get_n_rows();
+  const uword n_nz   = P.get_n_nonzero();
+
+  Mat<uword> tmp(n_nz, 1, arma_nozeros_indicator());
+
+  uword* tmp_mem = tmp.memptr();
+
+  typename SpProxy<T1>::const_iterator_type it = P.begin();
+
+  uword count = 0;
+
+  for(uword i=0; i<n_nz; ++i)
+    {
+    if(arma_isnan(*it) == false)
+      {
+      const uword index = it.row() + it.col()*n_rows;
+
+      tmp_mem[count] = index;
+
+      ++count;
+      }
+
+    ++it;
+    }
+
+  Col<uword> out;
+
+  if(count > 0)  { out.steal_mem_col(tmp, count); }
+
   return out;
   }
 

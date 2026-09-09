@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ arma_inline
 const Gen<vec, gen_ones>
 ones(const uword n_elem)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Gen<vec, gen_ones>(n_elem, 1);
   }
@@ -37,18 +39,14 @@ arma_inline
 const Gen<obj_type, gen_ones>
 ones(const uword n_elem, const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk1);
   arma_ignore(junk2);
   
-  if(is_Row<obj_type>::value)
-    {
-    return Gen<obj_type, gen_ones>(1, n_elem);
-    }
-  else
-    {
-    return Gen<obj_type, gen_ones>(n_elem, 1);
-    }
+  const uword n_rows = (is_Row<obj_type>::value) ? uword(1) : n_elem;
+  const uword n_cols = (is_Row<obj_type>::value) ? n_elem   : uword(1);
+  
+  return Gen<obj_type, gen_ones>(n_rows, n_cols);
   }
 
 
@@ -58,7 +56,7 @@ arma_inline
 const Gen<mat, gen_ones>
 ones(const uword n_rows, const uword n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Gen<mat, gen_ones>(n_rows, n_cols);
   }
@@ -70,7 +68,7 @@ arma_inline
 const Gen<mat, gen_ones>
 ones(const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Gen<mat, gen_ones>(s.n_rows, s.n_cols);
   }
@@ -83,18 +81,11 @@ inline
 const Gen<obj_type, gen_ones>
 ones(const uword n_rows, const uword n_cols, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
-  if(is_Col<obj_type>::value)
-    {
-    arma_debug_check( (n_cols != 1), "ones(): incompatible size" );
-    }
-  else
-  if(is_Row<obj_type>::value)
-    {
-    arma_debug_check( (n_rows != 1), "ones(): incompatible size" );
-    }
+  if(is_Col<obj_type>::value)  { arma_conform_check( (n_cols != 1), "ones(): incompatible size" ); }
+  if(is_Row<obj_type>::value)  { arma_conform_check( (n_rows != 1), "ones(): incompatible size" ); }
   
   return Gen<obj_type, gen_ones>(n_rows, n_cols);
   }
@@ -107,7 +98,7 @@ inline
 const Gen<obj_type, gen_ones>
 ones(const SizeMat& s, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   return ones<obj_type>(s.n_rows, s.n_cols);
@@ -120,7 +111,7 @@ arma_inline
 const GenCube<cube::elem_type, gen_ones>
 ones(const uword n_rows, const uword n_cols, const uword n_slices)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return GenCube<cube::elem_type, gen_ones>(n_rows, n_cols, n_slices);
   }
@@ -132,7 +123,7 @@ arma_inline
 const GenCube<cube::elem_type, gen_ones>
 ones(const SizeCube& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return GenCube<cube::elem_type, gen_ones>(s.n_rows, s.n_cols, s.n_slices);
   }
@@ -145,7 +136,7 @@ arma_inline
 const GenCube<typename cube_type::elem_type, gen_ones>
 ones(const uword n_rows, const uword n_cols, const uword n_slices, const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   return GenCube<typename cube_type::elem_type, gen_ones>(n_rows, n_cols, n_slices);
@@ -159,7 +150,7 @@ arma_inline
 const GenCube<typename cube_type::elem_type, gen_ones>
 ones(const SizeCube& s, const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   return GenCube<typename cube_type::elem_type, gen_ones>(s.n_rows, s.n_cols, s.n_slices);

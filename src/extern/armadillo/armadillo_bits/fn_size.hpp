@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 const SizeMat
 size(const uword n_rows, const uword n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeMat(n_rows, n_cols);
   }
@@ -37,7 +39,7 @@ inline
 const SizeMat
 size(const Base<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const Proxy<T1> P(X.get_ref());
   
@@ -46,42 +48,42 @@ size(const Base<typename T1::elem_type,T1>& X)
 
 
 
-// explicit overload to workround ADL issues with C++17 std::size()
+// explicit overload to workaround ADL issues with C++17 std::size()
 template<typename eT>
 arma_warn_unused
 inline
 const SizeMat
 size(const Mat<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeMat( X.n_rows, X.n_cols );
   }
 
 
 
-// explicit overload to workround ADL issues with C++17 std::size()
+// explicit overload to workaround ADL issues with C++17 std::size()
 template<typename eT>
 arma_warn_unused
 inline
 const SizeMat
 size(const Row<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeMat( X.n_rows, X.n_cols );
   }
 
 
 
-// explicit overload to workround ADL issues with C++17 std::size()
+// explicit overload to workaround ADL issues with C++17 std::size()
 template<typename eT>
 arma_warn_unused
 inline
 const SizeMat
 size(const Col<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeMat( X.n_rows, X.n_cols );
   }
@@ -93,20 +95,20 @@ inline
 const SizeMat
 size(const arma::span& row_span, const arma::span& col_span)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   uword n_rows = 0;
   uword n_cols = 0;
   
   if(row_span.whole || col_span.whole)
     {
-    arma_debug_check(true, "size(): span::all not supported");
+    arma_conform_check(true, "size(): span::all not supported");
     }
   else
     {
     if((row_span.a > row_span.b) || (col_span.a > col_span.b))
       {
-      arma_debug_check_bounds(true, "size(): span indices incorrectly used");
+      arma_conform_check_bounds(true, "size(): span indices incorrectly used");
       }
     else
       {
@@ -126,7 +128,7 @@ inline
 uword
 size(const Base<typename T1::elem_type,T1>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const Proxy<T1> P(X.get_ref());
   
@@ -140,7 +142,7 @@ inline
 const SizeCube
 size(const uword n_rows, const uword n_cols, const uword n_slices)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeCube(n_rows, n_cols, n_slices);
   }
@@ -153,7 +155,7 @@ inline
 const SizeCube
 size(const BaseCube<typename T1::elem_type, T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const ProxyCube<T1> P(X.get_ref());
   
@@ -162,14 +164,14 @@ size(const BaseCube<typename T1::elem_type, T1>& X)
 
 
 
-// explicit overload to workround ADL issues with C++17 std::size()
+// explicit overload to workaround ADL issues with C++17 std::size()
 template<typename eT>
 arma_warn_unused
 inline
 const SizeCube
 size(const Cube<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeCube( X.n_rows, X.n_cols, X.n_slices );
   }
@@ -182,7 +184,7 @@ inline
 uword
 size(const BaseCube<typename T1::elem_type, T1>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const ProxyCube<T1> P(X.get_ref());
   
@@ -196,7 +198,7 @@ inline
 const SizeCube
 size(const arma::span& row_span, const arma::span& col_span, const arma::span& slice_span)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   uword n_rows   = 0;
   uword n_cols   = 0;
@@ -204,13 +206,13 @@ size(const arma::span& row_span, const arma::span& col_span, const arma::span& s
   
   if(row_span.whole || col_span.whole || slice_span.whole)
     {
-    arma_debug_check(true, "size(): span::all not supported");
+    arma_conform_check(true, "size(): span::all not supported");
     }
   else
     {
     if((row_span.a > row_span.b) || (col_span.a > col_span.b) || (slice_span.a > slice_span.b))
       {
-      arma_debug_check_bounds(true, "size(): span indices incorrectly used");
+      arma_conform_check_bounds(true, "size(): span indices incorrectly used");
       }
     else
       {
@@ -231,7 +233,7 @@ inline
 const SizeMat
 size(const SpBase<typename T1::elem_type,T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy<T1> P(X.get_ref());
   
@@ -240,14 +242,14 @@ size(const SpBase<typename T1::elem_type,T1>& X)
 
 
 
-// explicit overload to workround ADL issues with C++17 std::size()
+// explicit overload to workaround ADL issues with C++17 std::size()
 template<typename eT>
 arma_warn_unused
 inline
 const SizeMat
 size(const SpMat<eT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeMat( X.n_rows, X.n_cols );
   }
@@ -260,7 +262,7 @@ inline
 uword
 size(const SpBase<typename T1::elem_type,T1>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy<T1> P(X.get_ref());
   
@@ -276,7 +278,7 @@ inline
 const SizeCube
 size(const field<oT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeCube( X.n_rows, X.n_cols, X.n_slices );
   }
@@ -289,7 +291,7 @@ inline
 uword
 size(const field<oT>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeCube( X.n_rows, X.n_cols, X.n_slices )( dim );
   }
@@ -302,7 +304,7 @@ inline
 const SizeCube
 size(const subview_field<oT>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeCube( X.n_rows, X.n_cols, X.n_slices );
   }
@@ -315,7 +317,7 @@ inline
 uword
 size(const subview_field<oT>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SizeCube( X.n_rows, X.n_cols, X.n_slices )( dim );
   }

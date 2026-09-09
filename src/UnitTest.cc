@@ -6018,15 +6018,28 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   int tz = eta.GetTRank() + H.GetTRank();
   int parity = (eta.GetParity() + H.GetParity())%2 ;
   int particle_rank = 2;
-  
+  int hEta = eta.IsHermitian() ? 1 : -1;
+  int hH = H.IsHermitian() ? 1 : -1;
+  int hZ = -hEta * hH;
 
 //  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
 //  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);
   Operator OpOut_direct(*modelspace, jrank, tz, parity, 3);
   Operator OpOut_factorized(*modelspace, jrank, tz, parity, 2);
+  if ( hZ < 0 )
+  {
+    OpOut_direct.SetAntiHermitian();
+    OpOut_factorized.SetAntiHermitian();
+  }
   OpOut_direct.ThreeBody.SetMode("pn");
-  OpOut_direct.MakeNotReduced();
-  OpOut_factorized.MakeNotReduced();
+  if (OpOut_direct.IsReduced() )
+  {
+     OpOut_direct.MakeNotReduced();
+  }
+  if (OpOut_factorized.IsReduced() )
+  {
+     OpOut_factorized.MakeNotReduced();
+  }
 
   if ( eta.IsReduced() or H.IsReduced() or OpOut_direct.IsReduced() or OpOut_factorized.IsReduced())
   {

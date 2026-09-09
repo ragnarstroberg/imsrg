@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +27,7 @@ inline
 void
 op_repmat::apply_noalias(Mat<typename obj::elem_type>& out, const obj& X, const uword copies_per_row, const uword copies_per_col)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename obj::elem_type eT;
   
@@ -94,7 +96,7 @@ inline
 void
 op_repmat::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_repmat>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -114,6 +116,87 @@ op_repmat::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_repmat>& in)
   else
     {
     op_repmat::apply_noalias(out, U.M, copies_per_row, copies_per_col);
+    }
+  }
+
+
+
+template<typename T1>
+inline
+void
+op_repmat::apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_repmat>& in)
+  {
+  arma_debug_sigprint();
+  
+  const uword copies_per_row = in.aux_uword_a;
+  const uword copies_per_col = in.aux_uword_b;
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  op_repmat::apply_noalias(out, U.M, copies_per_row, copies_per_col);
+  }
+
+
+
+//
+
+
+
+template<typename eT>
+inline
+void
+op_repcube::apply_noalias(Cube<eT>& out, const Cube<eT>& X, const uword copies_per_row, const uword copies_per_col, const uword copies_per_slice)
+  {
+  arma_debug_sigprint();
+  
+  out.set_size(X.n_rows * copies_per_row, X.n_cols * copies_per_col, X.n_slices * copies_per_slice);
+  
+  if(out.is_empty())  { return; }
+  
+  for(uword s=0; s < X.n_slices; ++s)
+    {
+    // avoid use of Cube::slice() to prevent generating Mat objects that the user may not need
+    
+    const Mat<eT>   X_slice_s(const_cast<eT*>(X.slice_memptr(s)),   X.n_rows,   X.n_cols, false, true);
+          Mat<eT> out_slice_s(              out.slice_memptr(s) , out.n_rows, out.n_cols, false, true);
+    
+    op_repmat::apply_noalias(out_slice_s, X_slice_s, copies_per_row, copies_per_col);
+    
+    for(uword t=1; t < copies_per_slice; ++t)
+      {
+      arrayops::copy(out.slice_memptr(s + (t * X.n_slices)), out_slice_s.memptr(), out_slice_s.n_elem);
+      }
+    }
+  }
+
+
+
+template<typename T1>
+inline
+void
+op_repcube::apply(Cube<typename T1::elem_type>& out, const OpCube<T1,op_repcube>& in)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const uword copies_per_row   = in.aux_uword_a;
+  const uword copies_per_col   = in.aux_uword_b;
+  const uword copies_per_slice = in.aux_uword_c;
+  
+  const unwrap_cube<T1> U(in.m);
+  
+  if(U.is_alias(out))
+    {
+    Cube<eT> tmp;
+    
+    op_repcube::apply_noalias(tmp, U.M, copies_per_row, copies_per_col, copies_per_slice);
+    
+    out.steal_mem(tmp);
+    }
+  else
+    {
+    op_repcube::apply_noalias(out, U.M, copies_per_row, copies_per_col, copies_per_slice);
     }
   }
 

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,9 +22,8 @@
 
 
 template<typename T1>
-class ProxyCube
+struct ProxyCube
   {
-  public:
   inline ProxyCube(const T1&)
     {
     arma_type_check(( is_arma_cube_type<T1>::value == false ));
@@ -35,10 +36,8 @@ class ProxyCube
 // which can provide access to elements via operator[]
 
 template<typename eT>
-class ProxyCube< Cube<eT> >
+struct ProxyCube< Cube<eT> >
   {
-  public:
-  
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef Cube<eT>                                 stored_type;
@@ -49,12 +48,12 @@ class ProxyCube< Cube<eT> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const Cube<eT>& Q;
+  const Cube<eT>& Q;
   
   inline explicit ProxyCube(const Cube<eT>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }
@@ -82,10 +81,8 @@ class ProxyCube< Cube<eT> >
 
 
 template<typename eT, typename gen_type>
-class ProxyCube< GenCube<eT, gen_type> >
+struct ProxyCube< GenCube<eT, gen_type> >
   {
-  public:
-  
   typedef          eT                              elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef GenCube<eT, gen_type>                    stored_type;
@@ -96,12 +93,12 @@ class ProxyCube< GenCube<eT, gen_type> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const GenCube<eT, gen_type>& Q;
+  const GenCube<eT, gen_type>& Q;
   
   inline explicit ProxyCube(const GenCube<eT, gen_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;                     }
@@ -123,110 +120,14 @@ class ProxyCube< GenCube<eT, gen_type> >
   template<typename eT2>
   constexpr bool has_overlap(const subview_cube<eT2>&) const { return false; }
   
-  arma_inline bool is_aligned() const { return GenCube<eT, gen_type>::is_simple; }
-  };
-
-
-
-template<typename eT>
-class ProxyCube< GenCube<eT, gen_randu> >
-  {
-  public:
-  
-  typedef eT                                       elem_type;
-  typedef typename get_pod_type<elem_type>::result pod_type;
-  typedef Cube<eT>                                 stored_type;
-  typedef const eT*                                ea_type;
-  typedef const Cube<eT>&                          aligned_ea_type;
-  
-  static constexpr bool use_at      = false;
-  static constexpr bool use_mp      = false;
-  static constexpr bool has_subview = false;
-  
-  arma_aligned const Cube<eT> Q;
-  
-  inline explicit ProxyCube(const GenCube<eT, gen_randu>& A)
-    : Q(A)
-    {
-    arma_extra_debug_sigprint();
-    }
-  
-  arma_inline uword get_n_rows()       const { return Q.n_rows;       }
-  arma_inline uword get_n_cols()       const { return Q.n_cols;       }
-  arma_inline uword get_n_elem_slice() const { return Q.n_elem_slice; }
-  arma_inline uword get_n_slices()     const { return Q.n_slices;     }
-  arma_inline uword get_n_elem()       const { return Q.n_elem;       }
-  
-  arma_inline elem_type operator[] (const uword i)                               const { return Q[i];          }
-  arma_inline elem_type at         (const uword r, const uword c, const uword s) const { return Q.at(r, c, s); }
-  arma_inline elem_type at_alt     (const uword i)                               const { return Q.at_alt(i);   }
-  
-  arma_inline         ea_type         get_ea() const { return Q.memptr(); }
-  arma_inline aligned_ea_type get_aligned_ea() const { return Q;          }
-  
-  template<typename eT2>
-  constexpr bool is_alias(const Cube<eT2>&) const { return false; }
-  
-  template<typename eT2>
-  constexpr bool has_overlap(const subview_cube<eT2>&) const { return false; }
-  
-  arma_inline bool is_aligned() const { return memory::is_aligned(Q.memptr()); }
-  };
-
-
-
-template<typename eT>
-class ProxyCube< GenCube<eT, gen_randn> >
-  {
-  public:
-  
-  typedef eT                                       elem_type;
-  typedef typename get_pod_type<elem_type>::result pod_type;
-  typedef Cube<eT>                                 stored_type;
-  typedef const eT*                                ea_type;
-  typedef const Cube<eT>&                          aligned_ea_type;
-  
-  static constexpr bool use_at      = false;
-  static constexpr bool use_mp      = false;
-  static constexpr bool has_subview = false;
-  
-  arma_aligned const Cube<eT> Q;
-  
-  inline explicit ProxyCube(const GenCube<eT, gen_randn>& A)
-    : Q(A)
-    {
-    arma_extra_debug_sigprint();
-    }
-  
-  arma_inline uword get_n_rows()       const { return Q.n_rows;       }
-  arma_inline uword get_n_cols()       const { return Q.n_cols;       }
-  arma_inline uword get_n_elem_slice() const { return Q.n_elem_slice; }
-  arma_inline uword get_n_slices()     const { return Q.n_slices;     }
-  arma_inline uword get_n_elem()       const { return Q.n_elem;       }
-  
-  arma_inline elem_type operator[] (const uword i)                               const { return Q[i];          }
-  arma_inline elem_type at         (const uword r, const uword c, const uword s) const { return Q.at(r, c, s); }
-  arma_inline elem_type at_alt     (const uword i)                               const { return Q.at_alt(i);   }
-  
-  arma_inline         ea_type         get_ea() const { return Q.memptr(); }
-  arma_inline aligned_ea_type get_aligned_ea() const { return Q;          }
-  
-  template<typename eT2>
-  constexpr bool is_alias(const Cube<eT2>&) const { return false; }
-  
-  template<typename eT2>
-  constexpr bool has_overlap(const subview_cube<eT2>&) const { return false; }
-  
-  arma_inline bool is_aligned() const { return memory::is_aligned(Q.memptr()); }
+  constexpr bool is_aligned() const { return GenCube<eT, gen_type>::is_simple; }
   };
 
 
 
 template<typename T1, typename op_type>
-class ProxyCube< OpCube<T1, op_type> >
+struct ProxyCube< OpCube<T1, op_type> >
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef Cube<elem_type>                          stored_type;
@@ -237,12 +138,12 @@ class ProxyCube< OpCube<T1, op_type> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const Cube<elem_type> Q;
+  const Cube<elem_type> Q;
   
   inline explicit ProxyCube(const OpCube<T1, op_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }
@@ -270,10 +171,8 @@ class ProxyCube< OpCube<T1, op_type> >
 
 
 template<typename T1, typename T2, typename glue_type>
-class ProxyCube< GlueCube<T1, T2, glue_type> >
+struct ProxyCube< GlueCube<T1, T2, glue_type> >
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef Cube<elem_type>                          stored_type;
@@ -284,12 +183,12 @@ class ProxyCube< GlueCube<T1, T2, glue_type> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const Cube<elem_type> Q;
+  const Cube<elem_type> Q;
   
   inline explicit ProxyCube(const GlueCube<T1, T2, glue_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
 
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }
@@ -317,10 +216,8 @@ class ProxyCube< GlueCube<T1, T2, glue_type> >
 
 
 template<typename eT>
-class ProxyCube< subview_cube<eT> >
+struct ProxyCube< subview_cube<eT> >
   {
-  public:
-  
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef subview_cube<eT>                         stored_type;
@@ -331,12 +228,12 @@ class ProxyCube< subview_cube<eT> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = true;
   
-  arma_aligned const subview_cube<eT>& Q;
+  const subview_cube<eT>& Q;
   
   inline explicit ProxyCube(const subview_cube<eT>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }
@@ -364,10 +261,8 @@ class ProxyCube< subview_cube<eT> >
 
 
 template<typename eT, typename T1>
-class ProxyCube< subview_cube_slices<eT,T1> >
+struct ProxyCube< subview_cube_slices<eT,T1> >
   {
-  public:
-  
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef Cube<eT>                                 stored_type;
@@ -378,12 +273,12 @@ class ProxyCube< subview_cube_slices<eT,T1> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const Cube<eT> Q;
+  const Cube<eT> Q;
   
   inline explicit ProxyCube(const subview_cube_slices<eT,T1>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }
@@ -411,10 +306,8 @@ class ProxyCube< subview_cube_slices<eT,T1> >
 
 
 template<typename T1, typename eop_type>
-class ProxyCube< eOpCube<T1, eop_type > >
+struct ProxyCube< eOpCube<T1, eop_type > >
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef eOpCube<T1, eop_type>                    stored_type;
@@ -425,12 +318,12 @@ class ProxyCube< eOpCube<T1, eop_type > >
   static constexpr bool use_mp      = eOpCube<T1, eop_type>::use_mp;
   static constexpr bool has_subview = eOpCube<T1, eop_type>::has_subview;
   
-  arma_aligned const eOpCube<T1, eop_type>& Q;
+  const eOpCube<T1, eop_type>& Q;
   
   inline explicit ProxyCube(const eOpCube<T1, eop_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.get_n_rows();       }
@@ -458,10 +351,8 @@ class ProxyCube< eOpCube<T1, eop_type > >
 
 
 template<typename T1, typename T2, typename eglue_type>
-class ProxyCube< eGlueCube<T1, T2, eglue_type > >
+struct ProxyCube< eGlueCube<T1, T2, eglue_type > >
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   typedef eGlueCube<T1, T2, eglue_type>            stored_type;
@@ -472,12 +363,12 @@ class ProxyCube< eGlueCube<T1, T2, eglue_type > >
   static constexpr bool use_mp      = eGlueCube<T1, T2, eglue_type>::use_mp;
   static constexpr bool has_subview = eGlueCube<T1, T2, eglue_type>::has_subview;
   
-  arma_aligned const eGlueCube<T1, T2, eglue_type>& Q;
+  const eGlueCube<T1, T2, eglue_type>& Q;
   
   inline explicit ProxyCube(const eGlueCube<T1, T2, eglue_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.get_n_rows();       }
@@ -505,10 +396,8 @@ class ProxyCube< eGlueCube<T1, T2, eglue_type > >
 
 
 template<typename out_eT, typename T1, typename op_type>
-class ProxyCube< mtOpCube<out_eT, T1, op_type> >
+struct ProxyCube< mtOpCube<out_eT, T1, op_type> >
   {
-  public:
-  
   typedef          out_eT                       elem_type;
   typedef typename get_pod_type<out_eT>::result pod_type;
   typedef          Cube<out_eT>                 stored_type;
@@ -519,12 +408,12 @@ class ProxyCube< mtOpCube<out_eT, T1, op_type> >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const Cube<out_eT> Q;
+  const Cube<out_eT> Q;
   
   inline explicit ProxyCube(const mtOpCube<out_eT, T1, op_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }
@@ -552,10 +441,8 @@ class ProxyCube< mtOpCube<out_eT, T1, op_type> >
 
 
 template<typename out_eT, typename T1, typename T2, typename glue_type>
-class ProxyCube< mtGlueCube<out_eT, T1, T2, glue_type > >
+struct ProxyCube< mtGlueCube<out_eT, T1, T2, glue_type > >
   {
-  public:
-  
   typedef          out_eT                       elem_type;
   typedef typename get_pod_type<out_eT>::result pod_type;
   typedef          Cube<out_eT>                 stored_type;
@@ -566,12 +453,12 @@ class ProxyCube< mtGlueCube<out_eT, T1, T2, glue_type > >
   static constexpr bool use_mp      = false;
   static constexpr bool has_subview = false;
   
-  arma_aligned const Cube<out_eT> Q;
+  const Cube<out_eT> Q;
   
   inline explicit ProxyCube(const mtGlueCube<out_eT, T1, T2, glue_type>& A)
     : Q(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   arma_inline uword get_n_rows()       const { return Q.n_rows;       }

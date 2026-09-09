@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,12 +26,12 @@ inline
 void
 op_range::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_range>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword dim = in.aux_uword_a;
-  arma_debug_check( (dim > 1), "range(): parameter 'dim' must be 0 or 1" );
+  arma_conform_check( (dim > 1), "range(): parameter 'dim' must be 0 or 1" );
   
   const quasi_unwrap<T1> U(in.m);
   const Mat<eT>& X = U.M;
@@ -55,7 +57,7 @@ inline
 void
 op_range::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // TODO: replace with dedicated implementation which finds min and max at the same time
   out = max(X,dim) - min(X,dim);
@@ -68,7 +70,7 @@ inline
 typename T1::elem_type
 op_range::vector_range(const T1& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -80,7 +82,7 @@ op_range::vector_range(const T1& expr)
   
   if(N == 0)
     {
-    arma_debug_check(true, "range(): object has no elements");
+    arma_conform_check(true, "range(): object has no elements");
     
     return Datum<eT>::nan;
     }

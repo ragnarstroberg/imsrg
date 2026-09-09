@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,11 +29,13 @@ class spdiagview : public SpBase< eT, spdiagview<eT> >
   typedef eT                                elem_type;
   typedef typename get_pod_type<eT>::result pod_type;
   
-  arma_aligned const SpMat<eT>& m;
+  const SpMat<eT>& m;
   
   static constexpr bool is_row  = false;
   static constexpr bool is_col  = true;
   static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = true;
   
   const uword row_offset;
   const uword col_offset;
@@ -102,6 +106,9 @@ class spdiagview : public SpBase< eT, spdiagview<eT> >
   
   inline static void extract(SpMat<eT>& out, const spdiagview& in);
   inline static void extract(  Mat<eT>& out, const spdiagview& in);
+  
+  template<typename eT2>
+  arma_inline bool is_alias(const SpMat<eT2>& X) const;
   
   
   friend class SpMat<eT>;
