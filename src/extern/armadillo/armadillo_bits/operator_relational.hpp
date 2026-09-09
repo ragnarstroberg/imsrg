@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,7 +41,7 @@ enable_if2
 operator<
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_lt>( X, Y );
   }
@@ -57,7 +59,7 @@ enable_if2
 operator>
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_gt>( X, Y );
   }
@@ -75,7 +77,7 @@ enable_if2
 operator<=
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_lteq>( X, Y );
   }
@@ -93,7 +95,7 @@ enable_if2
 operator>=
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_gteq>( X, Y );
   }
@@ -111,7 +113,7 @@ enable_if2
 operator==
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_eq>( X, Y );
   }
@@ -129,7 +131,7 @@ enable_if2
 operator!=
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_noteq>( X, Y );
   }
@@ -147,7 +149,7 @@ enable_if2
 operator&&
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_and>( X, Y );
   }
@@ -165,7 +167,7 @@ enable_if2
 operator||
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtGlue<uword, T1, T2, glue_rel_or>( X, Y );
   }
@@ -189,7 +191,7 @@ enable_if2
 operator<
 (const typename T1::elem_type val, const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_lt_pre>(X, val);
   }
@@ -207,7 +209,7 @@ enable_if2
 operator<
 (const T1& X, const typename T1::elem_type val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_lt_post>(X, val);
   }
@@ -225,7 +227,7 @@ enable_if2
 operator>
 (const typename T1::elem_type val, const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_gt_pre>(X, val);
   }
@@ -243,7 +245,7 @@ enable_if2
 operator>
 (const T1& X, const typename T1::elem_type val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_gt_post>(X, val);
   }
@@ -261,7 +263,7 @@ enable_if2
 operator<=
 (const typename T1::elem_type val, const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_lteq_pre>(X, val);
   }
@@ -279,7 +281,7 @@ enable_if2
 operator<=
 (const T1& X, const typename T1::elem_type val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_lteq_post>(X, val);
   }
@@ -297,7 +299,7 @@ enable_if2
 operator>=
 (const typename T1::elem_type val, const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_gteq_pre>(X, val);
   }
@@ -315,7 +317,7 @@ enable_if2
 operator>=
 (const T1& X, const typename T1::elem_type val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_gteq_post>(X, val);
   }
@@ -333,7 +335,7 @@ enable_if2
 operator==
 (const typename T1::elem_type val, const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_eq>(X, val);
   }
@@ -351,7 +353,7 @@ enable_if2
 operator==
 (const T1& X, const typename T1::elem_type val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_eq>(X, val);
   }
@@ -369,7 +371,7 @@ enable_if2
 operator!=
 (const typename T1::elem_type val, const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_noteq>(X, val);
   }
@@ -387,7 +389,7 @@ enable_if2
 operator!=
 (const T1& X, const typename T1::elem_type val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return mtOp<uword, T1, op_rel_noteq>(X, val);
   }
@@ -409,7 +411,7 @@ enable_if2
 operator<
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // TODO: ensure T1::elem_type and T2::elem_type are the same
   
@@ -429,7 +431,7 @@ enable_if2
 operator>
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // TODO: ensure T1::elem_type and T2::elem_type are the same
   
@@ -449,7 +451,7 @@ enable_if2
 operator&&
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // TODO: ensure T1::elem_type and T2::elem_type are the same
   
@@ -469,11 +471,233 @@ enable_if2
 operator||
 (const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // TODO: ensure T1::elem_type and T2::elem_type are the same
   
   return mtSpGlue<uword, T1, T2, spglue_rel_or>( X, Y );
+  }
+
+
+
+//
+//
+//
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_lt_pre>
+  >::result
+operator<
+(const typename T1::elem_type val, const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_lt_pre>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_lt_post>
+  >::result
+operator<
+(const T1& X, const typename T1::elem_type val)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_lt_post>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_gt_pre>
+  >::result
+operator>
+(const typename T1::elem_type val, const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_gt_pre>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_gt_post>
+  >::result
+operator>
+(const T1& X, const typename T1::elem_type val)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_gt_post>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_lteq_pre>
+  >::result
+operator<=
+(const typename T1::elem_type val, const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_lteq_pre>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_lteq_post>
+  >::result
+operator<=
+(const T1& X, const typename T1::elem_type val)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_lteq_post>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_gteq_pre>
+  >::result
+operator>=
+(const typename T1::elem_type val, const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_gteq_pre>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  (is_arma_sparse_type<T1>::value && (is_cx<typename T1::elem_type>::no)),
+  const mtSpOp<uword, T1, spop_rel_gteq_post>
+  >::result
+operator>=
+(const T1& X, const typename T1::elem_type val)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_gteq_post>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  is_arma_sparse_type<T1>::value,
+  const mtSpOp<uword, T1, spop_rel_eq>
+  >::result
+operator==
+(const typename T1::elem_type val, const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_eq>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  is_arma_sparse_type<T1>::value,
+  const mtSpOp<uword, T1, spop_rel_eq>
+  >::result
+operator==
+(const T1& X, const typename T1::elem_type val)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_eq>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  is_arma_sparse_type<T1>::value,
+  const mtSpOp<uword, T1, spop_rel_noteq>
+  >::result
+operator!=
+(const typename T1::elem_type val, const T1& X)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_noteq>(X, val);
+  }
+
+
+
+template<typename T1>
+inline
+typename
+enable_if2
+  <
+  is_arma_sparse_type<T1>::value,
+  const mtSpOp<uword, T1, spop_rel_noteq>
+  >::result
+operator!=
+(const T1& X, const typename T1::elem_type val)
+  {
+  arma_debug_sigprint();
+  
+  return mtSpOp<uword, T1, spop_rel_noteq>(X, val);
   }
 
 

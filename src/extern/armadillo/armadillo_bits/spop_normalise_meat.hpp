@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,15 +26,15 @@ inline
 void
 spop_normalise::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_normalise>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword p   = expr.aux_uword_a;
   const uword dim = expr.aux_uword_b;
   
-  arma_debug_check( (p   == 0), "normalise(): parameter 'p' must be greater than zero" );
-  arma_debug_check( (dim >  1), "normalise(): parameter 'dim' must be 0 or 1"          );
+  arma_conform_check( (p   == 0), "normalise(): unsupported vector norm type"   );
+  arma_conform_check( (dim >  1), "normalise(): parameter 'dim' must be 0 or 1" );
   
   const unwrap_spmat<T1> U(expr.m);
   
@@ -67,7 +69,7 @@ inline
 void
 spop_normalise::apply_direct(SpMat<eT>& out, const SpMat<eT>& X, const uword p)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   

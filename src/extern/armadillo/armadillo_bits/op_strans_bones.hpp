@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +22,8 @@
 
 //! 'matrix transpose' operation (simple transpose, ie. without taking the conjugate of the elements)
 
-class op_strans
+struct op_strans
   {
-  public:
-  
   template<typename T1>
   struct traits
     {
@@ -56,26 +56,30 @@ class op_strans
   arma_hot inline static void apply_mat_inplace(Mat<eT>& out);
   
   template<typename eT, typename TA>
-  arma_hot inline static void apply_mat(Mat<eT>& out, const TA& A);
+  inline static void apply_mat(Mat<eT>& out, const TA& A);
   
   template<typename T1>
-  arma_hot inline static void apply_proxy(Mat<typename T1::elem_type>& out, const T1& X);
+  inline static void apply_proxy(Mat<typename T1::elem_type>& out, const Proxy<T1>& P);
   
   template<typename T1>
-  arma_hot inline static void apply_direct(Mat<typename T1::elem_type>& out, const T1& X);
+  inline static void apply_direct(Mat<typename T1::elem_type>& out, const T1& X);
   
   template<typename T1>
-  arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_strans>& in);
-  };
-
-
-
-class op_strans_cube
-  {
-  public:
+  inline static void apply_direct(Mat_noalias<typename T1::elem_type>& out, const T1& X);
+  
+  template<typename T1>
+  inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_strans>& in);
+  
+  template<typename T1>
+  inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_strans>& in);
+  
+  //
   
   template<typename eT>
-  inline static void apply_noalias(Cube<eT>& out, const Cube<eT>& X);
+  inline static void apply_cube_noalias(Cube<eT>& Y, const Cube<eT>& X);
+  
+  template<typename T1>
+  inline static void apply(Cube<typename T1::elem_type>& out, const OpCube<T1,op_strans>& in);
   };
 
 

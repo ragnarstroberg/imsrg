@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 eOp<T1, eop_type>::eOp(const T1& in_m)
   : P(in_m)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -35,7 +37,7 @@ eOp<T1, eop_type>::eOp(const T1& in_m, const typename T1::elem_type in_aux)
   : P(in_m)
   , aux(in_aux)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -47,7 +49,7 @@ eOp<T1, eop_type>::eOp(const T1& in_m, const uword in_aux_uword_a, const uword i
   , aux_uword_a(in_aux_uword_a)
   , aux_uword_b(in_aux_uword_b)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -60,7 +62,7 @@ eOp<T1, eop_type>::eOp(const T1& in_m, const typename T1::elem_type in_aux, cons
   , aux_uword_a(in_aux_uword_a)
   , aux_uword_b(in_aux_uword_b)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -69,10 +71,23 @@ template<typename T1, typename eop_type>
 inline
 eOp<T1, eop_type>::~eOp()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
+
+
+template<typename T1, typename eop_type>
+template<typename eT2>
+inline
+bool
+eOp<T1, eop_type>::is_alias(const Mat<eT2>& X) const
+  {
+  arma_debug_sigprint();
   
+  return P.is_alias(X);
+  }
+
+
 
 template<typename T1, typename eop_type>
 arma_inline

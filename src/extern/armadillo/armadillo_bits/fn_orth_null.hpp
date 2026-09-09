@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,11 +23,11 @@
 
 template<typename T1>
 arma_warn_unused
-arma_inline
-typename enable_if2< is_real<typename T1::pod_type>::value, const Op<T1, op_orth> >::result
+inline
+typename enable_if2< is_blas_real<typename T1::pod_type>::value, const Op<T1, op_orth> >::result
 orth(const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -36,17 +38,17 @@ orth(const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol 
 
 template<typename T1>
 inline
-typename enable_if2< is_real<typename T1::pod_type>::value, bool >::result
+typename enable_if2< is_blas_real<typename T1::pod_type>::value, bool >::result
 orth(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool status = op_orth::apply_direct(out, X.get_ref(), tol);
   
   if(status == false)
     {
     out.soft_reset();
-    arma_debug_warn_level(3, "orth(): svd failed");
+    arma_warn(3, "orth(): svd failed");
     }
   
   return status;
@@ -60,11 +62,11 @@ orth(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type, T1>& X
 
 template<typename T1>
 arma_warn_unused
-arma_inline
-typename enable_if2< is_real<typename T1::pod_type>::value, const Op<T1, op_null> >::result
+inline
+typename enable_if2< is_blas_real<typename T1::pod_type>::value, const Op<T1, op_null> >::result
 null(const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -75,17 +77,17 @@ null(const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol 
 
 template<typename T1>
 inline
-typename enable_if2< is_real<typename T1::pod_type>::value, bool >::result
+typename enable_if2< is_blas_real<typename T1::pod_type>::value, bool >::result
 null(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool status = op_null::apply_direct(out, X.get_ref(), tol);
   
   if(status == false)
     {
     out.soft_reset();
-    arma_debug_warn_level(3, "null(): svd failed");
+    arma_warn(3, "null(): svd failed");
     }
   
   return status;

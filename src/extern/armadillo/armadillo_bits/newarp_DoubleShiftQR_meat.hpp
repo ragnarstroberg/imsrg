@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +25,7 @@ inline
 void
 DoubleShiftQR<eT>::compute_reflector(const eT& x1, const eT& x2, const eT& x3, uword ind)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // In general case the reflector affects 3 rows
   ref_nr(ind) = 3;
@@ -69,7 +71,7 @@ arma_inline
 void
 DoubleShiftQR<eT>::compute_reflector(const eT* x, uword ind)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   compute_reflector(x[0], x[1], x[2], ind);
   }
@@ -81,7 +83,7 @@ inline
 void
 DoubleShiftQR<eT>::update_block(uword il, uword iu)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // Block size
   uword bsize = iu - il + 1;
@@ -152,7 +154,7 @@ inline
 void
 DoubleShiftQR<eT>::apply_PX(Mat<eT>& X, uword oi, uword oj, uword nrow, uword ncol, uword u_ind)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(ref_nr(u_ind) == 1) { return; }
 
@@ -193,7 +195,7 @@ inline
 void
 DoubleShiftQR<eT>::apply_PX(eT* x, uword u_ind)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(ref_nr(u_ind) == 1) { return; }
 
@@ -217,7 +219,7 @@ inline
 void
 DoubleShiftQR<eT>::apply_XP(Mat<eT>& X, uword oi, uword oj, uword nrow, uword ncol, uword u_ind)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(ref_nr(u_ind) == 1) { return; }
 
@@ -266,7 +268,7 @@ DoubleShiftQR<eT>::DoubleShiftQR(uword size)
   , eps_abs(prec)
   , computed(false)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -285,7 +287,7 @@ DoubleShiftQR<eT>::DoubleShiftQR(const Mat<eT>& mat_obj, eT s, eT t)
   , eps_abs(prec)
   , computed(false)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   compute(mat_obj, s, t);
   }
@@ -296,9 +298,9 @@ template<typename eT>
 void
 DoubleShiftQR<eT>::compute(const Mat<eT>& mat_obj, eT s, eT t)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (mat_obj.is_square() == false), "newarp::DoubleShiftQR::compute(): matrix must be square" );
+  arma_conform_check( (mat_obj.is_square() == false), "newarp::DoubleShiftQR::compute(): matrix must be square" );
 
   n = mat_obj.n_rows;
   mat_H.set_size(n, n);
@@ -348,9 +350,9 @@ template<typename eT>
 Mat<eT>
 DoubleShiftQR<eT>::matrix_QtHQ()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (computed == false), "newarp::DoubleShiftQR::matrix_QtHQ(): need to call compute() first" );
+  arma_conform_check( (computed == false), "newarp::DoubleShiftQR::matrix_QtHQ(): need to call compute() first" );
 
   return mat_H;
   }
@@ -362,9 +364,9 @@ inline
 void
 DoubleShiftQR<eT>::apply_QtY(Col<eT>& y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (computed == false), "newarp::DoubleShiftQR::apply_QtY(): need to call compute() first" );
+  arma_conform_check( (computed == false), "newarp::DoubleShiftQR::apply_QtY(): need to call compute() first" );
 
   eT* y_ptr = y.memptr();
   for(uword i = 0; i < n - 1; i++, y_ptr++)
@@ -380,9 +382,9 @@ inline
 void
 DoubleShiftQR<eT>::apply_YQ(Mat<eT>& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (computed == false), "newarp::DoubleShiftQR::apply_YQ(): need to call compute() first" );
+  arma_conform_check( (computed == false), "newarp::DoubleShiftQR::apply_YQ(): need to call compute() first" );
 
   uword nrow = Y.n_rows;
   for(uword i = 0; i < n - 2; i++)

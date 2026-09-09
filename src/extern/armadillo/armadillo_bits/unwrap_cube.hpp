@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +30,7 @@ struct unwrap_cube
   unwrap_cube(const T1& A)
     : M(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   const Cube<eT> M;
@@ -46,13 +48,13 @@ struct unwrap_cube< Cube<eT> >
   unwrap_cube(const Cube<eT>& A)
     : M(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   const Cube<eT>& M;
   
   template<typename eT2>
-  arma_inline bool is_alias(const Cube<eT2>& X) const { return (void_ptr(&M) == void_ptr(&X)); }
+  arma_inline bool is_alias(const Cube<eT2>& X) const { return (is_same_type<eT,eT2>::yes) && (void_ptr(&M) == void_ptr(&X)); }
   };
 
 
@@ -72,7 +74,7 @@ struct unwrap_cube_check
   unwrap_cube_check(const T1& A, const Cube<eT>&)
     : M(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     arma_type_check(( is_arma_cube_type<T1>::value == false ));
     }
@@ -81,7 +83,7 @@ struct unwrap_cube_check
   unwrap_cube_check(const T1& A, const bool)
     : M(A)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     arma_type_check(( is_arma_cube_type<T1>::value == false ));
     }
@@ -99,7 +101,7 @@ struct unwrap_cube_check< Cube<eT> >
     : M_local( (&A == &B) ? new Cube<eT>(A) : nullptr )
     , M      ( (&A == &B) ? (*M_local)      : A       )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   
@@ -108,14 +110,14 @@ struct unwrap_cube_check< Cube<eT> >
     : M_local( is_alias ? new Cube<eT>(A) : nullptr )
     , M      ( is_alias ? (*M_local)      : A       )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     }
   
   
   inline
   ~unwrap_cube_check()
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     if(M_local)  { delete M_local; }
     }

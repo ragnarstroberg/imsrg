@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,20 +41,11 @@ inline
 void
 spop_scalar_times::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_scalar_times>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  if(in.aux != eT(0))
-    {
-    out.init_xform(in.m, priv::functor_scalar_times<eT>(in.aux));
-    }
-  else
-    {
-    const SpProxy<T1> P(in.m);
-    
-    out.zeros( P.get_n_rows(), P.get_n_cols() );
-    }
+  out.init_xform(in.m, priv::functor_scalar_times<eT>(in.aux));
   }
 
 
@@ -79,21 +72,11 @@ inline
 void
 spop_cx_scalar_times::apply(SpMat< std::complex<typename T1::pod_type> >& out, const mtSpOp< std::complex<typename T1::pod_type>, T1, spop_cx_scalar_times >& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  typedef typename T1::pod_type         T;
-  typedef typename std::complex<T> out_eT;
+  typedef typename T1::pod_type T;
   
-  if(in.aux_out_eT != out_eT(0))
-    {
-    out.init_xform_mt(in.m, priv::functor_cx_scalar_times<T>(in.aux_out_eT));
-    }
-  else
-    {
-    const SpProxy<T1> P(in.m);
-    
-    out.zeros( P.get_n_rows(), P.get_n_cols() );
-    }
+  out.init_xform_mt(in.m, priv::functor_cx_scalar_times<T>(in.aux_out_eT));
   }
 
 
@@ -114,7 +97,7 @@ inline
 void
 spop_square::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_square>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_square());
   }
@@ -137,9 +120,32 @@ inline
 void
 spop_sqrt::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sqrt>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_sqrt());
+  }
+
+
+
+namespace priv
+  {
+  struct functor_cbrt
+    {
+    template<typename eT>
+    arma_inline eT operator()(const eT val) const { return eop_aux::cbrt(val); }
+    };
+  }
+
+
+
+template<typename T1>
+inline
+void
+spop_cbrt::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_cbrt>& in)
+  {
+  arma_debug_sigprint();
+  
+  out.init_xform(in.m, priv::functor_cbrt());
   }
 
 
@@ -160,7 +166,7 @@ inline
 void
 spop_abs::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_abs>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_abs());
   }
@@ -183,7 +189,7 @@ inline
 void
 spop_cx_abs::apply(SpMat<typename T1::pod_type>& out, const mtSpOp<typename T1::pod_type, T1, spop_cx_abs>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform_mt(in.m, priv::functor_cx_abs());
   }
@@ -206,7 +212,7 @@ inline
 void
 spop_arg::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_arg>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_arg());
   }
@@ -229,7 +235,7 @@ inline
 void
 spop_cx_arg::apply(SpMat<typename T1::pod_type>& out, const mtSpOp<typename T1::pod_type, T1, spop_cx_arg>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform_mt(in.m, priv::functor_cx_arg());
   }
@@ -252,7 +258,7 @@ inline
 void
 spop_real::apply(SpMat<typename T1::pod_type>& out, const mtSpOp<typename T1::pod_type, T1, spop_real>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform_mt(in.m, priv::functor_real());
   }
@@ -263,8 +269,11 @@ namespace priv
   {
   struct functor_imag
     {
+    template<typename eT>
+    arma_inline eT operator()(const eT                  ) const { return eT(0);      }
+    
     template<typename T>
-    arma_inline T operator()(const std::complex<T>& val) const { return val.imag(); }
+    arma_inline  T operator()(const std::complex<T>& val) const { return val.imag(); }
     };
   }
 
@@ -275,9 +284,18 @@ inline
 void
 spop_imag::apply(SpMat<typename T1::pod_type>& out, const mtSpOp<typename T1::pod_type, T1, spop_imag>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  out.init_xform_mt(in.m, priv::functor_imag());
+  if(is_cx<typename T1::elem_type>::no)
+    {
+    const SpProxy<T1> P(in.m);
+    
+    out.zeros(P.get_n_rows(), P.get_n_cols());
+    }
+  else
+    {
+    out.init_xform_mt(in.m, priv::functor_imag());
+    }
   }
 
 
@@ -298,7 +316,7 @@ inline
 void
 spop_conj::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_conj>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_conj());
   }
@@ -310,7 +328,7 @@ inline
 void
 spop_repelem::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_repelem>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -326,8 +344,8 @@ spop_repelem::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_repe
   
   if( (out_n_rows > 0) && (out_n_cols > 0) && (out_nnz > 0) )
     {
-    umat    locs(2, out_nnz, arma_nozeros_indicator());
-    Col<eT> vals(   out_nnz, arma_nozeros_indicator());
+    Mat<uword> locs(2, out_nnz, arma_nozeros_indicator());
+    Col<eT>    vals(   out_nnz, arma_nozeros_indicator());
     
     uword* locs_mem = locs.memptr();
     eT*    vals_mem = vals.memptr();
@@ -367,7 +385,7 @@ inline
 void
 spop_reshape::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_reshape>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out = in.m;
   
@@ -381,7 +399,7 @@ inline
 void
 spop_resize::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_resize>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out = in.m;
   
@@ -406,7 +424,7 @@ inline
 void
 spop_floor::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_floor>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_floor());
   }
@@ -429,7 +447,7 @@ inline
 void
 spop_ceil::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_ceil>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_ceil());
   }
@@ -452,7 +470,7 @@ inline
 void
 spop_round::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_round>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_round());
   }
@@ -475,7 +493,7 @@ inline
 void
 spop_trunc::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_trunc>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_trunc());
   }
@@ -498,7 +516,7 @@ inline
 void
 spop_sign::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sign>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out.init_xform(in.m, priv::functor_sign());
   }
@@ -508,71 +526,9 @@ spop_sign::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sign>& i
 template<typename T1>
 inline
 void
-spop_diagvec::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_diagvec>& in)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::elem_type eT;
-  
-  const unwrap_spmat<T1> U(in.m);
-  
-  const SpMat<eT>& X = U.M;
-  
-  const uword a = in.aux_uword_a;
-  const uword b = in.aux_uword_b;
-  
-  const uword row_offset = (b >  0) ? a : 0;
-  const uword col_offset = (b == 0) ? a : 0;
-  
-  arma_debug_check_bounds
-    (
-    ((row_offset > 0) && (row_offset >= X.n_rows)) || ((col_offset > 0) && (col_offset >= X.n_cols)),
-    "diagvec(): requested diagonal out of bounds"
-    );
-  
-  const uword len = (std::min)(X.n_rows - row_offset, X.n_cols - col_offset);
-  
-  Col<eT> cache(len, arma_nozeros_indicator());
-  eT* cache_mem = cache.memptr();
-  
-  uword n_nonzero = 0;
-  
-  for(uword i=0; i < len; ++i)
-    {
-    const eT val = X.at(i + row_offset, i + col_offset);
-    
-    cache_mem[i] = val;
-    
-    n_nonzero += (val != eT(0)) ? uword(1) : uword(0);
-    }
-  
-  out.reserve(len, 1, n_nonzero);
-  
-  uword count = 0;
-  for(uword i=0; i < len; ++i)
-    {
-    const eT val = cache_mem[i];
-    
-    if(val != eT(0))
-      {
-      access::rw(out.row_indices[count]) = i;
-      access::rw(out.values[count])      = val;
-      ++count;
-      }
-    }
-  
-  access::rw(out.col_ptrs[0]) = 0;
-  access::rw(out.col_ptrs[1]) = n_nonzero;
-  }
-
-
-
-template<typename T1>
-inline
-void
 spop_flipud::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_flipud>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out = reverse(in.m, 0);
   }
@@ -584,9 +540,26 @@ inline
 void
 spop_fliplr::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_fliplr>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   out = reverse(in.m, 1);
+  }
+
+
+
+template<typename eT, typename T1>
+inline
+void
+spop_replace::apply(SpMat<eT>& out, const mtSpOp<eT, T1, spop_replace>& in)
+  {
+  arma_debug_sigprint();
+  
+  const eT old_val = in.aux;
+  const eT new_val = in.aux_out_eT;
+  
+  out = in.m;
+  
+  out.replace(old_val, new_val);
   }
 
 

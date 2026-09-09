@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,20 +27,28 @@ inline
 void
 op_clamp::apply(Mat<typename T1::elem_type>& out, const mtOp<typename T1::elem_type, T1, op_clamp>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const eT min_val = in.aux;
   const eT max_val = in.aux_out_eT;
   
-  arma_debug_check( (min_val > max_val), "clamp(): min_val must be less than max_val" );
+  arma_conform_check( ((min_val <= max_val) == false), "clamp(): min_val must be less than max_val" );
   
   if(is_Mat<T1>::value)
     {
-    const unwrap<T1> U(in.m);
+    const plain_unwrap<T1> U(in.m);
     
-    op_clamp::apply_direct(out, U.M, min_val, max_val);
+    // detect in-place operation
+    if(&out == &(U.M))
+      {
+      arrayops::clamp(out.memptr(), out.n_elem, min_val, max_val);
+      }
+    else
+      {
+      op_clamp::apply_mat_noalias(out, U.M, min_val, max_val);
+      }
     }
   else
     {
@@ -61,34 +71,55 @@ op_clamp::apply(Mat<typename T1::elem_type>& out, const mtOp<typename T1::elem_t
 
 
 
-template<typename eT>
+template<typename T1>
 inline
 void
-op_clamp::apply_direct(Mat<eT>& out, const Mat<eT>& X, const eT min_val, const eT max_val)
+op_clamp::apply(Mat_noalias<typename T1::elem_type>& out, const mtOp<typename T1::elem_type, T1, op_clamp>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  if(&out != &X)
+  typedef typename T1::elem_type eT;
+  
+  const eT min_val = in.aux;
+  const eT max_val = in.aux_out_eT;
+  
+  arma_conform_check( ((min_val <= max_val) == false), "clamp(): min_val must be less than max_val" );
+  
+  if((quasi_unwrap<T1>::has_orig_mem) || (is_Mat<typename Proxy<T1>::stored_type>::value) || (arma_config::openmp && Proxy<T1>::use_mp))
     {
-    out.set_size(X.n_rows, X.n_cols);
+    const quasi_unwrap<T1> U(in.m);
     
-    const uword N = out.n_elem;
-    
-    const eT*   X_mem =   X.memptr();
-          eT* out_mem = out.memptr();
-    
-    for(uword i=0; i<N; ++i)
-      {
-      const eT val = X_mem[i];
-      
-      out_mem[i] = (val < min_val) ? min_val : ((val > max_val) ? max_val : val);
-      }
+    op_clamp::apply_mat_noalias(out, U.M, min_val, max_val);
     }
   else
     {
-    arma_extra_debug_print("op_clamp::apply_direct(): inplace operation");
+    const Proxy<T1> P(in.m);
     
-    arrayops::clamp(out.memptr(), out.n_elem, min_val, max_val);
+    op_clamp::apply_proxy_noalias(out, P, min_val, max_val);
+    }
+  }
+
+
+
+template<typename eT>
+inline
+void
+op_clamp::apply_mat_noalias(Mat<eT>& out, const Mat<eT>& X, const eT min_val, const eT max_val)
+  {
+  arma_debug_sigprint();
+  
+  out.set_size(X.n_rows, X.n_cols);
+  
+  const uword N = out.n_elem;
+  
+  const eT*   X_mem =   X.memptr();
+        eT* out_mem = out.memptr();
+  
+  for(uword i=0; i<N; ++i)
+    {
+    const eT val = X_mem[i];
+    
+    out_mem[i] = (val < min_val) ? min_val : ((val > max_val) ? max_val : val);
     }
   }
 
@@ -99,7 +130,7 @@ inline
 void
 op_clamp::apply_proxy_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P, const typename T1::elem_type min_val, const typename T1::elem_type max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -148,14 +179,14 @@ inline
 void
 op_clamp::apply(Cube<typename T1::elem_type>& out, const mtOpCube<typename T1::elem_type, T1, op_clamp>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const eT min_val = in.aux;
   const eT max_val = in.aux_out_eT;
   
-  arma_debug_check( (min_val > max_val), "clamp(): min_val must be less than max_val" );
+  arma_conform_check( ((min_val <= max_val) == false), "clamp(): min_val must be less than max_val" );
   
   if(is_Cube<T1>::value)
     {
@@ -189,7 +220,7 @@ inline
 void
 op_clamp::apply_direct(Cube<eT>& out, const Cube<eT>& X, const eT min_val, const eT max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(&out != &X)
     {
@@ -209,7 +240,7 @@ op_clamp::apply_direct(Cube<eT>& out, const Cube<eT>& X, const eT min_val, const
     }
   else
     {
-    arma_extra_debug_print("op_clamp::apply_direct(): inplace operation");
+    arma_debug_print("op_clamp::apply_direct(): inplace operation");
     
     arrayops::clamp(out.memptr(), out.n_elem, min_val, max_val);
     }
@@ -222,7 +253,7 @@ inline
 void
 op_clamp::apply_proxy_noalias(Cube<typename T1::elem_type>& out, const ProxyCube<T1>& P, const typename T1::elem_type min_val, const typename T1::elem_type max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -273,13 +304,13 @@ inline
 void
 op_clamp_cx::apply(Mat<typename T1::elem_type>& out, const mtOp<typename T1::elem_type, T1, op_clamp_cx>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   if(is_Mat<T1>::value)
     {
-    const unwrap<T1> U(in.m);
+    const plain_unwrap<T1> U(in.m);
     
     op_clamp_cx::apply_direct(out, U.M, in.aux, in.aux_out_eT);
     }
@@ -309,7 +340,7 @@ inline
 void
 op_clamp_cx::apply_direct(Mat<eT>& out, const Mat<eT>& X, const eT min_val, const eT max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -319,8 +350,8 @@ op_clamp_cx::apply_direct(Mat<eT>& out, const Mat<eT>& X, const eT min_val, cons
   const T max_val_real = std::real(max_val);
   const T max_val_imag = std::imag(max_val);
   
-  arma_debug_check( (min_val_real > max_val_real), "clamp(): real(min_val) must be less than real(max_val)" );
-  arma_debug_check( (min_val_imag > max_val_imag), "clamp(): imag(min_val) must be less than imag(max_val)" );
+  arma_conform_check( ((min_val_real <= max_val_real) == false), "clamp(): real(min_val) must be less than real(max_val)" );
+  arma_conform_check( ((min_val_imag <= max_val_imag) == false), "clamp(): imag(min_val) must be less than imag(max_val)" );
   
   if(&out != &X)
     {
@@ -346,7 +377,7 @@ op_clamp_cx::apply_direct(Mat<eT>& out, const Mat<eT>& X, const eT min_val, cons
     }
   else
     {
-    arma_extra_debug_print("op_clamp_cx::apply_direct(): inplace operation");
+    arma_debug_print("op_clamp_cx::apply_direct(): inplace operation");
     
     arrayops::clamp(out.memptr(), out.n_elem, min_val, max_val);
     }
@@ -359,7 +390,7 @@ inline
 void
 op_clamp_cx::apply_proxy_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P, const typename T1::elem_type min_val, const typename T1::elem_type max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
@@ -370,8 +401,8 @@ op_clamp_cx::apply_proxy_noalias(Mat<typename T1::elem_type>& out, const Proxy<T
   const T max_val_real = std::real(max_val);
   const T max_val_imag = std::imag(max_val);
   
-  arma_debug_check( (min_val_real > max_val_real), "clamp(): real(min_val) must be less than real(max_val)" );
-  arma_debug_check( (min_val_imag > max_val_imag), "clamp(): imag(min_val) must be less than imag(max_val)" );
+  arma_conform_check( ((min_val_real <= max_val_real) == false), "clamp(): real(min_val) must be less than real(max_val)" );
+  arma_conform_check( ((min_val_imag <= max_val_imag) == false), "clamp(): imag(min_val) must be less than imag(max_val)" );
   
   const uword n_rows = P.get_n_rows();
   const uword n_cols = P.get_n_cols();
@@ -426,7 +457,7 @@ inline
 void
 op_clamp_cx::apply(Cube<typename T1::elem_type>& out, const mtOpCube<typename T1::elem_type, T1, op_clamp_cx>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -462,7 +493,7 @@ inline
 void
 op_clamp_cx::apply_direct(Cube<eT>& out, const Cube<eT>& X, const eT min_val, const eT max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -472,8 +503,8 @@ op_clamp_cx::apply_direct(Cube<eT>& out, const Cube<eT>& X, const eT min_val, co
   const T max_val_real = std::real(max_val);
   const T max_val_imag = std::imag(max_val);
   
-  arma_debug_check( (min_val_real > max_val_real), "clamp(): real(min_val) must be less than real(max_val)" );
-  arma_debug_check( (min_val_imag > max_val_imag), "clamp(): imag(min_val) must be less than imag(max_val)" );
+  arma_conform_check( ((min_val_real <= max_val_real) == false), "clamp(): real(min_val) must be less than real(max_val)" );
+  arma_conform_check( ((min_val_imag <= max_val_imag) == false), "clamp(): imag(min_val) must be less than imag(max_val)" );
   
   if(&out != &X)
     {
@@ -499,7 +530,7 @@ op_clamp_cx::apply_direct(Cube<eT>& out, const Cube<eT>& X, const eT min_val, co
     }
   else
     {
-    arma_extra_debug_print("op_clamp_cx::apply_direct(): inplace operation");
+    arma_debug_print("op_clamp_cx::apply_direct(): inplace operation");
     
     arrayops::clamp(out.memptr(), out.n_elem, min_val, max_val);
     }
@@ -512,7 +543,7 @@ inline
 void
 op_clamp_cx::apply_proxy_noalias(Cube<typename T1::elem_type>& out, const ProxyCube<T1>& P, const typename T1::elem_type min_val, const typename T1::elem_type max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
@@ -523,8 +554,8 @@ op_clamp_cx::apply_proxy_noalias(Cube<typename T1::elem_type>& out, const ProxyC
   const T max_val_real = std::real(max_val);
   const T max_val_imag = std::imag(max_val);
   
-  arma_debug_check( (min_val_real > max_val_real), "clamp(): real(min_val) must be less than real(max_val)" );
-  arma_debug_check( (min_val_imag > max_val_imag), "clamp(): imag(min_val) must be less than imag(max_val)" );
+  arma_conform_check( ((min_val_real <= max_val_real) == false), "clamp(): real(min_val) must be less than real(max_val)" );
+  arma_conform_check( ((min_val_imag <= max_val_imag) == false), "clamp(): imag(min_val) must be less than imag(max_val)" );
   
   const uword n_rows   = P.get_n_rows();
   const uword n_cols   = P.get_n_cols();

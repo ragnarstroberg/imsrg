@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,92 +23,158 @@
 
 template<typename T1>
 inline
-typename T1::pod_type
-op_cond::cond(const Base<typename T1::elem_type, T1>& X)
+bool
+op_cond::apply(typename T1::pod_type& out, const Base<typename T1::elem_type, T1>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
   Mat<eT> A(X.get_ref());
   
-  Col<T> S;
+  if(A.n_elem == 0)  { out = T(0); return true; }
   
-  const bool status = auxlib::svd_dc(S, A);
-  
-  if(status == false)
+  if(is_op_diagmat<T1>::value || A.is_diagmat())
     {
-    arma_debug_warn_level(3, "cond(): svd failed");
+    arma_debug_print("op_cond::apply(): diag optimisation");
     
-    return T(0);
+    return op_cond::apply_diag(out, A);
     }
   
-  return (S.n_elem > 0) ? T( max(S) / min(S) ) : T(0);
+  bool do_sym = false;
+  
+  const bool is_sym_size_ok = (A.n_rows == A.n_cols) && (A.n_rows > (is_cx<eT>::yes ? uword(20) : uword(40)));  // for consistency with op_pinv
+  
+  if( (is_sym_size_ok) && (arma_config::optimise_sym) )
+    {
+    do_sym = is_sym_expr<T1>::eval(X.get_ref());
+    
+    if(do_sym == false)  { do_sym = sym_helper::is_approx_sym(A); }
+    }
+  
+  if(do_sym)
+    {
+    arma_debug_print("op_cond: symmetric/hermitian optimisation");
+    
+    const bool status = op_cond::apply_sym(out, A);
+    
+    if(status)
+      {
+      return true;
+      }
+    else
+      {
+      arma_debug_print("op_cond: symmetric/hermitian optimisation failed");
+      
+      A = X.get_ref();
+      
+      // fallthrough
+      }
+    }
+  
+  return op_cond::apply_gen(out, A);
   }
 
 
 
-template<typename T1>
+template<typename eT>
 inline
-typename T1::pod_type
-op_cond::rcond(const Base<typename T1::elem_type, T1>& X)
+bool
+op_cond::apply_diag(typename get_pod_type<eT>::result& out, const Mat<eT>& A)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  typedef typename T1::elem_type eT;
-  typedef typename T1::pod_type   T;
+  typedef typename get_pod_type<eT>::result T;
   
-  if(strip_trimat<T1>::do_trimat)
+  const uword N = (std::min)(A.n_rows, A.n_cols);
+  
+  T abs_min = Datum<T>::inf;
+  T abs_max = T(0);
+  
+  for(uword i=0; i < N; ++i)
     {
-    const strip_trimat<T1> S(X.get_ref());
+    const T abs_val = std::abs(A.at(i,i));
     
-    const quasi_unwrap<typename strip_trimat<T1>::stored_type> U(S.M);
+    if(arma_isnan(abs_val))  { out = Datum<T>::nan; return false; }
     
-    arma_debug_check( (U.M.is_square() == false), "rcond(): matrix must be square sized" );
-    
-    const uword layout = (S.do_triu) ? uword(0) : uword(1);
-    
-    return auxlib::rcond_trimat(U.M, layout);
+    abs_min = (abs_val < abs_min) ? abs_val : abs_min;
+    abs_max = (abs_val > abs_max) ? abs_val : abs_max;
     }
   
-  Mat<eT> A = X.get_ref();
+  if((abs_min == T(0)) || (abs_max == T(0)))  { out = Datum<T>::inf; return true; }
   
-  arma_debug_check( (A.is_square() == false), "rcond(): matrix must be square sized" );
+  out = T(abs_max / abs_min);
   
-  if(A.is_empty()) { return Datum<T>::inf; }
+  return true;
+  }
+
+
+
+template<typename eT>
+inline
+bool
+op_cond::apply_sym(typename get_pod_type<eT>::result& out, Mat<eT>& A)
+  {
+  arma_debug_sigprint();
   
-  const bool is_triu =                     trimat_helper::is_triu(A);
-  const bool is_tril = (is_triu) ? false : trimat_helper::is_tril(A);
+  typedef typename get_pod_type<eT>::result T;
   
-  if(is_triu || is_tril)
+  Col<T> eigval;
+  
+  const bool status = auxlib::eig_sym(eigval, A);
+  
+  if(status == false)  { out = Datum<T>::nan; return false; }
+  
+  if(eigval.n_elem == 0)  { out = T(0); return true; }
+  
+  const T* eigval_mem = eigval.memptr();
+  
+  T abs_min = std::abs(eigval_mem[0]);
+  T abs_max = abs_min;
+  
+  for(uword i=1; i < eigval.n_elem; ++i)
     {
-    const uword layout = (is_triu) ? uword(0) : uword(1);
+    const T abs_val = std::abs(eigval_mem[i]);
     
-    return auxlib::rcond_trimat(A, layout);
+    abs_min = (abs_val < abs_min) ? abs_val : abs_min;
+    abs_max = (abs_val > abs_max) ? abs_val : abs_max;
     }
   
-  #if defined(ARMA_OPTIMISE_SYMPD)
-    const bool try_sympd = auxlib::crippled_lapack(A) ? false : sympd_helper::guess_sympd_anysize(A);
-  #else
-    const bool try_sympd = false;
-  #endif
+  if((abs_min == T(0)) || (abs_max == T(0)))  { out = Datum<T>::inf; return true; }
   
-  if(try_sympd)
-    {
-    bool calc_ok = false;
-    
-    const T out_val = auxlib::rcond_sympd(A, calc_ok);
-    
-    if(calc_ok)  { return out_val; }
-    
-    // auxlib::rcond_sympd() may have failed because A isn't really sympd
-    // restore A, as auxlib::rcond_sympd() may have destroyed it
-    A = X.get_ref();
-    // fallthrough to the next return statement
-    }
+  out = T(abs_max / abs_min);
   
-  return auxlib::rcond(A);
+  return true;
+  }
+
+
+
+template<typename eT>
+inline
+bool
+op_cond::apply_gen(typename get_pod_type<eT>::result& out, Mat<eT>& A)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename get_pod_type<eT>::result T;
+  
+  Col<T> S;
+  
+  const bool status = auxlib::svd_dc(S, A);
+  
+  if(status == false)  { out = Datum<T>::nan; return false; }
+  
+  if(S.n_elem == 0)  { out = T(0); return true; }
+  
+  const T S_max = S[0];
+  const T S_min = S[S.n_elem-1];
+  
+  if((S_max == T(0)) || (S_min == T(0)))  { out = Datum<T>::inf; return true; }
+  
+  out = T(S_max / S_min);
+  
+  return true;
   }
 
 

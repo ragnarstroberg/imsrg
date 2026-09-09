@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -68,7 +70,7 @@ arma_ostream::modify_stream(std::ostream& o, const eT* data, const uword n_elem)
     {
     const eT val = data[i];
     
-    if(arma_isfinite(val) == false)  { continue; }
+    if(arma_isnonfinite(val))  { continue; }
     
     if(
       ( cond_rel< (sizeof(eT) > 4) && (is_same_type<uword,eT>::yes || is_same_type<sword,eT>::yes) >::geq(val, eT(+10000000000)) )
@@ -84,22 +86,22 @@ arma_ostream::modify_stream(std::ostream& o, const eT* data, const uword n_elem)
       ( val >= eT(+100) )
       ||
       //( (is_signed<eT>::value) && (val <= eT(-100)) ) ||
-      //( (is_non_integral<eT>::value) && (val > eT(0)) && (val <= eT(+1e-4)) ) ||
-      //( (is_non_integral<eT>::value) && (is_signed<eT>::value) && (val < eT(0)) && (val >= eT(-1e-4)) ) 
+      //( (is_real<eT>::value) && (val > eT(0)) && (val <= eT(+1e-4)) ) ||
+      //( (is_real<eT>::value) && (is_signed<eT>::value) && (val < eT(0)) && (val >= eT(-1e-4)) ) 
         (
         cond_rel< is_signed<eT>::value >::leq(val, eT(-100))
         )
       ||
         (
-        cond_rel< is_non_integral<eT>::value >::gt(val,  eT(0))
+        cond_rel< is_real<eT>::value >::gt(val,  eT(0))
         &&
-        cond_rel< is_non_integral<eT>::value >::leq(val, eT(+1e-4))
+        cond_rel< is_real<eT>::value >::leq(val, eT(+1e-4))
         )
       ||
         (
-        cond_rel< is_non_integral<eT>::value && is_signed<eT>::value >::lt(val, eT(0))
+        cond_rel< is_real<eT>::value && is_signed<eT>::value >::lt(val, eT(0))
         &&
-        cond_rel< is_non_integral<eT>::value && is_signed<eT>::value >::geq(val, eT(-1e-4))
+        cond_rel< is_real<eT>::value && is_signed<eT>::value >::geq(val, eT(-1e-4))
         )
       )
       {
@@ -188,7 +190,7 @@ inline
 std::streamsize
 arma_ostream::modify_stream(std::ostream& o, typename SpMat<eT>::const_iterator begin, const uword n_elem, const typename arma_not_cx<eT>::result* junk)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   o.unsetf(ios::showbase);
@@ -206,13 +208,13 @@ arma_ostream::modify_stream(std::ostream& o, typename SpMat<eT>::const_iterator 
     {
     const eT val = (*it);
     
-    if(arma_isfinite(val) == false)  { continue; }
+    if(arma_isnonfinite(val))  { continue; }
     
     if(
       val >= eT(+100) ||
       ( (is_signed<eT>::value) && (val <= eT(-100)) ) ||
-      ( (is_non_integral<eT>::value) && (val > eT(0)) && (val <= eT(+1e-4)) ) ||
-      ( (is_non_integral<eT>::value) && (is_signed<eT>::value) && (val < eT(0)) && (val >= eT(-1e-4)) )
+      ( (  is_real<eT>::value) && (val > eT(0)) && (val <= eT(+1e-4)) ) ||
+      ( (  is_real<eT>::value) && (is_signed<eT>::value) && (val < eT(0)) && (val >= eT(-1e-4)) )
       )
       {
       use_layout_C = true;
@@ -366,7 +368,9 @@ inline
 void
 arma_ostream::print_elem(std::ostream& o, const std::complex<T>& x, const bool modify)
   {
-  if( (x.real() == T(0)) && (x.imag() == T(0)) && (modify) )
+  constexpr T T_zero = T(0);
+  
+  if( (x.real() == T_zero) && (x.imag() == T_zero) && (modify) )
     {
     o << "(0,0)";
     }
@@ -423,12 +427,11 @@ arma_ostream::raw_print_elem(std::ostream& o, const std::complex<T>& x)
 
 //! Print a matrix to the specified stream
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const Mat<eT>& m, const bool modify)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -493,12 +496,11 @@ arma_ostream::print(std::ostream& o, const Mat<eT>& m, const bool modify)
 
 //! Print a cube to the specified stream
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const Cube<eT>& x, const bool modify)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -534,14 +536,13 @@ arma_ostream::print(std::ostream& o, const Cube<eT>& x, const bool modify)
 
 
 //! Print a field to the specified stream
-//! Assumes type oT can be printed, i.e. oT has std::ostream& operator<< (std::ostream&, const oT&) 
+//! Assumes type oT can be printed, ie. oT has std::ostream& operator<< (std::ostream&, const oT&) 
 template<typename oT>
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const field<oT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -608,14 +609,13 @@ arma_ostream::print(std::ostream& o, const field<oT>& x)
 
 
 //! Print a subfield to the specified stream
-//! Assumes type oT can be printed, i.e. oT has std::ostream& operator<< (std::ostream&, const oT&) 
+//! Assumes type oT can be printed, ie. oT has std::ostream& operator<< (std::ostream&, const oT&) 
 template<typename oT>
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const subview_field<oT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -681,12 +681,11 @@ arma_ostream::print(std::ostream& o, const subview_field<oT>& x)
 
 
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::print_dense(std::ostream& o, const SpMat<eT>& m, const bool modify)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -764,12 +763,11 @@ arma_ostream::print_dense(std::ostream& o, const SpMat<eT>& m, const bool modify
 
 
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const SpMat<eT>& m, const bool modify)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -867,12 +865,11 @@ arma_ostream::print(std::ostream& o, const SpMat<eT>& m, const bool modify)
 
 
 
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const SizeMat& S)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -889,12 +886,11 @@ arma_ostream::print(std::ostream& o, const SizeMat& S)
 
 
 
-arma_cold
 inline
 void
 arma_ostream::print(std::ostream& o, const SizeCube& S)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -912,12 +908,11 @@ arma_ostream::print(std::ostream& o, const SizeCube& S)
 
 
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::brief_print(std::ostream& o, const Mat<eT>& m, const bool print_size)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -1071,12 +1066,11 @@ arma_ostream::brief_print(std::ostream& o, const Mat<eT>& m, const bool print_si
 
 
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::brief_print(std::ostream& o, const Cube<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const arma_ostream_state stream_state(o);
   
@@ -1129,12 +1123,11 @@ arma_ostream::brief_print(std::ostream& o, const Cube<eT>& x)
 
 
 template<typename eT>
-arma_cold
 inline
 void
 arma_ostream::brief_print(std::ostream& o, const SpMat<eT>& m)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(m.n_nonzero <= 10)  { arma_ostream::print(o, m, true); return; }
   

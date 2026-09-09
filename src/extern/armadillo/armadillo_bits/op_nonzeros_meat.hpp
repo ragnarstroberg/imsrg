@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,9 +27,11 @@ inline
 void
 op_nonzeros::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
+  
+  constexpr eT eT_zero = eT(0);
   
   const uword N_max = P.get_n_elem();
   
@@ -45,7 +49,7 @@ op_nonzeros::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
       {
       const eT val = Pea[i];
       
-      if(val != eT(0))  { tmp_mem[N_nz] = val; ++N_nz; }
+      if(val != eT_zero)  { tmp_mem[N_nz] = val; ++N_nz; }
       }
     }
   else
@@ -58,7 +62,7 @@ op_nonzeros::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
       {
       const eT val = P.at(row,col);
       
-      if(val != eT(0))  { tmp_mem[N_nz] = val; ++N_nz; }
+      if(val != eT_zero)  { tmp_mem[N_nz] = val; ++N_nz; }
       }
     }
   
@@ -72,7 +76,7 @@ inline
 void
 op_nonzeros::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_nonzeros>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -82,11 +86,11 @@ op_nonzeros::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_nonzeros>& 
   
   if(P.is_alias(out))
     {
-    Mat<eT> out2;
+    Mat<eT> tmp;
     
-    op_nonzeros::apply_noalias(out2, P);
+    op_nonzeros::apply_noalias(tmp, P);
     
-    out.steal_mem(out2);
+    out.steal_mem(tmp);
     }
   else
     {
@@ -99,35 +103,15 @@ op_nonzeros::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_nonzeros>& 
 template<typename T1>
 inline
 void
-op_nonzeros_spmat::apply(Mat<typename T1::elem_type>& out, const SpToDOp<T1, op_nonzeros_spmat>& X)
+op_nonzeros::apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1, op_nonzeros>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  typedef typename T1::elem_type eT;
+  const Proxy<T1> P(X.m);
   
-  const SpProxy<T1> P(X.m);
+  if(P.get_n_elem() == 0)  { out.set_size(0,1); return; }
   
-  const uword N = P.get_n_nonzero();
-  
-  out.set_size(N,1);
-  
-  if(N > 0)
-    {
-    if(is_SpMat<typename SpProxy<T1>::stored_type>::value)
-      {
-      const unwrap_spmat<typename SpProxy<T1>::stored_type> U(P.Q);
-      
-      arrayops::copy(out.memptr(), U.M.values, N);
-      }
-    else
-      {
-      eT* out_mem = out.memptr();
-      
-      typename SpProxy<T1>::const_iterator_type it = P.begin();
-      
-      for(uword i=0; i<N; ++i)  { out_mem[i] = (*it); ++it; }
-      }
-    }
+  op_nonzeros::apply_noalias(out, P);
   }
 
 

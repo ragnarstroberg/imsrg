@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +40,7 @@ op_princomp::direct_princomp
   const Base<typename T1::elem_type, T1>& X
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
@@ -130,7 +132,7 @@ op_princomp::direct_princomp
   const Base<typename T1::elem_type, T1>& X
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
@@ -204,7 +206,7 @@ op_princomp::direct_princomp
   const Base<typename T1::elem_type, T1>& X
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
@@ -261,13 +263,13 @@ op_princomp::direct_princomp
   const Base<typename T1::elem_type, T1>& X
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
-  const unwrap<T1>    Y( X.get_ref() );
-  const Mat<eT>& in = Y.M;
+  const plain_unwrap<T1> Y( X.get_ref() );
+  const Mat<eT>& in    = Y.M;
   
   if(in.n_elem != 0)
     {
@@ -300,7 +302,7 @@ op_princomp::apply
   const Op<T1,op_princomp>&          in
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool status = op_princomp::direct_princomp(out, in.m);
   

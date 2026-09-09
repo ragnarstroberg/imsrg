@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,12 +32,11 @@ Base<elem_type,derived>::get_ref() const
 
 
 template<typename elem_type, typename derived>
-arma_cold
 inline
 void
 Base<elem_type,derived>::print(const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> tmp( (*this).get_ref() );
   
@@ -54,12 +55,11 @@ Base<elem_type,derived>::print(const std::string extra_text) const
 
 
 template<typename elem_type, typename derived>
-arma_cold
 inline
 void
 Base<elem_type,derived>::print(std::ostream& user_stream, const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> tmp( (*this).get_ref() );
   
@@ -78,12 +78,11 @@ Base<elem_type,derived>::print(std::ostream& user_stream, const std::string extr
 
 
 template<typename elem_type, typename derived>
-arma_cold
 inline
 void
 Base<elem_type,derived>::raw_print(const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> tmp( (*this).get_ref() );
   
@@ -102,12 +101,11 @@ Base<elem_type,derived>::raw_print(const std::string extra_text) const
 
 
 template<typename elem_type, typename derived>
-arma_cold
 inline
 void
 Base<elem_type,derived>::raw_print(std::ostream& user_stream, const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> tmp( (*this).get_ref() );
   
@@ -126,12 +124,11 @@ Base<elem_type,derived>::raw_print(std::ostream& user_stream, const std::string 
 
 
 template<typename elem_type, typename derived>
-arma_cold
 inline
 void
 Base<elem_type,derived>::brief_print(const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> tmp( (*this).get_ref() );
   
@@ -150,12 +147,11 @@ Base<elem_type,derived>::brief_print(const std::string extra_text) const
 
 
 template<typename elem_type, typename derived>
-arma_cold
 inline
 void
 Base<elem_type,derived>::brief_print(std::ostream& user_stream, const std::string extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> tmp( (*this).get_ref() );
   
@@ -175,7 +171,6 @@ Base<elem_type,derived>::brief_print(std::ostream& user_stream, const std::strin
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 elem_type
 Base<elem_type,derived>::min() const
   {
@@ -186,7 +181,6 @@ Base<elem_type,derived>::min() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 elem_type
 Base<elem_type,derived>::max() const
   {
@@ -263,7 +257,6 @@ Base<elem_type,derived>::max(uword& row_of_max_val, uword& col_of_max_val) const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 uword
 Base<elem_type,derived>::index_min() const
   {
@@ -273,7 +266,7 @@ Base<elem_type,derived>::index_min() const
   
   if(P.get_n_elem() == 0)
     {
-    arma_debug_check(true, "index_min(): object has no elements");
+    arma_conform_check(true, "index_min(): object has no elements");
     }
   else
     {
@@ -287,7 +280,6 @@ Base<elem_type,derived>::index_min() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 uword
 Base<elem_type,derived>::index_max() const
   {
@@ -297,7 +289,7 @@ Base<elem_type,derived>::index_max() const
   
   if(P.get_n_elem() == 0)
     {
-    arma_debug_check(true, "index_max(): object has no elements");
+    arma_conform_check(true, "index_max(): object has no elements");
     }
   else
     {
@@ -311,11 +303,10 @@ Base<elem_type,derived>::index_max() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_symmetric() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> U( (*this).get_ref() );
   
@@ -352,17 +343,16 @@ Base<elem_type,derived>::is_symmetric() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_symmetric(const typename get_pod_type<elem_type>::result tol) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<elem_type>::result T;
   
   if(tol == T(0))  { return (*this).is_symmetric(); }
   
-  arma_debug_check( (tol < T(0)), "is_symmetric(): parameter 'tol' must be >= 0" );
+  arma_conform_check( ((tol >= T(0)) == false), "is_symmetric(): parameter 'tol' must be > 0" );
   
   const quasi_unwrap<derived> U( (*this).get_ref() );
   
@@ -375,7 +365,11 @@ Base<elem_type,derived>::is_symmetric(const typename get_pod_type<elem_type>::re
   
   if(norm_A == T(0))  { return true; }
   
+  if(arma_isnan(norm_A))  { return false; }
+  
   const T norm_A_Ast = as_scalar( arma::max(sum(abs(A - A.st()), 1), 0) );
+  
+  if(arma_isnan(norm_A_Ast))  { return false; }
   
   return ( (norm_A_Ast / norm_A) <= tol );
   }
@@ -384,11 +378,10 @@ Base<elem_type,derived>::is_symmetric(const typename get_pod_type<elem_type>::re
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_hermitian() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<elem_type>::result T;
   
@@ -437,17 +430,16 @@ Base<elem_type,derived>::is_hermitian() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_hermitian(const typename get_pod_type<elem_type>::result tol) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<elem_type>::result T;
   
   if(tol == T(0))  { return (*this).is_hermitian(); }
   
-  arma_debug_check( (tol < T(0)), "is_hermitian(): parameter 'tol' must be >= 0" );
+  arma_conform_check( ((tol >= T(0)) == false), "is_hermitian(): parameter 'tol' must be > 0" );
   
   const quasi_unwrap<derived> U( (*this).get_ref() );
   
@@ -460,7 +452,11 @@ Base<elem_type,derived>::is_hermitian(const typename get_pod_type<elem_type>::re
   
   if(norm_A == T(0))  { return true; }
   
+  if(arma_isnan(norm_A))  { return false; }
+  
   const T norm_A_At = as_scalar( arma::max(sum(abs(A - A.t()), 1), 0) );
+  
+  if(arma_isnan(norm_A_At))  { return false; }
   
   return ( (norm_A_At / norm_A) <= tol );
   }
@@ -469,17 +465,16 @@ Base<elem_type,derived>::is_hermitian(const typename get_pod_type<elem_type>::re
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_zero(const typename get_pod_type<elem_type>::result tol) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<elem_type>::result T;
   
-  arma_debug_check( (tol < T(0)), "is_zero(): parameter 'tol' must be >= 0" );
+  arma_conform_check( ((tol >= T(0)) == false), "is_zero(): parameter 'tol' must be >= 0" );
   
-  if(Proxy<derived>::use_at || is_Mat<typename Proxy<derived>::stored_type>::value)
+  if( (quasi_unwrap<derived>::has_orig_mem) || (is_Mat<typename Proxy<derived>::stored_type>::value) || (Proxy<derived>::use_at) )
     {
     const quasi_unwrap<derived> U( (*this).get_ref() );
     
@@ -496,22 +491,52 @@ Base<elem_type,derived>::is_zero(const typename get_pod_type<elem_type>::result 
   
   if(is_cx<elem_type>::yes)
     {
-    for(uword i=0; i<n_elem; ++i)
+    if(tol == T(0))
       {
-      const elem_type val = Pea[i];
-      
-      const T val_real = access::tmp_real(val);
-      const T val_imag = access::tmp_imag(val);
-      
-      if(eop_aux::arma_abs(val_real) > tol)  { return false; }
-      if(eop_aux::arma_abs(val_imag) > tol)  { return false; }
+      for(uword i=0; i < n_elem; ++i)
+        {
+        const elem_type val = Pea[i];
+        
+        const T val_real = access::tmp_real(val);
+        const T val_imag = access::tmp_imag(val);
+        
+        if(eop_aux::arma_abs(val_real) != T(0))  { return false; }
+        if(eop_aux::arma_abs(val_imag) != T(0))  { return false; }
+        }
+      }
+    else
+      {
+      for(uword i=0; i < n_elem; ++i)
+        {
+        const elem_type val = Pea[i];
+        
+        const T val_real = access::tmp_real(val);
+        const T val_imag = access::tmp_imag(val);
+        
+        if( (eop_aux::arma_abs(val_real) <= tol) == false )  { return false; }
+        if( (eop_aux::arma_abs(val_imag) <= tol) == false )  { return false; }
+        }
       }
     }
   else  // not complex
     {
-    for(uword i=0; i<n_elem; ++i)
+    if(tol == T(0))
       {
-      if(eop_aux::arma_abs(Pea[i]) > tol)  { return false; }
+      for(uword i=0; i < n_elem; ++i)
+        {
+        const elem_type val = Pea[i];
+        
+        if(val != elem_type(0))  { return false; }
+        }
+      }
+    else
+      {
+      for(uword i=0; i < n_elem; ++i)
+        {
+        const elem_type val = Pea[i];
+        
+        if( (eop_aux::arma_abs(val) <= tol) == false )  { return false; }
+        }
       }
     }
   
@@ -522,11 +547,10 @@ Base<elem_type,derived>::is_zero(const typename get_pod_type<elem_type>::result 
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_trimatu() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> U( (*this).get_ref() );
   
@@ -541,11 +565,10 @@ Base<elem_type,derived>::is_trimatu() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_trimatl() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> U( (*this).get_ref() );
   
@@ -560,11 +583,10 @@ Base<elem_type,derived>::is_trimatl() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_diagmat() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<derived> U( (*this).get_ref() );
   
@@ -600,11 +622,10 @@ Base<elem_type,derived>::is_diagmat() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_empty() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const Proxy<derived> P( (*this).get_ref() );
   
@@ -615,11 +636,10 @@ Base<elem_type,derived>::is_empty() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_square() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const Proxy<derived> P( (*this).get_ref() );
   
@@ -630,11 +650,10 @@ Base<elem_type,derived>::is_square() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_vec() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if( (Proxy<derived>::is_row) || (Proxy<derived>::is_col) || (Proxy<derived>::is_xvec) )  { return true; }
   
@@ -647,11 +666,10 @@ Base<elem_type,derived>::is_vec() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_colvec() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(Proxy<derived>::is_col)  { return true; }
   
@@ -664,11 +682,10 @@ Base<elem_type,derived>::is_colvec() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_rowvec() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(Proxy<derived>::is_row)  { return true; }
   
@@ -681,41 +698,44 @@ Base<elem_type,derived>::is_rowvec() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::is_finite() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  const Proxy<derived> P( (*this).get_ref() );
+  if(arma_config::fast_math_warn)  { arma_warn(1, "is_finite(): detection of non-finite values is not reliable in fast math mode"); }
   
-  if(is_Mat<typename Proxy<derived>::stored_type>::value)
+  if( (quasi_unwrap<derived>::has_orig_mem) || (is_Mat<typename Proxy<derived>::stored_type>::value) )
     {
-    const quasi_unwrap<typename Proxy<derived>::stored_type> U(P.Q);
+    const quasi_unwrap<derived> U( (*this).get_ref() );
     
     return arrayops::is_finite( U.M.memptr(), U.M.n_elem );
     }
-  
-  if(Proxy<derived>::use_at == false)
-    {
-    const typename Proxy<derived>::ea_type Pea = P.get_ea();
-    
-    const uword n_elem = P.get_n_elem();
-    
-    for(uword i=0; i<n_elem; ++i)
-      {
-      if(arma_isfinite(Pea[i]) == false)  { return false; }
-      }
-    }
   else
     {
-    const uword n_rows = P.get_n_rows();
-    const uword n_cols = P.get_n_cols();
+    const Proxy<derived> P( (*this).get_ref() );
     
-    for(uword col=0; col<n_cols; ++col)
-    for(uword row=0; row<n_rows; ++row)
+    if(Proxy<derived>::use_at == false)
       {
-      if(arma_isfinite(P.at(row,col)) == false)  { return false; }
+      const typename Proxy<derived>::ea_type Pea = P.get_ea();
+      
+      const uword n_elem = P.get_n_elem();
+      
+      for(uword i=0; i<n_elem; ++i)
+        {
+        if(arma_isnonfinite(Pea[i]))  { return false; }
+        }
+      }
+    else
+      {
+      const uword n_rows = P.get_n_rows();
+      const uword n_cols = P.get_n_cols();
+      
+      for(uword col=0; col<n_cols; ++col)
+      for(uword row=0; row<n_rows; ++row)
+        {
+        if(arma_isnonfinite(P.at(row,col)))  { return false; }
+        }
       }
     }
   
@@ -726,41 +746,44 @@ Base<elem_type,derived>::is_finite() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::has_inf() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  const Proxy<derived> P( (*this).get_ref() );
+  if(arma_config::fast_math_warn)  { arma_warn(1, "has_inf(): detection of non-finite values is not reliable in fast math mode"); }
   
-  if(is_Mat<typename Proxy<derived>::stored_type>::value)
+  if( (quasi_unwrap<derived>::has_orig_mem) || (is_Mat<typename Proxy<derived>::stored_type>::value) )
     {
-    const quasi_unwrap<typename Proxy<derived>::stored_type> U(P.Q);
+    const quasi_unwrap<derived> U( (*this).get_ref() );
     
     return arrayops::has_inf( U.M.memptr(), U.M.n_elem );
     }
-  
-  if(Proxy<derived>::use_at == false)
-    {
-    const typename Proxy<derived>::ea_type Pea = P.get_ea();
-    
-    const uword n_elem = P.get_n_elem();
-    
-    for(uword i=0; i<n_elem; ++i)
-      {
-      if(arma_isinf(Pea[i]))  { return true; }
-      }
-    }
   else
     {
-    const uword n_rows = P.get_n_rows();
-    const uword n_cols = P.get_n_cols();
+    const Proxy<derived> P( (*this).get_ref() );
     
-    for(uword col=0; col<n_cols; ++col)
-    for(uword row=0; row<n_rows; ++row)
+    if(Proxy<derived>::use_at == false)
       {
-      if(arma_isinf(P.at(row,col)))  { return true; }
+      const typename Proxy<derived>::ea_type Pea = P.get_ea();
+      
+      const uword n_elem = P.get_n_elem();
+      
+      for(uword i=0; i<n_elem; ++i)
+        {
+        if(arma_isinf(Pea[i]))  { return true; }
+        }
+      }
+    else
+      {
+      const uword n_rows = P.get_n_rows();
+      const uword n_cols = P.get_n_cols();
+      
+      for(uword col=0; col<n_cols; ++col)
+      for(uword row=0; row<n_rows; ++row)
+        {
+        if(arma_isinf(P.at(row,col)))  { return true; }
+        }
       }
     }
   
@@ -771,41 +794,44 @@ Base<elem_type,derived>::has_inf() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base<elem_type,derived>::has_nan() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  const Proxy<derived> P( (*this).get_ref() );
+  if(arma_config::fast_math_warn)  { arma_warn(1, "has_nan(): detection of non-finite values is not reliable in fast math mode"); }
   
-  if(is_Mat<typename Proxy<derived>::stored_type>::value)
+  if( (quasi_unwrap<derived>::has_orig_mem) || (is_Mat<typename Proxy<derived>::stored_type>::value) )
     {
-    const quasi_unwrap<typename Proxy<derived>::stored_type> U(P.Q);
+    const quasi_unwrap<derived> U( (*this).get_ref() );
     
     return arrayops::has_nan( U.M.memptr(), U.M.n_elem );
     }
-  
-  if(Proxy<derived>::use_at == false)
-    {
-    const typename Proxy<derived>::ea_type Pea = P.get_ea();
-    
-    const uword n_elem = P.get_n_elem();
-    
-    for(uword i=0; i<n_elem; ++i)
-      {
-      if(arma_isnan(Pea[i]))  { return true; }
-      }
-    }
   else
     {
-    const uword n_rows = P.get_n_rows();
-    const uword n_cols = P.get_n_cols();
+    const Proxy<derived> P( (*this).get_ref() );
     
-    for(uword col=0; col<n_cols; ++col)
-    for(uword row=0; row<n_rows; ++row)
+    if(Proxy<derived>::use_at == false)
       {
-      if(arma_isnan(P.at(row,col)))  { return true; }
+      const typename Proxy<derived>::ea_type Pea = P.get_ea();
+      
+      const uword n_elem = P.get_n_elem();
+      
+      for(uword i=0; i<n_elem; ++i)
+        {
+        if(arma_isnan(Pea[i]))  { return true; }
+        }
+      }
+    else
+      {
+      const uword n_rows = P.get_n_rows();
+      const uword n_cols = P.get_n_cols();
+      
+      for(uword col=0; col<n_cols; ++col)
+      for(uword row=0; row<n_rows; ++row)
+        {
+        if(arma_isnan(P.at(row,col)))  { return true; }
+        }
       }
     }
   
@@ -816,7 +842,54 @@ Base<elem_type,derived>::has_nan() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
+bool
+Base<elem_type,derived>::has_nonfinite() const
+  {
+  arma_debug_sigprint();
+  
+  if(arma_config::fast_math_warn)  { arma_warn(1, "has_nonfinite(): detection of non-finite values is not reliable in fast math mode"); }
+  
+  if( (quasi_unwrap<derived>::has_orig_mem) || (is_Mat<typename Proxy<derived>::stored_type>::value) )
+    {
+    const quasi_unwrap<derived> U( (*this).get_ref() );
+    
+    return (arrayops::is_finite( U.M.memptr(), U.M.n_elem ) == false);
+    }
+  else
+    {
+    const Proxy<derived> P( (*this).get_ref() );
+    
+    if(Proxy<derived>::use_at == false)
+      {
+      const typename Proxy<derived>::ea_type Pea = P.get_ea();
+      
+      const uword n_elem = P.get_n_elem();
+      
+      for(uword i=0; i<n_elem; ++i)
+        {
+        if(arma_isnonfinite(Pea[i]))  { return true; }
+        }
+      }
+    else
+      {
+      const uword n_rows = P.get_n_rows();
+      const uword n_cols = P.get_n_cols();
+      
+      for(uword col=0; col<n_cols; ++col)
+      for(uword row=0; row<n_rows; ++row)
+        {
+        if(arma_isnonfinite(P.at(row,col)))  { return true; }
+        }
+      }
+    }
+  
+  return false;
+  }
+
+
+
+template<typename elem_type, typename derived>
+inline
 const Op<derived,op_vectorise_col>
 Base<elem_type, derived>::as_col() const
   {
@@ -827,7 +900,6 @@ Base<elem_type, derived>::as_col() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 const Op<derived,op_vectorise_row>
 Base<elem_type, derived>::as_row() const
   {
@@ -841,22 +913,20 @@ Base<elem_type, derived>::as_row() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
-const Op<derived,op_inv>
+const Op<derived,op_inv_gen_default>
 Base_extra_yes<elem_type, derived>::i() const
   {
-  return Op<derived,op_inv>(static_cast<const derived&>(*this));
+  return Op<derived,op_inv_gen_default>(static_cast<const derived&>(*this));
   }
 
 
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base_extra_yes<elem_type,derived>::is_sympd() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<elem_type>::result T;
   
@@ -864,6 +934,8 @@ Base_extra_yes<elem_type,derived>::is_sympd() const
   
   // default value for tol
   const T tol = T(100) * std::numeric_limits<T>::epsilon() * norm(X, "fro");
+  
+  if(arma_isnan(tol))  { return false; }
   
   if(X.is_hermitian(tol) == false)  { return false; }
   
@@ -878,15 +950,14 @@ Base_extra_yes<elem_type,derived>::is_sympd() const
 
 template<typename elem_type, typename derived>
 inline
-arma_warn_unused
 bool
 Base_extra_yes<elem_type,derived>::is_sympd(typename get_pod_type<elem_type>::result tol) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<elem_type>::result T;
   
-  arma_debug_check( (tol < T(0)), "is_sympd(): parameter 'tol' must be >= 0" );
+  arma_conform_check( ((tol >= T(0)) == false), "is_sympd(): parameter 'tol' must be >= 0" );
   
   Mat<elem_type> X = static_cast<const derived&>(*this);
   
@@ -909,7 +980,7 @@ arma_inline
 const derived&
 Base_eval_Mat<elem_type, derived>::eval() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return static_cast<const derived&>(*this);
   }
@@ -920,11 +991,11 @@ Base_eval_Mat<elem_type, derived>::eval() const
 // extra functions defined in Base_eval_expr
 
 template<typename elem_type, typename derived>
-arma_inline
+inline
 Mat<elem_type>
 Base_eval_expr<elem_type, derived>::eval() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Mat<elem_type>( static_cast<const derived&>(*this) );
   }

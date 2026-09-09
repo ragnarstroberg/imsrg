@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +24,7 @@
 //! \brief
 //! Template metaprogram depth_lhs
 //! calculates the number of Glue<Tx,Ty, glue_type> instances on the left hand side argument of Glue<Tx,Ty, glue_type>
-//! i.e. it recursively expands each Tx, until the type of Tx is not "Glue<..,.., glue_type>"  (i.e the "glue_type" changes)
+//! ie. it recursively expands each Tx, until the type of Tx is not "Glue<..,.., glue_type>"  (i.e the "glue_type" changes)
 
 template<typename glue_type, typename T1>
 struct depth_lhs
@@ -38,7 +40,7 @@ struct depth_lhs< glue_type, Glue<T1,T2,glue_type> >
 
 
 
-template<bool do_inv_detect>
+template<bool do_inv_detect, bool check_alias>
 struct glue_times_redirect2_helper
   {
   template<typename T1, typename T2>
@@ -46,8 +48,8 @@ struct glue_times_redirect2_helper
   };
 
 
-template<>
-struct glue_times_redirect2_helper<true>
+template<bool check_alias>
+struct glue_times_redirect2_helper<true, check_alias>
   {
   template<typename T1, typename T2>
   arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_times>& X);
@@ -55,7 +57,7 @@ struct glue_times_redirect2_helper<true>
 
 
 
-template<bool do_inv_detect>
+template<bool do_inv_detect, bool check_alias>
 struct glue_times_redirect3_helper
   {
   template<typename T1, typename T2, typename T3>
@@ -63,8 +65,8 @@ struct glue_times_redirect3_helper
   };
 
 
-template<>
-struct glue_times_redirect3_helper<true>
+template<bool check_alias>
+struct glue_times_redirect3_helper<true, check_alias>
   {
   template<typename T1, typename T2, typename T3>
   arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Glue< Glue<T1,T2,glue_times>,T3,glue_times>& X);
@@ -72,7 +74,7 @@ struct glue_times_redirect3_helper<true>
 
 
 
-template<uword N>
+template<uword N, bool check_alias>
 struct glue_times_redirect
   {
   template<typename T1, typename T2>
@@ -80,24 +82,24 @@ struct glue_times_redirect
   };
 
 
-template<>
-struct glue_times_redirect<2>
+template<bool check_alias>
+struct glue_times_redirect<2, check_alias>
   {
   template<typename T1, typename T2>
   arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_times>& X);
   };
 
 
-template<>
-struct glue_times_redirect<3>
+template<bool check_alias>
+struct glue_times_redirect<3, check_alias>
   {
   template<typename T1, typename T2, typename T3>
   arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Glue< Glue<T1,T2,glue_times>,T3,glue_times>& X);
   };
 
 
-template<>
-struct glue_times_redirect<4>
+template<bool check_alias>
+struct glue_times_redirect<4, check_alias>
   {
   template<typename T1, typename T2, typename T3, typename T4>
   arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Glue< Glue< Glue<T1,T2,glue_times>, T3, glue_times>, T4, glue_times>& X);
@@ -106,10 +108,8 @@ struct glue_times_redirect<4>
 
 
 //! Class which implements the immediate multiplication of two or more matrices
-class glue_times
+struct glue_times
   {
-  public:
-  
   template<typename T1, typename T2>
   struct traits
     {
@@ -120,6 +120,9 @@ class glue_times
   
   template<typename T1, typename T2>
   arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_times>& X);
+  
+  template<typename T1, typename T2>
+  arma_hot inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Glue<T1,T2,glue_times>& X);
   
   
   template<typename T1>
@@ -145,10 +148,8 @@ class glue_times
 
 
 
-class glue_times_diag
+struct glue_times_diag
   {
-  public:
-  
   template<typename T1, typename T2>
   struct traits
     {

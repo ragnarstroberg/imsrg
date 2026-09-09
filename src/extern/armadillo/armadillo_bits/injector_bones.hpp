@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,22 +18,6 @@
 
 //! \addtogroup injector
 //! @{
-
-
-
-template<typename eT>
-class mat_injector_row
-  {
-  public:
-  
-  arma_cold inline mat_injector_row();
-  
-  arma_cold inline void insert(const eT val) const;
-  
-  mutable uword        n_cols;
-  mutable podarray<eT> A;
-  mutable podarray<eT> B;
-  };
 
 
 
@@ -49,14 +35,13 @@ class mat_injector
   
   private:
   
-  arma_cold inline mat_injector(T1& in_X, const elem_type val);
-  arma_cold inline mat_injector(T1& in_X, const injector_end_of_row<>& x);
+  inline mat_injector(T1& in_X, const elem_type val);
+  inline mat_injector(T1& in_X, const injector_end_of_row<>&);
   
-  T1&           X;
-  mutable uword n_rows;
+  T1& parent;
   
-  mutable podarray< mat_injector_row<elem_type>* >* AA;
-  mutable podarray< mat_injector_row<elem_type>* >* BB;
+  mutable std::vector<elem_type> values;
+  mutable std::vector<char>      rowend;
   
   friend class Mat<elem_type>;
   friend class Row<elem_type>;
@@ -69,23 +54,6 @@ class mat_injector
 
 
 
-template<typename oT>
-class field_injector_row
-  {
-  public:
-  
-  arma_cold inline  field_injector_row();
-  arma_cold inline ~field_injector_row();
-  
-  arma_cold inline void insert(const oT& val) const;
-  
-  mutable uword      n_cols;
-  mutable field<oT>* AA;
-  mutable field<oT>* BB;
-  };
-
-  
-  
 template<typename T1>
 class field_injector
   {
@@ -100,14 +68,13 @@ class field_injector
   
   private:
   
-  arma_cold inline field_injector(T1& in_X, const object_type& val);
-  arma_cold inline field_injector(T1& in_X, const injector_end_of_row<>& x);
+  inline field_injector(T1& in_X, const object_type& val);
+  inline field_injector(T1& in_X, const injector_end_of_row<>&);
   
-  T1&           X;
-  mutable uword n_rows;
+  T1& parent;
   
-  mutable podarray< field_injector_row<object_type>* >* AA;
-  mutable podarray< field_injector_row<object_type>* >* BB;
+  mutable std::vector<object_type> values;
+  mutable std::vector<char>        rowend;
   
   friend class field<object_type>;
   };

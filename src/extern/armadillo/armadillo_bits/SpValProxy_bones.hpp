@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,9 +28,9 @@ template<typename T1>
 class SpValProxy
   {
   public:
-
+  
   typedef typename T1::elem_type eT; // Convenience typedef
-
+  
   friend class SpMat<eT>;
   friend class SpSubview<eT>;
   
@@ -47,16 +49,17 @@ class SpValProxy
   //! Overload all of the potential operators.
   
   //! First, the ones that could modify a value.
-  arma_inline SpValProxy& operator=(const eT rhs);
-  arma_inline SpValProxy& operator+=(const eT rhs);
-  arma_inline SpValProxy& operator-=(const eT rhs);
-  arma_inline SpValProxy& operator*=(const eT rhs);
-  arma_inline SpValProxy& operator/=(const eT rhs);
+  inline SpValProxy& operator= (const eT rhs);
+  inline SpValProxy& operator+=(const eT rhs);
+  inline SpValProxy& operator-=(const eT rhs);
+  inline SpValProxy& operator*=(const eT rhs);
+  inline SpValProxy& operator/=(const eT rhs);
   
-  arma_inline SpValProxy& operator++();
-  arma_inline SpValProxy& operator--();
-  arma_inline eT operator++(const int);
-  arma_inline eT operator--(const int);
+  inline SpValProxy& operator++();
+  inline SpValProxy& operator--();
+  
+  inline eT          operator++(const int);
+  inline eT          operator--(const int);
   
   //! This will work for any other operations that do not modify a value.
   arma_inline operator eT() const;
@@ -70,8 +73,8 @@ class SpValProxy
   // Deletes the element if it is zero; NOTE: does not check if val_ptr == nullptr
   arma_inline void check_zero();
   
-  arma_aligned const uword row;
-  arma_aligned const uword col;
+  const uword row;
+  const uword col;
   
   arma_aligned eT* val_ptr;
   

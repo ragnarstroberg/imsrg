@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,9 +26,10 @@ inline
 bool
 op_log_det::apply_direct(typename T1::elem_type& out_val, typename T1::pod_type& out_sign, const Base<typename T1::elem_type,T1>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
+  // typedef typename T1::pod_type   T;
   
   if(strip_diagmat<T1>::do_diagmat)
     {
@@ -44,7 +47,7 @@ op_log_det::apply_direct(typename T1::elem_type& out_val, typename T1::pod_type&
   
   Mat<eT> A(expr.get_ref());
   
-  arma_debug_check( (A.is_square() == false), "log_det(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "log_det(): given matrix must be square sized" );
   
   if(A.is_diagmat())  { return op_log_det::apply_diagmat(out_val, out_sign, A); }
   
@@ -52,6 +55,32 @@ op_log_det::apply_direct(typename T1::elem_type& out_val, typename T1::pod_type&
   const bool is_tril = is_triu ? false : trimat_helper::is_tril(A);
   
   if(is_triu || is_tril)  { return op_log_det::apply_trimat(out_val, out_sign, A); }
+  
+  // const bool try_sympd = arma_config::optimise_sym && sym_helper::guess_sympd(A);
+  // 
+  // if(try_sympd)
+  //   {
+  //   arma_debug_print("op_log_det: attempting sympd optimisation");
+  //   
+  //   T out_val_real = T(0);
+  //   
+  //   const bool status = auxlib::log_det_sympd(out_val_real, A);
+  //   
+  //   if(status)
+  //     {
+  //     out_val  = eT(out_val_real);
+  //     out_sign =  T(1);
+  //     
+  //     return true;
+  //     }
+  //   
+  //   arma_debug_print("op_log_det: sympd optimisation failed");
+  //   
+  //   // restore A as it's destroyed by auxlib::log_det_sympd()
+  //   A = expr.get_ref();
+  //   
+  //   // fallthrough to the next return statement
+  //   }
   
   return auxlib::log_det(out_val, out_sign, A);
   }
@@ -63,14 +92,14 @@ inline
 bool
 op_log_det::apply_diagmat(typename T1::elem_type& out_val, typename T1::pod_type& out_sign, const Base<typename T1::elem_type,T1>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
   const diagmat_proxy<T1> A(expr.get_ref());
   
-  arma_debug_check( (A.n_rows != A.n_cols), "log_det(): given matrix must be square sized" );
+  arma_conform_check( (A.n_rows != A.n_cols), "log_det(): given matrix must be square sized" );
   
   const uword N = (std::min)(A.n_rows, A.n_cols);
   
@@ -108,7 +137,7 @@ inline
 bool
 op_log_det::apply_trimat(typename T1::elem_type& out_val, typename T1::pod_type& out_sign, const Base<typename T1::elem_type,T1>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
@@ -117,7 +146,7 @@ op_log_det::apply_trimat(typename T1::elem_type& out_val, typename T1::pod_type&
   
   const uword N = P.get_n_rows();
   
-  arma_debug_check( (N != P.get_n_cols()), "log_det(): given matrix must be square sized" );
+  arma_conform_check( (N != P.get_n_cols()), "log_det(): given matrix must be square sized" );
   
   if(N == 0)
     {
@@ -157,18 +186,49 @@ inline
 bool
 op_log_det_sympd::apply_direct(typename T1::pod_type& out_val, const Base<typename T1::elem_type,T1>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
+  typedef typename T1::pod_type   T;
   
   Mat<eT> A(expr.get_ref());
   
-  arma_debug_check( (A.is_square() == false), "log_det_sympd(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "log_det_sympd(): given matrix must be square sized" );
   
-  if((arma_config::debug) && (auxlib::rudimentary_sym_check(A) == false))
+  if((arma_config::check_conform) && (arma_config::warn_level > 0) && (is_cx<eT>::yes) && (sym_helper::check_diag_imag(A) == false))
     {
-    if(is_cx<eT>::no )  { arma_debug_warn_level(1, "log_det_sympd(): given matrix is not symmetric"); }
-    if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "log_det_sympd(): given matrix is not hermitian"); }
+    arma_warn(1, "log_det_sympd(): imaginary components on diagonal are non-zero");
+    }
+  
+  if(is_op_diagmat<T1>::value || A.is_diagmat())
+    {
+    arma_debug_print("op_log_det_sympd: diag optimisation");
+    
+    eT* colmem = A.memptr();
+    
+    out_val = T(0);
+    
+    const uword N = A.n_rows;
+    
+    for(uword i=0; i<N; ++i)
+      {
+      const eT& A_ii      = colmem[i];
+      const  T  A_ii_real = access::tmp_real(A_ii);
+      
+      if(A_ii_real <= T(0))  { return false; }
+      
+      out_val += std::log(A_ii_real);
+      
+      colmem += N;
+      }
+    
+    return true;
+    }
+  
+  if((arma_config::check_conform) && (auxlib::rudimentary_sym_check(A) == false))
+    {
+    if(is_cx<eT>::no )  { arma_warn(1, "log_det_sympd(): given matrix is not symmetric"); }
+    if(is_cx<eT>::yes)  { arma_warn(1, "log_det_sympd(): given matrix is not hermitian"); }
     }
   
   return auxlib::log_det_sympd(out_val, A);

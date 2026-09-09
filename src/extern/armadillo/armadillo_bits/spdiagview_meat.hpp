@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +24,7 @@ template<typename eT>
 inline
 spdiagview<eT>::~spdiagview()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -35,7 +37,7 @@ spdiagview<eT>::spdiagview(const SpMat<eT>& in_m, const uword in_row_offset, con
   , n_rows(in_len)
   , n_elem(in_len)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -46,11 +48,11 @@ inline
 void
 spdiagview<eT>::operator= (const spdiagview<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
-  arma_debug_check( (d.n_elem != x.n_elem), "spdiagview: diagonals have incompatible lengths" );
+  arma_conform_check( (d.n_elem != x.n_elem), "spdiagview: diagonals have incompatible lengths" );
   
         SpMat<eT>& d_m = const_cast< SpMat<eT>& >(d.m);
   const SpMat<eT>& x_m = x.m;
@@ -84,7 +86,7 @@ inline
 void
 spdiagview<eT>::operator+=(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(val == eT(0))  { return; }
   
@@ -107,7 +109,7 @@ inline
 void
 spdiagview<eT>::operator-=(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(val == eT(0))  { return; }
   
@@ -130,9 +132,7 @@ inline
 void
 spdiagview<eT>::operator*=(const eT val)
   {
-  arma_extra_debug_sigprint();
-  
-  if(val == eT(0))  { (*this).zeros(); return; }
+  arma_debug_sigprint();
   
   SpMat<eT>& t_m = const_cast< SpMat<eT>& >(m);
   
@@ -153,7 +153,7 @@ inline
 void
 spdiagview<eT>::operator/=(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT>& t_m = const_cast< SpMat<eT>& >(m);
   
@@ -176,7 +176,7 @@ inline
 void
 spdiagview<eT>::operator= (const Base<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -190,7 +190,7 @@ spdiagview<eT>::operator= (const Base<eT,T1>& o)
     {
     const Proxy<T1> P(o.get_ref());
     
-    arma_debug_check( (d_n_elem != P.get_n_elem()), "spdiagview: given object has incompatible size" );
+    arma_conform_check( (d_n_elem != P.get_n_elem()), "spdiagview: given object has incompatible size" );
     
     (*this).zeros();
     
@@ -201,7 +201,7 @@ spdiagview<eT>::operator= (const Base<eT,T1>& o)
     {
     const Proxy<T1> P(o.get_ref());
     
-    arma_debug_check( (d_n_elem != P.get_n_elem()), "spdiagview: given object has incompatible size" );
+    arma_conform_check( (d_n_elem != P.get_n_elem()), "spdiagview: given object has incompatible size" );
     
     (*this).ones();
     
@@ -213,7 +213,7 @@ spdiagview<eT>::operator= (const Base<eT,T1>& o)
   
   const eT* x_mem = x.memptr();
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != x.n_elem) || ((x.n_rows != 1) && (x.n_cols != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -263,7 +263,7 @@ inline
 void
 spdiagview<eT>::operator+=(const Base<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -275,7 +275,7 @@ spdiagview<eT>::operator+=(const Base<eT,T1>& o)
     
   const Proxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -283,7 +283,7 @@ spdiagview<eT>::operator+=(const Base<eT,T1>& o)
   
   if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
-    const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
+    const plain_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
     
     const eT* x_mem = x.memptr();
@@ -312,7 +312,7 @@ inline
 void
 spdiagview<eT>::operator-=(const Base<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -324,7 +324,7 @@ spdiagview<eT>::operator-=(const Base<eT,T1>& o)
     
   const Proxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -332,7 +332,7 @@ spdiagview<eT>::operator-=(const Base<eT,T1>& o)
   
   if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
-    const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
+    const plain_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
     
     const eT* x_mem = x.memptr();
@@ -361,7 +361,7 @@ inline
 void
 spdiagview<eT>::operator%=(const Base<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -373,7 +373,7 @@ spdiagview<eT>::operator%=(const Base<eT,T1>& o)
     
   const Proxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -381,7 +381,7 @@ spdiagview<eT>::operator%=(const Base<eT,T1>& o)
   
   if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
-    const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
+    const plain_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
     
     const eT* x_mem = x.memptr();
@@ -410,7 +410,7 @@ inline
 void
 spdiagview<eT>::operator/=(const Base<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -422,7 +422,7 @@ spdiagview<eT>::operator/=(const Base<eT,T1>& o)
     
   const Proxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -430,7 +430,7 @@ spdiagview<eT>::operator/=(const Base<eT,T1>& o)
   
   if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
-    const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
+    const plain_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
     
     const eT* x_mem = x.memptr();
@@ -460,12 +460,12 @@ inline
 void
 spdiagview<eT>::operator= (const SpBase<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const unwrap_spmat<T1> U( o.get_ref() );
   const SpMat<eT>& x   = U.M;
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (n_elem != x.n_elem) || ((x.n_rows != 1) && (x.n_cols != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -484,7 +484,7 @@ inline
 void
 spdiagview<eT>::operator+=(const SpBase<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -496,7 +496,7 @@ spdiagview<eT>::operator+=(const SpBase<eT,T1>& o)
   
   const SpProxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -538,7 +538,7 @@ inline
 void
 spdiagview<eT>::operator-=(const SpBase<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -550,7 +550,7 @@ spdiagview<eT>::operator-=(const SpBase<eT,T1>& o)
   
   const SpProxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -592,7 +592,7 @@ inline
 void
 spdiagview<eT>::operator%=(const SpBase<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -604,7 +604,7 @@ spdiagview<eT>::operator%=(const SpBase<eT,T1>& o)
   
   const SpProxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -646,7 +646,7 @@ inline
 void
 spdiagview<eT>::operator/=(const SpBase<eT,T1>& o)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spdiagview<eT>& d = *this;
   
@@ -658,7 +658,7 @@ spdiagview<eT>::operator/=(const SpBase<eT,T1>& o)
   
   const SpProxy<T1> P( o.get_ref() );
   
-  arma_debug_check
+  arma_conform_check
     (
     ( (d_n_elem != P.get_n_elem()) || ((P.get_n_rows() != 1) && (P.get_n_cols() != 1)) ),
     "spdiagview: given object has incompatible size"
@@ -699,7 +699,7 @@ inline
 void
 spdiagview<eT>::extract(SpMat<eT>& out, const spdiagview<eT>& d)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpMat<eT>& d_m = d.m;
   
@@ -748,10 +748,10 @@ inline
 void
 spdiagview<eT>::extract(Mat<eT>& out, const spdiagview<eT>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // NOTE: we're assuming that the 'out' matrix has already been set to the correct size;
-  // size setting is done by either the Mat contructor or Mat::operator=()
+  // size setting is done by either the Mat constructor or Mat::operator=()
   
   const SpMat<eT>& in_m = in.m;
   
@@ -814,7 +814,7 @@ inline
 SpMat_MapMat_val<eT>
 spdiagview<eT>::operator()(const uword i)
   {
-  arma_debug_check_bounds( (i >= n_elem), "spdiagview::operator(): out of bounds" );
+  arma_conform_check_bounds( (i >= n_elem), "spdiagview::operator(): out of bounds" );
   
   return (const_cast< SpMat<eT>& >(m)).at(i+row_offset, i+col_offset);
   }
@@ -826,7 +826,7 @@ inline
 eT
 spdiagview<eT>::operator()(const uword i) const
   {
-  arma_debug_check_bounds( (i >= n_elem), "spdiagview::operator(): out of bounds" );
+  arma_conform_check_bounds( (i >= n_elem), "spdiagview::operator(): out of bounds" );
   
   return m.at(i+row_offset, i+col_offset);
   }
@@ -858,7 +858,7 @@ inline
 SpMat_MapMat_val<eT>
 spdiagview<eT>::operator()(const uword row, const uword col)
   {
-  arma_debug_check_bounds( ((row >= n_elem) || (col > 0)), "spdiagview::operator(): out of bounds" );
+  arma_conform_check_bounds( ((row >= n_elem) || (col > 0)), "spdiagview::operator(): out of bounds" );
   
   return (const_cast< SpMat<eT>& >(m)).at(row+row_offset, row+col_offset);
   }
@@ -870,7 +870,7 @@ inline
 eT
 spdiagview<eT>::operator()(const uword row, const uword col) const
   {
-  arma_debug_check_bounds( ((row >= n_elem) || (col > 0)), "spdiagview::operator(): out of bounds" );
+  arma_conform_check_bounds( ((row >= n_elem) || (col > 0)), "spdiagview::operator(): out of bounds" );
   
   return m.at(row+row_offset, row+col_offset);
   }
@@ -882,11 +882,11 @@ inline
 void
 spdiagview<eT>::replace(const eT old_val, const eT new_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(old_val == eT(0))
     {
-    arma_debug_warn_level(1, "spdiagview::replace(): replacement not done, as old_val = 0");
+    arma_warn(1, "spdiagview::replace(): replacement not done, as old_val = 0");
     }
   else
     {
@@ -905,7 +905,7 @@ inline
 void
 spdiagview<eT>::clean(const typename get_pod_type<eT>::result threshold)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> tmp(*this);
   
@@ -921,9 +921,9 @@ inline
 void
 spdiagview<eT>::clamp(const eT min_val, const eT max_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  SpMat<eT> tmp(*this);
+  Mat<eT> tmp(*this);
   
   tmp.clamp(min_val, max_val);
   
@@ -937,7 +937,7 @@ inline
 void
 spdiagview<eT>::fill(const eT val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if( (row_offset == 0) && (col_offset == 0) && (m.sync_state != 1) )
     {
@@ -1011,7 +1011,7 @@ inline
 void
 spdiagview<eT>::zeros()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).fill(eT(0));
   }
@@ -1023,7 +1023,7 @@ inline
 void
 spdiagview<eT>::ones()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).fill(eT(1));
   }
@@ -1035,15 +1035,19 @@ inline
 void
 spdiagview<eT>::randu()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT>& x = const_cast< SpMat<eT>& >(m);
   
   const uword local_n_elem = n_elem;
   
+  Col<eT> tmp(local_n_elem, arma_nozeros_indicator());
+  
+  tmp.randu();
+  
   for(uword i=0; i < local_n_elem; ++i)
     {
-    x.at(i+row_offset, i+col_offset) = eT(arma_rng::randu<eT>());
+    x.at(i+row_offset, i+col_offset) = tmp[i];
     }
   }
 
@@ -1054,16 +1058,31 @@ inline
 void
 spdiagview<eT>::randn()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT>& x = const_cast< SpMat<eT>& >(m);
   
   const uword local_n_elem = n_elem;
   
+  Col<eT> tmp(local_n_elem, arma_nozeros_indicator());
+  
+  tmp.randn();
+  
   for(uword i=0; i < local_n_elem; ++i)
     {
-    x.at(i+row_offset, i+col_offset) = eT(arma_rng::randn<eT>());
+    x.at(i+row_offset, i+col_offset) = tmp[i];
     }
+  }
+
+
+
+template<typename eT>
+template<typename eT2>
+arma_inline
+bool
+spdiagview<eT>::is_alias(const SpMat<eT2>& X) const
+  {
+  return m.is_alias(X);
   }
 
 

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,10 +21,8 @@
 
 
 
-class syrk_helper
+struct syrk_helper
   {
-  public:
-  
   template<typename eT>
   inline
   static
@@ -59,10 +59,8 @@ class syrk_helper
 
 //! partial emulation of BLAS function syrk(), specialised for A being a vector
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class syrk_vec
+struct syrk_vec
   {
-  public:
-  
   template<typename eT, typename TA>
   arma_hot
   inline
@@ -76,7 +74,7 @@ class syrk_vec
     const eT       beta  = eT(0)
     )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     const uword A_n1 = (do_trans_A == false) ? A.n_rows : A.n_cols;
     const uword A_n2 = (do_trans_A == false) ? A.n_cols : A.n_rows;
@@ -187,10 +185,8 @@ class syrk_vec
 
 //! partial emulation of BLAS function syrk()
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class syrk_emul
+struct syrk_emul
   {
-  public:
-  
   template<typename eT, typename TA>
   arma_hot
   inline
@@ -204,7 +200,7 @@ class syrk_emul
     const eT       beta  = eT(0)
     )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     // do_trans_A == false  ->   C = alpha * A   * A^T + beta*C
     // do_trans_A == true   ->   C = alpha * A^T * A   + beta*C
@@ -231,7 +227,7 @@ class syrk_emul
         
         for(uword k=col_A; k < A_n_cols; ++k)
           {
-          const eT acc = op_dot::direct_dot_arma(A_n_rows, A_coldata, A.colptr(k));
+          const eT acc = op_dot::direct_dot(A_n_rows, A_coldata, A.colptr(k));
           
           if( (use_alpha == false) && (use_beta == false) )
             {
@@ -270,21 +266,19 @@ class syrk_emul
 
 
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class syrk
+struct syrk
   {
-  public:
-  
   template<typename eT, typename TA>
   inline
   static
   void
   apply_blas_type( Mat<eT>& C, const TA& A, const eT alpha = eT(1), const eT beta = eT(0) )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     if(A.is_vec())
       {
-      // work around poor handling of vectors by syrk() in ATLAS 3.8.4 and standard BLAS
+      // work around poor handling of vectors by syrk() in standard BLAS
       
       syrk_vec<do_trans_A, use_alpha, use_beta>::apply(C,A,alpha,beta);
       
@@ -316,9 +310,9 @@ class syrk
         
         atlas::cblas_syrk<eT>
           (
-          atlas::CblasColMajor,
-          atlas::CblasUpper,
-          (do_trans_A) ? atlas::CblasTrans : atlas::CblasNoTrans,
+          atlas_CblasColMajor,
+          atlas_CblasUpper,
+          (do_trans_A) ? atlas_CblasTrans : atlas_CblasNoTrans,
           C.n_cols,
           (do_trans_A) ? A.n_rows : A.n_cols,
           (use_alpha) ? alpha : eT(1),
@@ -346,7 +340,7 @@ class syrk
           return;
           }
         
-        arma_extra_debug_print("blas::syrk()");
+        arma_debug_print("blas::syrk()");
         
         const char uplo = 'U';
         
@@ -360,7 +354,7 @@ class syrk
         
         const blas_int lda = (do_trans_A) ? k : n;
         
-        arma_extra_debug_print( arma_str::format("blas::syrk(): trans_A = %c") % trans_A );
+        arma_debug_print( arma_str::format("blas::syrk(): trans_A: %c") % trans_A );
         
         blas::syrk<eT>
           (

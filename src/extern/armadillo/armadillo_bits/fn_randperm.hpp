@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,19 +26,29 @@ inline
 void
 internal_randperm_helper(obj_type& x, const uword N, const uword N_keep)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename obj_type::elem_type eT;
   
   // see op_sort_index_bones.hpp for the definition of arma_sort_index_packet
+  // and the associated comparison functor
   
   typedef arma_sort_index_packet<int> packet;
   
   std::vector<packet> packet_vec(N);
   
+  podarray<int> tmp(N);
+  
+  int* tmp_mem = tmp.memptr();
+  
+  const int a = 0;
+  const int b = arma_rng::randi<int>::max_val();
+  
+  arma_rng::randi<int>::fill(tmp_mem, N, a, b);
+  
   for(uword i=0; i < N; ++i)
     {
-    packet_vec[i].val   = int(arma_rng::randi<int>());
+    packet_vec[i].val   = tmp_mem[i];
     packet_vec[i].index = i;
     }
   
@@ -83,7 +95,7 @@ inline
 typename enable_if2< is_Mat<obj_type>::value, obj_type >::result
 randperm(const uword N)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   obj_type x;
   
@@ -99,7 +111,7 @@ inline
 uvec
 randperm(const uword N)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   uvec x;
   
@@ -116,9 +128,9 @@ inline
 typename enable_if2< is_Mat<obj_type>::value, obj_type >::result
 randperm(const uword N, const uword M)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (M > N), "randperm(): 'M' must be less than or equal to 'N'" );
+  arma_conform_check( (M > N), "randperm(): 'M' must be less than or equal to 'N'" );
   
   obj_type x;
   
@@ -134,9 +146,9 @@ inline
 uvec
 randperm(const uword N, const uword M)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (M > N), "randperm(): 'M' must be less than or equal to 'N'" );
+  arma_conform_check( (M > N), "randperm(): 'M' must be less than or equal to 'N'" );
   
   uvec x;
   

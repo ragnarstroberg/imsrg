@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +22,11 @@
 
 
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 spglue_minus::apply(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_minus>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -50,15 +51,29 @@ spglue_minus::apply(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglu
 
 
 
+template<typename T1, typename T2>
+inline
+void
+spglue_minus::apply(SpMat_noalias<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_minus>& X)
+  {
+  arma_debug_sigprint();
+  
+  const SpProxy<T1> pa(X.A);
+  const SpProxy<T2> pb(X.B);
+  
+  spglue_minus::apply_noalias(out, pa, pb);
+  }
+
+
+
 template<typename eT, typename T1, typename T2>
-arma_hot
 inline
 void
 spglue_minus::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy<T2>& pb)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "subtraction");
+  arma_conform_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "subtraction");
   
   if(pa.get_n_nonzero() == 0)  { out = pb.Q; out *= eT(-1); return; }
   if(pb.get_n_nonzero() == 0)  { out = pa.Q;                return; }
@@ -158,12 +173,11 @@ spglue_minus::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy
 
 
 template<typename eT>
-arma_hot
 inline
 void
 spglue_minus::apply_noalias(SpMat<eT>& out, const SpMat<eT>& A, const SpMat<eT>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy< SpMat<eT> > pa(A);
   const SpProxy< SpMat<eT> > pb(B);
@@ -182,7 +196,7 @@ inline
 void
 spglue_minus_mixed::apply(SpMat<typename eT_promoter<T1,T2>::eT>& out, const mtSpGlue<typename eT_promoter<T1,T2>::eT, T1, T2, spglue_minus_mixed>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT1;
   typedef typename T2::elem_type eT2;
@@ -255,7 +269,7 @@ inline
 void
 spglue_minus_mixed::sparse_minus_dense(Mat< typename promote_type<typename T1::elem_type, typename T2::elem_type >::result>& out, const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT1;
   typedef typename T2::elem_type eT2;
@@ -281,7 +295,7 @@ spglue_minus_mixed::sparse_minus_dense(Mat< typename promote_type<typename T1::e
   
   const SpProxy<T1> pa(X);
   
-  arma_debug_assert_same_size( pa.get_n_rows(), pa.get_n_cols(), out.n_rows, out.n_cols, "subtraction" );
+  arma_conform_assert_same_size( pa.get_n_rows(), pa.get_n_cols(), out.n_rows, out.n_cols, "subtraction" );
   
   typename SpProxy<T1>::const_iterator_type it     = pa.begin();
   typename SpProxy<T1>::const_iterator_type it_end = pa.end();
@@ -300,7 +314,7 @@ inline
 void
 spglue_minus_mixed::dense_minus_sparse(Mat< typename promote_type<typename T1::elem_type, typename T2::elem_type >::result>& out, const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT1;
   typedef typename T2::elem_type eT2;
@@ -324,7 +338,7 @@ spglue_minus_mixed::dense_minus_sparse(Mat< typename promote_type<typename T1::e
   
   const SpProxy<T2> pb(Y);
   
-  arma_debug_assert_same_size( out.n_rows, out.n_cols, pb.get_n_rows(), pb.get_n_cols(), "subtraction" );
+  arma_conform_assert_same_size( out.n_rows, out.n_cols, pb.get_n_rows(), pb.get_n_cols(), "subtraction" );
   
   typename SpProxy<T2>::const_iterator_type it     = pb.begin();
   typename SpProxy<T2>::const_iterator_type it_end = pb.end();

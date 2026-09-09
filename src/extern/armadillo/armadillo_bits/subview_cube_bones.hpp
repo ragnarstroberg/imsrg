@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +21,7 @@
 
 
 //! Class for storing data required to construct or apply operations to a subcube
-//! (i.e. where the subcube starts and ends as well as a reference/pointer to the original cube),
+//! (ie. where the subcube starts and ends as well as a reference/pointer to the original cube),
 template<typename eT>
 class subview_cube : public BaseCube< eT, subview_cube<eT> >
   {
@@ -47,6 +49,8 @@ class subview_cube : public BaseCube< eT, subview_cube<eT> >
   
   
   public:
+  
+  static constexpr bool has_subview = true;
   
   inline ~subview_cube();
   inline  subview_cube() = delete;
@@ -118,11 +122,12 @@ class subview_cube : public BaseCube< eT, subview_cube<eT> >
   inline void randu();
   inline void randn();
   
-  inline arma_warn_unused bool is_finite() const;
-  inline arma_warn_unused bool is_zero(const pod_type tol = 0) const;
+  arma_warn_unused inline bool is_finite() const;
+  arma_warn_unused inline bool is_zero(const pod_type tol = 0) const;
   
-  inline arma_warn_unused bool has_inf() const;
-  inline arma_warn_unused bool has_nan() const;
+  arma_warn_unused inline bool has_inf()       const;
+  arma_warn_unused inline bool has_nan()       const;
+  arma_warn_unused inline bool has_nonfinite() const;
   
   inline eT  at_alt    (const uword i) const;
   
@@ -157,15 +162,15 @@ class subview_cube : public BaseCube< eT, subview_cube<eT> >
     inline iterator(const iterator& X);
     inline iterator(subview_cube<eT>& in_sv, const uword in_row, const uword in_col, const uword in_slice);
     
-    inline arma_warn_unused eT& operator*();
+    arma_warn_unused inline eT& operator*();
     
-    inline                  iterator& operator++();
-    inline arma_warn_unused iterator  operator++(int);
+                     inline iterator& operator++();
+    arma_warn_unused inline iterator  operator++(int);
     
-    inline arma_warn_unused bool operator==(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator==(const const_iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const const_iterator& rhs) const;
     
     typedef std::forward_iterator_tag iterator_category;
     typedef eT                        value_type;
@@ -196,15 +201,15 @@ class subview_cube : public BaseCube< eT, subview_cube<eT> >
     inline const_iterator(const const_iterator& X);
     inline const_iterator(const subview_cube<eT>& in_sv, const uword in_row, const uword in_col, const uword in_slice);
     
-    inline arma_warn_unused const eT& operator*();
+    arma_warn_unused inline const eT& operator*();
     
-    inline                  const_iterator& operator++();
-    inline arma_warn_unused const_iterator  operator++(int);
+                     inline const_iterator& operator++();
+    arma_warn_unused inline const_iterator  operator++(int);
     
-    inline arma_warn_unused bool operator==(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator==(const const_iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const const_iterator& rhs) const;
     
     // So that we satisfy the STL iterator types.
     typedef std::forward_iterator_tag iterator_category;

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,8 +32,8 @@ enable_if2
   >::result
 var(const T1& X, const uword norm_type = 0)
   {
-  arma_extra_debug_sigprint();
-
+  arma_debug_sigprint();
+  
   return op_var::var_vec(X, norm_type);
   }
 
@@ -48,8 +50,8 @@ enable_if2
   >::result
 var(const T1& X, const uword norm_type = 0)
   {
-  arma_extra_debug_sigprint();
-
+  arma_debug_sigprint();
+  
   return mtOp<typename T1::pod_type, T1, op_var>(X, norm_type, 0);
   }
 
@@ -66,8 +68,8 @@ enable_if2
   >::result
 var(const T1& X, const uword norm_type, const uword dim)
   {
-  arma_extra_debug_sigprint();
-
+  arma_debug_sigprint();
+  
   return mtOp<typename T1::pod_type, T1, op_var>(X, norm_type, dim);
   }
 
@@ -75,7 +77,7 @@ var(const T1& X, const uword norm_type, const uword dim)
 
 template<typename T>
 arma_warn_unused
-arma_inline
+inline
 typename arma_scalar_only<T>::result
 var(const T&)
   {
@@ -95,9 +97,9 @@ enable_if2
   >::result
 var(const T1& X, const uword norm_type = 0)
   {
-  arma_extra_debug_sigprint();
-
-  return spop_var::var_vec(X, norm_type);
+  arma_debug_sigprint();
+  
+  return op_sp_var::var_vec(X, norm_type);
   }
 
 
@@ -109,13 +111,13 @@ typename
 enable_if2
   <
   is_arma_sparse_type<T1>::value && resolves_to_sparse_vector<T1>::no, 
-  const mtSpOp<typename T1::pod_type, T1, spop_var>
+  const mtSpReduceOp<typename T1::pod_type, T1, op_sp_var>
   >::result
 var(const T1& X, const uword norm_type = 0)
   {
-  arma_extra_debug_sigprint();
-
-  return mtSpOp<typename T1::pod_type, T1, spop_var>(X, norm_type, 0);
+  arma_debug_sigprint();
+  
+  return mtSpReduceOp<typename T1::pod_type, T1, op_sp_var>(X, norm_type, 0);
   }
 
 
@@ -127,13 +129,13 @@ typename
 enable_if2
   <
   is_arma_sparse_type<T1>::value,
-  const mtSpOp<typename T1::pod_type, T1, spop_var>
+  const mtSpReduceOp<typename T1::pod_type, T1, op_sp_var>
   >::result
 var(const T1& X, const uword norm_type, const uword dim)
   {
-  arma_extra_debug_sigprint();
-
-  return mtSpOp<typename T1::pod_type, T1, spop_var>(X, norm_type, dim);
+  arma_debug_sigprint();
+  
+  return mtSpReduceOp<typename T1::pod_type, T1, op_sp_var>(X, norm_type, dim);
   }
 
 

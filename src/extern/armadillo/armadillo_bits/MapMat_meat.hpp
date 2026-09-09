@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,12 +25,12 @@ template<typename eT>
 inline
 MapMat<eT>::~MapMat()
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   if(map_ptr)  { (*map_ptr).clear();  delete map_ptr; }
   
   // try to expose buggy user code that accesses deleted objects
-  if(arma_config::debug)  { map_ptr = nullptr; }
+  map_ptr = nullptr;
   
   arma_type_check(( is_supported_elem_type<eT>::value == false ));
   }
@@ -43,7 +45,7 @@ MapMat<eT>::MapMat()
   , n_elem (0)
   , map_ptr(nullptr)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   init_cold();
   }
@@ -58,7 +60,7 @@ MapMat<eT>::MapMat(const uword in_n_rows, const uword in_n_cols)
   , n_elem (in_n_rows * in_n_cols)
   , map_ptr(nullptr)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   init_cold();
   }
@@ -73,7 +75,7 @@ MapMat<eT>::MapMat(const SizeMat& s)
   , n_elem (s.n_rows * s.n_cols)
   , map_ptr(nullptr)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   init_cold();
   }
@@ -88,7 +90,7 @@ MapMat<eT>::MapMat(const MapMat<eT>& x)
   , n_elem (0)
   , map_ptr(nullptr)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   init_cold();
   
@@ -102,9 +104,14 @@ inline
 void
 MapMat<eT>::operator=(const MapMat<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  if(this == &x)  { return; }
+  if(this == &x)
+    {
+    arma_debug_print("MapMat::operator=(): copy omitted");
+    
+    return;
+    }
   
   access::rw(n_rows) = x.n_rows;
   access::rw(n_cols) = x.n_cols;
@@ -123,7 +130,7 @@ MapMat<eT>::MapMat(const SpMat<eT>& x)
   , n_elem (0)
   , map_ptr(nullptr)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   init_cold();
   
@@ -137,7 +144,7 @@ inline
 void
 MapMat<eT>::operator=(const SpMat<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword x_n_rows = x.n_rows;
   const uword x_n_cols = x.n_cols;
@@ -179,7 +186,7 @@ MapMat<eT>::MapMat(MapMat<eT>&& x)
   , n_elem (x.n_elem )
   , map_ptr(x.map_ptr)
   {
-  arma_extra_debug_sigprint_this(this);
+  arma_debug_sigprint_this(this);
   
   access::rw(x.n_rows)  = 0;
   access::rw(x.n_cols)  = 0;
@@ -194,7 +201,9 @@ inline
 void
 MapMat<eT>::operator=(MapMat<eT>&& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
+  
+  if(this == &x)  { return; }
   
   reset();
   
@@ -218,7 +227,7 @@ inline
 void
 MapMat<eT>::reset()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   access::rw(n_rows) = 0;
   access::rw(n_cols) = 0;
@@ -234,7 +243,7 @@ inline
 void
 MapMat<eT>::set_size(const uword in_n_rows)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   init_warm(in_n_rows, 1);
   }
@@ -246,7 +255,7 @@ inline
 void
 MapMat<eT>::set_size(const uword in_n_rows, const uword in_n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   init_warm(in_n_rows, in_n_cols);
   }
@@ -258,7 +267,7 @@ inline
 void
 MapMat<eT>::set_size(const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   init_warm(s.n_rows, s.n_cols);
   }
@@ -270,7 +279,7 @@ inline
 void
 MapMat<eT>::zeros()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*map_ptr).clear();
   }
@@ -282,7 +291,7 @@ inline
 void
 MapMat<eT>::zeros(const uword in_n_rows)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   init_warm(in_n_rows, 1);
   
@@ -296,7 +305,7 @@ inline
 void
 MapMat<eT>::zeros(const uword in_n_rows, const uword in_n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   init_warm(in_n_rows, in_n_cols);
   
@@ -310,7 +319,7 @@ inline
 void
 MapMat<eT>::zeros(const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   init_warm(s.n_rows, s.n_cols);
   
@@ -324,7 +333,7 @@ inline
 void
 MapMat<eT>::eye()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).eye(n_rows, n_cols);
   }
@@ -336,7 +345,7 @@ inline
 void
 MapMat<eT>::eye(const uword in_n_rows, const uword in_n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   zeros(in_n_rows, in_n_cols);
   
@@ -359,7 +368,7 @@ inline
 void
 MapMat<eT>::eye(const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).eye(s.n_rows, s.n_cols);
   }
@@ -371,7 +380,7 @@ inline
 void
 MapMat<eT>::speye()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).eye();
   }
@@ -383,7 +392,7 @@ inline
 void
 MapMat<eT>::speye(const uword in_n_rows, const uword in_n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).eye(in_n_rows, in_n_cols);
   }
@@ -395,7 +404,7 @@ inline
 void
 MapMat<eT>::speye(const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).eye(s);
   }
@@ -404,7 +413,6 @@ MapMat<eT>::speye(const SizeMat& s)
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 MapMat_val<eT>
 MapMat<eT>::operator[](const uword index)
   {
@@ -415,7 +423,6 @@ MapMat<eT>::operator[](const uword index)
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 MapMat<eT>::operator[](const uword index) const
   {
@@ -431,11 +438,10 @@ MapMat<eT>::operator[](const uword index) const
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 MapMat_val<eT>
 MapMat<eT>::operator()(const uword index)
   {
-  arma_debug_check_bounds( (index >= n_elem), "MapMat::operator(): index out of bounds" );
+  arma_conform_check_bounds( (index >= n_elem), "MapMat::operator(): index out of bounds" );
   
   return MapMat_val<eT>(*this, index);
   }
@@ -444,11 +450,10 @@ MapMat<eT>::operator()(const uword index)
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 MapMat<eT>::operator()(const uword index) const
   {
-  arma_debug_check_bounds( (index >= n_elem), "MapMat::operator(): index out of bounds" );
+  arma_conform_check_bounds( (index >= n_elem), "MapMat::operator(): index out of bounds" );
   
   map_type& map_ref = (*map_ptr);
   
@@ -462,7 +467,6 @@ MapMat<eT>::operator()(const uword index) const
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 MapMat_val<eT>
 MapMat<eT>::at(const uword in_row, const uword in_col)
   {
@@ -475,7 +479,6 @@ MapMat<eT>::at(const uword in_row, const uword in_col)
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 MapMat<eT>::at(const uword in_row, const uword in_col) const
   {
@@ -493,11 +496,10 @@ MapMat<eT>::at(const uword in_row, const uword in_col) const
 
 template<typename eT>
 arma_inline
-arma_warn_unused
 MapMat_val<eT>
 MapMat<eT>::operator()(const uword in_row, const uword in_col)
   {
-  arma_debug_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
+  arma_conform_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
   
   const uword index = (n_rows * in_col) + in_row;
   
@@ -508,11 +510,10 @@ MapMat<eT>::operator()(const uword in_row, const uword in_col)
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 MapMat<eT>::operator()(const uword in_row, const uword in_col) const
   {
-  arma_debug_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
+  arma_conform_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
   
   const uword index = (n_rows * in_col) + in_row;
   
@@ -528,7 +529,6 @@ MapMat<eT>::operator()(const uword in_row, const uword in_col) const
 
 template<typename eT>
 inline
-arma_warn_unused
 bool
 MapMat<eT>::is_empty() const
   {
@@ -539,7 +539,6 @@ MapMat<eT>::is_empty() const
 
 template<typename eT>
 inline
-arma_warn_unused
 bool
 MapMat<eT>::is_vec() const
   {
@@ -550,7 +549,6 @@ MapMat<eT>::is_vec() const
 
 template<typename eT>
 inline
-arma_warn_unused
 bool
 MapMat<eT>::is_rowvec() const
   {
@@ -562,7 +560,6 @@ MapMat<eT>::is_rowvec() const
 //! returns true if the object can be interpreted as a column vector
 template<typename eT>
 inline
-arma_warn_unused
 bool
 MapMat<eT>::is_colvec() const
   {
@@ -573,7 +570,6 @@ MapMat<eT>::is_colvec() const
 
 template<typename eT>
 inline
-arma_warn_unused
 bool
 MapMat<eT>::is_square() const
   {
@@ -588,7 +584,7 @@ inline
 void
 MapMat<eT>::sprandu(const uword in_n_rows, const uword in_n_cols, const double density)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   zeros(in_n_rows, in_n_cols);
   
@@ -619,7 +615,7 @@ inline
 void
 MapMat<eT>::print(const std::string& extra_text) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(extra_text.length() != 0)
     {
@@ -671,7 +667,7 @@ inline
 uword
 MapMat<eT>::get_n_nonzero() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return uword((*map_ptr).size());
   }
@@ -683,7 +679,7 @@ inline
 void
 MapMat<eT>::get_locval_format(umat& locs, Col<eT>& vals) const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   map_type& map_ref = (*map_ptr);
   
@@ -724,7 +720,7 @@ inline
 void
 MapMat<eT>::init_cold()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // ensure that n_elem can hold the result of (n_rows * n_cols)
   
@@ -734,7 +730,7 @@ MapMat<eT>::init_cold()
     const char* error_message = "MapMat(): requested size is too large; suggest to enable ARMA_64BIT_WORD";
   #endif
   
-  arma_debug_check
+  arma_conform_check
     (
       (
       ( (n_rows > ARMA_MAX_UHWORD) || (n_cols > ARMA_MAX_UHWORD) )
@@ -756,7 +752,7 @@ inline
 void
 MapMat<eT>::init_warm(const uword in_n_rows, const uword in_n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if( (n_rows == in_n_rows) && (n_cols == in_n_cols))  { return; }
   
@@ -768,7 +764,7 @@ MapMat<eT>::init_warm(const uword in_n_rows, const uword in_n_cols)
     const char* error_message = "MapMat(): requested size is too large; suggest to enable ARMA_64BIT_WORD";
   #endif
   
-  arma_debug_check
+  arma_conform_check
     (
       (
       ( (in_n_rows > ARMA_MAX_UHWORD) || (in_n_cols > ARMA_MAX_UHWORD) )
@@ -794,7 +790,7 @@ arma_inline
 void
 MapMat<eT>::set_val(const uword index, const eT& in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(in_val != eT(0))
     {
@@ -822,7 +818,7 @@ inline
 void
 MapMat<eT>::erase_val(const uword index)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   map_type& map_ref = (*map_ptr);
   
@@ -847,7 +843,7 @@ MapMat_val<eT>::MapMat_val(MapMat<eT>& in_parent, const uword in_index)
   : parent(in_parent)
   , index (in_index )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -856,7 +852,7 @@ template<typename eT>
 arma_inline
 MapMat_val<eT>::operator eT() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const MapMat<eT>& const_parent = parent;
   
@@ -870,7 +866,7 @@ arma_inline
 typename get_pod_type<eT>::result
 MapMat_val<eT>::real() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -886,7 +882,7 @@ arma_inline
 typename get_pod_type<eT>::result
 MapMat_val<eT>::imag() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -902,7 +898,7 @@ arma_inline
 void
 MapMat_val<eT>::operator=(const MapMat_val<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const eT in_val = eT(x);
   
@@ -916,7 +912,7 @@ arma_inline
 void
 MapMat_val<eT>::operator=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   parent.set_val(index, in_val);
   }
@@ -928,7 +924,7 @@ arma_inline
 void
 MapMat_val<eT>::operator+=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typename MapMat<eT>::map_type& map_ref = *(parent.map_ptr);
   
@@ -949,7 +945,7 @@ arma_inline
 void
 MapMat_val<eT>::operator-=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typename MapMat<eT>::map_type& map_ref = *(parent.map_ptr);
   
@@ -970,7 +966,7 @@ arma_inline
 void
 MapMat_val<eT>::operator*=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typename MapMat<eT>::map_type& map_ref = *(parent.map_ptr);
   
@@ -979,18 +975,17 @@ MapMat_val<eT>::operator*=(const eT in_val)
   
   if(it != it_end)
     {
-    if(in_val != eT(0))
-      {
-      eT& val = (*it).second;
-      
-      val *= in_val;
-      
-      if(val == eT(0))  { map_ref.erase(it); }
-      }
-    else
-      {
-      map_ref.erase(it);
-      }
+    eT& val = (*it).second;
+    
+    val *= in_val;
+    
+    if(val == eT(0))  { map_ref.erase(it); }
+    }
+  else
+    {
+    const eT val = eT(0) * in_val;  // in case in_val is inf or nan
+    
+    if(val != eT(0))  { parent.set_val(index, val); }
     }
   }
 
@@ -1001,7 +996,7 @@ arma_inline
 void
 MapMat_val<eT>::operator/=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typename MapMat<eT>::map_type& map_ref = *(parent.map_ptr);
   
@@ -1018,9 +1013,7 @@ MapMat_val<eT>::operator/=(const eT in_val)
     }
   else
     {
-    // silly operation, but included for completness
-    
-    const eT val = eT(0) / in_val;
+    const eT val = eT(0) / in_val;  // in case in_val is zero or nan
     
     if(val != eT(0))  { parent.set_val(index, val); }
     }
@@ -1033,7 +1026,7 @@ arma_inline
 void
 MapMat_val<eT>::operator++()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typename MapMat<eT>::map_type& map_ref = *(parent.map_ptr);
   
@@ -1051,7 +1044,7 @@ arma_inline
 void
 MapMat_val<eT>::operator++(int)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).operator++();
   }
@@ -1063,7 +1056,7 @@ arma_inline
 void
 MapMat_val<eT>::operator--()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typename MapMat<eT>::map_type& map_ref = *(parent.map_ptr);
   
@@ -1081,7 +1074,7 @@ arma_inline
 void
 MapMat_val<eT>::operator--(int)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   (*this).operator--();
   }
@@ -1102,7 +1095,7 @@ SpMat_MapMat_val<eT>::SpMat_MapMat_val(SpMat<eT>& in_s_parent, MapMat<eT>& in_m_
   , row     (in_row     )
   , col     (in_col     )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -1111,7 +1104,7 @@ template<typename eT>
 inline
 SpMat_MapMat_val<eT>::operator eT() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpMat<eT>& const_s_parent = s_parent;  // declare as const for clarity of intent
   
@@ -1125,7 +1118,7 @@ inline
 typename get_pod_type<eT>::result
 SpMat_MapMat_val<eT>::real() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -1141,7 +1134,7 @@ inline
 typename get_pod_type<eT>::result
 SpMat_MapMat_val<eT>::imag() const
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -1157,7 +1150,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator=(const SpMat_MapMat_val<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const eT in_val = eT(x);
   
@@ -1171,7 +1164,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   #if defined(ARMA_USE_OPENMP)
     {
@@ -1180,13 +1173,11 @@ SpMat_MapMat_val<eT>::operator=(const eT in_val)
       (*this).set(in_val);
       }
     }
-  #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #elif defined(ARMA_USE_STD_MUTEX)
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).set(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1204,7 +1195,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator+=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(in_val == eT(0))  { return *this; }
   
@@ -1215,13 +1206,11 @@ SpMat_MapMat_val<eT>::operator+=(const eT in_val)
       (*this).add(in_val);
       }
     }
-  #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #elif defined(ARMA_USE_STD_MUTEX)
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).add(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1239,7 +1228,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator-=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(in_val == eT(0))  { return *this; }
   
@@ -1250,13 +1239,11 @@ SpMat_MapMat_val<eT>::operator-=(const eT in_val)
       (*this).sub(in_val);
       }
     }
-  #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #elif defined(ARMA_USE_STD_MUTEX)
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).sub(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1274,7 +1261,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator*=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   #if defined(ARMA_USE_OPENMP)
     {
@@ -1283,13 +1270,11 @@ SpMat_MapMat_val<eT>::operator*=(const eT in_val)
       (*this).mul(in_val);
       }
     }
-  #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #elif defined(ARMA_USE_STD_MUTEX)
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).mul(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1307,7 +1292,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator/=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   #if defined(ARMA_USE_OPENMP)
     {
@@ -1316,13 +1301,11 @@ SpMat_MapMat_val<eT>::operator/=(const eT in_val)
       (*this).div(in_val);
       }
     }
-  #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #elif defined(ARMA_USE_STD_MUTEX)
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).div(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1340,7 +1323,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator++()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return (*this).operator+=( eT(1) );
   }
@@ -1349,11 +1332,10 @@ SpMat_MapMat_val<eT>::operator++()
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 SpMat_MapMat_val<eT>::operator++(int)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const eT old_val = eT(*this);
   
@@ -1369,7 +1351,7 @@ inline
 SpMat_MapMat_val<eT>&
 SpMat_MapMat_val<eT>::operator--()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return (*this).operator-=( eT(1) );
   }
@@ -1378,11 +1360,10 @@ SpMat_MapMat_val<eT>::operator--()
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 SpMat_MapMat_val<eT>::operator--(int)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const eT old_val = eT(*this);
   
@@ -1398,7 +1379,7 @@ inline
 void
 SpMat_MapMat_val<eT>::set(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool done = (s_parent.sync_state == 0) ? s_parent.try_set_value_csc(row, col, in_val) : false;
   
@@ -1423,7 +1404,7 @@ inline
 void
 SpMat_MapMat_val<eT>::add(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool done = (s_parent.sync_state == 0) ? s_parent.try_add_value_csc(row, col, in_val) : false;
     
@@ -1454,7 +1435,7 @@ inline
 void
 SpMat_MapMat_val<eT>::sub(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool done = (s_parent.sync_state == 0) ? s_parent.try_sub_value_csc(row, col, in_val) : false;
   
@@ -1485,7 +1466,7 @@ inline
 void
 SpMat_MapMat_val<eT>::mul(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool done = (s_parent.sync_state == 0) ? s_parent.try_mul_value_csc(row, col, in_val) : false;
   
@@ -1502,18 +1483,11 @@ SpMat_MapMat_val<eT>::mul(const eT in_val)
     
     if(it != it_end)
       {
-      if(in_val != eT(0))
-        {
-        eT& val = (*it).second;
-        
-        val *= in_val;
-        
-        if(val == eT(0))  { map_ref.erase(it); }
-        }
-      else
-        {
-        map_ref.erase(it);
-        }
+      eT& val = (*it).second;
+      
+      val *= in_val;
+      
+      if(val == eT(0))  { map_ref.erase(it); }
       
       s_parent.sync_state = 1;
       
@@ -1521,19 +1495,15 @@ SpMat_MapMat_val<eT>::mul(const eT in_val)
       }
     else
       {
-      // element not found, ie. it's zero; zero multiplied by anything is zero, except for nan and inf
-      if(arma_isfinite(in_val) == false)
+      const eT result = eT(0) * in_val;  // in case in_val is inf or nan
+      
+      if(result != eT(0))
         {
-        const eT result = eT(0) * in_val;
+        m_parent.set_val(index, result);
         
-        if(result != eT(0))  // paranoia, in case compiling with -ffast-math
-          {
-          m_parent.set_val(index, result);
-          
-          s_parent.sync_state = 1;
-          
-          access::rw(s_parent.n_nonzero) = m_parent.get_n_nonzero();
-          }
+        s_parent.sync_state = 1;
+        
+        access::rw(s_parent.n_nonzero) = m_parent.get_n_nonzero();
         }
       }
     }
@@ -1546,7 +1516,7 @@ inline
 void
 SpMat_MapMat_val<eT>::div(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const bool done = (s_parent.sync_state == 0) ? s_parent.try_div_value_csc(row, col, in_val) : false;
   
@@ -1575,19 +1545,15 @@ SpMat_MapMat_val<eT>::div(const eT in_val)
       }
     else
       {
-      // element not found, ie. it's zero; zero divided by anything is zero, except for zero and nan
-      if( (in_val == eT(0)) || (arma_isnan(in_val)) )
+      const eT result = eT(0) / in_val;  // in case in_val is zero or nan
+      
+      if(result != eT(0))
         {
-        const eT result = eT(0) / in_val;
+        m_parent.set_val(index, result);
         
-        if(result != eT(0))  // paranoia, in case compiling with -ffast-math
-          {
-          m_parent.set_val(index, result);
-          
-          s_parent.sync_state = 1;
-          
-          access::rw(s_parent.n_nonzero) = m_parent.get_n_nonzero();
-          }
+        s_parent.sync_state = 1;
+        
+        access::rw(s_parent.n_nonzero) = m_parent.get_n_nonzero();
         }
       }
     }
@@ -1606,7 +1572,7 @@ SpSubview_MapMat_val<eT>::SpSubview_MapMat_val(SpSubview<eT>& in_sv_parent, MapM
   : SpMat_MapMat_val<eT>(access::rw(in_sv_parent.m), in_m_parent, in_row, in_col)
   , sv_parent(in_sv_parent)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -1616,7 +1582,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator=(const SpSubview_MapMat_val<eT>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const eT in_val = eT(x);
   
@@ -1630,7 +1596,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1649,7 +1615,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator+=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1668,7 +1634,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator-=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1687,7 +1653,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator*=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1706,7 +1672,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator/=(const eT in_val)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1725,7 +1691,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator++()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1741,11 +1707,10 @@ SpSubview_MapMat_val<eT>::operator++()
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 SpSubview_MapMat_val<eT>::operator++(int)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1764,7 +1729,7 @@ inline
 SpSubview_MapMat_val<eT>&
 SpSubview_MapMat_val<eT>::operator--()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   
@@ -1780,11 +1745,10 @@ SpSubview_MapMat_val<eT>::operator--()
 
 template<typename eT>
 inline
-arma_warn_unused
 eT
 SpSubview_MapMat_val<eT>::operator--(int)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword old_n_nonzero = sv_parent.m.n_nonzero;
   

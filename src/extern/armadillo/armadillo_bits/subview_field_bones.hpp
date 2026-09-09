@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +21,7 @@
 
 
 //! Class for storing data required to construct or apply operations to a subfield
-//! (i.e. where the subfield starts and ends as well as a reference/pointer to the original field),
+//! (ie. where the subfield starts and ends as well as a reference/pointer to the original field),
 template<typename oT>
 class subview_field
   {
@@ -53,25 +55,25 @@ class subview_field
   inline void operator= (const field<oT>& x);
   inline void operator= (const subview_field& x);
   
-  arma_inline       oT& operator[](const uword i);
-  arma_inline const oT& operator[](const uword i) const;
+  arma_warn_unused arma_inline       oT& operator[](const uword i);
+  arma_warn_unused arma_inline const oT& operator[](const uword i) const;
   
-  arma_inline       oT& operator()(const uword i);
-  arma_inline const oT& operator()(const uword i) const;
+  arma_warn_unused arma_inline       oT& operator()(const uword i);
+  arma_warn_unused arma_inline const oT& operator()(const uword i) const;
   
-  arma_inline       oT&         at(const uword row, const uword col);
-  arma_inline const oT&         at(const uword row, const uword col) const;
+  arma_warn_unused arma_inline       oT&         at(const uword row, const uword col);
+  arma_warn_unused arma_inline const oT&         at(const uword row, const uword col) const;
 
-  arma_inline       oT&         at(const uword row, const uword col, const uword slice);
-  arma_inline const oT&         at(const uword row, const uword col, const uword slice) const;
+  arma_warn_unused arma_inline       oT&         at(const uword row, const uword col, const uword slice);
+  arma_warn_unused arma_inline const oT&         at(const uword row, const uword col, const uword slice) const;
   
-  arma_inline       oT& operator()(const uword row, const uword col);
-  arma_inline const oT& operator()(const uword row, const uword col) const;
+  arma_warn_unused arma_inline       oT& operator()(const uword row, const uword col);
+  arma_warn_unused arma_inline const oT& operator()(const uword row, const uword col) const;
   
-  arma_inline       oT& operator()(const uword row, const uword col, const uword slice);
-  arma_inline const oT& operator()(const uword row, const uword col, const uword slice) const;
+  arma_warn_unused arma_inline       oT& operator()(const uword row, const uword col, const uword slice);
+  arma_warn_unused arma_inline const oT& operator()(const uword row, const uword col, const uword slice) const;
   
-  arma_inline bool is_empty() const;
+  arma_warn_unused arma_inline bool is_empty() const;
   
   inline bool check_overlap(const subview_field& x) const;
   

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,11 +29,13 @@ class diagview : public Base< eT, diagview<eT> >
   typedef eT                                elem_type;
   typedef typename get_pod_type<eT>::result pod_type;
   
-  arma_aligned const Mat<eT>& m;
+  const Mat<eT>& m;
   
   static constexpr bool is_row  = false;
   static constexpr bool is_col  = true;
   static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = true;
   
   const uword row_offset;
   const uword col_offset;
@@ -87,10 +91,6 @@ class diagview : public Base< eT, diagview<eT> >
   arma_inline eT  operator()(const uword in_n_row, const uword in_n_col) const;
   
   
-  arma_inline const Op<diagview<eT>,op_htrans>  t() const;
-  arma_inline const Op<diagview<eT>,op_htrans> ht() const;
-  arma_inline const Op<diagview<eT>,op_strans> st() const;
-  
   inline void replace(const eT old_val, const eT new_val);
   
   inline void clean(const pod_type threshold);
@@ -109,6 +109,9 @@ class diagview : public Base< eT, diagview<eT> >
   inline static void minus_inplace(Mat<eT>& out, const diagview& in);
   inline static void schur_inplace(Mat<eT>& out, const diagview& in);
   inline static void   div_inplace(Mat<eT>& out, const diagview& in);
+  
+  template<typename eT2>
+  inline bool is_alias(const Mat<eT2>& X) const;
   
   
   friend class Mat<eT>;

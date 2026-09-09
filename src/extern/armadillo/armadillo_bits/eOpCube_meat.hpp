@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 eOpCube<T1, eop_type>::eOpCube(const BaseCube<typename T1::elem_type, T1>& in_m)
   : P (in_m.get_ref())
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
   
 
@@ -35,7 +37,7 @@ eOpCube<T1, eop_type>::eOpCube(const BaseCube<typename T1::elem_type, T1>& in_m,
   : P   (in_m.get_ref())
   , aux (in_aux)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
   
 
@@ -47,7 +49,7 @@ eOpCube<T1, eop_type>::eOpCube(const BaseCube<typename T1::elem_type, T1>& in_m,
   , aux_uword_a (in_aux_uword_a)
   , aux_uword_b (in_aux_uword_b)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -60,7 +62,7 @@ eOpCube<T1, eop_type>::eOpCube(const BaseCube<typename T1::elem_type, T1>& in_m,
   , aux_uword_b (in_aux_uword_b)
   , aux_uword_c (in_aux_uword_c)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -74,7 +76,7 @@ eOpCube<T1, eop_type>::eOpCube(const BaseCube<typename T1::elem_type, T1>& in_m,
   , aux_uword_b (in_aux_uword_b)
   , aux_uword_c (in_aux_uword_c)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -83,7 +85,7 @@ template<typename T1, typename eop_type>
 inline
 eOpCube<T1, eop_type>::~eOpCube()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 

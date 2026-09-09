@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,24 +21,25 @@
   #undef  H5_USE_110_API
   #define H5_USE_110_API
   
-  #if !defined(ARMA_HDF5_INCLUDE_DIR)
-    #include <hdf5.h>
+  #if defined(__has_include)
+    #if __has_include(<hdf5.h>)
+      #include <hdf5.h>
+    #else
+      #undef ARMA_USE_HDF5
+      #pragma message ("WARNING: use of HDF5 disabled; hdf5.h header not found")
+    #endif
   #else
-    #define ARMA_STR1(x) x
-    #define ARMA_STR2(x) ARMA_STR1(x)
-    
-    #define ARMA_HDF5_HEADER ARMA_STR2(ARMA_HDF5_INCLUDE_DIR)ARMA_STR2(hdf5.h)
-    
-    #include ARMA_INCFILE_WRAP(ARMA_HDF5_HEADER)
-    
-    #undef ARMA_STR1
-    #undef ARMA_STR2
-    #undef ARMA_HDF5_HEADER
+    #include <hdf5.h>
   #endif
-
-  #if defined(H5_USE_16_API_DEFAULT) || defined(H5_USE_16_API)
-    #pragma message ("WARNING: disabling use of HDF5 due to its incompatible configuration")
+  
+  #if defined(H5_USE_16_API) || defined(H5_USE_16_API_DEFAULT)
+    #pragma message ("WARNING: use of HDF5 disabled; incompatible configuration: H5_USE_16_API or H5_USE_16_API_DEFAULT")
     #undef ARMA_USE_HDF5
-    #undef ARMA_USE_HDF5_ALT
   #endif
+  
+  // // TODO
+  // #if defined(H5_USE_18_API) || defined(H5_USE_18_API_DEFAULT)
+  //   #pragma message ("WARNING: detected possibly incompatible configuration of HDF5: H5_USE_18_API or H5_USE_18_API_DEFAULT")
+  // #endif
+  
 #endif

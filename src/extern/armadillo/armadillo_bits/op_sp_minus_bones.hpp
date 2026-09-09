@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,22 +22,16 @@
 
 
 // Subtract a sparse object from a scalar; the output will be a dense object.
-class op_sp_minus_pre
+struct op_sp_minus_pre
   : public traits_op_passthru
   {
-  public:
-
   template<typename T1>
   inline static void apply(Mat<typename T1::elem_type>& out, const SpToDOp<T1,op_sp_minus_pre>& in);
-
-  // force apply into sparse matrix
-  template<typename T1>
-  inline static void apply(SpMat<typename T1::elem_type>& out, const SpToDOp<T1,op_sp_minus_pre>& in);
-
+  
   // used for the optimization of sparse % (scalar - sparse)
   template<typename eT, typename T2, typename T3>
   inline static void apply_inside_schur(SpMat<eT>& out, const T2& x, const SpToDOp<T3, op_sp_minus_pre>& y);
-
+  
   // used for the optimization of sparse / (scalar - sparse)
   template<typename eT, typename T2, typename T3>
   inline static void apply_inside_div(SpMat<eT>& out, const T2& x, const SpToDOp<T3, op_sp_minus_pre>& y);
@@ -44,22 +40,16 @@ class op_sp_minus_pre
 
 
 // Subtract a scalar from a sparse object; the output will be a dense object.
-class op_sp_minus_post
+struct op_sp_minus_post
   : public traits_op_passthru
   {
-  public:
-
   template<typename T1>
   inline static void apply(Mat<typename T1::elem_type>& out, const SpToDOp<T1,op_sp_minus_post>& in);
-
-  // force apply into sparse matrix
-  template<typename T1>
-  inline static void apply(SpMat<typename T1::elem_type>& out, const SpToDOp<T1,op_sp_minus_post>& in);
-
+  
   // used for the optimization of sparse % (sparse - scalar)
   template<typename eT, typename T2, typename T3>
   inline static void apply_inside_schur(SpMat<eT>& out, const T2& x, const SpToDOp<T3, op_sp_minus_post>& y);
-
+  
   // used for the optimization of sparse / (sparse - scalar)
   template<typename eT, typename T2, typename T3>
   inline static void apply_inside_div(SpMat<eT>& out, const T2& x, const SpToDOp<T3, op_sp_minus_post>& y);
