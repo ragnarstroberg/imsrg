@@ -980,7 +980,8 @@ namespace Commutator
         arma::mat Chi_222_b =  Eta_mat_bra * Eta_mat_nnnn_bra * Gamma_mat;
         if ( ch_bra==ch_ket)
         {
-          Chi_222_b += Chi_222_b.t();
+//          Chi_222_b += Chi_222_b.t();
+          Chi_222_b += hGamma*Chi_222_b.t(); // Missing factor found by Bingcheng Sep 2026
         }
         else
         {
@@ -1442,11 +1443,12 @@ namespace Commutator
               if (p <= e)
               {
 //                zij += IntermediateTwobody[ch_cc_pe,ch_cc_qe](ind_pe, ind_qe);
-                zij += EtaEtaGamma[{ch_cc_pe,ch_cc_qe}](ind_pe, ind_qe);
+                zij += EtaEtaGamma[{ch_cc_pe,ch_cc_qe}](ind_pe, ind_qe); 
               }
               else
               {
-                zij -= EtaEtaGamma[{ch_cc_pe,ch_cc_qe}](ind_ep, ind_eq);
+//                zij -= EtaEtaGamma[{ch_cc_pe,ch_cc_qe}](ind_ep, ind_eq);
+                zij -= hGamma * EtaEtaGamma[{ch_cc_pe,ch_cc_qe}](ind_ep, ind_eq); // Bug found by Bingcheng Sep 2026
               }
 
               if (e <= q)
@@ -1455,7 +1457,8 @@ namespace Commutator
               }
               else
               {
-                zij += EtaEtaGamma[{ch_cc_qe,ch_cc_pe}](ind_qe, ind_pe);
+//                zij += EtaEtaGamma[{ch_cc_qe,ch_cc_pe}](ind_qe, ind_pe);
+                zij += hGamma * EtaEtaGamma[{ch_cc_qe,ch_cc_pe}](ind_qe, ind_pe); // Bug found by Bingcheng Sep 2026
               }
             }
             Z.OneBody(p, q) += zij / j2hat2;
@@ -2370,7 +2373,7 @@ namespace Commutator
           continue;
         // Diagram IIa and IIc
         arma::mat Multi_matirx = Chi_III_Op.GetMatrix(ch_bra, ch_bra) * Gamma.TwoBody.GetMatrix(ch_bra, ch_ket);
-        Multi_matirx += hZ * Gamma.TwoBody.GetMatrix(ch_bra, ch_ket) * (Chi_III_Op.GetMatrix(ch_ket, ch_ket).t());
+        Multi_matirx += hZ * hGamma * Gamma.TwoBody.GetMatrix(ch_bra, ch_ket) * (Chi_III_Op.GetMatrix(ch_ket, ch_ket).t()); // Bug found by Bingcheng Sep 2026
         // Diagram IIIc and Diagram IIId
         Multi_matirx += -Eta.TwoBody.GetMatrix(ch_bra) * Chi_VI_Op.GetMatrix(ch_bra, ch_ket) - (Chi_VI_II_Op.GetMatrix(ch_bra, ch_ket) * Eta.TwoBody.GetMatrix(ch_ket));
         Z2.GetMatrix(ch_bra, ch_ket) += Multi_matirx;
