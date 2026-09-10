@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +22,8 @@
 
 
 
-class glue_polyfit
+struct glue_polyfit
   {
-  public:
-  
   template<typename T1, typename T2>
   struct traits
     {
@@ -36,7 +36,11 @@ class glue_polyfit
   
   template<typename T1, typename T2> inline static bool apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type,T1>& X_expr, const Base<typename T1::elem_type, T2>& Y_expr, const uword N);
   
+  template<typename T1, typename T2> inline static bool apply_direct(Mat_noalias<typename T1::elem_type>& out, const Base<typename T1::elem_type,T1>& X_expr, const Base<typename T1::elem_type, T2>& Y_expr, const uword N);
+  
   template<typename T1, typename T2> inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_polyfit>& expr);
+  
+  template<typename T1, typename T2> inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Glue<T1,T2,glue_polyfit>& expr);
   };
 
 

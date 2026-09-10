@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,14 +21,12 @@
 
 
 
-//! \brief
-//! both input matrices have the same element type
 template<typename eT>
 inline
 void
 glue_kron::direct_kron(Mat<eT>& out, const Mat<eT>& A, const Mat<eT>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword A_rows = A.n_rows;
   const uword A_cols = A.n_cols;
@@ -48,15 +48,12 @@ glue_kron::direct_kron(Mat<eT>& out, const Mat<eT>& A, const Mat<eT>& B)
 
 
 
-//! \brief
-//! different types of input matrices
-//! A -> complex, B -> basic element type
 template<typename T>
 inline
 void
 glue_kron::direct_kron(Mat< std::complex<T> >& out, const Mat< std::complex<T> >& A, const Mat<T>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename std::complex<T> eT;
   
@@ -82,15 +79,12 @@ glue_kron::direct_kron(Mat< std::complex<T> >& out, const Mat< std::complex<T> >
 
 
 
-//! \brief
-//! different types of input matrices
-//! A -> basic element type, B -> complex
 template<typename T>
 inline
 void
 glue_kron::direct_kron(Mat< std::complex<T> >& out, const Mat<T>& A, const Mat< std::complex<T> >& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword A_rows = A.n_rows;
   const uword A_cols = A.n_cols;
@@ -112,35 +106,45 @@ glue_kron::direct_kron(Mat< std::complex<T> >& out, const Mat<T>& A, const Mat< 
 
 
 
-//! \brief
-//! apply Kronecker product for two objects with same element type
 template<typename T1, typename T2>
 inline
 void
 glue_kron::apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_kron>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const unwrap<T1> A_tmp(X.A);
-  const unwrap<T2> B_tmp(X.B);
+  const quasi_unwrap<T1> UA(X.A);
+  const quasi_unwrap<T2> UB(X.B);
   
-  const Mat<eT>& A = A_tmp.M;
-  const Mat<eT>& B = B_tmp.M;
-  
-  if( (&out != &A) && (&out != &B) )
-    {
-    glue_kron::direct_kron(out, A, B); 
-    }
-  else
+  if(UA.is_alias(out) || UB.is_alias(out))
     {
     Mat<eT> tmp;
     
-    glue_kron::direct_kron(tmp, A, B);
+    glue_kron::direct_kron(tmp, UA.M, UB.M);
     
     out.steal_mem(tmp);
     }
+  else
+    {
+    glue_kron::direct_kron(out, UA.M, UB.M); 
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+inline
+void
+glue_kron::apply(Mat_noalias<typename T1::elem_type>& out, const Glue<T1,T2,glue_kron>& X)
+  {
+  arma_debug_sigprint();
+  
+  const quasi_unwrap<T1> UA(X.A);
+  const quasi_unwrap<T2> UB(X.B);
+  
+  glue_kron::direct_kron(out, UA.M, UB.M); 
   }
 
 

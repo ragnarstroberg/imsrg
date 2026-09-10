@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,8 +64,8 @@ class running_stat_vec
   
   inline running_stat_vec& operator=(const running_stat_vec& in_rsv);
   
-  template<typename T1> arma_hot inline void operator() (const Base<              T, T1>& X);
-  template<typename T1> arma_hot inline void operator() (const Base<std::complex<T>, T1>& X);
+  template<typename T1> inline void operator() (const Base<              T, T1>& X);
+  template<typename T1> inline void operator() (const Base<std::complex<T>, T1>& X);
   
   inline void reset();
   

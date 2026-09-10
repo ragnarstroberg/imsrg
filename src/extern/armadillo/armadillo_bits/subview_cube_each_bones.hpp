@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +28,8 @@ class subview_cube_each_common
   
   const Cube<eT>& P;
   
-  inline void check_size(const Mat<eT>& A) const;
+  template<typename eT2>
+  inline void check_size(const Mat<eT2>& A) const;
   
   
   protected:
@@ -34,12 +37,13 @@ class subview_cube_each_common
   arma_inline subview_cube_each_common(const Cube<eT>& in_p);
        inline subview_cube_each_common() = delete;
   
-  arma_cold inline const std::string incompat_size_string(const Mat<eT>& A) const;
+  template<typename eT2>
+  arma_cold inline const std::string incompat_size_string(const Mat<eT2>& A) const;
   };
 
 
 
-
+// NOTE: deliberately not derived from BaseCube
 template<typename eT>
 class subview_cube_each1 : public subview_cube_each_common<eT>
   {
@@ -67,6 +71,7 @@ class subview_cube_each1 : public subview_cube_each_common<eT>
 
 
 
+// NOTE: deliberately not derived from BaseCube
 template<typename eT, typename TB>
 class subview_cube_each2 : public subview_cube_each_common<eT>
   {
@@ -102,7 +107,7 @@ class subview_cube_each1_aux
   
   template<typename eT, typename T2>
   static inline Cube<eT> operator_plus(const subview_cube_each1<eT>& X, const Base<eT,T2>& Y);
-    
+  
   template<typename eT, typename T2>
   static inline Cube<eT> operator_minus(const subview_cube_each1<eT>& X, const Base<eT,T2>& Y);
   
@@ -133,7 +138,7 @@ class subview_cube_each2_aux
   
   template<typename eT, typename TB, typename T2>
   static inline Cube<eT> operator_plus(const subview_cube_each2<eT,TB>& X, const Base<eT,T2>& Y);
-    
+  
   template<typename eT, typename TB, typename T2>
   static inline Cube<eT> operator_minus(const subview_cube_each2<eT,TB>& X, const Base<eT,T2>& Y);
   

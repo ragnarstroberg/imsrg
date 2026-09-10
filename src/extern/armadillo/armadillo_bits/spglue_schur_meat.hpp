@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +22,11 @@
 
 
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 spglue_schur::apply(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_schur>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -50,23 +51,37 @@ spglue_schur::apply(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglu
 
 
 
+template<typename T1, typename T2>
+inline
+void
+spglue_schur::apply(SpMat_noalias<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_schur>& X)
+  {
+  arma_debug_sigprint();
+  
+  const SpProxy<T1> pa(X.A);
+  const SpProxy<T2> pb(X.B);
+  
+  spglue_schur::apply_noalias(out, pa, pb);
+  }
+
+
+
 template<typename eT, typename T1, typename T2>
-arma_hot
 inline
 void
 spglue_schur::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy<T2>& pb)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "element-wise multiplication");
+  arma_conform_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "element-wise multiplication");
   
-  if( (pa.get_n_nonzero() == 0) || (pb.get_n_nonzero() == 0) )
+  if( (pa.get_n_nonzero() == 0) && (pb.get_n_nonzero() == 0) )
     {
     out.zeros(pa.get_n_rows(), pa.get_n_cols());
     return;
     }
   
-  const uword max_n_nonzero = (std::min)(pa.get_n_nonzero(), pb.get_n_nonzero());
+  const uword max_n_nonzero = pa.get_n_nonzero() + pb.get_n_nonzero();
   
   // Resize memory to upper bound
   out.reserve(pa.get_n_rows(), pa.get_n_cols(), max_n_nonzero);
@@ -82,24 +97,19 @@ spglue_schur::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy
   
   while( (x_it != x_end) || (y_it != y_end) )
     {
+    eT out_val;
+    
     const uword x_it_row = x_it.row();
     const uword x_it_col = x_it.col();
     
     const uword y_it_row = y_it.row();
     const uword y_it_col = y_it.col();
     
+    bool use_y_loc = false;
+    
     if(x_it == y_it)
       {
-      const eT out_val = (*x_it) * (*y_it);
-      
-      if(out_val != eT(0))
-        {
-        access::rw(out.values[count]) = out_val;
-        
-        access::rw(out.row_indices[count]) = x_it_row;
-        access::rw(out.col_ptrs[x_it_col + 1])++;
-        ++count;
-        }
+      out_val = (*x_it) * (*y_it);
       
       ++x_it;
       ++y_it;
@@ -108,12 +118,30 @@ spglue_schur::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy
       {
       if((x_it_col < y_it_col) || ((x_it_col == y_it_col) && (x_it_row < y_it_row))) // if y is closer to the end
         {
+        out_val = (*x_it) * eT(0);  // in case (*x_it) is inf or nan
+        
         ++x_it;
         }
       else
         {
+        out_val = eT(0) * (*y_it);  // in case (*y_it) is inf or nan
+        
         ++y_it;
+        
+        use_y_loc = true;
         }
+      }
+    
+    if(out_val != eT(0))
+      {
+      access::rw(out.values[count]) = out_val;
+      
+      const uword out_row = (use_y_loc == false) ? x_it_row : y_it_row;
+      const uword out_col = (use_y_loc == false) ? x_it_col : y_it_col;
+      
+      access::rw(out.row_indices[count]) = out_row;
+      access::rw(out.col_ptrs[out_col + 1])++;
+      ++count;
       }
     
     arma_check( (count > max_n_nonzero), "internal error: spglue_schur::apply_noalias(): count > max_n_nonzero" );
@@ -148,12 +176,11 @@ spglue_schur::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy
 
 
 template<typename eT>
-arma_hot
 inline
 void
 spglue_schur::apply_noalias(SpMat<eT>& out, const SpMat<eT>& A, const SpMat<eT>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const SpProxy< SpMat<eT> > pa(A);
   const SpProxy< SpMat<eT> > pb(B);
@@ -174,14 +201,14 @@ inline
 void
 spglue_schur_misc::dense_schur_sparse(SpMat<typename T1::elem_type>& out, const T1& x, const T2& y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const   Proxy<T1> pa(x);
   const SpProxy<T2> pb(y);
   
-  arma_debug_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "element-wise multiplication");
+  arma_conform_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "element-wise multiplication");
   
   const uword max_n_nonzero = pb.get_n_nonzero();
   
@@ -246,7 +273,7 @@ inline
 void
 spglue_schur_mixed::apply(SpMat<typename eT_promoter<T1,T2>::eT>& out, const mtSpGlue<typename eT_promoter<T1,T2>::eT, T1, T2, spglue_schur_mixed>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT1;
   typedef typename T2::elem_type eT2;
@@ -319,7 +346,7 @@ inline
 void
 spglue_schur_mixed::dense_schur_sparse(SpMat< typename promote_type<typename T1::elem_type, typename T2::elem_type >::result>& out, const T1& X, const T2& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT1;
   typedef typename T2::elem_type eT2;
@@ -331,7 +358,7 @@ spglue_schur_mixed::dense_schur_sparse(SpMat< typename promote_type<typename T1:
   const   Proxy<T1> pa(X);
   const SpProxy<T2> pb(Y);
   
-  arma_debug_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "element-wise multiplication");
+  arma_conform_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "element-wise multiplication");
   
   // count new size
   uword new_n_nonzero = 0;

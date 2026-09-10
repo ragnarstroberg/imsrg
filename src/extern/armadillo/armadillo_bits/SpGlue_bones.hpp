@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +22,8 @@
 
 
 template<typename T1, typename T2, typename spglue_type>
-class SpGlue : public SpBase< typename T1::elem_type, SpGlue<T1, T2, spglue_type> >
+struct SpGlue : public SpBase< typename T1::elem_type, SpGlue<T1, T2, spglue_type> >
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   
@@ -31,11 +31,14 @@ class SpGlue : public SpBase< typename T1::elem_type, SpGlue<T1, T2, spglue_type
   static constexpr bool is_col  = spglue_type::template traits<T1,T2>::is_col;
   static constexpr bool is_xvec = spglue_type::template traits<T1,T2>::is_xvec;
   
+  static constexpr bool has_subview = T1::has_subview || T2::has_subview;
+  
   inline  SpGlue(const T1& in_A, const T2& in_B);
   inline  SpGlue(const T1& in_A, const T2& in_B, const elem_type in_aux);
   inline ~SpGlue();
   
-  arma_inline bool is_alias(const SpMat<elem_type>& X) const;
+  template<typename eT2>
+  arma_inline bool is_alias(const SpMat<eT2>& X) const;
   
   const T1&       A;    //!< first operand;  must be derived from SpBase
   const T2&       B;    //!< second operand; must be derived from SpBase

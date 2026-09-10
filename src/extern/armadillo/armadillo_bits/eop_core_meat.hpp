@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -239,17 +241,16 @@
 
 template<typename eop_type>
 template<typename outT, typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply(outT& out, const eOp<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   // NOTE: we're assuming that the matrix has already been set to the correct size and there is no aliasing;
-  // size setting and alias checking is done by either the Mat contructor or operator=()
+  // size setting and alias checking is done by either the Mat constructor or operator=()
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -315,19 +316,18 @@ eop_core<eop_type>::apply(outT& out, const eOp<T1, eop_type>& x)
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_plus(Mat<typename T1::elem_type>& out, const eOp<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "addition");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "addition");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -390,19 +390,18 @@ eop_core<eop_type>::apply_inplace_plus(Mat<typename T1::elem_type>& out, const e
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_minus(Mat<typename T1::elem_type>& out, const eOp<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "subtraction");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "subtraction");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -465,19 +464,18 @@ eop_core<eop_type>::apply_inplace_minus(Mat<typename T1::elem_type>& out, const 
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_schur(Mat<typename T1::elem_type>& out, const eOp<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise multiplication");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise multiplication");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -540,19 +538,18 @@ eop_core<eop_type>::apply_inplace_schur(Mat<typename T1::elem_type>& out, const 
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_div(Mat<typename T1::elem_type>& out, const eOp<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise division");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise division");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -620,17 +617,16 @@ eop_core<eop_type>::apply_inplace_div(Mat<typename T1::elem_type>& out, const eO
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply(Cube<typename T1::elem_type>& out, const eOpCube<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   // NOTE: we're assuming that the matrix has already been set to the correct size and there is no aliasing;
-  // size setting and alias checking is done by either the Mat contructor or operator=()
+  // size setting and alias checking is done by either the Mat constructor or operator=()
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -697,12 +693,11 @@ eop_core<eop_type>::apply(Cube<typename T1::elem_type>& out, const eOpCube<T1, e
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_plus(Cube<typename T1::elem_type>& out, const eOpCube<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -710,7 +705,7 @@ eop_core<eop_type>::apply_inplace_plus(Cube<typename T1::elem_type>& out, const 
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "addition");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "addition");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -773,12 +768,11 @@ eop_core<eop_type>::apply_inplace_plus(Cube<typename T1::elem_type>& out, const 
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_minus(Cube<typename T1::elem_type>& out, const eOpCube<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -786,7 +780,7 @@ eop_core<eop_type>::apply_inplace_minus(Cube<typename T1::elem_type>& out, const
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "subtraction");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "subtraction");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -849,12 +843,11 @@ eop_core<eop_type>::apply_inplace_minus(Cube<typename T1::elem_type>& out, const
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_schur(Cube<typename T1::elem_type>& out, const eOpCube<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -862,7 +855,7 @@ eop_core<eop_type>::apply_inplace_schur(Cube<typename T1::elem_type>& out, const
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise multiplication");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise multiplication");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -925,12 +918,11 @@ eop_core<eop_type>::apply_inplace_schur(Cube<typename T1::elem_type>& out, const
 
 template<typename eop_type>
 template<typename T1>
-arma_hot
 inline
 void
 eop_core<eop_type>::apply_inplace_div(Cube<typename T1::elem_type>& out, const eOpCube<T1, eop_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -938,7 +930,7 @@ eop_core<eop_type>::apply_inplace_div(Cube<typename T1::elem_type>& out, const e
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise division");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise division");
   
   const eT  k       = x.aux;
         eT* out_mem = out.memptr();
@@ -1113,9 +1105,6 @@ template<> template<typename eT> arma_inline eT
 eop_core<eop_sinc             >::process(const eT val, const eT  ) { return arma_sinc(val);           }
 
 template<> template<typename eT> arma_inline eT
-eop_core<eop_eps              >::process(const eT val, const eT  ) { return eop_aux::direct_eps(val); }
-
-template<> template<typename eT> arma_inline eT
 eop_core<eop_abs              >::process(const eT val, const eT  ) { return eop_aux::arma_abs(val);   }
 
 template<> template<typename eT> arma_inline eT
@@ -1141,6 +1130,9 @@ eop_core<eop_trunc            >::process(const eT val, const eT  ) { return eop_
 
 template<> template<typename eT> arma_inline eT
 eop_core<eop_sign             >::process(const eT val, const eT  ) { return arma_sign(val);           }
+
+template<> template<typename eT> arma_inline eT
+eop_core<eop_cbrt             >::process(const eT val, const eT  ) { return eop_aux::cbrt(val);       }
 
 template<> template<typename eT> arma_inline eT
 eop_core<eop_erf              >::process(const eT val, const eT  ) { return eop_aux::erf(val);        }

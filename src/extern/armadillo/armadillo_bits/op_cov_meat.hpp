@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,14 +27,14 @@ inline
 void
 op_cov::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_cov>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword norm_type = in.aux_uword_a;
   
-  const unwrap<T1>   U(in.m);
-  const Mat<eT>& A = U.M;
+  const plain_unwrap<T1> U(in.m);
+  const Mat<eT>& A     = U.M;
   
   if(A.n_elem == 0)
     {
@@ -60,7 +62,7 @@ inline
 void
 op_cov::apply(Mat<typename T1::elem_type>& out, const Op< Op<T1,op_htrans>, op_cov>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -74,8 +76,8 @@ op_cov::apply(Mat<typename T1::elem_type>& out, const Op< Op<T1,op_htrans>, op_c
     }
   else
     {
-    const unwrap<T1>   U(in.m.m);
-    const Mat<eT>& A = U.M;
+    const plain_unwrap<T1> U(in.m.m);
+    const Mat<eT>& A     = U.M;
     
     if(A.n_elem == 0)
       {

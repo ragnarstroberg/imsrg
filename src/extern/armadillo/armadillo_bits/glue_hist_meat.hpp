@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,9 +25,9 @@ inline
 void
 glue_hist::apply_noalias(Mat<uword>& out, const Mat<eT>& X, const Mat<eT>& C, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( ((C.is_vec() == false) && (C.is_empty() == false)), "hist(): parameter 'centers' must be a vector" );
+  arma_conform_check( ((C.is_vec() == false) && (C.is_empty() == false)), "hist(): parameter 'centers' must be a vector" );
   
   const uword X_n_rows = X.n_rows;
   const uword X_n_cols = X.n_cols;
@@ -34,7 +36,7 @@ glue_hist::apply_noalias(Mat<uword>& out, const Mat<eT>& X, const Mat<eT>& C, co
   
   if( C_n_elem == 0 )  { out.reset(); return; }
   
-  arma_debug_check
+  arma_conform_check
     (
     ((Col<eT>(const_cast<eT*>(C.memptr()), C_n_elem, false, false)).is_sorted("strictascend") == false),
     "hist(): given 'centers' vector does not contain monotonically increasing values"
@@ -107,7 +109,7 @@ glue_hist::apply_noalias(Mat<uword>& out, const Mat<eT>& X, const Mat<eT>& C, co
         {
         const eT val = X_mem[i];
         
-        if(is_finite(val))
+        if(arma_isfinite(val))
           {
           eT    opt_dist  = (val >= center_0) ? (val - center_0) : (center_0 - val);
           uword opt_index = 0;
@@ -196,11 +198,11 @@ inline
 void
 glue_hist::apply(Mat<uword>& out, const mtGlue<uword,T1,T2,glue_hist>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword dim = expr.aux_uword;
   
-  arma_debug_check( (dim > 1), "hist(): parameter 'dim' must be 0 or 1" );
+  arma_conform_check( (dim > 1), "hist(): parameter 'dim' must be 0 or 1" );
   
   const quasi_unwrap<T1> UA(expr.A);
   const quasi_unwrap<T2> UB(expr.B);
@@ -226,7 +228,7 @@ inline
 void
 glue_hist_default::apply(Mat<uword>& out, const mtGlue<uword,T1,T2,glue_hist_default>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<T1> UA(expr.A);
   const quasi_unwrap<T2> UB(expr.B);

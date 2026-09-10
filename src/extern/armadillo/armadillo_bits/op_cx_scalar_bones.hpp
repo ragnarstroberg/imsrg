@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,11 +21,9 @@
 
 
 
-class op_cx_scalar_times
+struct op_cx_scalar_times
   : public traits_op_passthru
   {
-  public:
-  
   template<typename T1>
   inline static void
   apply
@@ -43,11 +43,9 @@ class op_cx_scalar_times
 
 
 
-class op_cx_scalar_plus
+struct op_cx_scalar_plus
   : public traits_op_passthru
   {
-  public:
-  
   template<typename T1>
   inline static void
   apply
@@ -67,11 +65,9 @@ class op_cx_scalar_plus
 
 
 
-class op_cx_scalar_minus_pre
+struct op_cx_scalar_minus_pre
   : public traits_op_passthru
   {
-  public:
-  
   template<typename T1>
   inline static void
   apply
@@ -91,11 +87,9 @@ class op_cx_scalar_minus_pre
 
 
 
-class op_cx_scalar_minus_post
+struct op_cx_scalar_minus_post
   : public traits_op_passthru
   {
-  public:
-  
   template<typename T1>
   inline static void
   apply
@@ -115,11 +109,9 @@ class op_cx_scalar_minus_post
 
 
 
-class op_cx_scalar_div_pre
+struct op_cx_scalar_div_pre
   : public traits_op_passthru
   {
-  public:
-  
   template<typename T1>
   inline static void
   apply
@@ -139,11 +131,9 @@ class op_cx_scalar_div_pre
 
 
 
-class op_cx_scalar_div_post
+struct op_cx_scalar_div_post
   : public traits_op_passthru
   {
-  public:
-  
   template<typename T1>
   inline static void
   apply

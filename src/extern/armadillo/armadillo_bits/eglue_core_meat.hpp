@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -253,20 +255,20 @@
 
 template<typename eglue_type>
 template<typename outT, typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply(outT& out, const eGlue<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
-  const bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
+  constexpr bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (Proxy<T1>::use_mp && Proxy<T2>::use_mp);
   
   // NOTE: we're assuming that the matrix has already been set to the correct size and there is no aliasing;
-  // size setting and alias checking is done by either the Mat contructor or operator=()
+  // size setting and alias checking is done by either the Mat constructor or operator=()
   
   
   eT* out_mem = out.memptr();
@@ -275,7 +277,7 @@ eglue_core<eglue_type>::apply(outT& out, const eGlue<T1, T2, eglue_type>& x)
     {
     const uword n_elem = x.get_n_elem();
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename Proxy<T1>::ea_type P1 = x.P1.get_ea();
       typename Proxy<T2>::ea_type P2 = x.P2.get_ea();
@@ -332,7 +334,7 @@ eglue_core<eglue_type>::apply(outT& out, const eGlue<T1, T2, eglue_type>& x)
     const Proxy<T1>& P1 = x.P1;
     const Proxy<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_2_mp(=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_2_mp(=, -); }
@@ -353,30 +355,30 @@ eglue_core<eglue_type>::apply(outT& out, const eGlue<T1, T2, eglue_type>& x)
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_plus(Mat<typename T1::elem_type>& out, const eGlue<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
     
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "addition");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "addition");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
-  const bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
+  constexpr bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (Proxy<T1>::use_mp && Proxy<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = x.get_n_elem();
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename Proxy<T1>::ea_type P1 = x.P1.get_ea();
       typename Proxy<T2>::ea_type P2 = x.P2.get_ea();
@@ -430,7 +432,7 @@ eglue_core<eglue_type>::apply_inplace_plus(Mat<typename T1::elem_type>& out, con
     const Proxy<T1>& P1 = x.P1;
     const Proxy<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_2_mp(+=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_2_mp(+=, -); }
@@ -451,30 +453,30 @@ eglue_core<eglue_type>::apply_inplace_plus(Mat<typename T1::elem_type>& out, con
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_minus(Mat<typename T1::elem_type>& out, const eGlue<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "subtraction");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "subtraction");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
-  const bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
+  constexpr bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (Proxy<T1>::use_mp && Proxy<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = x.get_n_elem();
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename Proxy<T1>::ea_type P1 = x.P1.get_ea();
       typename Proxy<T2>::ea_type P2 = x.P2.get_ea();
@@ -528,7 +530,7 @@ eglue_core<eglue_type>::apply_inplace_minus(Mat<typename T1::elem_type>& out, co
     const Proxy<T1>& P1 = x.P1;
     const Proxy<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_2_mp(-=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_2_mp(-=, -); }
@@ -549,30 +551,30 @@ eglue_core<eglue_type>::apply_inplace_minus(Mat<typename T1::elem_type>& out, co
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_schur(Mat<typename T1::elem_type>& out, const eGlue<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise multiplication");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise multiplication");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
-  const bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
+  constexpr bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (Proxy<T1>::use_mp && Proxy<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = x.get_n_elem();
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename Proxy<T1>::ea_type P1 = x.P1.get_ea();
       typename Proxy<T2>::ea_type P2 = x.P2.get_ea();
@@ -626,7 +628,7 @@ eglue_core<eglue_type>::apply_inplace_schur(Mat<typename T1::elem_type>& out, co
     const Proxy<T1>& P1 = x.P1;
     const Proxy<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_2_mp(*=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_2_mp(*=, -); }
@@ -647,30 +649,30 @@ eglue_core<eglue_type>::apply_inplace_schur(Mat<typename T1::elem_type>& out, co
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_div(Mat<typename T1::elem_type>& out, const eGlue<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows = x.get_n_rows();
   const uword n_cols = x.get_n_cols();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise division");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, n_rows, n_cols, "element-wise division");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
-  const bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (Proxy<T1>::use_at || Proxy<T2>::use_at);
+  constexpr bool use_mp = (Proxy<T1>::use_mp || Proxy<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (Proxy<T1>::use_mp && Proxy<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = x.get_n_elem();
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename Proxy<T1>::ea_type P1 = x.P1.get_ea();
       typename Proxy<T2>::ea_type P2 = x.P2.get_ea();
@@ -724,7 +726,7 @@ eglue_core<eglue_type>::apply_inplace_div(Mat<typename T1::elem_type>& out, cons
     const Proxy<T1>& P1 = x.P1;
     const Proxy<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (Proxy<T1>::use_mp && Proxy<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_2_mp(/=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_2_mp(/=, -); }
@@ -750,20 +752,20 @@ eglue_core<eglue_type>::apply_inplace_div(Mat<typename T1::elem_type>& out, cons
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply(Cube<typename T1::elem_type>& out, const eGlueCube<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
-  const bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
+  constexpr bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp);
   
   // NOTE: we're assuming that the cube has already been set to the correct size and there is no aliasing;
-  // size setting and alias checking is done by either the Cube contructor or operator=()
+  // size setting and alias checking is done by either the Cube constructor or operator=()
   
   
   eT* out_mem = out.memptr();
@@ -772,7 +774,7 @@ eglue_core<eglue_type>::apply(Cube<typename T1::elem_type>& out, const eGlueCube
     {
     const uword n_elem = out.n_elem;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename ProxyCube<T1>::ea_type P1 = x.P1.get_ea();
       typename ProxyCube<T2>::ea_type P2 = x.P2.get_ea();
@@ -830,7 +832,7 @@ eglue_core<eglue_type>::apply(Cube<typename T1::elem_type>& out, const eGlueCube
     const ProxyCube<T1>& P1 = x.P1;
     const ProxyCube<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_3_mp(=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_3_mp(=, -); }
@@ -851,31 +853,31 @@ eglue_core<eglue_type>::apply(Cube<typename T1::elem_type>& out, const eGlueCube
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_plus(Cube<typename T1::elem_type>& out, const eGlueCube<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows   = x.get_n_rows();
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "addition");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "addition");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
-  const bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
+  constexpr bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = out.n_elem;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename ProxyCube<T1>::ea_type P1 = x.P1.get_ea();
       typename ProxyCube<T2>::ea_type P2 = x.P2.get_ea();
@@ -929,7 +931,7 @@ eglue_core<eglue_type>::apply_inplace_plus(Cube<typename T1::elem_type>& out, co
     const ProxyCube<T1>& P1 = x.P1;
     const ProxyCube<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_3_mp(+=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_3_mp(+=, -); }
@@ -950,31 +952,31 @@ eglue_core<eglue_type>::apply_inplace_plus(Cube<typename T1::elem_type>& out, co
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_minus(Cube<typename T1::elem_type>& out, const eGlueCube<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows   = x.get_n_rows();
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "subtraction");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "subtraction");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
-  const bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
+  constexpr bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = out.n_elem;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename ProxyCube<T1>::ea_type P1 = x.P1.get_ea();
       typename ProxyCube<T2>::ea_type P2 = x.P2.get_ea();
@@ -1028,7 +1030,7 @@ eglue_core<eglue_type>::apply_inplace_minus(Cube<typename T1::elem_type>& out, c
     const ProxyCube<T1>& P1 = x.P1;
     const ProxyCube<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_3_mp(-=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_3_mp(-=, -); }
@@ -1049,31 +1051,31 @@ eglue_core<eglue_type>::apply_inplace_minus(Cube<typename T1::elem_type>& out, c
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_schur(Cube<typename T1::elem_type>& out, const eGlueCube<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows   = x.get_n_rows();
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise multiplication");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise multiplication");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
-  const bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
+  constexpr bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = out.n_elem;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename ProxyCube<T1>::ea_type P1 = x.P1.get_ea();
       typename ProxyCube<T2>::ea_type P2 = x.P2.get_ea();
@@ -1127,7 +1129,7 @@ eglue_core<eglue_type>::apply_inplace_schur(Cube<typename T1::elem_type>& out, c
     const ProxyCube<T1>& P1 = x.P1;
     const ProxyCube<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_3_mp(*=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_3_mp(*=, -); }
@@ -1148,31 +1150,31 @@ eglue_core<eglue_type>::apply_inplace_schur(Cube<typename T1::elem_type>& out, c
 
 template<typename eglue_type>
 template<typename T1, typename T2>
-arma_hot
 inline
 void
 eglue_core<eglue_type>::apply_inplace_div(Cube<typename T1::elem_type>& out, const eGlueCube<T1, T2, eglue_type>& x)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows   = x.get_n_rows();
   const uword n_cols   = x.get_n_cols();
   const uword n_slices = x.get_n_slices();
   
-  arma_debug_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise division");
+  arma_conform_assert_same_size(out.n_rows, out.n_cols, out.n_slices, n_rows, n_cols, n_slices, "element-wise division");
   
   typedef typename T1::elem_type eT;
   
   eT* out_mem = out.memptr();
   
-  const bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
-  const bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_at = (ProxyCube<T1>::use_at || ProxyCube<T2>::use_at);
+  constexpr bool use_mp = (ProxyCube<T1>::use_mp || ProxyCube<T2>::use_mp) && (arma_config::openmp);
+  constexpr bool use_ht = (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp);
   
   if(use_at == false)
     {
     const uword n_elem = out.n_elem;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(n_elem))
+    if(use_mp && mp_gate<eT, use_ht>::eval(n_elem))
       {
       typename ProxyCube<T1>::ea_type P1 = x.P1.get_ea();
       typename ProxyCube<T2>::ea_type P2 = x.P2.get_ea();
@@ -1226,7 +1228,7 @@ eglue_core<eglue_type>::apply_inplace_div(Cube<typename T1::elem_type>& out, con
     const ProxyCube<T1>& P1 = x.P1;
     const ProxyCube<T2>& P2 = x.P2;
     
-    if(use_mp && mp_gate<eT, (ProxyCube<T1>::use_mp && ProxyCube<T2>::use_mp)>::eval(x.get_n_elem()))
+    if(use_mp && mp_gate<eT, use_ht>::eval(x.get_n_elem()))
       {
            if(is_same_type<eglue_type, eglue_plus >::yes) { arma_applier_3_mp(/=, +); }
       else if(is_same_type<eglue_type, eglue_minus>::yes) { arma_applier_3_mp(/=, -); }

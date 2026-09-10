@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 void
 op_chi2rnd::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_chi2rnd>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -51,11 +53,14 @@ inline
 void
 op_chi2rnd::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  op_chi2rnd_varying_df<eT> generator;
+  // we can only make a generator for float/double/long double types
+  typedef typename promote_type<eT, float>::result gT;
+  
+  op_chi2rnd_varying_df<gT> generator;
   
   const uword n_rows = P.get_n_rows();
   const uword n_cols = P.get_n_cols();
@@ -72,7 +77,7 @@ op_chi2rnd::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
     
     for(uword i=0; i<N; ++i)
       {
-      out_mem[i] = generator( Pea[i] );
+      out_mem[i] = eT( generator( Pea[i] ) );
       }
     }
   else
@@ -80,7 +85,7 @@ op_chi2rnd::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
     for(uword col=0; col < n_cols; ++col)
     for(uword row=0; row < n_rows; ++row)
       {
-      (*out_mem) = generator( P.at(row,col) );  ++out_mem;
+      (*out_mem) = eT( generator( P.at(row,col) ) );  ++out_mem;
       }
     }
   }
@@ -92,7 +97,7 @@ inline
 void
 op_chi2rnd::fill_constant_df(Mat<eT>& out, const eT df)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(df > eT(0))
     {
@@ -128,7 +133,7 @@ template<typename eT>
 inline
 op_chi2rnd_varying_df<eT>::~op_chi2rnd_varying_df()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -137,7 +142,7 @@ template<typename eT>
 inline
 op_chi2rnd_varying_df<eT>::op_chi2rnd_varying_df()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef std::mt19937_64::result_type seed_type;
   
@@ -151,7 +156,7 @@ inline
 eT
 op_chi2rnd_varying_df<eT>::operator()(const eT df)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   // as C++11 doesn't seem to provide a way to explicitly set the parameter
   // of an existing chi_squared_distribution object,

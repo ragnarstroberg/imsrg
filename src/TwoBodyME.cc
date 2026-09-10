@@ -144,7 +144,6 @@ bool TwoBodyME::IsAllocated()const
 
 void TwoBodyME::MakeReduced()
 {
-  std::cout << "HERE " <<__FILE__ << "  line " << __LINE__ << "  " <<__func__ << std::endl;
   if (is_reduced) return;
 
   for (auto &itmat : MatEl)
@@ -157,7 +156,6 @@ void TwoBodyME::MakeReduced()
 
 void TwoBodyME::MakeNotReduced()
 {
-  std::cout << "HERE " <<__FILE__ << "  line " << __LINE__ << "  " <<__func__ << std::endl;
   if (not is_reduced) return;
   for (auto &itmat : MatEl)
   {

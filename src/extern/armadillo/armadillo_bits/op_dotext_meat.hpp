@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +31,7 @@ op_dotext::direct_rowvec_mat_colvec
   const eT*      C_mem
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword cost_AB = B.n_cols;
   const uword cost_BC = B.n_rows;
@@ -86,7 +88,7 @@ op_dotext::direct_rowvec_transmat_colvec
   const eT*      C_mem
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword cost_AB = B.n_rows;
   const uword cost_BC = B.n_cols;
@@ -145,7 +147,7 @@ op_dotext::direct_rowvec_diagmat_colvec
   const eT*      C_mem
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   eT val = eT(0);
 
@@ -169,7 +171,7 @@ op_dotext::direct_rowvec_invdiagmat_colvec
   const eT*      C_mem
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   eT val = eT(0);
 
@@ -193,7 +195,7 @@ op_dotext::direct_rowvec_invdiagvec_colvec
   const eT*      C_mem
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const eT* B_mem = B.mem;
   

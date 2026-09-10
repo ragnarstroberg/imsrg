@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +22,8 @@
 
 
 
-class glue_join_cols
+struct glue_join_cols
   {
-  public:
-  
   template<typename T1, typename T2>
   struct traits
     {
@@ -36,7 +36,10 @@ class glue_join_cols
   inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_join_cols>& X);
   
   template<typename T1, typename T2>
-  inline static void apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& A, const Proxy<T2>& B);
+  inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Glue<T1,T2,glue_join_cols>& X);
+  
+  template<typename eT>
+  inline static void apply_noalias(Mat<eT>& out, const Mat<eT>& A, const Mat<eT>& B);
   
   template<typename eT, typename T1, typename T2, typename T3>
   inline static void apply(Mat<eT>& out, const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C);
@@ -47,10 +50,8 @@ class glue_join_cols
 
 
 
-class glue_join_rows
+struct glue_join_rows
   {
-  public:
-  
   template<typename T1, typename T2>
   struct traits
     {
@@ -63,7 +64,10 @@ class glue_join_rows
   inline static void apply(Mat<typename T1::elem_type>& out, const Glue<T1,T2,glue_join_rows>& X);
   
   template<typename T1, typename T2>
-  inline static void apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& A, const Proxy<T2>& B);
+  inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Glue<T1,T2,glue_join_rows>& X);
+  
+  template<typename eT>
+  inline static void apply_noalias(Mat<eT>& out, const Mat<eT>& A, const Mat<eT>& B);
   
   template<typename eT, typename T1, typename T2, typename T3>
   inline static void apply(Mat<eT>& out, const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C);
@@ -74,10 +78,8 @@ class glue_join_rows
 
 
 
-class glue_join_slices
+struct glue_join_slices
   {
-  public:
-  
   template<typename T1, typename T2>
   inline static void apply(Cube<typename T1::elem_type>& out, const GlueCube<T1,T2,glue_join_slices>& X);
   };

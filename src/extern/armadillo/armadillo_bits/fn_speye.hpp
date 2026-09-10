@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,18 +28,11 @@ inline
 obj_type
 speye(const uword n_rows, const uword n_cols, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
-  if(is_SpCol<obj_type>::value)
-    {
-    arma_debug_check( (n_cols != 1), "speye(): incompatible size" );
-    }
-  else
-  if(is_SpRow<obj_type>::value)
-    {
-    arma_debug_check( (n_rows != 1), "speye(): incompatible size" );
-    }
+  if(is_SpCol<obj_type>::value)  { arma_conform_check( (n_cols != 1), "speye(): incompatible size" ); }
+  if(is_SpRow<obj_type>::value)  { arma_conform_check( (n_rows != 1), "speye(): incompatible size" ); }
   
   obj_type out;
   
@@ -54,7 +49,7 @@ inline
 obj_type
 speye(const SizeMat& s, const typename arma_SpMat_SpCol_SpRow_only<obj_type>::result* junk = nullptr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   return speye<obj_type>(s.n_rows, s.n_cols);
@@ -68,7 +63,7 @@ inline
 sp_mat
 speye(const uword n_rows, const uword n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   sp_mat out;
   
@@ -84,7 +79,7 @@ inline
 sp_mat
 speye(const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   sp_mat out;
   

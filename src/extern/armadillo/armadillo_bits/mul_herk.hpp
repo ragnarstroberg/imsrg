@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,10 +21,8 @@
 
 
 
-class herk_helper
+struct herk_helper
   {
-  public:
-  
   template<typename eT>
   inline
   static
@@ -46,13 +46,13 @@ class herk_helper
   
   
   template<typename eT>
-  static
   arma_hot
   inline
+  static
   eT
   dot_conj_row(const uword n_elem, const eT* const A, const Mat<eT>& B, const uword row)
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     typedef typename get_pod_type<eT>::result T;
     
@@ -82,10 +82,8 @@ class herk_helper
 
 
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class herk_vec
+struct herk_vec
   {
-  public:
-  
   template<typename T, typename TA>
   arma_hot
   inline
@@ -99,7 +97,7 @@ class herk_vec
     const T                       beta  = T(0)
     )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     typedef std::complex<T> eT;
     
@@ -223,10 +221,8 @@ class herk_vec
 
 
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class herk_emul
+struct herk_emul
   {
-  public:
-  
   template<typename T, typename TA>
   arma_hot
   inline
@@ -240,7 +236,7 @@ class herk_emul
     const T                       beta  = T(0)
     )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     typedef std::complex<T> eT;
     
@@ -308,23 +304,21 @@ class herk_emul
 
 
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class herk
+struct herk
   {
-  public:
-  
   template<typename T, typename TA>
   inline
   static
   void
   apply_blas_type( Mat<std::complex<T>>& C, const TA& A, const T alpha = T(1), const T beta = T(0) )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     const uword threshold = 16;
     
     if(A.is_vec())
       {
-      // work around poor handling of vectors by herk() in ATLAS 3.8.4 and standard BLAS
+      // work around poor handling of vectors by herk() in standard BLAS
       
       herk_vec<do_trans_A, use_alpha, use_beta>::apply(C,A,alpha,beta);
       
@@ -357,9 +351,9 @@ class herk
         
         atlas::cblas_herk<T>
           (
-          atlas::CblasColMajor,
-          atlas::CblasUpper,
-          (do_trans_A) ? CblasConjTrans : atlas::CblasNoTrans,
+          atlas_CblasColMajor,
+          atlas_CblasUpper,
+          (do_trans_A) ? atlas_CblasConjTrans : atlas_CblasNoTrans,
           C.n_cols,
           (do_trans_A) ? A.n_rows : A.n_cols,
           (use_alpha) ? alpha : T(1),
@@ -389,7 +383,7 @@ class herk
           return;
           }
         
-        arma_extra_debug_print("blas::herk()");
+        arma_debug_print("blas::herk()");
         
         const char uplo = 'U';
         
@@ -403,7 +397,7 @@ class herk
         
         const blas_int lda = (do_trans_A) ? k : n;
         
-        arma_extra_debug_print( arma_str::format("blas::herk(): trans_A = %c") % trans_A );
+        arma_debug_print( arma_str::format("blas::herk(): trans_A: %c") % trans_A );
         
         blas::herk<T>
           (
@@ -482,6 +476,25 @@ class herk
     {
     herk<do_trans_A, use_alpha, use_beta>::apply_blas_type(C,A,alpha,beta);
     }
+  
+  
+  
+  #if defined(ARMA_HAVE_FP16)
+  template<typename TA>
+  arma_inline
+  static
+  void
+  apply
+    (
+          Mat< std::complex<fp16> >& C,
+    const TA&                        A,
+    const fp16                       alpha = fp16(1),
+    const fp16                       beta  = fp16(0)
+    )
+    {
+    herk_emul<do_trans_A, use_alpha, use_beta>::apply(C,A,alpha,beta);
+    }
+  #endif
   
   };
 

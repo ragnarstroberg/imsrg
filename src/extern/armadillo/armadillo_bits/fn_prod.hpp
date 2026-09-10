@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +20,6 @@
 //! @{
 
 
-//! \brief
-//! Delayed product of elements of a matrix along a specified dimension (either rows or columns).
-//! The result is stored in a dense matrix that has either one column or one row.
-//! For dim = 0, find the sum of each column (i.e. traverse across rows)
-//! For dim = 1, find the sum of each row (i.e. traverse across columns)
-//! The default is dim = 0.
-//! NOTE: this function works differently than in Matlab/Octave.
 
 template<typename T1>
 arma_warn_unused
@@ -32,7 +27,7 @@ inline
 typename enable_if2< is_arma_type<T1>::value && resolves_to_vector<T1>::yes, typename T1::elem_type >::result
 prod(const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return op_prod::prod(X);
   }
@@ -41,11 +36,11 @@ prod(const T1& X)
 
 template<typename T1>
 arma_warn_unused
-arma_inline
+inline
 typename enable_if2< is_arma_type<T1>::value && resolves_to_vector<T1>::no, const Op<T1, op_prod> >::result
 prod(const T1& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Op<T1, op_prod>(X, 0, 0);
   }
@@ -54,11 +49,11 @@ prod(const T1& X)
 
 template<typename T1>
 arma_warn_unused
-arma_inline
+inline
 typename enable_if2< is_arma_type<T1>::value, const Op<T1, op_prod> >::result
 prod(const T1& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Op<T1, op_prod>(X, dim, 0);
   }
@@ -67,7 +62,7 @@ prod(const T1& X, const uword dim)
 
 template<typename T>
 arma_warn_unused
-arma_inline
+inline
 typename arma_scalar_only<T>::result
 prod(const T& x)
   {

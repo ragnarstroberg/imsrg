@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,27 +43,28 @@ struct Op_traits<T1, op_type, false>
 
 
 template<typename T1, typename op_type>
-class Op
+struct Op
   : public Base< typename T1::elem_type, Op<T1, op_type> >
   , public Op_traits<T1, op_type, has_nested_op_traits<op_type>::value>
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
+  
+  static constexpr bool has_subview = T1::has_subview;
   
   inline explicit Op(const T1& in_m);
   inline          Op(const T1& in_m, const elem_type in_aux);
   inline          Op(const T1& in_m, const elem_type in_aux,         const uword in_aux_uword_a, const uword in_aux_uword_b);
   inline          Op(const T1& in_m, const uword     in_aux_uword_a, const uword in_aux_uword_b);
-  inline          Op(const T1& in_m, const uword     in_aux_uword_a, const uword in_aux_uword_b, const uword in_aux_uword_c, const char junk);
   inline         ~Op();
   
-  arma_aligned const T1&       m;            //!< the operand; must be derived from Base
-  arma_aligned       elem_type aux;          //!< auxiliary data, using the element type as used by T1
-  arma_aligned       uword     aux_uword_a;  //!< auxiliary data, uword format
-  arma_aligned       uword     aux_uword_b;  //!< auxiliary data, uword format
-  arma_aligned       uword     aux_uword_c;  //!< auxiliary data, uword format
+  template<typename eT2>
+  inline bool is_alias(const Mat<eT2>& X) const;
+  
+  const T1&       m;            //!< the operand; must be derived from Base
+        elem_type aux;          //!< auxiliary data, using the element type as used by T1
+        uword     aux_uword_a;  //!< auxiliary data, uword format
+        uword     aux_uword_b;  //!< auxiliary data, uword format
   };
 
 

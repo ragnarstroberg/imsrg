@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,10 +27,10 @@ hess
   (
          Mat<typename T1::elem_type>&    H,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename T1::elem_type eT;
@@ -48,7 +50,7 @@ hess
   if(status == false)
     {
     H.soft_reset();
-    arma_debug_warn_level(3, "hess(): decomposition failed");
+    arma_warn(3, "hess(): decomposition failed");
     }
   
   return status;
@@ -63,10 +65,10 @@ Mat<typename T1::elem_type>
 hess
   (
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename T1::elem_type eT;
@@ -103,13 +105,13 @@ hess
          Mat<typename T1::elem_type>&    U,
          Mat<typename T1::elem_type>&    H,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
-  arma_debug_check( void_ptr(&U) == void_ptr(&H), "hess(): 'U' is an alias of 'H'" );
+  arma_conform_check( void_ptr(&U) == void_ptr(&H), "hess(): 'U' is an alias of 'H'" );
   
   typedef typename T1::elem_type eT;
   
@@ -161,7 +163,7 @@ hess
     {
     U.soft_reset();
     H.soft_reset();
-    arma_debug_warn_level(3, "hess(): decomposition failed");
+    arma_warn(3, "hess(): decomposition failed");
     }
   
   return status;

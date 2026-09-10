@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,17 +20,11 @@
 //! @{
 
 
-class arrayops
+struct arrayops
   {
-  public:
-  
   template<typename eT>
   arma_inline static void
   copy(eT* dest, const eT* src, const uword n_elem);
-  
-  template<typename eT>
-  arma_cold inline static void
-  copy_small(eT* dest, const eT* src, const uword n_elem);
   
   template<typename eT>
   inline static void
@@ -141,11 +137,6 @@ class arrayops
   arma_hot inline static
   void
   inplace_set_base(eT* dest, const eT val, const uword n_elem);
-  
-  template<typename eT>
-  arma_cold inline static
-  void
-  inplace_set_small(eT* dest, const eT val, const uword n_elem);
   
   template<typename eT, const uword n_elem>
   arma_hot inline static

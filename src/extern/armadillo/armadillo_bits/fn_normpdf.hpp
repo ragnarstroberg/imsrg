@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 typename enable_if2< (is_real<typename T1::elem_type>::value), void >::result
 normpdf_helper(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type, T1>& X_expr, const Base<typename T1::elem_type, T2>& M_expr, const Base<typename T1::elem_type, T3>& S_expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -43,7 +45,7 @@ normpdf_helper(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_ty
   const Proxy<T2> PM(M_expr.get_ref());
   const Proxy<T3> PS(S_expr.get_ref());
   
-  arma_debug_check( ( (PX.get_n_rows() != PM.get_n_rows()) || (PX.get_n_cols() != PM.get_n_cols()) || (PM.get_n_rows() != PS.get_n_rows()) || (PM.get_n_cols() != PS.get_n_cols()) ), "normpdf(): size mismatch" );
+  arma_conform_check( ( (PX.get_n_rows() != PM.get_n_rows()) || (PX.get_n_cols() != PM.get_n_cols()) || (PM.get_n_rows() != PS.get_n_rows()) || (PM.get_n_cols() != PS.get_n_cols()) ), "normpdf(): size mismatch" );
   
   out.set_size(PX.get_n_rows(), PX.get_n_cols());
   
@@ -90,8 +92,8 @@ normpdf_helper(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_ty
 
 
 template<typename eT>
-inline
 arma_warn_unused
+inline
 typename enable_if2< (is_real<eT>::value), eT >::result
 normpdf(const eT x)
   {
@@ -103,8 +105,8 @@ normpdf(const eT x)
 
 
 template<typename eT>
-inline
 arma_warn_unused
+inline
 typename enable_if2< (is_real<eT>::value), eT >::result
 normpdf(const eT x, const eT mu, const eT sigma)
   {
@@ -118,12 +120,12 @@ normpdf(const eT x, const eT mu, const eT sigma)
 
 
 template<typename eT, typename T2, typename T3>
-inline
 arma_warn_unused
+inline
 typename enable_if2< (is_real<eT>::value), Mat<eT> >::result
 normpdf(const eT x, const Base<eT, T2>& M_expr, const Base<eT, T3>& S_expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const quasi_unwrap<T2> UM(M_expr.get_ref());
   const Mat<eT>&     M = UM.M;
@@ -138,12 +140,12 @@ normpdf(const eT x, const Base<eT, T2>& M_expr, const Base<eT, T3>& S_expr)
 
 
 template<typename T1>
-inline
 arma_warn_unused
+inline
 typename enable_if2< (is_real<typename T1::elem_type>::value), Mat<typename T1::elem_type> >::result
 normpdf(const Base<typename T1::elem_type, T1>& X_expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -160,12 +162,12 @@ normpdf(const Base<typename T1::elem_type, T1>& X_expr)
 
 
 template<typename T1>
-inline
 arma_warn_unused
+inline
 typename enable_if2< (is_real<typename T1::elem_type>::value), Mat<typename T1::elem_type> >::result
 normpdf(const Base<typename T1::elem_type, T1>& X_expr, const typename T1::elem_type mu, const typename T1::elem_type sigma)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -182,12 +184,12 @@ normpdf(const Base<typename T1::elem_type, T1>& X_expr, const typename T1::elem_
 
 
 template<typename T1, typename T2, typename T3>
-inline
 arma_warn_unused
+inline
 typename enable_if2< (is_real<typename T1::elem_type>::value), Mat<typename T1::elem_type> >::result
 normpdf(const Base<typename T1::elem_type, T1>& X_expr, const Base<typename T1::elem_type, T2>& M_expr, const Base<typename T1::elem_type, T3>& S_expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   

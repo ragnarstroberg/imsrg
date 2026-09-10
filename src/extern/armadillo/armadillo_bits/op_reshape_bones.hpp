@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,31 +22,26 @@
 
 
 
-class op_reshape
+struct op_reshape
   : public traits_op_default
   {
-  public:
+  template<typename T1> inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_reshape>& in);
   
-  template<typename eT> inline static void apply_unwrap(Mat<eT>&                     out, const Mat<eT>&   A, const uword in_n_rows, const uword in_n_cols);
+  template<typename T1> inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_reshape>& in);
   
-  template<typename T1> inline static void apply_proxy (Mat<typename T1::elem_type>& out, const Proxy<T1>& P, const uword in_n_rows, const uword in_n_cols);
+  template<typename eT> inline static void apply_mat_inplace(Mat<eT>& A, const uword new_n_rows, const uword new_n_cols);
   
-  template<typename T1> inline static void apply       (Mat<typename T1::elem_type>& out, const Op<T1,op_reshape>& in);
+  template<typename eT> inline static void apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const uword new_n_rows, const uword new_n_cols);
+  
+  template<typename T1> inline static void apply_proxy_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P, const uword new_n_rows, const uword new_n_cols);
   
   //
   
   template<typename T1> inline static void apply(Cube<typename T1::elem_type>& out, const OpCube<T1,op_reshape>& in);
-  };
-
-
-
-//! NOTE: deprecated
-class op_reshape_old
-  : public traits_op_default
-  {
-  public:
   
-  template<typename T1> arma_cold inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_reshape_old>& in);
+  template<typename eT> inline static void apply_cube_inplace(Cube<eT>& A, const uword new_n_rows, const uword new_n_cols, const uword new_n_slices);
+  
+  template<typename eT> inline static void apply_cube_noalias(Cube<eT>& out, const Cube<eT>& A, const uword new_n_rows, const uword new_n_cols, const uword new_n_slices);
   };
 
 

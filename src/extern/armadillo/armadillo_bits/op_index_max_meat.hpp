@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,12 +26,12 @@ inline
 void
 op_index_max::apply(Mat<uword>& out, const mtOp<uword,T1,op_index_max>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const uword dim = in.aux_uword_a;
-  arma_debug_check( (dim > 1), "index_max(): parameter 'dim' must be 0 or 1" );
+  arma_conform_check( (dim > 1), "index_max(): parameter 'dim' must be 0 or 1" );
   
   const quasi_unwrap<T1> U(in.m);
   const Mat<eT>& X = U.M;
@@ -55,7 +57,7 @@ inline
 void
 op_index_max::apply_noalias(Mat<uword>& out, const Mat<eT>& X, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename get_pod_type<eT>::result T;
   
@@ -64,7 +66,7 @@ op_index_max::apply_noalias(Mat<uword>& out, const Mat<eT>& X, const uword dim)
   
   if(dim == 0)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 0");
+    arma_debug_print("op_index_max::apply(): dim = 0");
     
     out.set_size((X_n_rows > 0) ? 1 : 0, X_n_cols);
     
@@ -80,7 +82,7 @@ op_index_max::apply_noalias(Mat<uword>& out, const Mat<eT>& X, const uword dim)
   else
   if(dim == 1)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 1");
+    arma_debug_print("op_index_max::apply(): dim = 1");
     
     out.zeros(X_n_rows, (X_n_cols > 0) ? 1 : 0);
     
@@ -133,10 +135,10 @@ inline
 void
 op_index_max::apply(Cube<uword>& out, const mtOpCube<uword, T1, op_index_max>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword dim = in.aux_uword_a;
-  arma_debug_check( (dim > 2), "index_max(): parameter 'dim' must be 0 or 1 or 2" );
+  arma_conform_check( (dim > 2), "index_max(): parameter 'dim' must be 0 or 1 or 2" );
   
   const unwrap_cube<T1> U(in.m);
   
@@ -161,7 +163,7 @@ inline
 void
 op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim, const typename arma_not_cx<eT>::result* junk)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   const uword X_n_rows   = X.n_rows;
@@ -170,7 +172,7 @@ op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim
   
   if(dim == 0)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 0");
+    arma_debug_print("op_index_max::apply(): dim = 0");
     
     out.set_size((X_n_rows > 0) ? 1 : 0, X_n_cols, X_n_slices);
     
@@ -189,7 +191,7 @@ op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim
   else
   if(dim == 1)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 1");
+    arma_debug_print("op_index_max::apply(): dim = 1");
     
     out.zeros(X_n_rows, (X_n_cols > 0) ? 1 : 0, X_n_slices);
     
@@ -225,7 +227,7 @@ op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim
   else
   if(dim == 2)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 2");
+    arma_debug_print("op_index_max::apply(): dim = 2");
     
     out.zeros(X_n_rows, X_n_cols, (X_n_slices > 0) ? 1 : 0);
     
@@ -263,7 +265,7 @@ inline
 void
 op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim, const typename arma_cx_only<eT>::result* junk)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename get_pod_type<eT>::result T;
@@ -274,7 +276,7 @@ op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim
   
   if(dim == 0)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 0");
+    arma_debug_print("op_index_max::apply(): dim = 0");
     
     out.set_size((X_n_rows > 0) ? 1 : 0, X_n_cols, X_n_slices);
     
@@ -293,7 +295,7 @@ op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim
   else
   if(dim == 1)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 1");
+    arma_debug_print("op_index_max::apply(): dim = 1");
     
     out.zeros(X_n_rows, (X_n_cols > 0) ? 1 : 0, X_n_slices);
     
@@ -334,7 +336,7 @@ op_index_max::apply_noalias(Cube<uword>& out, const Cube<eT>& X, const uword dim
   else
   if(dim == 2)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 2");
+    arma_debug_print("op_index_max::apply(): dim = 2");
     
     out.zeros(X_n_rows, X_n_cols, (X_n_slices > 0) ? 1 : 0);
     
@@ -379,11 +381,11 @@ inline
 void
 op_index_max::apply(Mat<uword>& out, const SpBase<typename T1::elem_type,T1>& expr, const uword dim)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  arma_debug_check( (dim > 1), "index_max(): parameter 'dim' must be 0 or 1" );
+  arma_conform_check( (dim > 1), "index_max(): parameter 'dim' must be 0 or 1" );
   
   const unwrap_spmat<T1> U(expr.get_ref());
   const SpMat<eT>& X   = U.M;
@@ -393,7 +395,7 @@ op_index_max::apply(Mat<uword>& out, const SpBase<typename T1::elem_type,T1>& ex
   
   if(dim == 0)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 0");
+    arma_debug_print("op_index_max::apply(): dim = 0");
     
     out.set_size((X_n_rows > 0) ? 1 : 0, X_n_cols);
     
@@ -409,7 +411,7 @@ op_index_max::apply(Mat<uword>& out, const SpBase<typename T1::elem_type,T1>& ex
   else
   if(dim == 1)
     {
-    arma_extra_debug_print("op_index_max::apply(): dim = 1");
+    arma_debug_print("op_index_max::apply(): dim = 1");
     
     out.set_size(X_n_rows, (X_n_cols > 0) ? 1 : 0);
     
