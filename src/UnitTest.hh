@@ -171,6 +171,8 @@ class UnitTest
 
   bool TestPerturbativeTriples();
 
+  bool Test3BGenerator( Operator& H, Operator& Hdenom);
+
   bool SanityCheck();
 
 };

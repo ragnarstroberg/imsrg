@@ -876,6 +876,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetMschemeMatrixElement_1b", &UnitTest::GetMschemeMatrixElement_1b, py::arg("Op"), py::arg("a"), py::arg("ma"), py::arg("b"), py::arg("mb")) 
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)  
           .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) 
+          .def("Test3BGenerator",&UnitTest::Test3BGenerator)
           ;
 
 

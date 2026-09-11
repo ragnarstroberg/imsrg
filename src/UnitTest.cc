@@ -12,6 +12,7 @@
 #include "version.hh"
 #include "ReferenceImplementations.hh" // for commutators
 #include "IMSRGSolver.hh"              // for Perturbative Triples
+#include "Generator.hh"
 
 #include <omp.h>
 
@@ -8507,6 +8508,96 @@ bool UnitTest::Mscheme_Test_comm333_pph_hhpst(const Operator &X, const Operator 
   std::cout << "   " << __func__ << "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
+}
+
+
+
+
+bool UnitTest::Test3BGenerator( Operator& H, Operator& Hdenom)
+{
+
+   bool pass = true;
+   Operator EtaOpt(H);
+   EtaOpt.SetAntiHermitian();
+   
+   Generator gen;
+   gen.SetType("shell-model");
+   gen.SetDenominatorPartitioning("Moller-Plesset");
+   gen.UpdateGeneral(H,Hdenom,EtaOpt);
+
+   /////////   
+    for (auto &it : H.ThreeBody.Get_ch_start())
+    {
+      size_t ch3bra = it.first.ch_bra;
+      size_t ch3ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = H.modelspace->GetThreeBodyChannel(ch3bra);
+      ThreeBodyChannel &Tbc_ket = H.modelspace->GetThreeBodyChannel(ch3ket);
+      size_t nbras = Tbc_bra.GetNumberKets();
+      size_t nkets = Tbc_ket.GetNumberKets();
+      for (size_t ibra = 0; ibra < nbras; ibra++)
+      {
+
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+
+//      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+
+
+//      double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+//      double d_eb = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+//      double d_ec = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+//      double occnat_a = bra.op->occ_nat;
+//      double occnat_b = bra.oq->occ_nat;
+//      double occnat_c = bra.oR->occ_nat;
+//      if ( d_ea + d_eb + d_ec > H->modelspace->GetdE3max() ) continue;
+//      if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+      size_t a = bra.p;
+      size_t b = bra.q;
+      size_t c = bra.r;
+
+      for (size_t iket=0; iket<nkets; iket++)
+      {
+         Ket3& ket = Tbc_ket.GetKet(iket);
+         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
+         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
+                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
+                  ) ) continue;
+         if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+                 
+//         if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+//         double d_ei = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+//         double d_ej = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+//         double d_ek = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+//         double occnat_i = ket.op->occ_nat;
+//         double occnat_j = ket.oq->occ_nat;
+//         double occnat_k = ket.oR->occ_nat;
+//         if ( d_ei + d_ej + d_ek > H->modelspace->GetdE3max() ) continue;
+//         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+         size_t i = ket.p;
+         size_t j = ket.q;
+         size_t k = ket.r;
+
+         double denominator = gen.Get3bDenominator( a,b,c, i,j,k ) ;
+
+         double ME_od = H.ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
+         double eta =   ME_od / denominator;
+
+         double eta_opt = EtaOpt.ThreeBody.GetME_pn_ch( ch3bra,ch3ket,ibra,iket); // hermitian conjugate automatically gets added
+
+         double diff = eta-eta_opt;
+         if (std::abs(diff)>1e-9)
+         {
+            std::cout << __func__ << " abcijk " << a << " " << b << " " << c << " " << i << " " << j << " " << k << " "
+                      << "ME_od " << ME_od << "   denom " << denominator << "  eta " << eta << "   eta_opt " << eta_opt << "    diff " << diff << std::endl;
+            pass = false;
+         }
+         
+      }// for iket
+
+    }// for ibra
+    }// for it ch_start
+
+   ////////
+   return pass;
 }
 
 

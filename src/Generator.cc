@@ -416,7 +416,8 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
            double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
            double eta =  etafunc( ME_od, denominator);
 
-           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+           Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+//           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
            
         }// for iket
 
@@ -523,7 +524,7 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
    std::vector<size_t> corevec;
    for (auto a : H->modelspace->core) corevec.push_back(a);
    std::map<int,double> e_fermi = H->modelspace->GetEFermi();
-   if (H->OneBodyNorm() < 1e-6)
+   if (H_denom->OneBodyNorm() < 1e-6)
    {
       std::cout << __func__ << "  WARNING: || H1b || is zero. This may cause trouble with the denominators." << std::endl;
    }
