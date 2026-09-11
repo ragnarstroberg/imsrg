@@ -554,7 +554,7 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
       size_t nkets = Tbc_ket.GetNumberKets();
 
       Ket3& bra = Tbc_bra.GetKet(ibra);
-      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+//      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
 
 
       double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
@@ -569,12 +569,13 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
       size_t b = bra.q;
       size_t c = bra.r;
 
-      for (size_t iket=0; iket<nkets; iket++)
+      size_t iket_min = (ch3bra==ch3ket) ? ibra : 0;
+      for (size_t iket=iket_min; iket<nkets; iket++)
       {
          Ket3& ket = Tbc_ket.GetKet(iket);
-         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
-         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
-                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
+         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv      cvq>0 means "p". cvq<2 means c or v
+         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // ppp|ccc  ppp|ccv   ppp|cvv  ppp|vvv
+                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  ) // ccc|ppp  ccv|ppp   cvv|ppp  vvv|ppp
                   ) ) continue;
          if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
                  
@@ -596,7 +597,8 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
          double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
          double eta =  etafunc( ME_od, denominator);
 
-         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+//         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+         Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
          
       }// for iket
 
