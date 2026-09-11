@@ -416,7 +416,8 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
            double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
            double eta =  etafunc( ME_od, denominator);
 
-           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+           Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+//           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
            
         }// for iket
 
@@ -523,7 +524,7 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
    std::vector<size_t> corevec;
    for (auto a : H->modelspace->core) corevec.push_back(a);
    std::map<int,double> e_fermi = H->modelspace->GetEFermi();
-   if (H->OneBodyNorm() < 1e-6)
+   if (H_denom->OneBodyNorm() < 1e-6)
    {
       std::cout << __func__ << "  WARNING: || H1b || is zero. This may cause trouble with the denominators." << std::endl;
    }
@@ -554,7 +555,7 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
       size_t nkets = Tbc_ket.GetNumberKets();
 
       Ket3& bra = Tbc_bra.GetKet(ibra);
-      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+//      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
 
 
       double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
@@ -569,7 +570,10 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
       size_t b = bra.q;
       size_t c = bra.r;
 
-      for (size_t iket=0; iket<nkets; iket++)
+//      size_t iket_min = 0;
+      size_t iket_min = (ch3bra==ch3ket) ? ibra : 0;
+//      for (size_t iket=0; iket<nkets; iket++)
+      for (size_t iket=iket_min; iket<nkets; iket++)
       {
          Ket3& ket = Tbc_ket.GetKet(iket);
          // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
@@ -596,7 +600,8 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
          double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
          double eta =  etafunc( ME_od, denominator);
 
-         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+//         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+         Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
          
       }// for iket
 
