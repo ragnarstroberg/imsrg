@@ -598,14 +598,8 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
          double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
          double eta =  etafunc( ME_od, denominator);
 
-<<<<<<< HEAD
-
-         Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
-//         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
-=======
 //         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
          Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
->>>>>>> 6f0e6ff01e9542a368ce61619aa3ff552712b0bc
          
       }// for iket
 
