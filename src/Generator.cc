@@ -416,8 +416,8 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
            double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
            double eta =  etafunc( ME_od, denominator);
 
-//           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
            Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+//           Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
            
         }// for iket
 
@@ -574,9 +574,9 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
       for (size_t iket=iket_min; iket<nkets; iket++)
       {
          Ket3& ket = Tbc_ket.GetKet(iket);
-         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
-         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
-                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
+         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv      cvq>0 means "p". cvq<2 means c or v
+         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // ppp|ccc  ppp|ccv   ppp|cvv  ppp|vvv
+                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  ) // ccc|ppp  ccv|ppp   cvv|ppp  vvv|ppp
                   ) ) continue;
          if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
                  
@@ -598,9 +598,14 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
          double ME_od = H->ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
          double eta =  etafunc( ME_od, denominator);
 
+<<<<<<< HEAD
 
          Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
 //         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+=======
+//         Eta->ThreeBody.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+         Eta->ThreeBody.SetME_pn_ch( ch3bra,ch3ket,ibra,iket,  eta); // hermitian conjugate automatically gets added
+>>>>>>> 6f0e6ff01e9542a368ce61619aa3ff552712b0bc
          
       }// for iket
 

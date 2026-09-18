@@ -1321,14 +1321,17 @@ void HFMBPT::SolveVanVleck(Operator& HNO, int order)
       vv_omegas[i].SetAntiHermitian();
    }
    Operator H0 = Operator(HNO);
-   Operator V1 = Operator(HNO);
+   Operator VD = Operator(HNO);
    H0.EraseTwoBody();
    H0.EraseThreeBody();
-   V1.ZeroBody = 0;
-   V1.EraseOneBody();
+   VD.ZeroBody = 0;
+   VD.EraseOneBody();
+   Operator VX = vv_gen.GetHod(VD);
+   VD -= VX;
 
    // 1st order
-   vv_gen.UpdateGeneral( V1, H0, vv_omegas[0] ); // first order Omega
+   // [O1,H0] = -VX
+   vv_gen.UpdateGeneral( VX, H0, vv_omegas[0] ); // first order Omega
 
    if ( order <2 )   return ;
 
@@ -1344,22 +1347,27 @@ void HFMBPT::SolveVanVleck(Operator& HNO, int order)
    }
 
    // 2nd order [for a 2-body V, this goes up to 3-body]
-   Operator O1V1 = Commutator::Commutator( vv_omegas[0], V1 );
+   // [O2,H0] = [O1, (VD+1/2Vx)]
+   Operator O1V1 = Commutator::Commutator( vv_omegas[0], (VD+1./2*VX) );
    vv_gen.UpdateGeneral( O1V1, H0, vv_omegas[1] ); // second order Omega
    if ( order <3 )   return ;
 
    // 3rd order [for a 2-body V, this should go up to 4-body]
-   Operator O1O1V1 = Commutator::Commutator( vv_omegas[0], O1V1 );
+   // [O3,H0] = [O2,(VD+1/2VX)] + 1/3[O1,[O1,VX]]  -1/4[O1, [O1,VX]X]
+   Operator O2V1 = Commutator::Commutator( vv_omegas[1], VD+1./2*VX);
+   Operator O1VX = Commutator::Commutator( vv_omegas[0], VX);
+   Operator O1O1VX = Commutator::Commutator( vv_omegas[0], O1VX );
+   Operator O1O1VXx = Commutator::Commutator( vv_omegas[0], vv_gen.GetHod( O1VX));
    if ( vv_approx == "imsrg3f2")
    {
-      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],V1, O1O1V1);
-      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],V1, O1O1V1);
+      Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],VX, O1O1VX);
+      Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],VX, O1O1VX);
    }
-   Operator O2V1 = Commutator::Commutator( vv_omegas[1], V1);
-   Operator Hod = O2V1 + +1./3*O1O1V1;
+   Operator Hod = O2V1 + +1./3*O1O1VX - 1./4*O1O1VXx;
    vv_gen.UpdateGeneral( Hod,  H0, vv_omegas[2] ); // third order Omega
-   if ( order <4 )   return ;
 
+   if ( order <4 )   return ;
+/*
    // 4th order [for a 2-body V, this should go up to 5-body]
    Operator O3V1   = Commutator::Commutator(vv_omegas[2],V1);
    Operator O2O1V1 = Commutator::Commutator(vv_omegas[1],O1V1);
@@ -1385,7 +1393,8 @@ void HFMBPT::SolveVanVleck(Operator& HNO, int order)
    Hod = O3V1 + 1./3*O2O1V1;
    vv_gen.UpdateGeneral( Hod, H0, vv_omegas[3]); // 4th order Omega
    if ( order <5 )   return ;
-   if ( order >=5 )
+*/
+   if ( order >=4 )
    {
       std::cout << "Orders beyond 4 not yet implemented. So you get up to 4th order." << std::endl;
    }
@@ -1411,17 +1420,19 @@ std::vector<Operator> HFMBPT::VV_TransformH( Operator& HNO, int order, bool sing
        Commutator::SetUseIMSRG3(true);
        Commutator::SetUseIMSRG3N7(true);
    }
-   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[0],HNO) ); // Hout[0] = H2
-   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[1],HNO) ); // Hout[1] = H3
-   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[2],HNO) ); // Hout[2] = H4
-   Operator O1O1V1 = Commutator::Commutator( 2*vv_omegas[0],Hout[0] ); 
+   Operator VX = vv_gen.GetHod(HNO);
+   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[0],VX) ); // Hout[0] = H2
+   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[1],VX) ); // Hout[1] = H3
+   Hout.push_back( 1./2* Commutator::Commutator(vv_omegas[2],VX) ); // Hout[2] = H4
+   Operator O1O1VX = Commutator::Commutator( 2*vv_omegas[0],Hout[0] ); 
    if (vv_approx == "imsrg3f2")
    {
-     Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],HNO, O1O1V1);
+     Commutator::FactorizedDoubleCommutator::comm223_232(vv_omegas[0],VX, O1O1VX);
      if (not singleref)
-        Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],HNO, O1O1V1);
+        Commutator::FactorizedDoubleCommutator::comm223_231(vv_omegas[0],VX, O1O1VX);
+     Hout[1] += 1./12 * O1O1VX; // SRS added this. It's not in the Shavitt Redmon paper.
    }
-   Operator O1O1O1V1 = Commutator::Commutator(vv_omegas[0], O1O1V1 );
+   Operator O1O1O1V1 = Commutator::Commutator(vv_omegas[0], O1O1VX );
    // This part doesn't matter for the 4th order energy
    if (vv_approx == "imsrg3f2" and (not singleref))
    {
