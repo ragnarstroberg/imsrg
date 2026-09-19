@@ -82,6 +82,7 @@ class HFMBPT : public HartreeFock
 
 
     double GetDenom(const Operator& H, const std::vector<index_t>& holes, const std::vector<index_t>& particles) const;
+    double GetMP4_term( const Operator& H, int diagram) const;
     double GetMP4_F1( const Operator& H) const ;
     double GetMP4_F2( const Operator& H) const ;
     double GetMP4_F3( const Operator& H) const ;
