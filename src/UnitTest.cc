@@ -6021,18 +6021,25 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   int particle_rank = 2;
   int hEta = eta.IsHermitian() ? 1 : -1;
   int hH = H.IsHermitian() ? 1 : -1;
-  int hZ = -hEta * hH;
+  int hZ = hH;
+//  int hZ = -hEta * hH;
 
 //  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
 //  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);
-  Operator OpOut_direct(*modelspace, jrank, tz, parity, 3);
+  Operator OpOut_intermediate(*modelspace, jrank, tz, parity, 3);
+  Operator OpOut_direct(*modelspace, jrank, tz, parity, 2);
   Operator OpOut_factorized(*modelspace, jrank, tz, parity, 2);
   if ( hZ < 0 )
   {
     OpOut_direct.SetAntiHermitian();
     OpOut_factorized.SetAntiHermitian();
   }
-  OpOut_direct.ThreeBody.SetMode("pn");
+  if ( -1*hEta*hH < 0 )
+  {
+    OpOut_intermediate.SetAntiHermitian();
+  }
+//  OpOut_direct.ThreeBody.SetMode("pn");
+  OpOut_intermediate.ThreeBody.SetMode("pn");
   if (OpOut_direct.IsReduced() )
   {
      OpOut_direct.MakeNotReduced();
@@ -6041,6 +6048,10 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   {
      OpOut_factorized.MakeNotReduced();
   }
+  if (OpOut_intermediate.IsReduced() )
+  {
+     OpOut_intermediate.MakeNotReduced();
+  }
 
   if ( eta.IsReduced() or H.IsReduced() or OpOut_direct.IsReduced() or OpOut_factorized.IsReduced())
   {
@@ -6048,11 +6059,14 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
                << eta.IsReduced() << " " << H.IsReduced() << " " << OpOut_direct.IsReduced() << " " << OpOut_factorized.IsReduced() 
                << std::endl;
   }
-  Commutator::comm223ss(eta, H, OpOut_direct);
-  Commutator::comm231ss(eta, OpOut_direct, OpOut_direct);
-  Commutator::comm232ss(eta, OpOut_direct, OpOut_direct);
+//  Commutator::comm223ss(eta, H, OpOut_direct);
+//  Commutator::comm231ss(eta, OpOut_direct, OpOut_direct);
+//  Commutator::comm232ss(eta, OpOut_direct, OpOut_direct);
+  Commutator::comm223ss(eta, H, OpOut_intermediate);
+  Commutator::comm231ss(eta, OpOut_intermediate, OpOut_direct);
+  Commutator::comm232ss(eta, OpOut_intermediate, OpOut_direct);
 
-  OpOut_direct.ThreeBody.Erase();
+//  OpOut_direct.ThreeBody.Erase();
   // OpOut_factorized.EraseOneBody();  
   // OpOut_factorized.TwoBody.Erase();
 

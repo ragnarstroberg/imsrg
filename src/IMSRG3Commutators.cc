@@ -417,7 +417,7 @@ namespace Commutator
     int x_particle_rank = X.GetParticleRank();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    int herm = Z.IsHermitian() ? 1 : -1;
+//    int herm = Z.IsHermitian() ? 1 : -1;
 
     size_t norb = Z.modelspace->GetNumberOrbits();
     std::vector<std::array<size_t, 2>> ij_pairs;
