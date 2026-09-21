@@ -691,11 +691,17 @@ namespace Commutator
             int twoJ_max = oa.j2 + 2 * J;
             // this is less efficient than doing the loop twice, but less code
             // and easily lets us treat the case of Y having nonzero Tz or odd parity
-            for (int b_loop = 0; b_loop <= 1; b_loop++)
+            // If either operator is not channel diagonal, we do two loops.
+            // The first loop (b_loop=0) corresponds to X1 and Y3, the second loop corresponds to Y1 and X3
+            // If both operators are channel diagonal, then we do everything in the first loop.
+            // This fixes a bug reported by Sota Yoshida, Sept 2026, in which the case Y3=0 gave a wrong result.
+            int b_loop_max = (x_channel_diag and y_channel_diag) ?  0 : 1;
+//            for (int b_loop = 0; b_loop <= 1; b_loop++)
+            for (int b_loop = 0; b_loop <= b_loop_max; b_loop++)
             {
-              if (x_channel_diag and y_channel_diag and b_loop > 0)
-                continue;
-              if ( b_loop ==0 and y3norm<1e-12)
+//              if (x_channel_diag and y_channel_diag and b_loop > 0)
+//                continue;
+              if ( b_loop ==0 and b_loop_max==1 and y3norm<1e-12) // don't bother if the norm is zero
                  continue;
               if ( b_loop ==1 and x3norm<1e-12)
                  continue;
