@@ -146,6 +146,7 @@ double GetMP4_F1( const Operator& H)
 // Diagram F2 (as numbered by ADG)   complex conjugate diagram: F3
 // mscheme expression: F2 = -1/4 sum_abcdijkl (v_abij v_ijak v_cdbl v_klcd) / (eps_ijab eps_kb eps_klcd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F2( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -214,6 +215,7 @@ double GetMP4_F2( const Operator& H)
 // Diagram F3 (as numbered by ADG)   complex conjugate diagram: F2
 // mscheme expression: F3 = -1/4 sum_abcdijkl (v_abij v_icab v_jdkl v_klcd) / (eps_ijab eps_jc eps_klcd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F3( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -282,6 +284,7 @@ double GetMP4_F3( const Operator& H)
 // Diagram F4 (as numbered by ADG)
 // mscheme expression: F4 = 1/4 sum_abcdeijk (v_abij v_icab v_deck v_jkde) / (eps_ijab eps_jc eps_jkde)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F4( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -349,6 +352,7 @@ double GetMP4_F4( const Operator& H)
 // Diagram F5 (as numbered by ADG)
 // mscheme expression: F5 = 1/16 sum_abijklmn (v_abij v_ijkl v_klmn v_mnab) / (eps^ij_ab eps^kl_ab eps^mn_ab)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F5( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -411,6 +415,7 @@ double GetMP4_F5( const Operator& H)
 // Diagram F6 (as numbered by ADG)   complex conjugate diagram: F8
 // mscheme expression: F6 = 1/2 sum_abcijklm (v_abij v_ijkl v_kcam v_lmbc) / (eps^ij_ab eps^kl_ab eps^lm_bc)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F6( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -486,6 +491,7 @@ double GetMP4_F6( const Operator& H)
 // Diagram F7 (as numbered by ADG)   complex conjugate diagram: F14
 // mscheme expression: F7 = 1/16 sum_abcdijkl (v_abij v_ijkl v_cdab v_klcd) / (eps^ij_ab eps^kl_ab eps^kl_cd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F7( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -548,6 +554,7 @@ double GetMP4_F7( const Operator& H)
 // Diagram F8 (as numbered by ADG)   complex conjugate diagram: F6
 // mscheme expression: F8 = 1/2 sum_abcijklm (v_abij v_icak v_jklm v_lmbc) / (eps^ij_ab eps^jk_bc eps^lm_bc)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F8( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -623,6 +630,7 @@ double GetMP4_F8( const Operator& H)
 // Diagram F9 (as numbered by ADG)
 // mscheme expression: F9 = sum_abcdijkl (v_abik v_icaj v_jdcl v_klbd) / (eps^ik_ab eps^jk_cb eps^kl_bd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F9( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -715,7 +723,7 @@ double GetMP4_F9( const Operator& H)
 
 // Diagram F10 (as numbered by ADG)
 // mscheme expression: F10 = -sum_abcdijkl (v_abij v_icak v_jdcl v_klbd) / (eps^ij_ab eps^jk_cb eps^kl_bd)
-// POSSIBLE SIGN ERROR?
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F10( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -810,7 +818,7 @@ double GetMP4_F10( const Operator& H)
 
 // Diagram F11 (as numbered by ADG)
 // mscheme expression: F11 = -sum_abcdijkl (v_abik v_icaj v_jdbl v_klcd) / (eps^ik_ab eps^jk_bc eps^kl_cd)
-// POSSIBLE SIGN ERROR?
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F11( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -904,6 +912,7 @@ double GetMP4_F11( const Operator& H)
 // Diagram F12 (as numbered by ADG)
 // mscheme expression: F12 = sum_abcdijkl (v_abij v_icak v_jdbl v_klcd) / (eps^ij_ab eps^jk_bc eps^kl_cd)
 // Fixed the triangle condidions. Now it works.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F12( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -997,6 +1006,7 @@ double GetMP4_F12( const Operator& H)
 // Diagram F13 (as numbered by ADG)   complex conjugate diagram: F15
 // mscheme expression: F13 = 1/2 sum_abcdeijk (v_abij v_icak v_debc v_jkde) / (eps^ij_ab eps^jk_bc eps^jk_de)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F13( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1072,6 +1082,7 @@ double GetMP4_F13( const Operator& H)
 // Diagram F14 (as numbered by ADG)   complex conjugate diagram: F7
 // mscheme expression: F14 = 1/16 sum_abcdijkl (v_abij v_cdab v_ijkl v_klcd) / (eps^ij_ab eps^ij_cd eps^kl_cd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F14( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1134,6 +1145,7 @@ double GetMP4_F14( const Operator& H)
 // Diagram F15 (as numbered by ADG)   complex conjugate diagram: F13
 // mscheme expression: F15 = 1/2 sum_abcdeijk (v_abij v_cdab v_ieck v_jkde) / (eps^ij_ab eps^ij_cd eps^jk_de)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F15( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1209,6 +1221,7 @@ double GetMP4_F15( const Operator& H)
 // Diagram F16 (as numbered by ADG)
 // mscheme expression: F16 = 1/16 sum_abcdefij (v_abij v_cdab v_efcd v_ijef) / (eps^ij_ab eps^ij_cd eps^ij_ef)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F16( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1271,6 +1284,7 @@ double GetMP4_F16( const Operator& H)
 // Diagram F17 (as numbered by ADG)
 // mscheme expression: F17 = 1/4 sum_abcijklm (v_abil v_icjk v_jkcm v_lmab) / (eps^il_ab eps^jkl_cab eps^lm_ab)
 // Claude was OFF BY A MINUS SIGN. I fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F17( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1341,6 +1355,7 @@ double GetMP4_F17( const Operator& H)
 // Diagram F18 (as numbered by ADG)
 // mscheme expression: F18 = 1/2 sum_abcijklm (v_abij v_ickl v_jkcm v_lmab) / (eps^ij_ab eps^jkl_cab eps^lm_ab)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F18( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1411,284 +1426,11 @@ double GetMP4_F18( const Operator& H)
   return F18;
 }
 
-/*
-// Diagram F18 (as numbered by ADG)
-// mscheme expression: F18 = 1/2 sum_abcijklm (v_abij v_ickl v_jkcm v_lmab) / (eps^ij_ab eps^jkl_cab eps^lm_ab)
-// Minus sign error due to bug in AMC code
-double GetMP4_F18( const Operator& H)
-{
-   double t_start = omp_get_wtime();
-
-   double F18 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F18)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jklcab = GetDenom(H,{j,k,l},{c,a,b});
-                   double e_lmab = GetDenom(H,{l,m},{a,b});
-                   double denom = e_ijab * e_jklcab * e_lmab;
-                   int phase_exponent = (oc.j2+oj.j2+ok.j2+ol.j2)/2;  // + J0, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vlmab = H.TwoBody.GetTBME_J(J0,J0,l,m,a,b);
-                     double phase = ( (J0+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vickl = H.TwoBody.GetTBME_J(J1,J1,i,c,k,l);
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vjkcm = H.TwoBody.GetTBME_J(J2,J2,j,k,c,m);
-                         double ninej = H.modelspace->GetNineJ( oj.j2/2., oi.j2/2., J0, ok.j2/2., J1, ol.j2/2., J2, oc.j2/2., om.j2/2. );
-                         F18 -= 1./2 * phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * ninej * vabij * vickl * vjkcm * vlmab / denom;
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F18;
-}
-*/
-
-/*
-double GetMP4_F18( const Operator& H)
-{
-   double t_start = omp_get_wtime();
-
-   double F18 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F18)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-               if ( (oa.l+ob.l+oi.l+oj.l)%2 !=0) continue;
-               if ( (oa.tz2+ob.tz2) != (oi.tz2+oj.tz2) ) continue;
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                   if ( (oi.l+oc.l+ol.l+ok.l)%2 !=0) continue;
-                   if ( (oi.tz2+oc.tz2) != (ol.tz2+ok.tz2) ) continue;
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-                   if ( (oa.l+ob.l+ol.l+om.l)%2 !=0) continue;
-                   if ( (oa.tz2+ob.tz2) != (ol.tz2+om.tz2) ) continue;
-                   if ( (oj.l+ok.l+oc.l+om.l)%2 !=0) continue;
-                   if ( (oj.tz2+ok.tz2) != (oc.tz2+om.tz2) ) continue;
-
-
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jklcab = GetDenom(H,{j,k,l},{c,a,b});
-                   double e_lmab = GetDenom(H,{l,m},{a,b});
-                   double denom = e_ijab * e_jklcab * e_lmab;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oi.j2,ol.j2},{om.j2,oj.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oi.j2,ol.j2},{om.j2,oj.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J3_min = AngMom::Jmin( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   int J3_max = AngMom::Jmax( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vmlab = H.TwoBody.GetTBME_J(J0,J0,m,l,a,b);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                        double vbar_ilkc=0;
-                        double vbar_kcmj=0;
-                        for ( int J2=J2_min; J2<=J2_max; J2++)
-                        {
-                           double sixj1 = H.modelspace->GetSixJ(oi.j2/2.,ol.j2/2.,J1, ok.j2/2.,oc.j2/2.,J2);
-                           vbar_ilkc -= (2*J2+1) * sixj1 * H.TwoBody.GetTBME_J(J2,J2,i,c,k,l);
-                        }
-                        for ( int J3=J3_min; J3<=J3_max; J3++)
-                        {
-                           double sixj2 = H.modelspace->GetSixJ(ok.j2/2.,oc.j2/2.,J1, om.j2/2.,oj.j2/2.,J3);
-                           vbar_kcmj -= (2*J3+1) * sixj2 * H.TwoBody.GetTBME_J(J3,J3,k,j,m,c);
-                        }
-                        double sixj3 = H.modelspace->GetSixJ(om.j2/2.,ol.j2/2.,J0,oi.j2/2.,oj.j2/2.,J1);
-                        F18 -= 1./2 * (2*J0+1) * (2*J1+1) * sixj3 * vabij * vmlab * vbar_ilkc * vbar_kcmj / denom;
-                     }// for J1
-                   }// for J0
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F18;
-}
-*/
-
-/*
-///MSCHEME version will be SLOW...
-double GetMP4_F18( const Operator& H)
-{
-   double t_start = omp_get_wtime();
-   UnitTest ut(*(H.modelspace));
-
-   double F18 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F18)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-               if ( (oa.l+ob.l+oi.l+oj.l)%2 !=0) continue;
-               if ( (oa.tz2+ob.tz2) != (oi.tz2+oj.tz2) ) continue;
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                   if ( (oi.l+oc.l+ol.l+ok.l)%2 !=0) continue;
-                   if ( (oi.tz2+oc.tz2) != (ol.tz2+ok.tz2) ) continue;
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-
-                   if ( (oa.l+ob.l+ol.l+om.l)%2 !=0) continue;
-                   if ( (oa.tz2+ob.tz2) != (ol.tz2+om.tz2) ) continue;
-                   if ( (oj.l+ok.l+oc.l+om.l)%2 !=0) continue;
-                   if ( (oj.tz2+ok.tz2) != (oc.tz2+om.tz2) ) continue;
-
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jklcab = GetDenom(H,{j,k,l},{c,a,b});
-                   double e_lmab = GetDenom(H,{l,m},{a,b});
-                   double denom = e_ijab * e_jklcab * e_lmab;
-                   for (int two_ma=-oa.j2; two_ma<=oa.j2; two_ma+=2)
-                   {
-                   for (int two_mb=-ob.j2; two_mb<=ob.j2; two_mb+=2)
-                   {
-                   for (int two_mc=-oc.j2; two_mc<=oc.j2; two_mc+=2)
-                   {
-                   for (int two_mi=-oi.j2; two_mi<=oi.j2; two_mi+=2)
-                   {
-                   for (int two_mj=-oj.j2; two_mj<=oj.j2; two_mj+=2)
-                   {
-                      if ( (two_mi + two_mj) != (two_ma+two_mb) ) continue;
-                   for (int two_mk=-ok.j2; two_mk<=ok.j2; two_mk+=2)
-                   {
-                   for (int two_ml=-ol.j2; two_ml<=ol.j2; two_ml+=2)
-                   {
-                      if ( (two_mi + two_mc) != (two_mk+two_ml) ) continue;
-                   for (int two_mm=-om.j2; two_mm<=om.j2; two_mm+=2)
-                   {
-                      if ( (two_ml + two_mm) != (two_ma+two_mb) ) continue;
-                      if ( (two_mj + two_mk) != (two_mc+two_mm) ) continue;
-
-//                      double vabij = ut.GetMschemeMatrixElement_2b( H, a, two_ma, b, two_mb, i, two_mi, j, two_mj );
-//                      double vlmab = ut.GetMschemeMatrixElement_2b( H, l, two_ml, m, two_mm , a, two_ma, b, two_mb);
-//                      double vickl = ut.GetMschemeMatrixElement_2b( H, i, two_mi, c, two_mc , k, two_mk, l, two_ml);
-//                      double vjkcm = ut.GetMschemeMatrixElement_2b( H, j, two_mj, k, two_mk , c, two_mc, m, two_mm);
-//                      F18 += 1./2 * vabij * vickl * vjkcm * vlmab / denom;
-                      double vabij = ut.GetMschemeMatrixElement_2b( H, a, two_ma, b, two_mb, i, two_mi, j, two_mj );
-                      double vickl = ut.GetMschemeMatrixElement_2b( H, i, two_mi, c, two_mc, k, two_mk, l, two_ml);
-                      double vkjmc = ut.GetMschemeMatrixElement_2b( H, k, two_mk, j, two_mj, m, two_mm, c, two_mc );
-                      double vmlab = ut.GetMschemeMatrixElement_2b( H, m, two_mm, l, two_ml, a, two_ma, b, two_mb);
-                      F18 -= 1./2 * vabij * vickl * vkjmc * vmlab / denom;
-                   }
-                   }
-                   }
-                   }
-                   }
-                   }
-                   }
-                   }
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F18;
-}
-*/
-
-
 
 // Diagram F19 (as numbered by ADG)
 // mscheme expression: F19 = 1/2 sum_abcijklm (v_abil v_icjk v_jkam v_lmbc) / (eps^il_ab eps^jkl_abc eps^lm_bc)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F19( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1763,7 +1505,8 @@ double GetMP4_F19( const Operator& H)
 
 // Diagram F20 (as numbered by ADG)
 // mscheme expression: F20 = sum_abcijklm (v_abij v_ickl v_jkam v_lmbc) / (eps^ij_ab eps^jkl_abc eps^lm_bc)
-// doesnt agree, and I don't know why
+// There was a bug in Takayuki's Fortran implementation. Now both agree.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F20( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1857,6 +1600,7 @@ double GetMP4_F20( const Operator& H)
 // Diagram F21 (as numbered by ADG)   complex conjugate diagram: F25
 // mscheme expression: F21 = -sum_abcdijkl (v_abik v_icjl v_jdac v_klbd) / (eps^ik_ab eps^jkl_acb eps^kl_bd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F21( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -1950,6 +1694,7 @@ double GetMP4_F21( const Operator& H)
 // Diagram F22 (as numbered by ADG)   complex conjugate diagram: F26
 // mscheme expression: F22 = 1/2 sum_abcdijkl (v_abij v_ickl v_jdac v_klbd) / (eps^ij_ab eps^jkl_acb eps^kl_bd)
 // Missing minus sign? Yes, dropped the minus sign from AMC
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F22( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2025,6 +1770,7 @@ double GetMP4_F22( const Operator& H)
 // Diagram F23 (as numbered by ADG)   complex conjugate diagram: F29
 // mscheme expression: F23 = 1/2 sum_abcdijkl (v_abik v_icjl v_jdab v_klcd) / (eps^ik_ab eps^jkl_abc eps^kl_cd)
 // missing minus sign? yep. fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F23( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2100,6 +1846,7 @@ double GetMP4_F23( const Operator& H)
 // Diagram F24 (as numbered by ADG)   complex conjugate diagram: F30
 // mscheme expression: F24 = -1/4 sum_abcdijkl (v_abij v_ickl v_jdab v_klcd) / (eps^ij_ab eps^jkl_abc eps^kl_cd)
 // missing minus sign. fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F24( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2170,6 +1917,7 @@ double GetMP4_F24( const Operator& H)
 // Diagram F25 (as numbered by ADG)   complex conjugate diagram: F21
 // mscheme expression: F25 = -sum_abcdijkl (v_abik v_cdaj v_ijcl v_klbd) / (eps^ik_ab eps^ijk_cbd eps^kl_bd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F25( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2262,7 +2010,8 @@ double GetMP4_F25( const Operator& H)
 
 // Diagram F26 (as numbered by ADG)   complex conjugate diagram: F22
 // mscheme expression: F26 = 1/2 sum_abcdijkl (v_abij v_cdak v_ijcl v_klbd) / (eps^ij_ab eps^ijk_cbd eps^kl_bd)
-// Off by a minus sign. not sure why
+// Missing minus sign due to bug in AMC
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F26( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2338,6 +2087,7 @@ double GetMP4_F26( const Operator& H)
 // Diagram F27 (as numbered by ADG)
 // mscheme expression: F27 = 1/4 sum_abcdeijk (v_abjk v_cdai v_iecd v_jkbe) / (eps^jk_ab eps^ijk_cdb eps^jk_be)
 // missing minus sign?  yep. fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F27( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2408,6 +2158,7 @@ double GetMP4_F27( const Operator& H)
 // Diagram F28 (as numbered by ADG)
 // mscheme expression: F28 = 1/2 sum_abcdeijk (v_abij v_cdak v_iecd v_jkbe) / (eps^ij_ab eps^ijk_cdb eps^jk_be)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F28( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2483,6 +2234,7 @@ double GetMP4_F28( const Operator& H)
 // Diagram F29 (as numbered by ADG)   complex conjugate diagram: F23
 // mscheme expression: F29 = 1/2 sum_abcdijkl (v_abik v_cdaj v_ijbl v_klcd) / (eps^ik_ab eps^ijk_bcd eps^kl_cd)
 // minus sign was missing. fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F29( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2558,6 +2310,7 @@ double GetMP4_F29( const Operator& H)
 // Diagram F30 (as numbered by ADG)   complex conjugate diagram: F24
 // mscheme expression: F30 = -1/4 sum_abcdijkl (v_abij v_cdak v_ijbl v_klcd) / (eps^ij_ab eps^ijk_bcd eps^kl_cd)
 // missing minus sign? yep. fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F30( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2628,6 +2381,7 @@ double GetMP4_F30( const Operator& H)
 // Diagram F31 (as numbered by ADG)
 // mscheme expression: F31 = 1/2 sum_abcdeijk (v_abjk v_cdai v_iebc v_jkde) / (eps^jk_ab eps^ijk_bcd eps^jk_de)
 // missing minus sign. fixed it.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F31( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2703,6 +2457,7 @@ double GetMP4_F31( const Operator& H)
 // Diagram F32 (as numbered by ADG)
 // mscheme expression: F32 = sum_abcdeijk (v_abij v_cdak v_iebc v_jkde) / (eps^ij_ab eps^ijk_bcd eps^jk_de)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F32( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2793,6 +2548,7 @@ double GetMP4_F32( const Operator& H)
 // Diagram F33 (as numbered by ADG)
 // mscheme expression: F33 = -1/4 sum_abcdijkl (v_abik v_cdjl v_ijcd v_klab) / (eps^ik_ab eps^ijkl_cdab eps^kl_ab)
 // minus sign error. Fixed.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F33( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2863,6 +2619,7 @@ double GetMP4_F33( const Operator& H)
 // Diagram F34 (as numbered by ADG)
 // mscheme expression: F34 = 1/16 sum_abcdijkl (v_abij v_cdkl v_ijcd v_klab) / (eps^ij_ab eps^ijkl_cdab eps^kl_ab)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F34( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2925,6 +2682,7 @@ double GetMP4_F34( const Operator& H)
 // Diagram F35 (as numbered by ADG)
 // mscheme expression: F35 = -1/4 sum_abcdijkl (v_abkl v_cdij v_ijac v_klbd) / (eps^kl_ab eps^ijkl_acbd eps^kl_bd)
 // minus sign error. Fixed.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F35( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -2995,6 +2753,7 @@ double GetMP4_F35( const Operator& H)
 // Diagram F36 (as numbered by ADG)
 // mscheme expression: F36 = sum_abcdijkl (v_abik v_cdjl v_ijac v_klbd) / (eps^ik_ab eps^ijkl_acbd eps^kl_bd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F36( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -3086,6 +2845,7 @@ double GetMP4_F36( const Operator& H)
 // Diagram F37 (as numbered by ADG)
 // mscheme expression: F37 = -1/4 sum_abcdijkl (v_abij v_cdkl v_ijac v_klbd) / (eps^ij_ab eps^ijkl_acbd eps^kl_bd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F37( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -3154,6 +2914,7 @@ double GetMP4_F37( const Operator& H)
 // Diagram F38 (as numbered by ADG)
 // mscheme expression: F38 = 1/16 sum_abcdijkl (v_abkl v_cdij v_ijab v_klcd) / (eps^kl_ab eps^ijkl_abcd eps^kl_cd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F38( const Operator& H)
 {
    double t_start = omp_get_wtime();
@@ -3216,6 +2977,7 @@ double GetMP4_F38( const Operator& H)
 // Diagram F39 (as numbered by ADG)
 // mscheme expression: F39 = -1/4 sum_abcdijkl (v_abik v_cdjl v_ijab v_klcd) / (eps^ik_ab eps^ijkl_abcd eps^kl_cd)
 // agrees.
+// Written by AI (Claude sonnet 5) based on expressions and example from Ragnar. Tested and corrected by Ragnar.
 double GetMP4_F39( const Operator& H)
 {
    double t_start = omp_get_wtime();
