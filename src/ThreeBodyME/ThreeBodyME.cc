@@ -298,8 +298,10 @@ void ThreeBodyME::TransformToPN()
     ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
     ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
     int twoJ = Tbc_bra.twoJ;
-    size_t nbras = Tbc_bra.GetNumber3bKets();
-    size_t nkets = Tbc_ket.GetNumber3bKets();
+//    size_t nbras = Tbc_bra.GetNumber3bKets();
+//    size_t nkets = Tbc_ket.GetNumber3bKets();
+    size_t nbras = Tbc_bra.GetNumberKets();
+    size_t nkets = Tbc_ket.GetNumberKets();
     for (size_t ibra=0; ibra<nbras; ibra++)
     {
 //      std::cout << "   ibra = " << ibra << std::endl;

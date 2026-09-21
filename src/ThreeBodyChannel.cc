@@ -33,10 +33,10 @@ void ThreeBodyChannel::Initialize()
 }
 
 
-int ThreeBodyChannel::GetNumber3bKets()
-{
-  return KetList.size();
-}
+//int ThreeBodyChannel::GetNumber3bKets()
+//{
+//  return KetList.size();
+//}
 
 // We will need to deal with requests of indices with the wrong ordering...
 size_t ThreeBodyChannel::GetLocalIndex( int p, int q, int r, int Jpq )

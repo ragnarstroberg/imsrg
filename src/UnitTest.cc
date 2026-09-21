@@ -6022,7 +6022,7 @@ bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
   int hEta = eta.IsHermitian() ? 1 : -1;
   int hH = H.IsHermitian() ? 1 : -1;
   int hZ = hH;
-//  int hZ = -hEta * hH;
+//  int hZ = hEta * hEta * hH;
 
 //  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
 //  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);

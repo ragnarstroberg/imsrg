@@ -4341,8 +4341,10 @@ void ReadWrite::WriteOperator(Operator& op, std::string filename, double CHOP=1e
         ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(chbra);
         ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(chket);
         int twoJ = Tbc_bra.twoJ;
-        size_t nbras = Tbc_bra.GetNumber3bKets();
-        size_t nkets = Tbc_ket.GetNumber3bKets();
+        size_t nbras = Tbc_bra.GetNumberKets();
+        size_t nkets = Tbc_ket.GetNumberKets();
+//        size_t nbras = Tbc_bra.GetNumber3bKets();
+//        size_t nkets = Tbc_ket.GetNumber3bKets();
         for (size_t ibra=0; ibra<nbras; ibra++)
         {
           size_t iketmin = (chbra==chket) ? ibra : 0;
