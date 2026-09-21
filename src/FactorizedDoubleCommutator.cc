@@ -142,6 +142,7 @@ namespace Commutator
       int hEta = Eta.IsHermitian() ? 1 : -1;
       int hGamma = Gamma.IsHermitian() ? 1 : -1;
       // int hZ = Z.IsHermitian() ? 1 : -1;
+//      int hZ = hGamma;
       int hZ = hGamma;
       // ###########################################################
       //  diagram I
@@ -417,7 +418,8 @@ namespace Commutator
               {
                 double etaME = (2 * J1 + 1) * Eta.TwoBody.GetTBME_J(J1, J1, e, p, d, q);
                 zij_a += Chi_221_b(d, e) * etaME;
-                zij_b += hZ * Chi_221_b(e, d) * etaME;
+                zij_b -= hEta * hZ * Chi_221_b(e,d) * etaME;
+//                zij_b += hZ * Chi_221_b(e, d) * etaME;  // this is wrong for hermitian eta.
               }
             }
           }
@@ -1306,7 +1308,8 @@ namespace Commutator
                 norm *= bra.Phase(tbc_bra.J);
               zpqrs += norm * CHI_I(p, b) * Gamma.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_bq, iket);
               if (Z_is_scalar)
-                zpqrs += norm * hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_bq, iket);
+                zpqrs -= norm * hEta * hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_bq, iket);
+//                zpqrs += norm * hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_bq, iket) // this is wrong for hermitian eta
               // zpqrs += CHI_I(p, b) * Gamma.TwoBody.GetTBME_J(J, J, b, q, r, s);
               // zpqrs += hZ * CHI_II(b, p) * Eta.TwoBody.GetTBME_J(J, J, b, q, r, s);
             }
@@ -1320,7 +1323,8 @@ namespace Commutator
                 norm *= bra.Phase(tbc_bra.J);
               zpqrs += norm * CHI_I(q, b) * Gamma.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_pb, iket);
               if (Z_is_scalar)
-                zpqrs += norm * hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_pb, iket);
+                zpqrs -= norm * hEta * hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_pb, iket);
+//                zpqrs += norm * hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_norm(ch_bra, ch_ket, ibra_pb, iket); // this is wrong for hermitian eta
               // zpqrs += CHI_I(q, b) *     Gamma.TwoBody.GetTBME_J(J, J, p, b, r, s);
               // zpqrs += hZ * CHI_II(b, q) * Eta.TwoBody.GetTBME_J(J, J, p, b, r, s);
             }
@@ -2056,7 +2060,7 @@ namespace Commutator
                   if (c > b)
                     indx_cb += nkets;
                   XbarIIbd -= Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (barCHI_III[ch_cc_old](indx_bc, indx_ad) + barCHI_III[ch_cc_old](indx_ad, indx_bc));
-                  XbarIIIab += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) - hZ * bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
+                  XbarIIIab += Z.modelspace->phase((ob.j2 + oc.j2) / 2 + J_std) * (2 * J_std + 1) * sixj1 * (bar_CHI_V[ch_cc_old](indx_ad, indx_bc) + hEta * hZ * bar_CHI_V[ch_cc_old](indx_bc, indx_ad));
                 }
               }
             }
