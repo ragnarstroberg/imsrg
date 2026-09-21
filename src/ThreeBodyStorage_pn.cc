@@ -82,7 +82,8 @@ void ThreeBodyStorage_pn::Allocate()
   for (size_t ch_bra=0; ch_bra<nch; ch_bra++)
   {
     ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel( ch_bra );
-    size_t nkets_bra = Tbc_bra.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
+    size_t nkets_bra = Tbc_bra.GetNumberKets(); // Number of kets in this 3body J,p,Tz channel
+//    size_t nkets_bra = Tbc_bra.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
     ch_dim.push_back( nkets_bra );
     for (size_t ch_ket=ch_bra; ch_ket<nch; ch_ket++)
     {
@@ -90,7 +91,8 @@ void ThreeBodyStorage_pn::Allocate()
       if (  ( std::abs(Tbc_bra.twoJ-Tbc_ket.twoJ)<=2*rank_J ) and ( (Tbc_bra.twoJ+Tbc_ket.twoJ)>=2*rank_J )
           and ( (Tbc_bra.parity+Tbc_ket.parity)%2==parity ) and ( std::abs(Tbc_bra.twoTz-Tbc_ket.twoTz)==2*rank_T )  )
       {
-         size_t nkets_ket = Tbc_ket.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
+         size_t nkets_ket = Tbc_ket.GetNumberKets(); // Number of kets in this 3body J,p,Tz channel
+//         size_t nkets_ket = Tbc_ket.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
          if (nkets_ket > 0) // If there aren't any kets, don't add it to the list.
             ch_start[{ch_bra,ch_ket}] = total_dimension;
          if (ch_bra==ch_ket)
@@ -385,7 +387,8 @@ void ThreeBodyStorage_pn::AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, si
       or    iket_1>ch_dim[ch_1] or iket_2>ch_dim[ch_2])
   {
     std::ostringstream oss;
-    oss << __FILE__ << " " << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
+    oss << __FILE__ << " " << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket
+        << " dim: " << ch_dim[ch_1] << " " << ch_dim[ch_2];
     throw std::domain_error( oss.str() );
   }
   // ch_start points to where the matrix for this channel starts, and the rest

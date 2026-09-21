@@ -228,7 +228,7 @@ struct ThreeBodyChannel
    ThreeBodyChannel(int ch, ModelSpace* ms);
    void Initialize();
 
-   int GetNumber3bKets();
+//   int GetNumber3bKets();
 
    size_t GetLocalIndex( int p, int q, int r, int Jpq );
    bool CheckChannel_ket( Ket3& ket3);
