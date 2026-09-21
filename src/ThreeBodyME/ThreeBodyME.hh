@@ -22,10 +22,10 @@
 
 #include "ModelSpace.hh"
 #include "ThreeBodyStorage.hh"
-#include "ThreeBodyStorage_iso.hh"
-#include "ThreeBodyStorage_pn.hh"
-#include "ThreeBodyStorage_no2b.hh"
-#include "ThreeBodyStorage_mono.hh"
+//#include "ThreeBodyStorage_iso.hh"
+//#include "ThreeBodyStorage_pn.hh"
+//#include "ThreeBodyStorage_no2b.hh"
+//#include "ThreeBodyStorage_mono.hh"
 #include <fstream>
 #include <unordered_map>
 #include <memory> // for shared_ptr

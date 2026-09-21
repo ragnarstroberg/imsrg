@@ -3,6 +3,9 @@
 #include "ModelSpace.hh"
 #include "ThreeBodyStorage.hh"
 #include "ThreeBodyStorage_iso.hh"
+#include "ThreeBodyStorage_pn.hh"
+#include "ThreeBodyStorage_mono.hh"
+#include "ThreeBodyStorage_no2b.hh"
 #include "IMSRGProfiler.hh"
 #include "AngMom.hh"
 

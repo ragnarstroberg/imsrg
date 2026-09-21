@@ -35,7 +35,7 @@
 #include "AngMom.hh"
 #include "IMSRGProfiler.hh"
 #include "Jacobi3BME.hh"
-#include "DarkMatterNREFT.hh"
+//#include "DarkMatterNREFT.hh"
 #include "HFMBPT.hh"
 #include "UnitTest.hh"
 #include "PhysicalConstants.hh"
