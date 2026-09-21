@@ -16,7 +16,7 @@
 /// \f]
 /// where q is the momentum transfer, psi is a scalar function and Omega is 
 /// one of the six possibility for the spin operator. It is therefore very easy
-/// to implement any scalar 2B operator using this class to generatre the relative
+/// to implement any scalar 2B operator using this class to generate the relative
 /// frame TBME. Example on how this is use can be found for the 0vbb operators in
 /// M0nu.cc
 class PWD
