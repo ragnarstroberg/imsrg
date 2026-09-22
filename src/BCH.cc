@@ -109,6 +109,10 @@ namespace BCH
     {
       OpOut.SetParticleRank(2);
     }
+//    if (OpOut.GetJRank() == 0  and OpOut.IsReduced() )
+//    {
+//      OpOut.MakeNotReduced();
+//    }
     if (OpOut.GetJRank() == 0 and (OpOut.GetTRank() != 0 or OpOut.GetParity() != 0) and OpOut.IsReduced() == false)
     {
       OpOut.MakeReduced();

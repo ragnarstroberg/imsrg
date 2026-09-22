@@ -1710,6 +1710,10 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
   }
   else
   {
+    if( not ( AngMom::Triangle(j1,j2,j3) and AngMom::Triangle(J1,J2,j3) and AngMom::Triangle(j1,J2,J3) and AngMom::Triangle(J1,j2,J3) ) )
+    {
+       return 0;
+    }
     sixj = AngMom::SixJ(j1, j2, j3, J1, J2, J3);
     //    if (not sixj_has_been_precalculated)
     if (omp_get_num_threads() < 2)
@@ -1768,6 +1772,13 @@ void ModelSpace::PreCalculateSixJ()
   int jmax_2b = 2*jmax_1b; // max j two particles can have
   int jmax_3b = 3*jmax_1b; // max j three particles can have
 
+  // For tensor IMSRG(3), we need both b and c going to jmax_3b
+  // for emax > 10, this makes the storage of 6js get beyond 1GB
+  // which is potentially manageable, but unnecessary, since nobody
+  // will be doing tensor IMSRG(3) for emax>10 in the foreseable future.
+  // If you do need it, you can come here and change the code. -SRS
+  int jmax_c = (Emax > 10) ? jmax_1b : jmax_3b;
+
   // { ja jb J1 }  for IMSRG(2), a,b,c,d are all single-particle js.
   // { jc jd J2 }  for many IMSRG(3) terms,  jd can be a 3-particle j
   //               and for 333_pph_hhp, both jb and jd can be 3-particle
@@ -1777,22 +1788,27 @@ void ModelSpace::PreCalculateSixJ()
   {
     for (int j2b = 1; j2b <= jmax_3b; j2b += 2)
     {
-      for (int j2c = 1; j2c <= jmax_1b; j2c += 2)
+      for (int j2c = 1; j2c <= jmax_c; j2c += 2)
       {
-        // four half-integer j's,  two integer J's
         for (int j2d = 1; j2d <= jmax_3b; j2d += 2)
         {
-          if (j2b > std::max(j2d, jmax_1b))
-            continue;
+//          if (j2b > std::max(j2d, jmax_1b))
+//            continue;
+          if ( (j2b>jmax_1b) and (j2c>jmax_1b) and (j2d>jmax_1b) ) continue;
           // J1 couples a,b, and c,d;  J2 couples a,d and b,c
           // We extend the hash table to include symbols outside the coupling range for computational gain.
           // We may want to revert this change at some point. SRS: I reverted it.
-          for (int J1 = 0; J1 <= jmax_2b; J1 += 2)
+          int J1min = AngMom::Jmin({ {j2a,j2b}, {j2c,j2d}});
+          int J1max = AngMom::Jmax({ {j2a,j2b}, {j2c,j2d}});
+          int J2min = AngMom::Jmin({ {j2a,j2d}, {j2b,j2c}});
+          int J2max = AngMom::Jmax({ {j2a,j2d}, {j2b,j2c}});
+//          for (int J1 = 0; J1 <= jmax_2b; J1 += 2)
+          for (int J1 = J1min; J1 <= J1max; J1 += 2)
           {
-            if (not ( AngMom::Triangle(j2a,j2b,J1) and AngMom::Triangle(j2c,j2d,J1) ) ) continue;
-            for (int J2 = 0; J2 <= jmax_2b; J2 += 2)
+//            if (not ( AngMom::Triangle(j2a,j2b,J1) and AngMom::Triangle(j2c,j2d,J1) ) ) continue;
+            for (int J2 = J2min; J2 <= J2max; J2 += 2)
             {
-              if (not ( AngMom::Triangle(j2a,j2d,J2) and AngMom::Triangle(j2c,j2b,J2) ) ) continue;
+//              if (not ( AngMom::Triangle(j2a,j2d,J2) and AngMom::Triangle(j2c,j2b,J2) ) ) continue;
               uint64_t key = SixJHash(0.5 * j2a, 0.5 * j2b, 0.5 * J1, 0.5 * j2c, 0.5 * j2d, 0.5 * J2);
               if (SixJList.count(key) == 0)
               {
@@ -1812,18 +1828,27 @@ void ModelSpace::PreCalculateSixJ()
   {
     for (int j2b = 1; j2b <= jmax_3b; j2b += 2)
     {
-      for (int j2c = 1; j2c <= jmax_1b; j2c += 2)
+//      for (int j2c = 1; j2c <= jmax_1b; j2c += 2)
+      for (int j2c = 1; j2c <= jmax_3b; j2c += 2)
       {
-        int J1_min = std::abs(j2b - j2c);
-        int J1_max = std::min( j2b + j2c,  jmax_2b);
-        int J2_min = std::abs(j2a - j2c);
-        int J2_max = std::min( j2a + j2c,  jmax_2b);
+        int J1_min = AngMom::Jmin({ {j2b,j2c} });
+        int J1_max = std::min( AngMom::Jmax({ {j2b,j2c} }), jmax_2b );
+//        int J1_min = std::abs(j2b - j2c);
+//        int J1_max = std::min( j2b + j2c,  jmax_2b);
+//        int J1_max = j2b + j2c;
+        int J2_min = AngMom::Jmin({ {j2a,j2c}});
+        int J2_max = std::min( AngMom::Jmax({ {j2a,j2c}}), jmax_2b );
+//        int J2_min = std::abs(j2a - j2c);
+//        int J2_max = std::min( j2a + j2c,  jmax_2b);
+//        int J2_max = j2a + j2c;
         for (int J1 = J1_min; J1 <= J1_max; J1 += 2)
         {
           for (int J2 = J2_min; J2 <= J2_max; J2 += 2)
           {
-            int J3_min = std::max(std::abs(J1 - J2), std::abs(j2a - j2b));
-            int J3_max = std::min(J1 + J2, j2a + j2b);
+//            int J3_min = std::max(std::abs(J1 - J2), std::abs(j2a - j2b));
+//            int J3_max = std::min(J1 + J2, j2a + j2b);
+            int J3_min = AngMom::Jmin({ {J1,J2}, {j2a,j2b} });
+            int J3_max = AngMom::Jmax({ {J1,J2}, {j2a,j2b} });
             for (int J3 = J3_min; J3 <= J3_max; J3 += 2)
             {
               uint64_t key = SixJHash(0.5 * J1, 0.5 * J2, 0.5 * J3, 0.5 * j2a, 0.5 * j2b, 0.5 * j2c);

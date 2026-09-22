@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,22 +22,21 @@
 
 
 template<typename T1, typename eop_type>
-class eOpCube : public BaseCube< typename T1::elem_type, eOpCube<T1, eop_type> >
+struct eOpCube : public BaseCube< typename T1::elem_type, eOpCube<T1, eop_type> >
   {
-  public:
-  
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
+  typedef          ProxyCube<T1>                   proxy_type;
   
   static constexpr bool use_at      = ProxyCube<T1>::use_at;
   static constexpr bool use_mp      = ProxyCube<T1>::use_mp || eop_type::use_mp;
   static constexpr bool has_subview = ProxyCube<T1>::has_subview;
   
-  arma_aligned const ProxyCube<T1> P;
-  arma_aligned       elem_type     aux;          //!< storage of auxiliary data, user defined format
-  arma_aligned       uword         aux_uword_a;  //!< storage of auxiliary data, uword format
-  arma_aligned       uword         aux_uword_b;  //!< storage of auxiliary data, uword format
-  arma_aligned       uword         aux_uword_c;  //!< storage of auxiliary data, uword format
+  const ProxyCube<T1> P;
+        elem_type     aux;          //!< storage of auxiliary data, user defined format
+        uword         aux_uword_a;  //!< storage of auxiliary data, uword format
+        uword         aux_uword_b;  //!< storage of auxiliary data, uword format
+        uword         aux_uword_c;  //!< storage of auxiliary data, uword format
   
   inline         ~eOpCube();
   inline explicit eOpCube(const BaseCube<typename T1::elem_type, T1>& in_m);

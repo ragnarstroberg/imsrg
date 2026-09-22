@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +25,7 @@ inline
 void
 SymEigsShiftSolver<eT, SelectionRule, OpType>::sort_ritzpair()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
 
   // First transform back the Ritz values, and then sort
   for(uword i = 0; i < this->nev; i++)
@@ -41,7 +43,7 @@ SymEigsShiftSolver<eT, SelectionRule, OpType>::SymEigsShiftSolver(const OpType& 
   : SymEigsSolver<eT, SelectionRule, OpType>::SymEigsSolver(op_, nev_, ncv_)
   , sigma(sigma_)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 

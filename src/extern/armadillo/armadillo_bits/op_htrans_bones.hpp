@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +22,8 @@
 
 //! 'hermitian transpose' operation
 
-class op_htrans
+struct op_htrans
   {
-  public:
-  
   template<typename T1>
   struct traits
     {
@@ -33,7 +33,7 @@ class op_htrans
     };
   
   template<typename eT>
-      arma_inline static void apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma_not_cx<eT>::result* junk = nullptr);
+  arma_hot inline static void apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma_not_cx<eT>::result* junk = nullptr);
   
   template<typename eT>
   arma_hot inline static void apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma_cx_only<eT>::result* junk = nullptr);
@@ -49,7 +49,7 @@ class op_htrans
   //
   
   template<typename eT>
-      arma_inline static void apply_mat_inplace(Mat<eT>& out, const typename arma_not_cx<eT>::result* junk = nullptr);
+  arma_hot inline static void apply_mat_inplace(Mat<eT>& out, const typename arma_not_cx<eT>::result* junk = nullptr);
   
   template<typename eT>
   arma_hot inline static void apply_mat_inplace(Mat<eT>& out, const typename arma_cx_only<eT>::result* junk = nullptr);
@@ -57,34 +57,49 @@ class op_htrans
   //
   
   template<typename eT>
-      arma_inline static void apply_mat(Mat<eT>& out, const Mat<eT>& A, const typename arma_not_cx<eT>::result* junk = nullptr);
+  inline static void apply_mat(Mat<eT>& out, const Mat<eT>& A, const typename arma_not_cx<eT>::result* junk = nullptr);
   
   template<typename eT>
-  arma_hot inline static void apply_mat(Mat<eT>& out, const Mat<eT>& A, const typename arma_cx_only<eT>::result* junk = nullptr);
+  inline static void apply_mat(Mat<eT>& out, const Mat<eT>& A, const typename arma_cx_only<eT>::result* junk = nullptr);
   
   //
   
   template<typename T1>
-  arma_hot inline static void apply_proxy(Mat<typename T1::elem_type>& out, const T1& X);
+  inline static void apply_proxy(Mat<typename T1::elem_type>& out, const Proxy<T1>& P);
   
   //
   
   template<typename T1>
-  arma_hot inline static void apply_direct(Mat<typename T1::elem_type>& out, const T1& X);
+  inline static void apply_direct(Mat<typename T1::elem_type>& out, const T1& X);
   
   template<typename T1>
-  arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk = nullptr);
+  inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk = nullptr);
   
   template<typename T1>
-  arma_hot inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk = nullptr);
+  inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk = nullptr);
+  
+  template<typename T1>
+  inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk = nullptr);
+  
+  template<typename T1>
+  inline static void apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk = nullptr);
+  
+  //
+  
+  template<typename eT>
+  inline static void apply_cube_noalias(Cube<eT>& Y, const Cube<eT>& X);
+
+  template<typename T1>
+  inline static void apply(Cube<typename T1::elem_type>& out, const OpCube<T1,op_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk = nullptr);
+  
+  template<typename T1>
+  inline static void apply(Cube<typename T1::elem_type>& out, const OpCube<T1,op_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk = nullptr);
   };
 
 
 
-class op_htrans2
+struct op_htrans2
   {
-  public:
-  
   template<typename T1>
   struct traits
     {

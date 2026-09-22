@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,38 +26,126 @@ inline
 void
 op_reverse::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_reverse>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
   
   const uword dim = in.aux_uword_a;
   
-  arma_debug_check( (dim > 1), "reverse(): parameter 'dim' must be 0 or 1" );
+  arma_conform_check( (dim > 1), "reverse(): parameter 'dim' must be 0 or 1" );
   
-  const Proxy<T1> P(in.m);
-  
-  if(is_Mat<typename Proxy<T1>::stored_type>::value || P.is_alias(out))
+  if(is_Mat<T1>::value)
     {
-    const unwrap<typename Proxy<T1>::stored_type> U(P.Q);
+    const plain_unwrap<T1> U(in.m);
     
-    if(dim == 0)
+    if(&out == &(U.M))
       {
-      op_flipud::apply_direct(out, U.M);
+      if(dim == 0)  { op_flipud::apply_mat_inplace(out); return; }
+      if(dim == 1)  { op_fliplr::apply_mat_inplace(out); return; }
       }
-    else
-    if(dim == 1)
-      {
-      op_fliplr::apply_direct(out, U.M);
-      }
+    
+    // fallthrough if operation is not in-place
+    }
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  if(U.is_alias(out))
+    {
+    Mat<eT> tmp;
+    
+    if(dim == 0)  { op_flipud::apply_mat_noalias(tmp, U.M); }
+    if(dim == 1)  { op_fliplr::apply_mat_noalias(tmp, U.M); }
+    
+    out.steal_mem(tmp);
     }
   else
     {
-    if(dim == 0)
+    if(dim == 0)  { op_flipud::apply_mat_noalias(out, U.M); }
+    if(dim == 1)  { op_fliplr::apply_mat_noalias(out, U.M); }
+    }
+  }
+
+
+
+template<typename T1>
+inline
+void
+op_reverse::apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_reverse>& in)
+  {
+  arma_debug_sigprint();
+  
+  const uword dim = in.aux_uword_a;
+  
+  arma_conform_check( (dim > 1), "reverse(): parameter 'dim' must be 0 or 1" );
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  if(dim == 0)  { op_flipud::apply_mat_noalias(out, U.M); }
+  if(dim == 1)  { op_fliplr::apply_mat_noalias(out, U.M); }
+  }
+
+
+
+//
+
+
+
+template<typename T1>
+inline
+void
+op_reverse_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_reverse_vec>& in)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  if(is_Mat<T1>::value)
+    {
+    const plain_unwrap<T1> U(in.m);
+    
+    if(&out == &(U.M))
       {
-      op_flipud::apply_proxy_noalias(out, P);
+      if((T1::is_xvec) ? bool(U.M.is_rowvec()) : bool(T1::is_row))
+        {
+        op_fliplr::apply_mat_inplace(out);
+        }
+      else
+        {
+        op_flipud::apply_mat_inplace(out);
+        }
+      
+      return;
+      }
+    
+    // fallthrough if operation is not in-place
+    }
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  if(U.is_alias(out))
+    {
+    Mat<eT> tmp;
+    
+    if((T1::is_xvec) ? bool(U.M.is_rowvec()) : bool(T1::is_row))
+      {
+      op_fliplr::apply_mat_noalias(tmp, U.M);
       }
     else
-    if(dim == 1)
       {
-      op_fliplr::apply_proxy_noalias(out, P);
+      op_flipud::apply_mat_noalias(tmp, U.M);
+      }
+    
+    out.steal_mem(tmp);
+    }
+  else
+    {
+    if((T1::is_xvec) ? bool(U.M.is_rowvec()) : bool(T1::is_row))
+      {
+      op_fliplr::apply_mat_noalias(out, U.M);
+      }
+    else
+      {
+      op_flipud::apply_mat_noalias(out, U.M);
       }
     }
   }
@@ -65,35 +155,19 @@ op_reverse::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_reverse>& in)
 template<typename T1>
 inline
 void
-op_reverse_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_reverse_vec>& in)
+op_reverse_vec::apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1,op_reverse_vec>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  const Proxy<T1> P(in.m);
+  const quasi_unwrap<T1> U(in.m);
   
-  if(is_Mat<typename Proxy<T1>::stored_type>::value || P.is_alias(out))
+  if((T1::is_xvec) ? bool(U.M.is_rowvec()) : bool(T1::is_row))
     {
-    const unwrap<typename Proxy<T1>::stored_type> U(P.Q);
-    
-    if((T1::is_xvec) ? bool(U.M.is_rowvec()) : bool(T1::is_row))
-      {
-      op_fliplr::apply_direct(out, U.M);
-      }
-    else
-      {
-      op_flipud::apply_direct(out, U.M);
-      }
+    op_fliplr::apply_mat_noalias(out, U.M);
     }
   else
     {
-    if((T1::is_xvec) ? bool(P.get_n_rows() == 1) : bool(T1::is_row))
-      {
-      op_fliplr::apply_proxy_noalias(out, P);
-      }
-    else
-      {
-      op_flipud::apply_proxy_noalias(out, P);
-      }
+    op_flipud::apply_mat_noalias(out, U.M);
     }
   }
 

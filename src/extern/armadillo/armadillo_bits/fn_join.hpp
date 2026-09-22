@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +32,7 @@ enable_if2
   >::result
 join_cols(const T1& A, const T2& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Glue<T1, T2, glue_join_cols>(A, B);
   }
@@ -43,7 +45,7 @@ inline
 Mat<eT>
 join_cols(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -60,7 +62,7 @@ inline
 Mat<eT>
 join_cols(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C, const Base<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -82,7 +84,7 @@ enable_if2
   >::result
 join_vert(const T1& A, const T2& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Glue<T1, T2, glue_join_cols>(A, B);
   }
@@ -95,7 +97,7 @@ inline
 Mat<eT>
 join_vert(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -112,7 +114,7 @@ inline
 Mat<eT>
 join_vert(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C, const Base<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -134,7 +136,7 @@ enable_if2
   >::result
 join_rows(const T1& A, const T2& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Glue<T1, T2, glue_join_rows>(A, B);
   }
@@ -147,7 +149,7 @@ inline
 Mat<eT>
 join_rows(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -164,7 +166,7 @@ inline
 Mat<eT>
 join_rows(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C, const Base<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -186,7 +188,7 @@ enable_if2
   >::result
 join_horiz(const T1& A, const T2& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Glue<T1, T2, glue_join_rows>(A, B);
   }
@@ -199,7 +201,7 @@ inline
 Mat<eT>
 join_horiz(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -216,7 +218,7 @@ inline
 Mat<eT>
 join_horiz(const Base<eT,T1>& A, const Base<eT,T2>& B, const Base<eT,T3>& C, const Base<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   Mat<eT> out;
   
@@ -236,7 +238,7 @@ inline
 const GlueCube<T1, T2, glue_join_slices>
 join_slices(const BaseCube<typename T1::elem_type,T1>& A, const BaseCube<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return GlueCube<T1, T2, glue_join_slices>(A.get_ref(), B.get_ref());
   }
@@ -249,14 +251,14 @@ inline
 Cube<typename T1::elem_type>
 join_slices(const Base<typename T1::elem_type,T1>& A, const Base<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
   const quasi_unwrap<T1> UA(A.get_ref());
   const quasi_unwrap<T2> UB(B.get_ref());
   
-  arma_debug_assert_same_size(UA.M.n_rows, UA.M.n_cols, UB.M.n_rows, UB.M.n_cols, "join_slices(): incompatible dimensions");
+  arma_conform_assert_same_size(UA.M.n_rows, UA.M.n_cols, UB.M.n_rows, UB.M.n_cols, "join_slices(): incompatible dimensions");
   
   Cube<eT> out(UA.M.n_rows, UA.M.n_cols, 2, arma_nozeros_indicator());
   
@@ -274,7 +276,7 @@ inline
 Cube<typename T1::elem_type>
 join_slices(const Base<typename T1::elem_type,T1>& A, const BaseCube<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -293,7 +295,7 @@ inline
 Cube<typename T1::elem_type>
 join_slices(const BaseCube<typename T1::elem_type,T1>& A, const Base<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -315,7 +317,7 @@ inline
 const SpGlue<T1, T2, spglue_join_cols>
 join_cols(const SpBase<typename T1::elem_type,T1>& A, const SpBase<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SpGlue<T1, T2, spglue_join_cols>(A.get_ref(), B.get_ref());
   }
@@ -328,7 +330,7 @@ inline
 SpMat<eT>
 join_cols(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   
@@ -345,7 +347,7 @@ inline
 SpMat<eT>
 join_cols(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C, const SpBase<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   
@@ -362,7 +364,7 @@ inline
 const SpGlue<T1, T2, spglue_join_cols>
 join_vert(const SpBase<typename T1::elem_type,T1>& A, const SpBase<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SpGlue<T1, T2, spglue_join_cols>(A.get_ref(), B.get_ref());
   }
@@ -375,7 +377,7 @@ inline
 SpMat<eT>
 join_vert(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   
@@ -392,7 +394,7 @@ inline
 SpMat<eT>
 join_vert(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C, const SpBase<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   
@@ -409,7 +411,7 @@ inline
 const SpGlue<T1, T2, spglue_join_rows>
 join_rows(const SpBase<typename T1::elem_type,T1>& A, const SpBase<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SpGlue<T1, T2, spglue_join_rows>(A.get_ref(), B.get_ref());
   }
@@ -422,7 +424,7 @@ inline
 SpMat<eT>
 join_rows(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   
@@ -439,7 +441,7 @@ inline
 SpMat<eT>
 join_rows(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C, const SpBase<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   
@@ -456,7 +458,7 @@ inline
 const SpGlue<T1, T2, spglue_join_rows>
 join_horiz(const SpBase<typename T1::elem_type,T1>& A, const SpBase<typename T1::elem_type,T2>& B)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return SpGlue<T1, T2, spglue_join_rows>(A.get_ref(), B.get_ref());
   }
@@ -469,7 +471,7 @@ inline
 SpMat<eT>
 join_horiz(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<typename T1::elem_type> out;
   
@@ -486,7 +488,7 @@ inline
 SpMat<eT>
 join_horiz(const SpBase<eT,T1>& A, const SpBase<eT,T2>& B, const SpBase<eT,T3>& C, const SpBase<eT,T4>& D)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   SpMat<eT> out;
   

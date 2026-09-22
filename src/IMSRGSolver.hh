@@ -115,7 +115,7 @@ class IMSRGSolver
 
   void SetFlowFile(std::string s);
   void SetDs(double d){ds = d; ds_0 = d;};
-  void SetDsmax(double d){ds_max = d;};
+  void SetDsmax(double d);
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
   void SetGenerator(std::string g);
@@ -201,7 +201,8 @@ class IMSRGSolver
 
 //  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
   void operator()( const std::deque<Operator>& x, std::deque<Operator>& dxdt, const double t);
-  void Solve_ode();
+//  void Solve_ode();
+  void Solve_flow_euler();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();
 

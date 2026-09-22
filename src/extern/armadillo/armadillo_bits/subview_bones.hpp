@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +21,7 @@
 
 
 //! Class for storing data required to construct or apply operations to a submatrix
-//! (i.e. where the submatrix starts and ends as well as a reference/pointer to the original matrix),
+//! (ie. where the submatrix starts and ends as well as a reference/pointer to the original matrix),
 template<typename eT>
 class subview : public Base< eT, subview<eT> >
   {
@@ -33,6 +35,8 @@ class subview : public Base< eT, subview<eT> >
   static constexpr bool is_row  = false;
   static constexpr bool is_col  = false;
   static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = true;
   
   const uword aux_row1;
   const uword aux_col1;
@@ -83,7 +87,7 @@ class subview : public Base< eT, subview<eT> >
   template<typename T1> inline void operator-= (const SpBase<eT,T1>& x);
   template<typename T1> inline void operator%= (const SpBase<eT,T1>& x);
   template<typename T1> inline void operator/= (const SpBase<eT,T1>& x);
-
+  
   template<typename T1, typename gen_type>
   inline typename enable_if2< is_same_type<typename T1::elem_type, eT>::value, void>::result operator=(const Gen<T1,gen_type>& x);
   
@@ -117,38 +121,42 @@ class subview : public Base< eT, subview<eT> >
   inline void randu();
   inline void randn();
   
-  inline arma_warn_unused eT  at_alt    (const uword ii) const;
+  arma_warn_unused inline eT  at_alt    (const uword ii) const;
   
-  inline arma_warn_unused eT& operator[](const uword ii);
-  inline arma_warn_unused eT  operator[](const uword ii) const;
+  arma_warn_unused inline eT& operator[](const uword ii);
+  arma_warn_unused inline eT  operator[](const uword ii) const;
   
-  inline arma_warn_unused eT& operator()(const uword ii);
-  inline arma_warn_unused eT  operator()(const uword ii) const;
+  arma_warn_unused inline eT& operator()(const uword ii);
+  arma_warn_unused inline eT  operator()(const uword ii) const;
   
-  inline arma_warn_unused eT& operator()(const uword in_row, const uword in_col);
-  inline arma_warn_unused eT  operator()(const uword in_row, const uword in_col) const;
+  arma_warn_unused inline eT& operator()(const uword in_row, const uword in_col);
+  arma_warn_unused inline eT  operator()(const uword in_row, const uword in_col) const;
   
-  inline arma_warn_unused eT&         at(const uword in_row, const uword in_col);
-  inline arma_warn_unused eT          at(const uword in_row, const uword in_col) const;
+  arma_warn_unused inline eT&         at(const uword in_row, const uword in_col);
+  arma_warn_unused inline eT          at(const uword in_row, const uword in_col) const;
   
-  inline arma_warn_unused eT& front();
-  inline arma_warn_unused eT  front() const;
+  arma_warn_unused inline eT& front();
+  arma_warn_unused inline eT  front() const;
   
-  inline arma_warn_unused eT& back();
-  inline arma_warn_unused eT  back() const;
+  arma_warn_unused inline eT& back();
+  arma_warn_unused inline eT  back() const;
   
   arma_inline       eT* colptr(const uword in_col);
   arma_inline const eT* colptr(const uword in_col) const;
   
+  arma_inline       eT* startptr();
+  arma_inline const eT* startptr() const;
+  
   template<typename eT2>
   inline bool check_overlap(const subview<eT2>& x) const;
   
-  inline arma_warn_unused bool is_vec()    const;
-  inline arma_warn_unused bool is_finite() const;
-  inline arma_warn_unused bool is_zero(const pod_type tol = 0) const;
+  arma_warn_unused inline bool is_vec()    const;
+  arma_warn_unused inline bool is_finite() const;
+  arma_warn_unused inline bool is_zero(const pod_type tol = 0) const;
   
-  inline arma_warn_unused bool has_inf() const;
-  inline arma_warn_unused bool has_nan() const;
+  arma_warn_unused inline bool has_inf()       const;
+  arma_warn_unused inline bool has_nan()       const;
+  arma_warn_unused inline bool has_nonfinite() const;
   
   inline       subview_row<eT> row(const uword row_num);
   inline const subview_row<eT> row(const uword row_num) const;
@@ -168,8 +176,8 @@ class subview : public Base< eT, subview<eT> >
   inline       subview<eT> rows(const uword in_row1, const uword in_row2);
   inline const subview<eT> rows(const uword in_row1, const uword in_row2) const;
   
-  inline       subview<eT> cols(const uword in_col1, const uword in_col2);
-  inline const subview<eT> cols(const uword in_col1, const uword in_col2) const;
+  inline       subview<eT> cols(const uword in_col1, const uword in_col2);        // deliberately not returning subview_cols
+  inline const subview<eT> cols(const uword in_col1, const uword in_col2) const;  // deliberately not returning subview_cols
   
   inline       subview<eT> submat(const uword in_row1, const uword in_col1, const uword in_row2, const uword in_col2);
   inline const subview<eT> submat(const uword in_row1, const uword in_col1, const uword in_row2, const uword in_col2) const;
@@ -198,6 +206,9 @@ class subview : public Base< eT, subview<eT> >
   inline void swap_rows(const uword in_row1, const uword in_row2);
   inline void swap_cols(const uword in_col1, const uword in_col2);
   
+  template<typename eT2>
+  inline bool is_alias(const Mat<eT2>& X) const;
+  
   
   class const_iterator;
   
@@ -209,15 +220,15 @@ class subview : public Base< eT, subview<eT> >
     inline iterator(const iterator& X);
     inline iterator(subview<eT>& in_sv, const uword in_row, const uword in_col);
     
-    inline arma_warn_unused eT& operator*();
+    arma_warn_unused inline eT& operator*();
     
-    inline                  iterator& operator++();
-    inline arma_warn_unused iterator  operator++(int);
+                     inline iterator& operator++();
+    arma_warn_unused inline iterator  operator++(int);
     
-    inline arma_warn_unused bool operator==(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator==(const const_iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const const_iterator& rhs) const;
     
     typedef std::forward_iterator_tag iterator_category;
     typedef eT                        value_type;
@@ -244,15 +255,15 @@ class subview : public Base< eT, subview<eT> >
     inline const_iterator(const const_iterator& X);
     inline const_iterator(const subview<eT>& in_sv, const uword in_row, const uword in_col);
     
-    inline arma_warn_unused const eT& operator*();
+    arma_warn_unused inline const eT& operator*();
     
-    inline                  const_iterator& operator++();
-    inline arma_warn_unused const_iterator  operator++(int);
+                     inline const_iterator& operator++();
+    arma_warn_unused inline const_iterator  operator++(int);
     
-    inline arma_warn_unused bool operator==(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const       iterator& rhs) const;
-    inline arma_warn_unused bool operator==(const const_iterator& rhs) const;
-    inline arma_warn_unused bool operator!=(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const       iterator& rhs) const;
+    arma_warn_unused inline bool operator==(const const_iterator& rhs) const;
+    arma_warn_unused inline bool operator!=(const const_iterator& rhs) const;
     
     // So that we satisfy the STL iterator types.
     typedef std::forward_iterator_tag iterator_category;
@@ -281,15 +292,15 @@ class subview : public Base< eT, subview<eT> >
     inline row_iterator(const row_iterator& X);
     inline row_iterator(subview<eT>& in_sv, const uword in_row, const uword in_col);
     
-    inline arma_warn_unused eT& operator* ();
+    arma_warn_unused inline eT& operator* ();
     
-    inline                  row_iterator& operator++();
-    inline arma_warn_unused row_iterator  operator++(int);
+                     inline row_iterator& operator++();
+    arma_warn_unused inline row_iterator  operator++(int);
     
-    inline arma_warn_unused bool operator!=(const       row_iterator& X) const;
-    inline arma_warn_unused bool operator==(const       row_iterator& X) const;
-    inline arma_warn_unused bool operator!=(const const_row_iterator& X) const;
-    inline arma_warn_unused bool operator==(const const_row_iterator& X) const;
+    arma_warn_unused inline bool operator!=(const       row_iterator& X) const;
+    arma_warn_unused inline bool operator==(const       row_iterator& X) const;
+    arma_warn_unused inline bool operator!=(const const_row_iterator& X) const;
+    arma_warn_unused inline bool operator==(const const_row_iterator& X) const;
     
     typedef std::forward_iterator_tag iterator_category;
     typedef eT                        value_type;
@@ -315,15 +326,15 @@ class subview : public Base< eT, subview<eT> >
     inline const_row_iterator(const const_row_iterator& X);
     inline const_row_iterator(const subview<eT>& in_sv, const uword in_row, const uword in_col);
     
-    inline arma_warn_unused const eT& operator*() const;
+    arma_warn_unused inline const eT& operator*() const;
     
-    inline                  const_row_iterator& operator++();
-    inline arma_warn_unused const_row_iterator  operator++(int);
+                     inline const_row_iterator& operator++();
+    arma_warn_unused inline const_row_iterator  operator++(int);
     
-    inline arma_warn_unused bool operator!=(const       row_iterator& X) const;
-    inline arma_warn_unused bool operator==(const       row_iterator& X) const;
-    inline arma_warn_unused bool operator!=(const const_row_iterator& X) const;
-    inline arma_warn_unused bool operator==(const const_row_iterator& X) const;
+    arma_warn_unused inline bool operator!=(const       row_iterator& X) const;
+    arma_warn_unused inline bool operator==(const       row_iterator& X) const;
+    arma_warn_unused inline bool operator!=(const const_row_iterator& X) const;
+    arma_warn_unused inline bool operator==(const const_row_iterator& X) const;
     
     typedef std::forward_iterator_tag iterator_category;
     typedef eT                        value_type;
@@ -367,6 +378,8 @@ class subview_col : public subview<eT>
   static constexpr bool is_col  = true;
   static constexpr bool is_xvec = false;
   
+  static constexpr bool has_subview = true;
+  
   const eT* colmem;
   
   inline void operator= (const subview<eT>& x);
@@ -374,21 +387,31 @@ class subview_col : public subview<eT>
   inline void operator= (const eT val);
   inline void operator= (const std::initializer_list<eT>& list);
   
-  template<typename T1>
-  inline void operator= (const Base<eT,T1>& x);
+  template<typename T1> inline void operator= (const   Base<eT,T1>& x);
+  template<typename T1> inline void operator= (const SpBase<eT,T1>& x);
   
   template<typename T1, typename gen_type>
   inline typename enable_if2< is_same_type<typename T1::elem_type, eT>::value, void>::result operator=(const Gen<T1,gen_type>& x);
   
-  arma_inline const Op<subview_col<eT>,op_htrans>  t() const;
-  arma_inline const Op<subview_col<eT>,op_htrans> ht() const;
-  arma_inline const Op<subview_col<eT>,op_strans> st() const;
+  arma_warn_unused arma_inline const Op<subview_col<eT>,op_htrans>  t() const;
+  arma_warn_unused arma_inline const Op<subview_col<eT>,op_htrans> ht() const;
+  arma_warn_unused arma_inline const Op<subview_col<eT>,op_strans> st() const;
   
-  arma_inline const Op<subview_col<eT>,op_strans> as_row() const;
+  arma_warn_unused arma_inline const Op<subview_col<eT>,op_strans> as_row() const;
+  
+  inline void replace(const eT old_val, const eT new_val);
   
   inline void fill(const eT val);
   inline void zeros();
   inline void ones();
+  inline void randu();
+  inline void randn();
+  
+  arma_warn_unused inline bool is_finite() const;
+  arma_warn_unused inline bool is_zero(const pod_type tol = 0) const;
+  
+  arma_warn_unused inline bool has_inf() const;
+  arma_warn_unused inline bool has_nan() const;
   
   arma_inline eT  at_alt    (const uword i) const;
   
@@ -422,14 +445,14 @@ class subview_col : public subview<eT>
   inline       subview_col<eT> tail(const uword N);
   inline const subview_col<eT> tail(const uword N) const;
   
-  inline arma_warn_unused eT min() const;
-  inline arma_warn_unused eT max() const;
+  arma_warn_unused inline eT min() const;
+  arma_warn_unused inline eT max() const;
   
-  inline eT min(uword& index_of_min_val) const;
-  inline eT max(uword& index_of_max_val) const;
+  [[deprecated("use .index_min() instead")]] inline eT min(uword& index_of_min_val) const;
+  [[deprecated("use .index_max() instead")]] inline eT max(uword& index_of_max_val) const;
   
-  inline arma_warn_unused uword index_min() const;
-  inline arma_warn_unused uword index_max() const;
+  arma_warn_unused inline uword index_min() const;
+  arma_warn_unused inline uword index_max() const;
   
   inline  subview_col(const subview_col&  in);
   inline  subview_col(      subview_col&& in);
@@ -450,6 +473,69 @@ class subview_col : public subview<eT>
 
 
 template<typename eT>
+class subview_cols : public subview<eT>
+  {
+  public:
+  
+  typedef eT                                       elem_type;
+  typedef typename get_pod_type<elem_type>::result pod_type;
+  
+  static constexpr bool is_row  = false;
+  static constexpr bool is_col  = false;
+  static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = true;
+  
+  inline  subview_cols(const subview_cols&  in);
+  inline  subview_cols(      subview_cols&& in);
+  
+  inline void operator= (const subview<eT>&  x);
+  inline void operator= (const subview_cols& x);
+  inline void operator= (const eT val);
+  inline void operator= (const std::initializer_list<eT>& list);
+  inline void operator= (const std::initializer_list< std::initializer_list<eT> >& list);
+  
+  template<typename T1> inline void operator= (const   Base<eT,T1>& x);
+  template<typename T1> inline void operator= (const SpBase<eT,T1>& x);
+  
+  template<typename T1, typename gen_type>
+  inline typename enable_if2< is_same_type<typename T1::elem_type, eT>::value, void>::result operator=(const Gen<T1,gen_type>& x);
+  
+  arma_warn_unused arma_inline const Op<subview_cols<eT>,op_htrans>  t() const;
+  arma_warn_unused arma_inline const Op<subview_cols<eT>,op_htrans> ht() const;
+  arma_warn_unused arma_inline const Op<subview_cols<eT>,op_strans> st() const;
+  
+  arma_warn_unused arma_inline const Op<subview_cols<eT>,op_vectorise_col> as_col() const;
+  
+  arma_warn_unused inline eT  at_alt    (const uword ii) const;
+  
+  arma_warn_unused inline eT& operator[](const uword ii);
+  arma_warn_unused inline eT  operator[](const uword ii) const;
+  
+  arma_warn_unused inline eT& operator()(const uword ii);
+  arma_warn_unused inline eT  operator()(const uword ii) const;
+  
+  arma_warn_unused inline eT& operator()(const uword in_row, const uword in_col);
+  arma_warn_unused inline eT  operator()(const uword in_row, const uword in_col) const;
+  
+  arma_warn_unused inline eT&         at(const uword in_row, const uword in_col);
+  arma_warn_unused inline eT          at(const uword in_row, const uword in_col) const;
+  
+  arma_inline       eT* colptr(const uword in_col);
+  arma_inline const eT* colptr(const uword in_col) const;
+  
+  protected:
+  
+  inline subview_cols(const Mat<eT>& in_m, const uword in_col1, const uword in_n_cols);
+  inline subview_cols() = delete;
+  
+  friend class Mat<eT>;
+  friend class subview<eT>;
+  };
+
+
+
+template<typename eT>
 class subview_row : public subview<eT>
   {
   public:
@@ -461,22 +547,40 @@ class subview_row : public subview<eT>
   static constexpr bool is_col  = false;
   static constexpr bool is_xvec = false;
   
+  static constexpr bool has_subview = true;
+  
+  const eT* rowmem;
+  
   inline void operator= (const subview<eT>& x);
   inline void operator= (const subview_row& x);
   inline void operator= (const eT val);
   inline void operator= (const std::initializer_list<eT>& list);
   
-  template<typename T1>
-  inline void operator= (const Base<eT,T1>& x);
+  template<typename T1> inline void operator= (const   Base<eT,T1>& x);
+  template<typename T1> inline void operator= (const SpBase<eT,T1>& x);
   
   template<typename T1, typename gen_type>
   inline typename enable_if2< is_same_type<typename T1::elem_type, eT>::value, void>::result operator=(const Gen<T1,gen_type>& x);
   
-  arma_inline const Op<subview_row<eT>,op_htrans>  t() const;
-  arma_inline const Op<subview_row<eT>,op_htrans> ht() const;
-  arma_inline const Op<subview_row<eT>,op_strans> st() const;
+  arma_warn_unused arma_inline const Op<subview_row<eT>,op_htrans>  t() const;
+  arma_warn_unused arma_inline const Op<subview_row<eT>,op_htrans> ht() const;
+  arma_warn_unused arma_inline const Op<subview_row<eT>,op_strans> st() const;
   
-  arma_inline const Op<subview_row<eT>,op_strans> as_col() const;
+  arma_warn_unused arma_inline const Op<subview_row<eT>,op_strans> as_col() const;
+  
+  inline void replace(const eT old_val, const eT new_val);
+  
+  inline void fill(const eT val);
+  inline void zeros();
+  inline void ones();
+  inline void randu();
+  inline void randn();
+  
+  arma_warn_unused inline bool is_finite() const;
+  arma_warn_unused inline bool is_zero(const pod_type tol = 0) const;
+  
+  arma_warn_unused inline bool has_inf() const;
+  arma_warn_unused inline bool has_nan() const;
   
   inline eT  at_alt    (const uword i) const;
   
@@ -507,8 +611,8 @@ class subview_row : public subview<eT>
   inline       subview_row<eT> tail(const uword N);
   inline const subview_row<eT> tail(const uword N) const;
   
-  inline arma_warn_unused uword index_min() const;
-  inline arma_warn_unused uword index_max() const;
+  arma_warn_unused inline uword index_min() const;
+  arma_warn_unused inline uword index_max() const;
   
   inline typename subview<eT>::row_iterator        begin();
   inline typename subview<eT>::const_row_iterator  begin() const;
@@ -548,6 +652,8 @@ class subview_row_strans : public Base< eT, subview_row_strans<eT> >
   static constexpr bool is_col  = true;
   static constexpr bool is_xvec = false;
   
+  static constexpr bool has_subview = true;
+  
   arma_aligned const subview_row<eT>& sv_row;
   
   const uword n_rows;     // equal to n_elem
@@ -582,6 +688,8 @@ class subview_row_htrans : public Base< eT, subview_row_htrans<eT> >
   static constexpr bool is_row  = false;
   static constexpr bool is_col  = true;
   static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = true;
   
   arma_aligned const subview_row<eT>& sv_row;
   

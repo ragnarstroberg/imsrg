@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,14 +25,14 @@ struct mtOpCube_dual_aux_indicator {};
 
 
 template<typename out_eT, typename T1, typename op_type>
-class mtOpCube : public BaseCube< out_eT, mtOpCube<out_eT, T1, op_type> >
+struct mtOpCube : public BaseCube< out_eT, mtOpCube<out_eT, T1, op_type> >
   {
-  public:
-  
   typedef          out_eT                       elem_type;
   typedef typename get_pod_type<out_eT>::result pod_type;
   
   typedef typename T1::elem_type                in_eT;
+  
+  static constexpr bool has_subview = T1::has_subview;
   
   inline explicit mtOpCube(const T1& in_m);
   inline          mtOpCube(const T1& in_m, const in_eT in_aux);
@@ -43,14 +45,12 @@ class mtOpCube : public BaseCube< out_eT, mtOpCube<out_eT, T1, op_type> >
   
   inline         ~mtOpCube();
   
-  
-  arma_aligned const T1&    m;            //!< the operand; must be derived from BaseCube
-  arma_aligned       in_eT  aux;          //!< auxiliary data, using the element type as used by T1
-  arma_aligned       out_eT aux_out_eT;   //!< auxiliary data, using the element type as specified by the out_eT template parameter
-  arma_aligned       uword  aux_uword_a;  //!< auxiliary data, uword format
-  arma_aligned       uword  aux_uword_b;  //!< auxiliary data, uword format
-  arma_aligned       uword  aux_uword_c;  //!< auxiliary data, uword format
-  
+  const T1&    m;            //!< the operand; must be derived from BaseCube
+        in_eT  aux;          //!< auxiliary data, using the element type as used by T1
+        out_eT aux_out_eT;   //!< auxiliary data, using the element type as specified by the out_eT template parameter
+        uword  aux_uword_a;  //!< auxiliary data, uword format
+        uword  aux_uword_b;  //!< auxiliary data, uword format
+        uword  aux_uword_c;  //!< auxiliary data, uword format
   };
 
 

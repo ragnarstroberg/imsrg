@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,22 +32,22 @@ svds_helper
   const uword                              k,
   const typename T1::pod_type              tol,
   const bool                               calc_UV,
-  const typename arma_real_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
-  arma_debug_check
+  arma_conform_check
     (
-    ( ((void*)(&U) == (void*)(&S)) || (&U == &V) || ((void*)(&S) == (void*)(&V)) ),
+    ( (void_ptr(&U) == void_ptr(&S)) || (&U == &V) || (void_ptr(&S) == void_ptr(&V)) ),
     "svds(): two or more output objects are the same object"
     );
   
-  arma_debug_check( (tol < T(0)), "svds(): tol must be >= 0" );
+  arma_conform_check( ((tol >= T(0)) == false), "svds(): tol must be >= 0" );
   
   const unwrap_spmat<T1> tmp(X.get_ref());
   const SpMat<eT>& A =   tmp.M;
@@ -129,7 +131,7 @@ svds_helper
       }
     }
   
-  if(S.n_elem < k)  { arma_debug_warn_level(1, "svds(): found fewer singular values than specified"); }
+  if(S.n_elem < k)  { arma_warn(1, "svds(): found fewer singular values than specified"); }
   
   return true;
   }
@@ -148,10 +150,10 @@ svds_helper
   const uword                              k,
   const typename T1::pod_type              tol,
   const bool                               calc_UV,
-  const typename arma_cx_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename T1::elem_type eT;
@@ -163,13 +165,13 @@ svds_helper
     return false;
     }
   
-  arma_debug_check
+  arma_conform_check
     (
-    ( ((void*)(&U) == (void*)(&S)) || (&U == &V) || ((void*)(&S) == (void*)(&V)) ),
+    ( (void_ptr(&U) == void_ptr(&S)) || (&U == &V) || (void_ptr(&S) == void_ptr(&V)) ),
     "svds(): two or more output objects are the same object"
     );
   
-  arma_debug_check( (tol < T(0)), "svds(): tol must be >= 0" );
+  arma_conform_check( ((tol >= T(0)) == false), "svds(): tol must be >= 0" );
   
   const unwrap_spmat<T1> tmp(X.get_ref());
   const SpMat<eT>& A =   tmp.M;
@@ -255,7 +257,7 @@ svds_helper
       }
     }
   
-  if(S.n_elem < k)  { arma_debug_warn_level(1, "svds(): found fewer singular values than specified"); }
+  if(S.n_elem < k)  { arma_warn(1, "svds(): found fewer singular values than specified"); }
   
   return true;
   }
@@ -274,15 +276,15 @@ svds
   const SpBase<typename T1::elem_type,T1>& X,
   const uword                              k,
   const typename T1::pod_type              tol  = 0.0,
-  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   const bool status = svds_helper(U, S, V, X.get_ref(), k, tol, true);
   
-  if(status == false)  { arma_debug_warn_level(3, "svds(): decomposition failed"); }
+  if(status == false)  { arma_warn(3, "svds(): decomposition failed"); }
 
   return status;
   }
@@ -299,10 +301,10 @@ svds
   const SpBase<typename T1::elem_type,T1>& X,
   const uword                              k,
   const typename T1::pod_type              tol  = 0.0,
-  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   Mat<typename T1::elem_type> U;
@@ -310,7 +312,7 @@ svds
   
   const bool status = svds_helper(U, S, V, X.get_ref(), k, tol, false);
   
-  if(status == false)  { arma_debug_warn_level(3, "svds(): decomposition failed"); }
+  if(status == false)  { arma_warn(3, "svds(): decomposition failed"); }
   
   return status;
   }
@@ -327,10 +329,10 @@ svds
   const SpBase<typename T1::elem_type,T1>& X,
   const uword                              k,
   const typename T1::pod_type              tol  = 0.0,
-  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   Col<typename T1::pod_type>  S;

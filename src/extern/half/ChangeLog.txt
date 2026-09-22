@@ -1,5 +1,14 @@
-Release Notes											{#changelog}
+Release Notes
 =============
+
+2.2.1 release (2025-03-02):
+---------------------------
+
+- Fixed error when converting minimum negative integer value to half.
+- Added more type conversions to remove warnings on some 64-bit platforms.
+- Removed potential naming conflicts of internal functions with C standard 
+  library functions.
+
 
 2.2.0 release (2021-06-12):
 ---------------------------

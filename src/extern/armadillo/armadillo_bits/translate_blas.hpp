@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +17,7 @@
 
 
 
-#ifdef ARMA_USE_BLAS
+#if defined(ARMA_USE_BLAS)
 
 
 //! \namespace blas namespace for BLAS functions
@@ -28,7 +30,7 @@ namespace blas
   void
   gemv(const char* transA, const blas_int* m, const blas_int* n, const eT* alpha, const eT* A, const blas_int* ldA, const eT* x, const blas_int* incx, const eT* beta, eT* y, const blas_int* incy)
     {
-    arma_type_check((is_supported_blas_type<eT>::value == false));
+    arma_type_check((is_blas_type<eT>::value == false));
     
     #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)
       {
@@ -54,7 +56,7 @@ namespace blas
   void
   gemm(const char* transA, const char* transB, const blas_int* m, const blas_int* n, const blas_int* k, const eT* alpha, const eT* A, const blas_int* ldA, const eT* B, const blas_int* ldB, const eT* beta, eT* C, const blas_int* ldC)
     {
-    arma_type_check((is_supported_blas_type<eT>::value == false));
+    arma_type_check((is_blas_type<eT>::value == false));
     
     #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)
       {
@@ -80,7 +82,7 @@ namespace blas
   void
   syrk(const char* uplo, const char* transA, const blas_int* n, const blas_int* k, const eT* alpha, const eT* A, const blas_int* ldA, const eT* beta, eT* C, const blas_int* ldC)
     {
-    arma_type_check((is_supported_blas_type<eT>::value == false));
+    arma_type_check((is_blas_type<eT>::value == false));
     
     #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)
       {
@@ -102,7 +104,7 @@ namespace blas
   void
   herk(const char* uplo, const char* transA, const blas_int* n, const blas_int* k, const T* alpha, const std::complex<T>* A, const blas_int* ldA, const T* beta, std::complex<T>* C, const blas_int* ldC)
     {
-    arma_type_check((is_supported_blas_type<T>::value == false));
+    arma_type_check((is_blas_type<T>::value == false));
     
     #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)
       {
@@ -124,11 +126,11 @@ namespace blas
   eT
   dot(const uword n_elem, const eT* x, const eT* y)
     {
-    arma_type_check((is_supported_blas_type<eT>::value == false));
+    arma_type_check((is_blas_type<eT>::value == false));
     
     if(is_float<eT>::value)
       {
-      #if defined(ARMA_BLAS_SDOT_BUG)
+      #if defined(ARMA_BLAS_FLOAT_BUG)
         {
         if(n_elem == 0)  { return eT(0); }
         
@@ -142,6 +144,9 @@ namespace blas
         const eT beta      = eT(0);
         
         eT result[2];  // paranoia: using two elements instead of one
+        
+        result[0] = eT(0);
+        result[1] = eT(0);
         
         blas::gemv(&trans, &m, &n, &alpha, x, &m, y, &inc, &beta, &result[0], &inc);
         
@@ -184,11 +189,14 @@ namespace blas
       
       eT result[2];  // paranoia: using two elements instead of one
       
+      result[0] = eT(0);
+      result[1] = eT(0);
+      
       blas::gemv(&trans, &m, &n, &alpha, x, &m, y, &inc, &beta, &result[0], &inc);
       
       return result[0];
       }
-
+    
     return eT(0);
     }
   
@@ -199,10 +207,12 @@ namespace blas
   eT
   asum(const uword n_elem, const eT* x)
     {
-    arma_type_check((is_supported_blas_type<eT>::value == false));
+    arma_type_check((is_blas_type<eT>::value == false));
     
     if(is_float<eT>::value)
       {
+      // WARNING: sasum() from Accelerate framework (macOS) may return 'double' instead of 'float'
+      
       blas_int n   = blas_int(n_elem);
       blas_int inc = 1;
       
@@ -229,10 +239,12 @@ namespace blas
   eT
   nrm2(const uword n_elem, const eT* x)
     {
-    arma_type_check((is_supported_blas_type<eT>::value == false));
+    arma_type_check((is_blas_type<eT>::value == false));
     
     if(is_float<eT>::value)
       {
+      // WARNING: snrm2() from Accelerate framework (macOS) may return 'double' instead of 'float'
+      
       blas_int n   = blas_int(n_elem);
       blas_int inc = 1;
       

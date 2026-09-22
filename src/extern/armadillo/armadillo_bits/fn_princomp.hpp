@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,10 +37,10 @@ princomp
          Col<typename T1::pod_type>&     latent_out,
          Col<typename T1::elem_type>&    tsquared_out,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   const bool status = op_princomp::direct_princomp(coeff_out, score_out, latent_out, tsquared_out, X);
@@ -50,7 +52,7 @@ princomp
     latent_out.soft_reset();
     tsquared_out.soft_reset();
     
-    arma_debug_warn_level(3, "princomp(): decomposition failed");
+    arma_warn(3, "princomp(): decomposition failed");
     }
   
   return status;
@@ -72,10 +74,10 @@ princomp
          Mat<typename T1::elem_type>&    score_out,
          Col<typename T1::pod_type>&     latent_out,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   const bool status = op_princomp::direct_princomp(coeff_out, score_out, latent_out, X); 
@@ -86,7 +88,7 @@ princomp
     score_out.soft_reset();
     latent_out.soft_reset();
     
-    arma_debug_warn_level(3, "princomp(): decomposition failed");
+    arma_warn(3, "princomp(): decomposition failed");
     }
   
   return status;
@@ -106,10 +108,10 @@ princomp
          Mat<typename T1::elem_type>&    coeff_out,
          Mat<typename T1::elem_type>&    score_out,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   const bool status = op_princomp::direct_princomp(coeff_out, score_out, X); 
@@ -119,7 +121,7 @@ princomp
     coeff_out.soft_reset();
     score_out.soft_reset();
     
-    arma_debug_warn_level(3, "princomp(): decomposition failed");
+    arma_warn(3, "princomp(): decomposition failed");
     }
   
   return status;
@@ -137,10 +139,10 @@ princomp
   (
          Mat<typename T1::elem_type>&    coeff_out,
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   const bool status = op_princomp::direct_princomp(coeff_out, X);
@@ -149,7 +151,7 @@ princomp
     {
     coeff_out.soft_reset();
     
-    arma_debug_warn_level(3, "princomp(): decomposition failed");
+    arma_warn(3, "princomp(): decomposition failed");
     }
   
   return status;
@@ -164,10 +166,10 @@ const Op<T1, op_princomp>
 princomp
   (
   const Base<typename T1::elem_type,T1>& X,
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = nullptr
+  const typename arma_blas_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   return Op<T1, op_princomp>(X.get_ref());

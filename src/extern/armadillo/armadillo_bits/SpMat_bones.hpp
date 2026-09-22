@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +32,8 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   static constexpr bool is_row  = false;
   static constexpr bool is_col  = false;
   static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = false;
   
   const uword n_rows;    //!< number of rows             (read-only)
   const uword n_cols;    //!< number of columns          (read-only)
@@ -99,7 +103,7 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   inline SpMat& operator= (const MapMat<eT>& x);
   
   template<typename T1, typename T2, typename T3>
-  inline SpMat(const Base<uword,T1>& rowind, const Base<uword,T2>& colptr, const Base<eT,T3>& values, const uword n_rows, const uword n_cols);
+  inline SpMat(const Base<uword,T1>& rowind, const Base<uword,T2>& colptr, const Base<eT,T3>& values, const uword n_rows, const uword n_cols, const bool check_for_zeros = true);
   
   template<typename T1, typename T2>
   inline SpMat(const Base<uword,T1>& locations, const Base<eT,T2>& values, const bool sort_locations = true);
@@ -137,9 +141,6 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   template<typename T1> inline SpMat& operator*=(const Op<T1, op_diagmat>& expr);
   template<typename T1> inline SpMat& operator/=(const Op<T1, op_diagmat>& expr);
   template<typename T1> inline SpMat& operator%=(const Op<T1, op_diagmat>& expr);
-
-  //! explicit specification of sparse +/- scalar
-  template<typename T1, typename op_type> inline explicit SpMat(const SpToDOp<T1, op_type>& expr);
   
   //! construction of complex matrix out of two non-complex matrices
   template<typename T1, typename T2>
@@ -169,7 +170,6 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   inline SpMat& operator%=(const spdiagview<eT>& X);
   inline SpMat& operator/=(const spdiagview<eT>& X);
   
-  // delayed unary ops
   template<typename T1, typename spop_type> inline             SpMat(const SpOp<T1, spop_type>& X);
   template<typename T1, typename spop_type> inline SpMat& operator= (const SpOp<T1, spop_type>& X);
   template<typename T1, typename spop_type> inline SpMat& operator+=(const SpOp<T1, spop_type>& X);
@@ -178,7 +178,6 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   template<typename T1, typename spop_type> inline SpMat& operator%=(const SpOp<T1, spop_type>& X);
   template<typename T1, typename spop_type> inline SpMat& operator/=(const SpOp<T1, spop_type>& X);
   
-  // delayed binary ops
   template<typename T1, typename T2, typename spglue_type> inline             SpMat(const SpGlue<T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator= (const SpGlue<T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator+=(const SpGlue<T1, T2, spglue_type>& X);
@@ -187,7 +186,6 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator%=(const SpGlue<T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator/=(const SpGlue<T1, T2, spglue_type>& X);
   
-  // delayed mixed-type unary ops
   template<typename T1, typename spop_type> inline             SpMat(const mtSpOp<eT, T1, spop_type>& X);
   template<typename T1, typename spop_type> inline SpMat& operator= (const mtSpOp<eT, T1, spop_type>& X);
   template<typename T1, typename spop_type> inline SpMat& operator+=(const mtSpOp<eT, T1, spop_type>& X);
@@ -196,7 +194,6 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   template<typename T1, typename spop_type> inline SpMat& operator%=(const mtSpOp<eT, T1, spop_type>& X);
   template<typename T1, typename spop_type> inline SpMat& operator/=(const mtSpOp<eT, T1, spop_type>& X);
   
-  // delayed mixed-type binary ops
   template<typename T1, typename T2, typename spglue_type> inline             SpMat(const mtSpGlue<eT, T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator= (const mtSpGlue<eT, T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator+=(const mtSpGlue<eT, T1, T2, spglue_type>& X);
@@ -204,6 +201,14 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator*=(const mtSpGlue<eT, T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator%=(const mtSpGlue<eT, T1, T2, spglue_type>& X);
   template<typename T1, typename T2, typename spglue_type> inline SpMat& operator/=(const mtSpGlue<eT, T1, T2, spglue_type>& X);
+  
+  template<typename T1, typename op_type> inline             SpMat(const mtSpReduceOp<eT, T1, op_type>& X);
+  template<typename T1, typename op_type> inline SpMat& operator= (const mtSpReduceOp<eT, T1, op_type>& X);
+  template<typename T1, typename op_type> inline SpMat& operator+=(const mtSpReduceOp<eT, T1, op_type>& X);
+  template<typename T1, typename op_type> inline SpMat& operator-=(const mtSpReduceOp<eT, T1, op_type>& X);
+  template<typename T1, typename op_type> inline SpMat& operator*=(const mtSpReduceOp<eT, T1, op_type>& X);
+  template<typename T1, typename op_type> inline SpMat& operator%=(const mtSpReduceOp<eT, T1, op_type>& X);
+  template<typename T1, typename op_type> inline SpMat& operator/=(const mtSpReduceOp<eT, T1, op_type>& X);
   
   
   arma_inline       SpSubview_row<eT> row(const uword row_num);
@@ -272,92 +277,101 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   
   
   // access the i-th element; if there is nothing at element i, 0 is returned
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator[] (const uword i);
-  arma_inline arma_warn_unused eT                   operator[] (const uword i) const;
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> at         (const uword i);
-  arma_inline arma_warn_unused eT                   at         (const uword i) const;
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator() (const uword i);
-  arma_inline arma_warn_unused eT                   operator() (const uword i) const;
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> operator[] (const uword i);
+  arma_warn_unused arma_inline eT                   operator[] (const uword i) const;
+  
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> at         (const uword i);
+  arma_warn_unused arma_inline eT                   at         (const uword i) const;
+  
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> operator() (const uword i);
+  arma_warn_unused arma_inline eT                   operator() (const uword i) const;
   
   // access the element at the given row and column; if there is nothing at that position, 0 is returned
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> at         (const uword in_row, const uword in_col);
-  arma_inline arma_warn_unused eT                   at         (const uword in_row, const uword in_col) const;
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator() (const uword in_row, const uword in_col);
-  arma_inline arma_warn_unused eT                   operator() (const uword in_row, const uword in_col) const;
+  #if defined(__cpp_multidimensional_subscript)
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> operator[] (const uword in_row, const uword in_col);
+  arma_warn_unused arma_inline eT                   operator[] (const uword in_row, const uword in_col) const;
+  #endif
+  
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> at         (const uword in_row, const uword in_col);
+  arma_warn_unused arma_inline eT                   at         (const uword in_row, const uword in_col) const;
+  
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> operator() (const uword in_row, const uword in_col);
+  arma_warn_unused arma_inline eT                   operator() (const uword in_row, const uword in_col) const;
   
   
-  arma_inline arma_warn_unused bool is_empty()  const;
-  arma_inline arma_warn_unused bool is_vec()    const;
-  arma_inline arma_warn_unused bool is_rowvec() const;
-  arma_inline arma_warn_unused bool is_colvec() const;
-  arma_inline arma_warn_unused bool is_square() const;
-       inline arma_warn_unused bool is_finite() const;
+  arma_warn_unused arma_inline bool is_empty()  const;
+  arma_warn_unused arma_inline bool is_vec()    const;
+  arma_warn_unused arma_inline bool is_rowvec() const;
+  arma_warn_unused arma_inline bool is_colvec() const;
+  arma_warn_unused arma_inline bool is_square() const;
   
-  inline arma_warn_unused bool is_symmetric() const;
-  inline arma_warn_unused bool is_symmetric(const typename get_pod_type<eT>::result tol) const;
+  arma_warn_unused inline bool is_symmetric() const;
+  arma_warn_unused inline bool is_symmetric(const typename get_pod_type<eT>::result tol) const;
   
-  inline arma_warn_unused bool is_hermitian() const;
-  inline arma_warn_unused bool is_hermitian(const typename get_pod_type<eT>::result tol) const;
+  arma_warn_unused inline bool is_hermitian() const;
+  arma_warn_unused inline bool is_hermitian(const typename get_pod_type<eT>::result tol) const;
   
-  inline arma_warn_unused bool has_inf() const;
-  inline arma_warn_unused bool has_nan() const;
+  arma_warn_unused inline bool internal_is_finite()     const;
+  arma_warn_unused inline bool internal_has_inf()       const;
+  arma_warn_unused inline bool internal_has_nan()       const;
+  arma_warn_unused inline bool internal_has_nonfinite() const;
   
-  arma_inline arma_warn_unused bool in_range(const uword i) const;
-  arma_inline arma_warn_unused bool in_range(const span& x) const;
+  arma_warn_unused arma_inline bool in_range(const uword i) const;
+  arma_warn_unused arma_inline bool in_range(const span& x) const;
   
-  arma_inline arma_warn_unused bool in_range(const uword   in_row, const uword   in_col) const;
-  arma_inline arma_warn_unused bool in_range(const span& row_span, const uword   in_col) const;
-  arma_inline arma_warn_unused bool in_range(const uword   in_row, const span& col_span) const;
-  arma_inline arma_warn_unused bool in_range(const span& row_span, const span& col_span) const;
+  arma_warn_unused arma_inline bool in_range(const uword   in_row, const uword   in_col) const;
+  arma_warn_unused arma_inline bool in_range(const span& row_span, const uword   in_col) const;
+  arma_warn_unused arma_inline bool in_range(const uword   in_row, const span& col_span) const;
+  arma_warn_unused arma_inline bool in_range(const span& row_span, const span& col_span) const;
   
-  arma_inline arma_warn_unused bool in_range(const uword in_row, const uword in_col, const SizeMat& s) const;
+  arma_warn_unused arma_inline bool in_range(const uword in_row, const uword in_col, const SizeMat& s) const;
   
   
-  template<typename eT2> inline void copy_size(const SpMat<eT2>& m);
-  template<typename eT2> inline void copy_size(const   Mat<eT2>& m);
+  template<typename eT2> inline SpMat& copy_size(const SpMat<eT2>& m);
+  template<typename eT2> inline SpMat& copy_size(const   Mat<eT2>& m);
   
-  inline void set_size(const uword in_elem);
-  inline void set_size(const uword in_rows, const uword in_cols);
-  inline void set_size(const SizeMat& s);
+  inline SpMat& set_size(const uword in_elem);
+  inline SpMat& set_size(const uword in_rows, const uword in_cols);
+  inline SpMat& set_size(const SizeMat& s);
   
-  inline void   resize(const uword in_rows, const uword in_cols);
-  inline void   resize(const SizeMat& s);
+  inline SpMat&   resize(const uword in_rows, const uword in_cols);
+  inline SpMat&   resize(const SizeMat& s);
   
-  inline void  reshape(const uword in_rows, const uword in_cols);
-  inline void  reshape(const SizeMat& s);
+  inline SpMat&  reshape(const uword in_rows, const uword in_cols);
+  inline SpMat&  reshape(const SizeMat& s);
   
   inline void  reshape_helper_generic(const uword in_rows, const uword in_cols);  //! internal use only
   inline void  reshape_helper_intovec();                                          //! internal use only
   
-  template<typename functor> inline const SpMat&  for_each(functor F);
+  template<typename functor> inline       SpMat&  for_each(functor F);
   template<typename functor> inline const SpMat&  for_each(functor F) const;
   
-  template<typename functor> inline const SpMat& transform(functor F);
+  template<typename functor> inline       SpMat& transform(functor F);
   
-  inline const SpMat& replace(const eT old_val, const eT new_val);
+  inline SpMat& replace(const eT old_val, const eT new_val);
   
-  inline const SpMat& clean(const pod_type threshold);
+  inline SpMat& clean(const pod_type threshold);
   
-  inline const SpMat& clamp(const eT min_val, const eT max_val);
+  inline SpMat& clamp(const eT min_val, const eT max_val);
   
-  inline const SpMat& zeros();
-  inline const SpMat& zeros(const uword in_elem);
-  inline const SpMat& zeros(const uword in_rows, const uword in_cols);
-  inline const SpMat& zeros(const SizeMat& s);
+  inline SpMat& zeros();
+  inline SpMat& zeros(const uword in_elem);
+  inline SpMat& zeros(const uword in_rows, const uword in_cols);
+  inline SpMat& zeros(const SizeMat& s);
   
-  inline const SpMat& eye();
-  inline const SpMat& eye(const uword in_rows, const uword in_cols);
-  inline const SpMat& eye(const SizeMat& s);
+  inline SpMat& eye();
+  inline SpMat& eye(const uword in_rows, const uword in_cols);
+  inline SpMat& eye(const SizeMat& s);
   
-  inline const SpMat& speye();
-  inline const SpMat& speye(const uword in_rows, const uword in_cols);
-  inline const SpMat& speye(const SizeMat& s);
+  inline SpMat& speye();
+  inline SpMat& speye(const uword in_rows, const uword in_cols);
+  inline SpMat& speye(const SizeMat& s);
   
-  inline const SpMat& sprandu(const uword in_rows, const uword in_cols, const double density);
-  inline const SpMat& sprandu(const SizeMat& s,                         const double density);
+  inline SpMat& sprandu(const uword in_rows, const uword in_cols, const double density);
+  inline SpMat& sprandu(const SizeMat& s,                         const double density);
   
-  inline const SpMat& sprandn(const uword in_rows, const uword in_cols, const double density);
-  inline const SpMat& sprandn(const SizeMat& s,                         const double density);
+  inline SpMat& sprandn(const uword in_rows, const uword in_cols, const double density);
+  inline SpMat& sprandn(const SizeMat& s,                         const double density);
   
   inline void reset();
   inline void reset_cache();
@@ -379,21 +393,13 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   // saving and loading
   // TODO: implement auto_detect for sparse matrices
   
-  inline arma_cold bool save(const std::string   name, const file_type type = arma_binary) const;
-  inline arma_cold bool save(const csv_name&     spec, const file_type type =   csv_ascii) const;
-  inline arma_cold bool save(      std::ostream& os,   const file_type type = arma_binary) const;
+  arma_cold inline bool save(const std::string   name, const file_type type = arma_binary) const;
+  arma_cold inline bool save(const csv_name&     spec, const file_type type =   csv_ascii) const;
+  arma_cold inline bool save(      std::ostream& os,   const file_type type = arma_binary) const;
   
-  inline arma_cold bool load(const std::string   name, const file_type type = arma_binary);
-  inline arma_cold bool load(const csv_name&     spec, const file_type type =   csv_ascii);
-  inline arma_cold bool load(      std::istream& is,   const file_type type = arma_binary);
-  
-  inline arma_cold bool quiet_save(const std::string   name, const file_type type = arma_binary) const;
-  inline arma_cold bool quiet_save(const csv_name&     spec, const file_type type =   csv_ascii) const;
-  inline arma_cold bool quiet_save(      std::ostream& os,   const file_type type = arma_binary) const;
-  
-  inline arma_cold bool quiet_load(const std::string   name, const file_type type = arma_binary);
-  inline arma_cold bool quiet_load(const csv_name&     spec, const file_type type =   csv_ascii);
-  inline arma_cold bool quiet_load(      std::istream& is,   const file_type type = arma_binary);
+  arma_cold inline bool load(const std::string   name, const file_type type = arma_binary);
+  arma_cold inline bool load(const csv_name&     spec, const file_type type =   csv_ascii);
+  arma_cold inline bool load(      std::istream& is,   const file_type type = arma_binary);
   
   
   
@@ -436,30 +442,31 @@ class SpMat : public SpBase< eT, SpMat<eT> >
     public:
     
     inline const_iterator();
-    inline const_iterator(const SpMat& in_M, uword initial_pos = 0); // assumes initial_pos is valid
-    //! once initialised, will be at the first nonzero value after the given position (using forward columnwise traversal)
-    inline const_iterator(const SpMat& in_M, uword in_row, uword in_col);
-    //! if you know the exact position of the iterator;  in_row is a dummy argument
-    inline const_iterator(const SpMat& in_M, uword in_row, uword in_col, uword in_pos);
-    inline const_iterator(const const_iterator& other);
     
-    inline arma_hot         const_iterator& operator++();
-    inline arma_warn_unused const_iterator  operator++(int);
+    inline const_iterator(const SpMat& in_M, uword initial_pos = 0);                     // assumes initial_pos is valid
+    inline const_iterator(const SpMat& in_M, uword in_row, uword in_col);                // iterator will be at the first nonzero value after the given position (using forward columnwise traversal)
+    inline const_iterator(const SpMat& in_M, uword in_row, uword in_col, uword in_pos);  // if the exact position of the iterator is known; in_row is a dummy argument
     
-    inline arma_hot         const_iterator& operator--();
-    inline arma_warn_unused const_iterator  operator--(int);
+    inline                 const_iterator(const const_iterator& other);
+    inline const_iterator& operator=     (const const_iterator& other) = default;
     
-    inline arma_hot bool operator==(const const_iterator& rhs) const;
-    inline arma_hot bool operator!=(const const_iterator& rhs) const;
+    arma_hot         inline const_iterator& operator++();
+    arma_warn_unused inline const_iterator  operator++(int);
     
-    inline arma_hot bool operator==(const typename SpSubview<eT>::const_iterator& rhs) const;
-    inline arma_hot bool operator!=(const typename SpSubview<eT>::const_iterator& rhs) const;
+    arma_hot         inline const_iterator& operator--();
+    arma_warn_unused inline const_iterator  operator--(int);
     
-    inline arma_hot bool operator==(const const_row_iterator& rhs) const;
-    inline arma_hot bool operator!=(const const_row_iterator& rhs) const;
+    arma_hot inline bool operator==(const const_iterator& rhs) const;
+    arma_hot inline bool operator!=(const const_iterator& rhs) const;
     
-    inline arma_hot bool operator==(const typename SpSubview<eT>::const_row_iterator& rhs) const;
-    inline arma_hot bool operator!=(const typename SpSubview<eT>::const_row_iterator& rhs) const;
+    arma_hot inline bool operator==(const typename SpSubview<eT>::const_iterator& rhs) const;
+    arma_hot inline bool operator!=(const typename SpSubview<eT>::const_iterator& rhs) const;
+    
+    arma_hot inline bool operator==(const const_row_iterator& rhs) const;
+    arma_hot inline bool operator!=(const const_row_iterator& rhs) const;
+    
+    arma_hot inline bool operator==(const typename SpSubview<eT>::const_row_iterator& rhs) const;
+    arma_hot inline bool operator!=(const typename SpSubview<eT>::const_row_iterator& rhs) const;
     };
   
   /**
@@ -472,19 +479,22 @@ class SpMat : public SpBase< eT, SpMat<eT> >
     public:
     
     inline iterator() : const_iterator() { }
-    inline iterator(SpMat& in_M, uword initial_pos = 0) : const_iterator(in_M, initial_pos) { }
-    inline iterator(SpMat& in_M, uword in_row, uword in_col) : const_iterator(in_M, in_row, in_col) { }
-    inline iterator(SpMat& in_M, uword in_row, uword in_col, uword in_pos) : const_iterator(in_M, in_row, in_col, in_pos) { }
-    inline iterator(const iterator& other) : const_iterator(other) { }
     
-    inline arma_hot SpValProxy< SpMat<eT> > operator*();
+    inline iterator(SpMat& in_M, uword initial_pos = 0)                    : const_iterator(in_M, initial_pos)            { }
+    inline iterator(SpMat& in_M, uword in_row, uword in_col)               : const_iterator(in_M, in_row, in_col)         { }
+    inline iterator(SpMat& in_M, uword in_row, uword in_col, uword in_pos) : const_iterator(in_M, in_row, in_col, in_pos) { }
+    
+    inline           iterator (const iterator& other) : const_iterator(other) { }
+    inline iterator& operator=(const iterator& other) = default;
+    
+    arma_hot inline SpValProxy< SpMat<eT> > operator*();
     
     // overloads needed for return type correctness
-    inline arma_hot         iterator& operator++();
-    inline arma_warn_unused iterator  operator++(int);
+    arma_hot         inline iterator& operator++();
+    arma_warn_unused inline iterator  operator++(int);
     
-    inline arma_hot         iterator& operator--();
-    inline arma_warn_unused iterator  operator--(int);
+    arma_hot         inline iterator& operator--();
+    arma_warn_unused inline iterator  operator--(int);
     
     // this has a different value_type than iterator_base
     typedef       SpValProxy< SpMat<eT> >   value_type;
@@ -498,34 +508,35 @@ class SpMat : public SpBase< eT, SpMat<eT> >
     
     inline const_row_iterator();
     inline const_row_iterator(const SpMat& in_M, uword initial_pos = 0);
-    //! once initialised, will be at the first nonzero value after the given position (using forward row-wise traversal)
     inline const_row_iterator(const SpMat& in_M, uword in_row, uword in_col);
-    inline const_row_iterator(const const_row_iterator& other);
     
-    inline arma_hot         const_row_iterator& operator++();
-    inline arma_warn_unused const_row_iterator  operator++(int);
+    inline                     const_row_iterator(const const_row_iterator& other);
+    inline const_row_iterator& operator=         (const const_row_iterator& other) = default;
     
-    inline arma_hot         const_row_iterator& operator--();
-    inline arma_warn_unused const_row_iterator  operator--(int);
+    arma_hot         inline const_row_iterator& operator++();
+    arma_warn_unused inline const_row_iterator  operator++(int);
+    
+    arma_hot         inline const_row_iterator& operator--();
+    arma_warn_unused inline const_row_iterator  operator--(int);
     
     uword internal_row; // hold row internally
-    uword actual_pos; // this holds the true position we are at in the matrix, as column-major indexing
+    uword actual_pos;   // hold the true position we are at in the matrix, as column-major indexing
     
     arma_inline eT operator*() const { return iterator_base::M->values[actual_pos]; }
     
     arma_inline uword row() const { return internal_row; }
     
-    inline arma_hot bool operator==(const const_iterator& rhs) const;
-    inline arma_hot bool operator!=(const const_iterator& rhs) const;
+    arma_hot inline bool operator==(const const_iterator& rhs) const;
+    arma_hot inline bool operator!=(const const_iterator& rhs) const;
     
-    inline arma_hot bool operator==(const typename SpSubview<eT>::const_iterator& rhs) const;
-    inline arma_hot bool operator!=(const typename SpSubview<eT>::const_iterator& rhs) const;
+    arma_hot inline bool operator==(const typename SpSubview<eT>::const_iterator& rhs) const;
+    arma_hot inline bool operator!=(const typename SpSubview<eT>::const_iterator& rhs) const;
     
-    inline arma_hot bool operator==(const const_row_iterator& rhs) const;
-    inline arma_hot bool operator!=(const const_row_iterator& rhs) const;
+    arma_hot inline bool operator==(const const_row_iterator& rhs) const;
+    arma_hot inline bool operator!=(const const_row_iterator& rhs) const;
     
-    inline arma_hot bool operator==(const typename SpSubview<eT>::const_row_iterator& rhs) const;
-    inline arma_hot bool operator!=(const typename SpSubview<eT>::const_row_iterator& rhs) const;
+    arma_hot inline bool operator==(const typename SpSubview<eT>::const_row_iterator& rhs) const;
+    arma_hot inline bool operator!=(const typename SpSubview<eT>::const_row_iterator& rhs) const;
     };
   
   class row_iterator : public const_row_iterator
@@ -533,19 +544,21 @@ class SpMat : public SpBase< eT, SpMat<eT> >
     public:
     
     inline row_iterator() : const_row_iterator() {}
-    inline row_iterator(SpMat& in_M, uword initial_pos = 0) : const_row_iterator(in_M, initial_pos) { }
-    //! once initialised, will be at the first nonzero value after the given position (using forward row-wise traversal)
-    inline row_iterator(SpMat& in_M, uword in_row, uword in_col) : const_row_iterator(in_M, in_row, in_col) { }
-    inline row_iterator(const row_iterator& other) : const_row_iterator(other) { }
     
-    inline arma_hot SpValProxy< SpMat<eT> > operator*();
+    inline row_iterator(SpMat& in_M, uword initial_pos = 0)      : const_row_iterator(in_M, initial_pos)    { }
+    inline row_iterator(SpMat& in_M, uword in_row, uword in_col) : const_row_iterator(in_M, in_row, in_col) { }
+    
+    inline               row_iterator(const row_iterator& other) : const_row_iterator(other) { }
+    inline row_iterator& operator=   (const row_iterator& other) = default;
+    
+    arma_hot inline SpValProxy< SpMat<eT> > operator*();
     
     // overloads required for return type correctness
-    inline arma_hot         row_iterator& operator++();
-    inline arma_warn_unused row_iterator  operator++(int);
+    arma_hot         inline row_iterator& operator++();
+    arma_warn_unused inline row_iterator  operator++(int);
     
-    inline arma_hot         row_iterator& operator--();
-    inline arma_warn_unused row_iterator  operator--(int);
+    arma_hot         inline row_iterator& operator--();
+    arma_warn_unused inline row_iterator  operator--(int);
     
     // this has a different value_type than iterator_base
     typedef       SpValProxy< SpMat<eT> >  value_type;
@@ -601,11 +614,11 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   inline bool  empty() const;
   inline uword size()  const;
   
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> front();
-  arma_inline arma_warn_unused eT                   front() const;
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> front();
+  arma_warn_unused arma_inline eT                   front() const;
   
-  arma_inline arma_warn_unused SpMat_MapMat_val<eT> back();
-  arma_inline arma_warn_unused eT                   back() const;
+  arma_warn_unused arma_inline SpMat_MapMat_val<eT> back();
+  arma_warn_unused arma_inline eT                   back() const;
   
   // Resize memory.
   // If the new size is larger, the column pointers and new memory still need to be correctly set.
@@ -630,13 +643,14 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   template<typename eT2, typename T1, typename Functor> inline void init_xform_mt(const SpBase<eT2,T1>& x, const Functor& func);
   
   //! don't use this unless you're writing internal Armadillo code
-  arma_inline bool is_alias(const SpMat<eT>& X) const;
+  template<typename eT2>
+  arma_inline bool is_alias(const SpMat<eT2>& X) const;
   
   
   protected:
   
-  inline void                init(uword in_rows, uword in_cols, const uword new_n_nonzero = 0);
-  inline void arma_cold init_cold(uword in_rows, uword in_cols, const uword new_n_nonzero = 0);
+            inline void       init(uword in_rows, uword in_cols, const uword new_n_nonzero = 0);
+  arma_cold inline void  init_cold(uword in_rows, uword in_cols, const uword new_n_nonzero = 0);
   
   inline void init(const std::string& text);
   inline void init(const  SpMat<eT>& x);
@@ -653,22 +667,22 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   
   private:
   
-  inline arma_hot arma_warn_unused const eT* find_value_csc(const uword in_row, const uword in_col) const;
+  arma_warn_unused arma_hot inline const eT* find_value_csc(const uword in_row, const uword in_col) const;
   
-  inline arma_hot arma_warn_unused eT get_value(const uword i                         ) const;
-  inline arma_hot arma_warn_unused eT get_value(const uword in_row, const uword in_col) const;
+  arma_warn_unused arma_hot inline eT get_value(const uword i                         ) const;
+  arma_warn_unused arma_hot inline eT get_value(const uword in_row, const uword in_col) const;
   
-  inline arma_hot arma_warn_unused eT get_value_csc(const uword i                         ) const;
-  inline arma_hot arma_warn_unused eT get_value_csc(const uword in_row, const uword in_col) const;
+  arma_warn_unused arma_hot inline eT get_value_csc(const uword i                         ) const;
+  arma_warn_unused arma_hot inline eT get_value_csc(const uword in_row, const uword in_col) const;
   
-  inline arma_hot arma_warn_unused bool try_set_value_csc(const uword in_row, const uword in_col, const eT in_val);
-  inline arma_hot arma_warn_unused bool try_add_value_csc(const uword in_row, const uword in_col, const eT in_val);
-  inline arma_hot arma_warn_unused bool try_sub_value_csc(const uword in_row, const uword in_col, const eT in_val);
-  inline arma_hot arma_warn_unused bool try_mul_value_csc(const uword in_row, const uword in_col, const eT in_val);
-  inline arma_hot arma_warn_unused bool try_div_value_csc(const uword in_row, const uword in_col, const eT in_val);
+  arma_warn_unused arma_hot inline bool try_set_value_csc(const uword in_row, const uword in_col, const eT in_val);
+  arma_warn_unused arma_hot inline bool try_add_value_csc(const uword in_row, const uword in_col, const eT in_val);
+  arma_warn_unused arma_hot inline bool try_sub_value_csc(const uword in_row, const uword in_col, const eT in_val);
+  arma_warn_unused arma_hot inline bool try_mul_value_csc(const uword in_row, const uword in_col, const eT in_val);
+  arma_warn_unused arma_hot inline bool try_div_value_csc(const uword in_row, const uword in_col, const eT in_val);
   
-  inline arma_warn_unused eT&  insert_element(const uword in_row, const uword in_col, const eT in_val = eT(0));
-  inline                  void delete_element(const uword in_row, const uword in_col);
+  arma_warn_unused inline eT&  insert_element(const uword in_row, const uword in_col, const eT in_val = eT(0));
+                   inline void delete_element(const uword in_row, const uword in_col);
   
   
   // cache related
@@ -679,7 +693,7 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   // 1: CSC needs to be updated from cache (ie. cache has more recent data)
   // 2: no update required                 (ie. CSC and cache contain the same data)
   
-  #if (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #if defined(ARMA_USE_STD_MUTEX)
   arma_aligned mutable std::mutex cache_mutex;
   #endif
   
@@ -704,7 +718,7 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   
   public:
   
-  #ifdef ARMA_EXTRA_SPMAT_PROTO
+  #if defined(ARMA_EXTRA_SPMAT_PROTO)
     #include ARMA_INCFILE_WRAP(ARMA_EXTRA_SPMAT_PROTO)
   #endif
   };
@@ -721,6 +735,10 @@ class SpMat_aux
   template<typename eT, typename T1> inline static void set_imag(SpMat<eT>&                out, const SpBase<eT,T1>& X);
   template<typename T,  typename T1> inline static void set_imag(SpMat< std::complex<T> >& out, const SpBase< T,T1>& X);
   };
+
+
+
+template<typename eT> class SpMat_noalias : public SpMat<eT> {};
 
 
 

@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 void
 op_powmat::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_powmat>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword y     =  expr.aux_uword_a;
   const bool  y_neg = (expr.aux_uword_b == uword(1));
@@ -45,7 +47,7 @@ inline
 bool
 op_powmat::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type,T1>& X, const uword y, const bool y_neg)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -53,13 +55,13 @@ op_powmat::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1
     {
     if(y == uword(1))
       {
-      return op_inv::apply_direct(out, X.get_ref(), "powmat()");
+      return op_inv_gen_default::apply_direct(out, X.get_ref(), "powmat()");
       }
     else
       {
       Mat<eT> X_inv;
       
-      const bool inv_status = op_inv::apply_direct(X_inv, X.get_ref(), "powmat()");
+      const bool inv_status = op_inv_gen_default::apply_direct(X_inv, X.get_ref(), "powmat()");
       
       if(inv_status == false)  { return false; }
       
@@ -70,7 +72,7 @@ op_powmat::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1
     {
     const quasi_unwrap<T1> U(X.get_ref());
     
-    arma_debug_check( (U.M.is_square() == false), "powmat(): given matrix must be square sized" );
+    arma_conform_check( (U.M.is_square() == false), "powmat(): given matrix must be square sized" );
     
     op_powmat::apply_direct_positive(out, U.M, y);
     }
@@ -85,7 +87,7 @@ inline
 void
 op_powmat::apply_direct_positive(Mat<eT>& out, const Mat<eT>& X, const uword y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword N = X.n_rows;
   
@@ -94,6 +96,8 @@ op_powmat::apply_direct_positive(Mat<eT>& out, const Mat<eT>& X, const uword y)
   
   if(X.is_diagmat())
     {
+    arma_debug_print("op_powmat: diag optimisation");
+    
     podarray<eT> tmp(N);  // use temporary array in case we have aliasing
     
     for(uword i=0; i<N; ++i)  { tmp[i] = eop_aux::pow(X.at(i,i), int(y)); }
@@ -135,7 +139,7 @@ inline
 void
 op_powmat_cx::apply(Mat< std::complex<typename T1::pod_type> >& out, const mtOp<std::complex<typename T1::pod_type>,T1,op_powmat_cx>& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::pod_type in_T;
   
@@ -157,7 +161,7 @@ inline
 bool
 op_powmat_cx::apply_direct(Mat< std::complex<typename T1::pod_type> >& out, const Base<typename T1::elem_type,T1>& X, const typename T1::pod_type y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type in_eT;
   typedef typename T1::pod_type  in_T;
@@ -165,7 +169,7 @@ op_powmat_cx::apply_direct(Mat< std::complex<typename T1::pod_type> >& out, cons
   
   if( y == in_T(int(y)) )
     {
-    arma_extra_debug_print("op_powmat_cx::apply_direct(): integer exponent detected; redirecting to op_powmat");
+    arma_debug_print("op_powmat_cx::apply_direct(): integer exponent detected; redirecting to op_powmat");
     
     const uword y_val = (y < int(0)) ? uword(-y) : uword(y);
     const bool  y_neg = (y < int(0));
@@ -184,15 +188,17 @@ op_powmat_cx::apply_direct(Mat< std::complex<typename T1::pod_type> >& out, cons
   const quasi_unwrap<T1> U(X.get_ref());
   const Mat<in_eT>& A  = U.M;
   
-  arma_debug_check( (A.is_square() == false), "powmat(): given matrix must be square sized" );
+  arma_conform_check( (A.is_square() == false), "powmat(): given matrix must be square sized" );
   
   const uword N = A.n_rows;
   
   if(A.is_diagmat())
     {
+    arma_debug_print("op_powmat_cx: diag optimisation");
+    
     podarray<out_eT> tmp(N);  // use temporary array in case we have aliasing
     
-    for(uword i=0; i<N; ++i)  { tmp[i] = eop_aux::pow( std::complex<in_T>(A.at(i,i)), y) ; }
+    for(uword i=0; i<N; ++i)  { tmp[i] = eop_aux::pow( std::complex<in_T>(A.at(i,i)), y ); }
     
     out.zeros(N,N);
     
@@ -201,14 +207,12 @@ op_powmat_cx::apply_direct(Mat< std::complex<typename T1::pod_type> >& out, cons
     return true;
     }
   
-  #if defined(ARMA_OPTIMISE_SYMPD)
-    const bool try_sympd = sympd_helper::guess_sympd_anysize(A);
-  #else
-    const bool try_sympd = false;
-  #endif
+  const bool try_sym = arma_config::optimise_sym && sym_helper::is_approx_sym(A);
   
-  if(try_sympd)
+  if(try_sym)
     {
+    arma_debug_print("op_powmat_cx: symmetric/hermitian optimisation");
+    
     Col<in_T>  eigval;
     Mat<in_eT> eigvec;
     
@@ -216,16 +220,41 @@ op_powmat_cx::apply_direct(Mat< std::complex<typename T1::pod_type> >& out, cons
     
     if(eig_status)
       {
-      eigval = pow(eigval, y);
+      bool all_pos = true;
       
-      const Mat<in_eT> tmp = diagmat(eigval) * eigvec.t();
+      for(uword i=0; i<N; ++i)  { all_pos = (eigval[i] <= in_T(0)) ? false : all_pos; }
       
-      out = conv_to< Mat<out_eT> >::from(eigvec * tmp);
+      if(all_pos)
+        {
+        arma_debug_print("op_powmat_cx: all_pos = true");
+        
+        eigval = pow(eigval, y);
+        
+        const Mat<in_eT> tmp = eigvec * diagmat(eigval);
+        
+        out = conv_to< Mat<out_eT> >::from(tmp  * eigvec.t());
+        }
+      else
+        {
+        arma_debug_print("op_powmat_cx: all_pos = false");
+        
+        Col<out_eT> cx_eigval_pow(N, arma_nozeros_indicator());
+        
+        for(uword i=0; i<N; ++i)  { cx_eigval_pow[i] = eop_aux::pow( std::complex<in_T>(eigval[i]), y ); }
+        
+        const Mat<out_eT> cx_eigvec = conv_to< Mat<out_eT> >::from(eigvec);
+        
+        const Mat<out_eT> tmp = cx_eigvec * diagmat(cx_eigval_pow);
+        
+        out = tmp * cx_eigvec.t();
+        }
       
       return true;
       }
     
-    // fallthrough
+    arma_debug_print("op_powmat_cx: symmetric/hermitian optimisation failed");
+    
+    // fallthrough if optimisation failed
     }
   
   bool powmat_status = false;

@@ -12,6 +12,7 @@
 #include "version.hh"
 #include "ReferenceImplementations.hh" // for commutators
 #include "IMSRGSolver.hh"              // for Perturbative Triples
+#include "Generator.hh"
 
 #include <omp.h>
 
@@ -611,12 +612,12 @@ bool UnitTest::TestNormalOrdering(Operator& Op)
 
 
 
-bool UnitTest::TestCommutators()
+bool UnitTest::TestCommutators(Operator& X, Operator& Y)
 {
   double t_start = omp_get_wtime();
   arma::arma_rng::set_seed(random_seed);
-  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
-  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
+//  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
+//  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
   modelspace->PreCalculateSixJ();
 
   bool all_good = true;
@@ -640,7 +641,7 @@ bool UnitTest::TestCommutators()
   if (Commutator::comm_term_on["comm222_phss"])
     all_good &= Test_comm222_phss(X, Y);
   //  if ( Commutator::comm_term_on["comm222_pp_hh_221ss"] )   all_good &= Test_comm222_pp_hh_221ss( X, Y );
-  if (Commutator::comm_term_on["comm222_pp_hh"] and Commutator::comm_term_on["comm221ss"])
+  if (Commutator::comm_term_on["comm222_pp_hhss"] and Commutator::comm_term_on["comm221ss"])
     all_good &= Test_comm222_pp_hh_221ss(X, Y);
 
   if (Commutator::comm_term_on["comm330ss"])
@@ -747,9 +748,6 @@ bool UnitTest::TestCommutators_Tensor(Operator& X, Operator& Y)
                all_good &= Test_comm333_ppp_hhhst(X, Y);
   if (Commutator::comm_term_on["comm333_pph_hhpst"])
                all_good &= Test_comm333_pph_hhpst(X, Y);
-
-
-
 
 
 
@@ -1502,6 +1500,8 @@ bool UnitTest::Test_against_ref_impl(const Operator &X, const Operator &Y, commu
 
   if (Z.IsReduced() and z_Jrank==0)
     Z.MakeNotReduced();
+  if (Zref.IsReduced() and z_Jrank==0)
+    Zref.MakeNotReduced();
 
   if ((X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()))
   {
@@ -1520,22 +1520,20 @@ bool UnitTest::Test_against_ref_impl(const Operator &X, const Operator &Y, commu
     Zref.SetNonHermitian();
   }
 
-  if (Zref.IsReduced() and z_Jrank==0)
-    Zref.MakeNotReduced();
 
 
   ComOpt(*Xnred, *Ynred, Z);
-  if ( not Z.IsReduced() and ((Z.GetParity() != 0) or (Z.GetTRank() != 0) and z_Jrank==0) )
-  {  
-    Z.MakeReduced(); // If Z changes parity or Tz, we by default store it as reduced. So make it as expected. Is that a good idea? Not sure....
-  }
+//  if ( not Z.IsReduced() and ((Z.GetParity() != 0) or (Z.GetTRank() != 0) and z_Jrank==0) )
+//  {  
+//    Z.MakeReduced(); // If Z changes parity or Tz, we by default store it as reduced. So make it as expected. Is that a good idea? Not sure....
+//  }
 
 //  double tstart = omp_get_wtime();
   ComRef(*Xnred, *Ynred, Zref);
-  if ( not Zref.IsReduced() and ((Zref.GetParity() != 0) or (Zref.GetTRank() != 0) and z_Jrank==0) )
-  {
-    Zref.MakeReduced(); // If Z changes parity or Tz, we by default store it as reduced. So make it as expected. Is that a good idea? Not sure....
-  }
+//  if ( not Zref.IsReduced() and ((Zref.GetParity() != 0) or (Zref.GetTRank() != 0) and z_Jrank==0) )
+//  {
+//    Zref.MakeReduced(); // If Z changes parity or Tz, we by default store it as reduced. So make it as expected. Is that a good idea? Not sure....
+//  }
 //  Z.profiler.timer["_ref_" + output_tag] += omp_get_wtime() - tstart;
   // std::cout<<Z.Norm()<<" "<<Z.ZeroBody<<std::endl;
   // std::cout << Zref.Norm() << " " << Zref.ZeroBody << std::endl;
@@ -2145,24 +2143,38 @@ bool UnitTest::Mscheme_Test_comm121st(const Operator &X, const Operator &Y)
 bool UnitTest::Mscheme_Test_comm221ss(const Operator &X, const Operator &Y)
 {
 
-  Operator Z_J(Y);
-  Z_J.Erase();
+  int z_Jrank = X.GetJRank() + Y.GetJRank(); // I sure hope this is zero.
+  int z_Trank = X.GetTRank() + Y.GetTRank();
+  int z_parity = (X.GetParity() + Y.GetParity()) % 2;
+  int z_particlerank = Commutator::use_imsrg3 ? 3: 2;
+  int hx = X.IsHermitian() ? +1 : -1;
+  int hy = Y.IsHermitian() ? +1 : -1;
+  int hz = -hx*hy;
+
+  ModelSpace &ms = *(Y.GetModelSpace());
+  Operator Z_J(ms, z_Jrank, z_Trank, z_parity, z_particlerank);
+  Z_J.MakeNotReduced();
+  if (hz < 0)
+  Z_J.SetAntiHermitian();
 
   Operator Xcpy(X);
   Operator Ycpy(Y);
-  Ycpy.MakeReduced();
-  Commutator::comm222_pp_hh_221st(Xcpy, Ycpy, Z_J);
-  Z_J.MakeNotReduced();
-  //  Commutator::comm222_pp_hh_221ss( X, Y, Z_J ) ;
-  //  Commutator::comm221ss( X, Y, Z_J);
-  //  Commutator::comm222_pp_hh_221st( X, Y, Z_J);
-  Z_J.EraseTwoBody();
-  //  ReferenceImplementations::comm221ss( X, Y, Z_J);
+  Xcpy.MakeNotReduced();
+  Ycpy.MakeNotReduced();
+//  Ycpy.MakeReduced();
+//  Commutator::comm222_pp_hh_221st(Xcpy, Ycpy, Z_J);
+//  Z_J.MakeNotReduced();
+//    Commutator::comm222_pp_hh_221ss( X, Y, Z_J ) ;
+    Commutator::comm221ss( Xcpy, Ycpy, Z_J);
+//   Commutator::comm222_pp_hh_221ss( Xcpy, Ycpy, Z_J);
+//  Z_J.EraseTwoBody();
+//    ReferenceImplementations::comm221ss( Xcpy, Ycpy, Z_J);
 
-  if (Z_J.IsHermitian())
-    Z_J.Symmetrize();
-  else if (Z_J.IsAntiHermitian())
-    Z_J.AntiSymmetrize();
+//  if (Z_J.IsHermitian())
+//    Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian())
+//    Z_J.AntiSymmetrize();
+
 
   double summed_error = 0;
   double sum_m = 0;
@@ -2177,7 +2189,8 @@ bool UnitTest::Mscheme_Test_comm221ss(const Operator &X, const Operator &Y)
       Orbit &oj = X.modelspace->GetOrbit(j);
       int mj = oj.j2;
       double Zm_ij = 0;
-      if ((oi.j2 == oj.j2) and (oi.l == oj.l) and (oi.tz2 == oj.tz2))
+//      if ((oi.j2 == oj.j2) and (oi.l == oj.l) and (oi.tz2 == oj.tz2))
+      if ((oi.j2 == oj.j2) and true)
       {
         for (auto a : X.modelspace->all_orbits)
         {
@@ -2194,10 +2207,10 @@ bool UnitTest::Mscheme_Test_comm221ss(const Operator &X, const Operator &Y)
               double nc = oc.occ;
               if (std::abs(na * nb * (1 - nc) + (1 - na) * (1 - nb) * nc) < 1e-6)
                 continue;
-              if ((oi.l + oc.l + oa.l + ob.l) % 2 > 0)
-                continue;
-              if ((oi.tz2 + oc.tz2) != (oa.tz2 + ob.tz2))
-                continue;
+//              if ((oi.l + oc.l + oa.l + ob.l) % 2 > 0)
+//                continue;
+//              if ((oi.tz2 + oc.tz2) != (oa.tz2 + ob.tz2))
+//                continue;
 
               for (int ma = -oa.j2; ma <= oa.j2; ma += 2)
               {
@@ -3641,6 +3654,8 @@ bool UnitTest::Mscheme_Test_comm232ss(const Operator &X, const Operator &Y)
 /// M-Scheme Formula:
 //
 // Z_ijkl = 1/6 * sum_abcd (n_a*n_b*n_c*nbar_d - nbar_a*nbar_b*nbar_c*n_d) * [  Xijdabc*Yabckld - Yijdabc*Xabckld  ]
+// THIS HAS AN OVERALL MINUS SIGN ERROR! (Thanks to Victor Vaida for pointing this out)
+// Corrected Sep 3 2025. SRS.
 //
 bool UnitTest::Mscheme_Test_comm332_ppph_hhhpss(const Operator &X, const Operator &Y) // test not yet implemented
 {
@@ -3717,7 +3732,8 @@ bool UnitTest::Mscheme_Test_comm332_ppph_hhhpss(const Operator &X, const Operato
                       {
                         Orbit &od = X.modelspace->GetOrbit(d);
                         double nd = od.occ;
-                        double occfactor = na * nb * nc * (1 - nd) - (1 - na) * (1 - nb) * (1 - nc) * nd;
+//                        double occfactor = na * nb * nc * (1 - nd) - (1 - na) * (1 - nb) * (1 - nc) * nd;
+                        double occfactor = (1 - na) * (1 - nb) * (1 - nc) * nd -  na * nb * nc * (1 - nd); // Corrected Sep 3 2025 (SRS) 
 
                         // These make the contribution trivially zero, so I skip them in the name of efficiently
                         // testing the more complicated part. Commenting them out allows to check that the trivial stuff is right.
@@ -3800,14 +3816,14 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
   Operator Z_J_old(Y);
   Z_J.SetHermitian();
   Z_J.Erase();
-  Z_J_old.SetHermitian();
-  Z_J_old.Erase();
+//  Z_J_old.SetHermitian();
+//  Z_J_old.Erase();
 
   //  Z_J.modelspace->SetOccNat3Cut(1e-5);
   //  Z_J.modelspace->SetdE3max(1);
 
   //  Commutator::comm332_pphhss_debug( X, Y, Z_J);
-  Commutator::comm332_pphhss_debug(X, Y, Z_J_old);
+//  Commutator::comm332_pphhss_debug(X, Y, Z_J_old);
   //  Z_J.Erase();
   Commutator::comm332_pphhss(X, Y, Z_J);
 
@@ -3947,7 +3963,7 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
                 } // for a
 
                 double ZJ_ijkl = GetMschemeMatrixElement_2b(Z_J, i, mi, j, mj, k, mk, l, ml);
-                double ZJ_old_ijkl = GetMschemeMatrixElement_2b(Z_J_old, i, mi, j, mj, k, mk, l, ml);
+//                double ZJ_old_ijkl = GetMschemeMatrixElement_2b(Z_J_old, i, mi, j, mj, k, mk, l, ml);
                 double err = Zm_ijkl - ZJ_ijkl;
                 //             if (std::abs(ZJ_ijkl-ZJ_old_ijkl)>1e-6)
                 if (std::abs(err) > 1e-6)
@@ -3955,8 +3971,8 @@ bool UnitTest::Mscheme_Test_comm332_pphhss(const Operator &X, const Operator &Y)
                   std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
                             << " {m} = " << mi << " " << mj << " " << mk << " " << ml
                             //                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl;
-                            << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << " ZJ_old_ijkl " << ZJ_old_ijkl << "   err = " << err
-                            << "  J err = " << ZJ_ijkl - ZJ_old_ijkl << std::endl;
+                            << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl  << "   err = " << err
+                            <<  std::endl;
                 }
                 summed_error += err * err;
                 sum_m += Zm_ijkl * Zm_ijkl;
@@ -5989,35 +6005,90 @@ bool UnitTest::TestRPAEffectiveCharge(const Operator &H, const Operator &OpIn, s
   return passed;
 }
 
-bool UnitTest::TestFactorizedDoubleCommutators()
+//bool UnitTest::TestFactorizedDoubleCommutators()
+bool UnitTest::TestFactorizedDoubleCommutators( Operator& eta, Operator& H )
 {
   bool passed = true;
 
-  int jrank = 0;
-  int tz = 0;
-  int parity = 0;
+//  int jrank = 0;
+//  int tz = 0;
+//  int parity = 0;
+//  int particle_rank = 2;
+
+  int jrank = eta.GetJRank() + H.GetJRank();
+  int tz = eta.GetTRank() + H.GetTRank();
+  int parity = (eta.GetParity() + H.GetParity())%2 ;
   int particle_rank = 2;
+  int hEta = eta.IsHermitian() ? 1 : -1;
+  int hH = H.IsHermitian() ? 1 : -1;
+  int hZ = hH;
+//  int hZ = hEta * hEta * hH;
 
-  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
-  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);
-  Operator OpOut_direct(*modelspace, jrank, tz, parity, 3);
+//  Operator eta = RandomOp(*modelspace, jrank, tz, parity, particle_rank, -1);
+//  Operator H = RandomOp(*modelspace, jrank, tz, parity, particle_rank, +1);
+  Operator OpOut_intermediate(*modelspace, jrank, tz, parity, 3);
+  Operator OpOut_direct(*modelspace, jrank, tz, parity, 2);
   Operator OpOut_factorized(*modelspace, jrank, tz, parity, 2);
-  OpOut_direct.ThreeBody.SetMode("pn");
+  if ( hZ < 0 )
+  {
+    OpOut_direct.SetAntiHermitian();
+    OpOut_factorized.SetAntiHermitian();
+  }
+  if ( -1*hEta*hH < 0 )
+  {
+    OpOut_intermediate.SetAntiHermitian();
+  }
+//  OpOut_direct.ThreeBody.SetMode("pn");
+  OpOut_intermediate.ThreeBody.SetMode("pn");
+  if (OpOut_direct.IsReduced() )
+  {
+     OpOut_direct.MakeNotReduced();
+  }
+  if (OpOut_factorized.IsReduced() )
+  {
+     OpOut_factorized.MakeNotReduced();
+  }
+  if (OpOut_intermediate.IsReduced() )
+  {
+     OpOut_intermediate.MakeNotReduced();
+  }
 
+  if ( eta.IsReduced() or H.IsReduced() or OpOut_direct.IsReduced() or OpOut_factorized.IsReduced())
+  {
+     std::cout << "Uh oh. eta,H,Odirect,Ofactorized  Is Reduced? "
+               << eta.IsReduced() << " " << H.IsReduced() << " " << OpOut_direct.IsReduced() << " " << OpOut_factorized.IsReduced() 
+               << std::endl;
+  }
+//  Commutator::comm223ss(eta, H, OpOut_direct);
+//  Commutator::comm231ss(eta, OpOut_direct, OpOut_direct);
+//  Commutator::comm232ss(eta, OpOut_direct, OpOut_direct);
+  Commutator::comm223ss(eta, H, OpOut_intermediate);
+  Commutator::comm231ss(eta, OpOut_intermediate, OpOut_direct);
+  Commutator::comm232ss(eta, OpOut_intermediate, OpOut_direct);
 
-  Commutator::comm223ss(eta, H, OpOut_direct);
-  Commutator::comm231ss(eta, OpOut_direct, OpOut_direct);
-  Commutator::comm232ss(eta, OpOut_direct, OpOut_direct);
-
-  OpOut_direct.ThreeBody.Erase();
+//  OpOut_direct.ThreeBody.Erase();
   // OpOut_factorized.EraseOneBody();  
   // OpOut_factorized.TwoBody.Erase();
 
   Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates(true);
   Commutator::FactorizedDoubleCommutator::SetUse_2b_Intermediates(true);
+//  Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates(false);
+//  Commutator::FactorizedDoubleCommutator::SetUse_2b_Intermediates(false);
 
   Commutator::FactorizedDoubleCommutator::comm223_231(eta, H, OpOut_factorized);
+//  Commutator::FactorizedDoubleCommutator::SetUse_1b_Intermediates(true);
+//  Commutator::FactorizedDoubleCommutator::SetUse_2b_Intermediates(true);
   Commutator::FactorizedDoubleCommutator::comm223_232(eta, H, OpOut_factorized);
+
+//  ReferenceImplementations::comm223_231_BruteForce(eta, H, OpOut_factorized);
+////  ReferenceImplementations::comm223_232_BruteForce(eta, H, OpOut_factorized);
+//////  OpOut_factorized.EraseOneBody();
+//  ReferenceImplementations::comm223_231_fI(eta, H, OpOut_factorized);
+//  ReferenceImplementations::comm223_231_fII(eta, H, OpOut_factorized);
+//  ReferenceImplementations::comm223_231_fIIIa(eta, H, OpOut_factorized);
+//  ReferenceImplementations::comm223_231_fIIIb(eta, H, OpOut_factorized);
+//  ReferenceImplementations::comm223_231(eta, H, OpOut_factorized);
+//  ReferenceImplementations::comm223_232(eta, H, OpOut_factorized);
 
   std::cout << "Norm of OpOut_direct:     " << OpOut_direct.Norm()     << "  1b : " << OpOut_direct.OneBodyNorm()     << "  2b : " << OpOut_direct.TwoBodyNorm() << std::endl;
   std::cout << "Norm of OpOut_factorized: " << OpOut_factorized.Norm() << "  1b : " << OpOut_factorized.OneBodyNorm() << "  2b : " << OpOut_factorized.TwoBodyNorm() << std::endl;
@@ -8451,6 +8522,96 @@ bool UnitTest::Mscheme_Test_comm333_pph_hhpst(const Operator &X, const Operator 
   std::cout << "   " << __func__ << "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
+}
+
+
+
+
+bool UnitTest::Test3BGenerator( Operator& H, Operator& Hdenom)
+{
+
+   bool pass = true;
+   Operator EtaOpt(H);
+   EtaOpt.SetAntiHermitian();
+   
+   Generator gen;
+   gen.SetType("shell-model");
+   gen.SetDenominatorPartitioning("Moller-Plesset");
+   gen.UpdateGeneral(H,Hdenom,EtaOpt);
+
+   /////////   
+    for (auto &it : H.ThreeBody.Get_ch_start())
+    {
+      size_t ch3bra = it.first.ch_bra;
+      size_t ch3ket = it.first.ch_ket;
+      ThreeBodyChannel &Tbc_bra = H.modelspace->GetThreeBodyChannel(ch3bra);
+      ThreeBodyChannel &Tbc_ket = H.modelspace->GetThreeBodyChannel(ch3ket);
+      size_t nbras = Tbc_bra.GetNumberKets();
+      size_t nkets = Tbc_ket.GetNumberKets();
+      for (size_t ibra = 0; ibra < nbras; ibra++)
+      {
+
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+
+//      if ( ch3bra==ch3ket and (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+
+
+//      double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+//      double d_eb = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+//      double d_ec = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+//      double occnat_a = bra.op->occ_nat;
+//      double occnat_b = bra.oq->occ_nat;
+//      double occnat_c = bra.oR->occ_nat;
+//      if ( d_ea + d_eb + d_ec > H->modelspace->GetdE3max() ) continue;
+//      if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+      size_t a = bra.p;
+      size_t b = bra.q;
+      size_t c = bra.r;
+
+      for (size_t iket=0; iket<nkets; iket++)
+      {
+         Ket3& ket = Tbc_ket.GetKet(iket);
+         // off-diagonal :  ppp|ccc , ppp|ccv , ppp|cvv , qpp|vvv
+         if ( not ( ( (bra.op->cvq>0) and (bra.oq->cvq>0) and (bra.oR->cvq>0) and (ket.op->cvq<2) and (ket.oq->cvq<2) and (ket.oR->cvq<2)  ) // cvq>0 means v or q. cvq<2 means c or v
+                 or ( (ket.op->cvq>0) and (ket.oq->cvq>0) and (ket.oR->cvq>0) and (bra.op->cvq<2) and (bra.oq->cvq<2) and (bra.oR->cvq<2)  )
+                  ) ) continue;
+         if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+                 
+//         if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+//         double d_ei = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+//         double d_ej = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+//         double d_ek = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+//         double occnat_i = ket.op->occ_nat;
+//         double occnat_j = ket.oq->occ_nat;
+//         double occnat_k = ket.oR->occ_nat;
+//         if ( d_ei + d_ej + d_ek > H->modelspace->GetdE3max() ) continue;
+//         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < H->modelspace->GetOccNat3Cut() ) continue ;
+         size_t i = ket.p;
+         size_t j = ket.q;
+         size_t k = ket.r;
+
+         double denominator = gen.Get3bDenominator( a,b,c, i,j,k ) ;
+
+         double ME_od = H.ThreeBody.GetME_pn_ch(ch3bra,ch3ket,ibra,iket );
+         double eta =   ME_od / denominator;
+
+         double eta_opt = EtaOpt.ThreeBody.GetME_pn_ch( ch3bra,ch3ket,ibra,iket); // hermitian conjugate automatically gets added
+
+         double diff = eta-eta_opt;
+         if (std::abs(diff)>1e-9)
+         {
+            std::cout << __func__ << " abcijk " << a << " " << b << " " << c << " " << i << " " << j << " " << k << " "
+                      << "ME_od " << ME_od << "   denom " << denominator << "  eta " << eta << "   eta_opt " << eta_opt << "    diff " << diff << std::endl;
+            pass = false;
+         }
+         
+      }// for iket
+
+    }// for ibra
+    }// for it ch_start
+
+   ////////
+   return pass;
 }
 
 

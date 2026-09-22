@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 double
 chi2rnd(const double df)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   op_chi2rnd_varying_df<double> generator;
   
@@ -39,11 +41,21 @@ inline
 typename arma_real_only<eT>::result
 chi2rnd(const eT df)
   {
-  arma_extra_debug_sigprint();
-  
-  op_chi2rnd_varying_df<eT> generator;
-  
-  return generator(df);
+  arma_debug_sigprint();
+
+  if(is_fp16<eT>::yes)
+    {
+    // std::chi_squared_distribution is undefined for types other than float, double, and long double
+    op_chi2rnd_varying_df<float> generator;
+
+    return eT(generator(df));
+    }
+  else
+    {
+    op_chi2rnd_varying_df<eT> generator;
+
+    return generator(df);
+    }
   }
 
 
@@ -59,7 +71,7 @@ enable_if2
   >::result
 chi2rnd(const T1& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return Op<T1, op_chi2rnd>(expr);
   }
@@ -77,16 +89,16 @@ enable_if2
   >::result
 chi2rnd(const typename obj_type::elem_type df, const uword n_rows, const uword n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(is_Col<obj_type>::value)
     {
-    arma_debug_check( (n_cols != 1), "chi2rnd(): incompatible size" );
+    arma_conform_check( (n_cols != 1), "chi2rnd(): incompatible size" );
     }
   else
   if(is_Row<obj_type>::value)
     {
-    arma_debug_check( (n_rows != 1), "chi2rnd(): incompatible size" );
+    arma_conform_check( (n_rows != 1), "chi2rnd(): incompatible size" );
     }
   
   obj_type out(n_rows, n_cols, arma_nozeros_indicator());
@@ -109,7 +121,7 @@ enable_if2
   >::result
 chi2rnd(const typename obj_type::elem_type df, const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return chi2rnd<obj_type>(df, s.n_rows, s.n_cols);
   }
@@ -127,7 +139,7 @@ enable_if2
   >::result
 chi2rnd(const typename obj_type::elem_type df, const uword n_elem)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   if(is_Row<obj_type>::value)
     {
@@ -146,7 +158,7 @@ inline
 mat
 chi2rnd(const double df, const uword n_rows, const uword n_cols)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return chi2rnd<mat>(df, n_rows, n_cols);
   }
@@ -158,7 +170,7 @@ inline
 mat
 chi2rnd(const double df, const SizeMat& s)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return chi2rnd<mat>(df, s.n_rows, s.n_cols);
   }
@@ -170,7 +182,7 @@ inline
 vec
 chi2rnd(const double df, const uword n_elem)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   return chi2rnd<vec>(df, n_elem, 1);
   }

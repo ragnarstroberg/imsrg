@@ -60,6 +60,7 @@ class TwoBodyME
   int rank_J;
   int rank_T;
   int parity;
+  bool is_reduced;
 
   ~TwoBodyME();
   TwoBodyME();
@@ -71,17 +72,23 @@ class TwoBodyME
   TwoBodyME operator*(const double) const;
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
+  friend TwoBodyME operator+(const TwoBodyME& lhs, const TwoBodyME& rhs);
+  friend TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs);
+  friend TwoBodyME operator*(const double lhs, const TwoBodyME& rhs);
 
 //  void Copy(const TwoBodyME&);
   void Allocate();
   void Deallocate();
-  bool IsHermitian(){return hermitian;};
-  bool IsAntiHermitian(){return antihermitian;};
-  bool IsNonHermitian(){return not (hermitian or antihermitian);};
+  bool IsHermitian()const {return hermitian;};
+  bool IsAntiHermitian()const {return antihermitian;};
+  bool IsNonHermitian()const {return not (hermitian or antihermitian);};
   void SetHermitian();
   void SetAntiHermitian();
   void SetNonHermitian();
   bool IsAllocated()const;
+  bool IsReduced()const {return is_reduced;};
+  void MakeReduced();
+  void MakeNotReduced();
 
   arma::mat& GetMatrix(size_t chbra, size_t chket){return MatEl.at({chbra,chket});};
   arma::mat& GetMatrix(size_t ch){return GetMatrix(ch,ch);};
@@ -163,6 +170,7 @@ class TwoBodyME
   void Symmetrize();
   void AntiSymmetrize();
   void Eye();
+  void PrintAllMatricesTerse() const;
   void PrintAllMatrices() const;
   void PrintMatrix(size_t chbra,size_t chket) const;
 //  void PrintMatrix(size_t chbra,size_t chket) const {std::cout.precision(12); MatEl.at({chbra,chket}).raw_print();};

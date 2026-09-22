@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +17,7 @@
 
 
 
-#ifdef ARMA_USE_LAPACK
+#if defined(ARMA_USE_LAPACK)
 
 #if defined(dgetrf) || defined(DGETRF)
   #pragma message ("WARNING: detected possible interference with definitions of LAPACK functions;")
@@ -257,9 +259,6 @@
   #define arma_strevc strevc
   #define arma_dtrevc dtrevc
   
-  #define arma_slarnv slarnv
-  #define arma_dlarnv dlarnv
-  
   #define arma_sgehrd sgehrd
   #define arma_dgehrd dgehrd
   #define arma_cgehrd cgehrd
@@ -269,6 +268,35 @@
   #define arma_dpstrf dpstrf
   #define arma_cpstrf cpstrf
   #define arma_zpstrf zpstrf
+  
+  #define arma_ssytrf ssytrf
+  #define arma_dsytrf dsytrf
+  
+  #define arma_chetrf chetrf
+  #define arma_zhetrf zhetrf
+  
+  #define arma_ssytrs ssytrs
+  #define arma_dsytrs dsytrs
+  
+  #define arma_chetrs chetrs
+  #define arma_zhetrs zhetrs
+  
+  #define arma_ssytri ssytri
+  #define arma_dsytri dsytri
+  
+  #define arma_chetri chetri
+  #define arma_zhetri zhetri
+  
+  #define arma_ssycon ssycon
+  #define arma_dsycon dsycon
+  
+  #define arma_checon checon
+  #define arma_zhecon zhecon
+  
+  #define arma_sgebal sgebal
+  #define arma_dgebal dgebal
+  #define arma_cgebal cgebal
+  #define arma_zgebal zgebal
   
 #else
   
@@ -496,9 +524,6 @@
   #define arma_strevc STREVC
   #define arma_dtrevc DTREVC
   
-  #define arma_slarnv SLARNV
-  #define arma_dlarnv DLARNV
-  
   #define arma_sgehrd SGEHRD
   #define arma_dgehrd DGEHRD
   #define arma_cgehrd CGEHRD
@@ -508,6 +533,35 @@
   #define arma_dpstrf DPSTRF
   #define arma_cpstrf CPSTRF
   #define arma_zpstrf ZPSTRF
+  
+  #define arma_ssytrf SSYTRF
+  #define arma_dsytrf DSYTRF
+  
+  #define arma_chetrf CHETRF
+  #define arma_zhetrf ZHETRF
+  
+  #define arma_ssytrs SSYTRS
+  #define arma_dsytrs DSYTRS
+  
+  #define arma_chetrs CHETRS
+  #define arma_zhetrs ZHETRS
+  
+  #define arma_ssytri SSYTRI
+  #define arma_dsytri DSYTRI
+  
+  #define arma_chetri CHETRI
+  #define arma_zhetri ZHETRI
+  
+  #define arma_ssycon SSYCON
+  #define arma_dsycon DSYCON
+  
+  #define arma_checon CHECON
+  #define arma_zhecon ZHECON
+  
+  #define arma_sgebal SGEBAL
+  #define arma_dgebal DGEBAL
+  #define arma_cgebal CGEBAL
+  #define arma_zgebal ZGEBAL
   
 #endif
 
@@ -838,10 +892,6 @@ extern "C"
   void arma_fortran(arma_strevc)(const char* side, const char* howmny, blas_int* select, const blas_int* n, const  float* t, const blas_int* ldt,  float* vl, const blas_int* ldvl,  float* vr, const blas_int* ldvr, const blas_int* mm, blas_int* m,  float* work, blas_int* info, blas_len side_len, blas_len howmny_len) ARMA_NOEXCEPT;
   void arma_fortran(arma_dtrevc)(const char* side, const char* howmny, blas_int* select, const blas_int* n, const double* t, const blas_int* ldt, double* vl, const blas_int* ldvl, double* vr, const blas_int* ldvr, const blas_int* mm, blas_int* m, double* work, blas_int* info, blas_len side_len, blas_len howmny_len) ARMA_NOEXCEPT;
   
-  // generate a vector of random numbers
-  void arma_fortran(arma_slarnv)(const blas_int* idist, blas_int* iseed, const blas_int* n,  float* x) ARMA_NOEXCEPT;
-  void arma_fortran(arma_dlarnv)(const blas_int* idist, blas_int* iseed, const blas_int* n, double* x) ARMA_NOEXCEPT;
-  
   // hessenberg decomposition
   void arma_fortran(arma_sgehrd)(const blas_int* n, const blas_int* ilo, const blas_int* ihi,    float* a, const blas_int* lda,    float* tao,    float* work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
   void arma_fortran(arma_dgehrd)(const blas_int* n, const blas_int* ilo, const blas_int* ihi,   double* a, const blas_int* lda,   double* tao,   double* work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
@@ -853,6 +903,44 @@ extern "C"
   void arma_fortran(arma_dpstrf)(const char* uplo, const blas_int* n,   double* a, const blas_int* lda, blas_int* piv, blas_int* rank, const double* tol, double* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
   void arma_fortran(arma_cpstrf)(const char* uplo, const blas_int* n, blas_cxf* a, const blas_int* lda, blas_int* piv, blas_int* rank, const  float* tol,  float* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
   void arma_fortran(arma_zpstrf)(const char* uplo, const blas_int* n, blas_cxd* a, const blas_int* lda, blas_int* piv, blas_int* rank, const double* tol, double* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // factorisation of symmetric matrix (real)
+  void arma_fortran(arma_ssytrf)(const char* uplo, const blas_int* n, float*    a, const blas_int* lda, blas_int* ipiv, float*    work, const blas_int* lwork, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsytrf)(const char* uplo, const blas_int* n, double*   a, const blas_int* lda, blas_int* ipiv, double*   work, const blas_int* lwork, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // factorisation of hermitian matrix (complex)
+  void arma_fortran(arma_chetrf)(const char* uplo, const blas_int* n, blas_cxf* a, const blas_int* lda, blas_int* ipiv, blas_cxf* work, const blas_int* lwork, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhetrf)(const char* uplo, const blas_int* n, blas_cxd* a, const blas_int* lda, blas_int* ipiv, blas_cxd* work, const blas_int* lwork, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // solve system using pre-computed factorisation (real)
+  void arma_fortran(arma_ssytrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const float*    a, const blas_int* lda, const blas_int* ipiv, float*  b, const blas_int* ldb, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsytrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const double*   a, const blas_int* lda, const blas_int* ipiv, double* b, const blas_int* ldb, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // solve system using pre-computed factorisation (complex)
+  void arma_fortran(arma_chetrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const blas_cxf* a, const blas_int* lda, const blas_int* ipiv, blas_cxf* b, const blas_int* ldb, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhetrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const blas_cxd* a, const blas_int* lda, const blas_int* ipiv, blas_cxd* b, const blas_int* ldb, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // inverse of symmetric matrix using pre-computed factorisation (real)
+  void arma_fortran(arma_ssytri)(const char* uplo, const blas_int* n, float*    a, const blas_int* lda, const blas_int* ipiv, float*    work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsytri)(const char* uplo, const blas_int* n, double*   a, const blas_int* lda, const blas_int* ipiv, double*   work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // inverse of hermitian matrix using pre-computed factorisation (complex)
+  void arma_fortran(arma_chetri)(const char* uplo, const blas_int* n, blas_cxf* a, const blas_int* lda, const blas_int* ipiv, blas_cxf* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhetri)(const char* uplo, const blas_int* n, blas_cxd* a, const blas_int* lda, const blas_int* ipiv, blas_cxd* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // rcond of symmetric matrix using pre-computed factorisation (real)
+  void arma_fortran(arma_ssycon)(const char* uplo, const blas_int* n, const float*    a, const blas_int* lda, const blas_int* ipiv, const float*  anorm, float*  rcond, float*    work, blas_int* iwork, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsycon)(const char* uplo, const blas_int* n, const double*   a, const blas_int* lda, const blas_int* ipiv, const double* anorm, double* rcond, double*   work, blas_int* iwork, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // rcond of hermitian matrix using pre-computed factorisation (complex)
+  void arma_fortran(arma_checon)(const char* uplo, const blas_int* n, const blas_cxf* a, const blas_int* lda, const blas_int* ipiv, const float*  anorm, float*  rcond, blas_cxf* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhecon)(const char* uplo, const blas_int* n, const blas_cxd* a, const blas_int* lda, const blas_int* ipiv, const double* anorm, double* rcond, blas_cxd* work, blas_int* info, blas_len uplo_len) ARMA_NOEXCEPT;
+  
+  // matrix balance
+  void arma_fortran(arma_sgebal)(const char* job, const blas_int* n,    float* a, const blas_int* lda, blas_int* ilo, blas_int* ihi,  float* scale, blas_int* info, blas_len job_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dgebal)(const char* job, const blas_int* n,   double* a, const blas_int* lda, blas_int* ilo, blas_int* ihi, double* scale, blas_int* info, blas_len job_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_cgebal)(const char* job, const blas_int* n, blas_cxf* a, const blas_int* lda, blas_int* ilo, blas_int* ihi,  float* scale, blas_int* info, blas_len job_len) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zgebal)(const char* job, const blas_int* n, blas_cxd* a, const blas_int* lda, blas_int* ilo, blas_int* ihi, double* scale, blas_int* info, blas_len job_len) ARMA_NOEXCEPT;
   
 #else
   
@@ -1166,10 +1254,6 @@ extern "C"
   void arma_fortran(arma_strevc)(const char* side, const char* howmny, blas_int* select, const blas_int* n, const  float* t, const blas_int* ldt,  float* vl, const blas_int* ldvl,  float* vr, const blas_int* ldvr, const blas_int* mm, blas_int* m,  float* work, blas_int* info) ARMA_NOEXCEPT;
   void arma_fortran(arma_dtrevc)(const char* side, const char* howmny, blas_int* select, const blas_int* n, const double* t, const blas_int* ldt, double* vl, const blas_int* ldvl, double* vr, const blas_int* ldvr, const blas_int* mm, blas_int* m, double* work, blas_int* info) ARMA_NOEXCEPT;
   
-  // generate a vector of random numbers
-  void arma_fortran(arma_slarnv)(const blas_int* idist, blas_int* iseed, const blas_int* n,  float* x) ARMA_NOEXCEPT;
-  void arma_fortran(arma_dlarnv)(const blas_int* idist, blas_int* iseed, const blas_int* n, double* x) ARMA_NOEXCEPT;
-  
   // hessenberg decomposition
   void arma_fortran(arma_sgehrd)(const blas_int* n, const blas_int* ilo, const blas_int* ihi,    float* a, const blas_int* lda,    float* tao,    float* work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
   void arma_fortran(arma_dgehrd)(const blas_int* n, const blas_int* ilo, const blas_int* ihi,   double* a, const blas_int* lda,   double* tao,   double* work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
@@ -1181,6 +1265,44 @@ extern "C"
   void arma_fortran(arma_dpstrf)(const char* uplo, const blas_int* n,   double* a, const blas_int* lda, blas_int* piv, blas_int* rank, const double* tol, double* work, blas_int* info) ARMA_NOEXCEPT;
   void arma_fortran(arma_cpstrf)(const char* uplo, const blas_int* n, blas_cxf* a, const blas_int* lda, blas_int* piv, blas_int* rank, const  float* tol,  float* work, blas_int* info) ARMA_NOEXCEPT;
   void arma_fortran(arma_zpstrf)(const char* uplo, const blas_int* n, blas_cxd* a, const blas_int* lda, blas_int* piv, blas_int* rank, const double* tol, double* work, blas_int* info) ARMA_NOEXCEPT;
+  
+  // factorisation of symmetric matrix (real)
+  void arma_fortran(arma_ssytrf)(const char* uplo, const blas_int* n, float*    a, const blas_int* lda, blas_int* ipiv, float*    work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsytrf)(const char* uplo, const blas_int* n, double*   a, const blas_int* lda, blas_int* ipiv, double*   work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
+  
+  // factorisation of hermitian matrix (complex)
+  void arma_fortran(arma_chetrf)(const char* uplo, const blas_int* n, blas_cxf* a, const blas_int* lda, blas_int* ipiv, blas_cxf* work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhetrf)(const char* uplo, const blas_int* n, blas_cxd* a, const blas_int* lda, blas_int* ipiv, blas_cxd* work, const blas_int* lwork, blas_int* info) ARMA_NOEXCEPT;
+  
+  // solve system using pre-computed factorisation (real)
+  void arma_fortran(arma_ssytrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const float*    a, const blas_int* lda, const blas_int* ipiv, float*  b, const blas_int* ldb, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsytrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const double*   a, const blas_int* lda, const blas_int* ipiv, double* b, const blas_int* ldb, blas_int* info) ARMA_NOEXCEPT;
+  
+  // solve system using pre-computed factorisation (complex)
+  void arma_fortran(arma_zhetrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const blas_cxd* a, const blas_int* lda, const blas_int* ipiv, blas_cxd* b, const blas_int* ldb, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_chetrs)(const char* uplo, const blas_int* n, const blas_int* nrhs, const blas_cxf* a, const blas_int* lda, const blas_int* ipiv, blas_cxf* b, const blas_int* ldb, blas_int* info) ARMA_NOEXCEPT;
+  
+  // inverse of symmetric matrix using pre-computed factorisation (real)
+  void arma_fortran(arma_ssytri)(const char* uplo, const blas_int* n, float*    a, const blas_int* lda, const blas_int* ipiv, float*    work, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsytri)(const char* uplo, const blas_int* n, double*   a, const blas_int* lda, const blas_int* ipiv, double*   work, blas_int* info) ARMA_NOEXCEPT;
+  
+  // inverse of hermitian matrix using pre-computed factorisation (complex)
+  void arma_fortran(arma_chetri)(const char* uplo, const blas_int* n, blas_cxf* a, const blas_int* lda, const blas_int* ipiv, blas_cxf* work, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhetri)(const char* uplo, const blas_int* n, blas_cxd* a, const blas_int* lda, const blas_int* ipiv, blas_cxd* work, blas_int* info) ARMA_NOEXCEPT;
+  
+  // rcond of symmetric matrix using pre-computed factorisation (real)
+  void arma_fortran(arma_ssycon)(const char* uplo, const blas_int* n, const float*    a, const blas_int* lda, const blas_int* ipiv, const float*  anorm,  float* rcond, float*    work, blas_int* iwork, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dsycon)(const char* uplo, const blas_int* n, const double*   a, const blas_int* lda, const blas_int* ipiv, const double* anorm, double* rcond, double*   work, blas_int* iwork, blas_int* info) ARMA_NOEXCEPT;
+  
+  // rcond of hermitian matrix using pre-computed factorisation (complex)
+  void arma_fortran(arma_checon)(const char* uplo, const blas_int* n, const blas_cxf* a, const blas_int* lda, const blas_int* ipiv, const float*  anorm, float*  rcond, blas_cxf* work, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zhecon)(const char* uplo, const blas_int* n, const blas_cxd* a, const blas_int* lda, const blas_int* ipiv, const double* anorm, double* rcond, blas_cxd* work, blas_int* info) ARMA_NOEXCEPT;
+  
+  // matrix balance
+  void arma_fortran(arma_sgebal)(const char* job, const blas_int* n,    float* a, const blas_int* lda, blas_int* ilo, blas_int* ihi,  float* scale, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_dgebal)(const char* job, const blas_int* n,   double* a, const blas_int* lda, blas_int* ilo, blas_int* ihi, double* scale, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_cgebal)(const char* job, const blas_int* n, blas_cxf* a, const blas_int* lda, blas_int* ilo, blas_int* ihi,  float* scale, blas_int* info) ARMA_NOEXCEPT;
+  void arma_fortran(arma_zgebal)(const char* job, const blas_int* n, blas_cxd* a, const blas_int* lda, blas_int* ilo, blas_int* ihi, double* scale, blas_int* info) ARMA_NOEXCEPT;
   
 #endif
 }

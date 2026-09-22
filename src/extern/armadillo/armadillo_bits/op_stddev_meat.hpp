@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,35 +20,75 @@
 //! @{
 
 
-//! \brief
-//! For each row or for each column, find the standard deviation.
-//! The result is stored in a dense matrix that has either one column or one row.
-//! The dimension for which the standard deviations are found is set via the stddev() function.
+
 template<typename T1>
 inline
 void
 op_stddev::apply(Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_type, T1, op_stddev>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  typedef typename T1::elem_type  in_eT;
-  typedef typename T1::pod_type  out_eT;
-  
-  const unwrap_check_mixed<T1> tmp(in.m, out);
-  const Mat<in_eT>&        X = tmp.M;
+  typedef typename T1::pod_type out_eT;
   
   const uword norm_type = in.aux_uword_a;
   const uword dim       = in.aux_uword_b;
   
-  arma_debug_check( (norm_type > 1), "stddev(): parameter 'norm_type' must be 0 or 1" );
-  arma_debug_check( (dim > 1),       "stddev(): parameter 'dim' must be 0 or 1"       );
+  arma_conform_check( (norm_type > 1), "stddev(): parameter 'norm_type' must be 0 or 1" );
+  arma_conform_check( (dim > 1),       "stddev(): parameter 'dim' must be 0 or 1"       );
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  if(U.is_alias(out))
+    {
+    Mat<out_eT> tmp;
+    
+    op_stddev::apply_noalias(tmp, U.M, norm_type, dim);
+    
+    out.steal_mem(tmp);
+    }
+  else
+    {
+    op_stddev::apply_noalias(out, U.M, norm_type, dim);
+    }
+  }
+
+
+
+template<typename T1>
+inline
+void
+op_stddev::apply(Mat_noalias<typename T1::pod_type>& out, const mtOp<typename T1::pod_type, T1, op_stddev>& in)
+  {
+  arma_debug_sigprint();
+  
+  const uword norm_type = in.aux_uword_a;
+  const uword dim       = in.aux_uword_b;
+  
+  arma_conform_check( (norm_type > 1), "stddev(): parameter 'norm_type' must be 0 or 1" );
+  arma_conform_check( (dim > 1),       "stddev(): parameter 'dim' must be 0 or 1"       );
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  op_stddev::apply_noalias(out, U.M, norm_type, dim);
+  }
+
+
+
+template<typename in_eT>
+inline
+void
+op_stddev::apply_noalias(Mat<typename get_pod_type<in_eT>::result>& out, const Mat<in_eT>& X, const uword norm_type, const uword dim)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename get_pod_type<in_eT>::result out_eT;
   
   const uword X_n_rows = X.n_rows;
   const uword X_n_cols = X.n_cols;
   
   if(dim == 0)
     {
-    arma_extra_debug_print("op_stddev::apply(): dim = 0");
+    arma_debug_print("op_stddev::apply_noalias(): dim = 0");
     
     out.set_size((X_n_rows > 0) ? 1 : 0, X_n_cols);
     
@@ -54,7 +96,7 @@ op_stddev::apply(Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_ty
       {
       out_eT* out_mem = out.memptr();
       
-      for(uword col=0; col<X_n_cols; ++col)
+      for(uword col=0; col < X_n_cols; ++col)
         {
         out_mem[col] = std::sqrt( op_var::direct_var( X.colptr(col), X_n_rows, norm_type ) );
         }
@@ -63,22 +105,21 @@ op_stddev::apply(Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_ty
   else
   if(dim == 1)
     {
-    arma_extra_debug_print("op_stddev::apply(): dim = 1");
+    arma_debug_print("op_stddev::apply_noalias(): dim = 1");
     
     out.set_size(X_n_rows, (X_n_cols > 0) ? 1 : 0);
     
     if(X_n_cols > 0)
       {
-      podarray<in_eT> dat(X_n_cols);
-      
-      in_eT*  dat_mem = dat.memptr();
       out_eT* out_mem = out.memptr();
       
-      for(uword row=0; row<X_n_rows; ++row)
+      podarray<in_eT> tmp;
+      
+      for(uword row=0; row < X_n_rows; ++row)
         {
-        dat.copy_row(X, row);
+        tmp.copy_row(X, row);
         
-        out_mem[row] = std::sqrt( op_var::direct_var( dat_mem, X_n_cols, norm_type) );
+        out_mem[row] = std::sqrt( op_var::direct_var( tmp.memptr(), tmp.n_elem, norm_type) );
         }
       }
     }
@@ -86,5 +127,29 @@ op_stddev::apply(Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_ty
 
 
 
-//! @}
+template<typename T1>
+inline
+typename T1::pod_type
+op_stddev::stddev_vec(const T1& X, const uword norm_type)
+  {
+  arma_debug_sigprint();
+  
+  typedef typename T1::pod_type T;
+  
+  arma_conform_check( (norm_type > 1), "stddev(): parameter 'norm_type' must be 0 or 1" );
+  
+  const quasi_unwrap<T1> U(X);
+  
+  if(U.M.n_elem == 0)
+    {
+    arma_conform_check(true, "stddev(): object has no elements");
+    
+    return Datum<T>::nan;
+    }
+  
+  return std::sqrt( op_var::direct_var(U.M.memptr(), U.M.n_elem, norm_type) );
+  }
 
+
+
+//! @}

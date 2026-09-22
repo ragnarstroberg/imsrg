@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +22,9 @@
 
 
 
-class op_any
+struct op_any
   : public traits_op_xvec
   {
-  public:
-  
-  
   template<typename T1>
   static inline bool
   any_vec_helper(const Base<typename T1::elem_type, T1>& X);
@@ -66,9 +65,11 @@ class op_any
   static inline bool any_vec(T1& X);
   
   
-  template<typename T1>
-  static inline void apply_helper(Mat<uword>& out, const Proxy<T1>& P, const uword dim);
+  template<typename eT>
+  static inline void apply_mat_noalias(Mat<uword>& out, const Mat<eT>& X, const uword dim);
   
+  template<typename T1>
+  static inline void apply_proxy_noalias(Mat<uword>& out, const Proxy<T1>& P, const uword dim);
   
   template<typename T1>
   static inline void apply(Mat<uword>& out, const mtOp<uword, T1, op_any>& X);

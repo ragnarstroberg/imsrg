@@ -198,6 +198,12 @@ void IMSRGSolver::SetFlowFile(std::string str)
   }
 }
 
+void IMSRGSolver::SetDsmax(double d)
+{
+   ds_max = d;
+   if (ds>ds_max) ds = ds_max;
+}
+
 void IMSRGSolver::Solve()
 {
 
@@ -215,7 +221,8 @@ void IMSRGSolver::Solve()
   else if (method == "magnus_adaptive")
     Solve_ode_magnus();
   else if (method == "flow_euler")
-    Solve_ode();
+    Solve_flow_euler();
+//    Solve_ode();
   else if (method == "flow_RK4")
     Solve_flow_RK4();
   else if (method == "restore_4th_order")
@@ -236,6 +243,38 @@ void IMSRGSolver::UpdateEta()
 {
   generator.Update(FlowingOps[0], Eta);
 }
+
+
+// Simplest implementation. Not very efficient.
+// Better to use Magnus or the 4th order Runge-Kutta solver.
+void IMSRGSolver::Solve_flow_euler()
+{
+  istep = 0;
+  Operator& Hs = FlowingOps[0];
+  UpdateEta();
+
+  // Write details of the flow
+  WriteFlowStatus(flowfile);
+  WriteFlowStatus(std::cout);
+
+  double norm_dHds = 1e6;
+  for (istep = 1; s < smax and norm_dHds>1e-6;  ++istep)
+  {
+    UpdateEta();
+    Operator dHds = Commutator::Commutator(Eta,Hs);
+    norm_dHds = dHds.Norm();
+    Hs += dHds * ds;
+    for (size_t iop=1; iop<FlowingOps.size(); iop++)
+    {
+       FlowingOps[iop] += Commutator::Commutator(Eta,FlowingOps[iop]) * ds;
+    }
+    s += ds;
+    WriteFlowStatus(flowfile);
+    WriteFlowStatus(std::cout);
+  }
+
+}
+
 
 // This is the default solver
 void IMSRGSolver::Solve_magnus_euler()
@@ -479,7 +518,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
     H_temp = FlowingOps[0] + ds * Commutator::Commutator(Eta, FlowingOps[0]);
     //      generator.AddToEta(&H_temp,&Eta);
-    generator.AddToEta(H_temp, Eta);
+    generator.AddToEta(H_temp, H_temp, Eta);
 
     Eta *= ds * 0.5; // Here's the modified Euler step.
 
@@ -773,22 +812,9 @@ namespace boost
 }
 #endif
 
-void IMSRGSolver::Solve_ode()
-{
 
-  ode_mode = "H";
-  WriteFlowStatusHeader(std::cout);
-  WriteFlowStatus(flowfile);
-  //   using namespace boost::numeric::odeint;
-  namespace odeint = boost::numeric::odeint;
-  //   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-  odeint::runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
-  auto system = *this;
-  auto monitor = ode_monitor;
-  //   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
-  odeint::integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
-  monitor.report();
-}
+
+
 
 void IMSRGSolver::Solve_ode_adaptive()
 {
@@ -1171,9 +1197,16 @@ double IMSRGSolver::CalculatePerturbativeTriples()
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
 
+  // We want E3max= 3*emax when computing perturbative triples
+  // Usually, that would use way too much memory, but in this case we don't
+  // actually construct the 3b storage structure.
+  int E3max_save = Hs.modelspace->GetE3max();
+  int Emax = Hs.modelspace->GetEmax();
+  Hs.modelspace->SetE3max( 3*Emax );
   Commutator::perturbative_triples = true;
   Commutator::comm223ss(omega, Htilde, Wbar);
   Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations
+  Hs.modelspace->SetE3max( E3max_save );
 
   double pert_triples = Wbar.ZeroBody;
 

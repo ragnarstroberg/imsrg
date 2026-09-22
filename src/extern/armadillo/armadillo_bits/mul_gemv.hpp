@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,11 +23,8 @@
 
 //! for tiny square matrices, size <= 4x4
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class gemv_emul_tinysq
+struct gemv_emul_tinysq
   {
-  public:
-  
-  
   template<const uword row, const uword col>
   struct pos
     {
@@ -63,7 +62,7 @@ class gemv_emul_tinysq
   void
   apply( eT* y, const TA& A, const eT* x, const eT alpha = eT(1), const eT beta = eT(0) )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     const eT*  Am = A.memptr();
     
@@ -138,10 +137,8 @@ class gemv_emul_tinysq
 
 
 
-class gemv_emul_helper
+struct gemv_emul_helper
   {
-  public:
-  
   template<typename eT, typename TA>
   arma_hot
   inline
@@ -206,15 +203,13 @@ class gemv_emul_helper
 
 
 
-//! \brief
-//! Partial emulation of ATLAS/BLAS gemv().
-//! 'y' is assumed to have been set to the correct size (i.e. taking into account the transpose)
-
+#if defined(ARMA_USE_OPENMP)
+//! Partial emulation of BLAS gemv().
+//! 'y' is assumed to have been set to the correct size (ie. taking into account the transpose)
+//! parallelised version
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class gemv_emul
+struct gemv_emul_mp
   {
-  public:
-  
   template<typename eT, typename TA>
   arma_hot
   inline
@@ -222,16 +217,99 @@ class gemv_emul
   void
   apply( eT* y, const TA& A, const eT* x, const eT alpha = eT(1), const eT beta = eT(0) )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
+    
+    const int n_threads = mp_thread_limit::get();
     
     const uword A_n_rows = A.n_rows;
     const uword A_n_cols = A.n_cols;
     
     if(do_trans_A == false)
       {
+      #pragma omp parallel for schedule(static) num_threads(n_threads)
+      for(uword row=0; row < A_n_rows; ++row)
+        {
+        const eT acc = gemv_emul_helper::dot_row_col(A, x, row, A_n_cols);
+        
+             if( (use_alpha == false) && (use_beta == false) )  { y[row] =       acc;               }
+        else if( (use_alpha == true ) && (use_beta == false) )  { y[row] = alpha*acc;               }
+        else if( (use_alpha == false) && (use_beta == true ) )  { y[row] =       acc + beta*y[row]; }
+        else if( (use_alpha == true ) && (use_beta == true ) )  { y[row] = alpha*acc + beta*y[row]; }
+        }
+      }
+    else
+    if(do_trans_A == true)
+      {
+      if(is_cx<eT>::no)
+        {
+        #pragma omp parallel for schedule(static) num_threads(n_threads)
+        for(uword col=0; col < A_n_cols; ++col)
+          {
+          // col is interpreted as row when storing the results in 'y'
+          
+          const eT acc = op_dot::direct_dot(A_n_rows, A.colptr(col), x);
+          
+               if( (use_alpha == false) && (use_beta == false) )  { y[col] =       acc;               }
+          else if( (use_alpha == true ) && (use_beta == false) )  { y[col] = alpha*acc;               }
+          else if( (use_alpha == false) && (use_beta == true ) )  { y[col] =       acc + beta*y[col]; }
+          else if( (use_alpha == true ) && (use_beta == true ) )  { y[col] = alpha*acc + beta*y[col]; }
+          }
+        }
+      else
+        {
+        Mat<eT> AA;
+        
+        op_htrans::apply_mat_noalias(AA, A);
+        
+        gemv_emul_mp<false, use_alpha, use_beta>::apply(y, AA, x, alpha, beta);
+        }
+      }
+    }
+  
+  };
+#endif
+
+
+
+//! \brief
+//! Partial emulation of BLAS gemv().
+//! 'y' is assumed to have been set to the correct size (ie. taking into account the transpose)
+
+template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
+struct gemv_emul
+  {
+  template<typename eT, typename TA>
+  arma_hot
+  inline
+  static
+  void
+  apply( eT* y, const TA& A, const eT* x, const eT alpha = eT(1), const eT beta = eT(0) )
+    {
+    arma_debug_sigprint();
+    
+    const uword A_n_rows = A.n_rows;
+    const uword A_n_cols = A.n_cols;
+    
+    #if defined(ARMA_USE_OPENMP)
+      {
+      // TODO: replace with more sophisticated threshold mechanism
+      
+      constexpr uword threshold = uword(200);
+      
+      if( (A_n_rows >= threshold) && (A_n_cols >= threshold) && (mp_thread_limit::in_parallel() == false) )
+        {
+        gemv_emul_mp<do_trans_A, use_alpha, use_beta>::apply(y, A, x, alpha, beta);
+        
+        return;
+        }
+      }
+    #endif
+    
+    if(do_trans_A == false)
+      {
       if(A_n_rows == 1)
         {
-        const eT acc = op_dot::direct_dot_arma(A_n_cols, A.memptr(), x);
+        const eT acc = op_dot::direct_dot(A_n_cols, A.memptr(), x);
         
              if( (use_alpha == false) && (use_beta == false) )  { y[0] =       acc;             }
         else if( (use_alpha == true ) && (use_beta == false) )  { y[0] = alpha*acc;             }
@@ -267,7 +345,7 @@ class gemv_emul
           //   acc += A_coldata[row] * x[row];
           //   }
           
-          const eT acc = op_dot::direct_dot_arma(A_n_rows, A.colptr(col), x);
+          const eT acc = op_dot::direct_dot(A_n_rows, A.colptr(col), x);
           
                if( (use_alpha == false) && (use_beta == false) )  { y[col] =       acc;               }
           else if( (use_alpha == true ) && (use_beta == false) )  { y[col] = alpha*acc;               }
@@ -291,21 +369,19 @@ class gemv_emul
 
 
 //! \brief
-//! Wrapper for ATLAS/BLAS gemv function, using template arguments to control the arguments passed to gemv.
-//! 'y' is assumed to have been set to the correct size (i.e. taking into account the transpose)
+//! Wrapper for BLAS gemv function, using template arguments to control the arguments passed to gemv.
+//! 'y' is assumed to have been set to the correct size (ie. taking into account the transpose)
 
 template<const bool do_trans_A=false, const bool use_alpha=false, const bool use_beta=false>
-class gemv
+struct gemv
   {
-  public:
-  
   template<typename eT, typename TA>
   inline
   static
   void
   apply_blas_type( eT* y, const TA& A, const eT* x, const eT alpha = eT(1), const eT beta = eT(0) )
     {
-    arma_extra_debug_sigprint();
+    arma_debug_sigprint();
     
     if( (A.n_rows <= 4) && (A.n_rows == A.n_cols) && (is_cx<eT>::no) )
       {
@@ -315,19 +391,19 @@ class gemv
       {
       #if defined(ARMA_USE_ATLAS)
         {
-        arma_debug_assert_atlas_size(A);
+        arma_conform_assert_atlas_size(A);
         
         if(is_cx<eT>::no)
           {
           // use gemm() instead of gemv() to work around a speed issue in Atlas 3.8.4
           
-          arma_extra_debug_print("atlas::cblas_gemm()");
+          arma_debug_print("atlas::cblas_gemm()");
           
           atlas::cblas_gemm<eT>
             (
-            atlas::CblasColMajor,
-            (do_trans_A) ? ( is_cx<eT>::yes ? CblasConjTrans : atlas::CblasTrans ) : atlas::CblasNoTrans,
-            atlas::CblasNoTrans,
+            atlas_CblasColMajor,
+            (do_trans_A) ? ( is_cx<eT>::yes ? atlas_CblasConjTrans : atlas_CblasTrans ) : atlas_CblasNoTrans,
+            atlas_CblasNoTrans,
             (do_trans_A) ? A.n_cols : A.n_rows,
             1,
             (do_trans_A) ? A.n_rows : A.n_cols,
@@ -343,12 +419,12 @@ class gemv
           }
         else
           {
-          arma_extra_debug_print("atlas::cblas_gemv()");
+          arma_debug_print("atlas::cblas_gemv()");
           
           atlas::cblas_gemv<eT>
             (
-            atlas::CblasColMajor,
-            (do_trans_A) ? ( is_cx<eT>::yes ? CblasConjTrans : atlas::CblasTrans ) : atlas::CblasNoTrans,
+            atlas_CblasColMajor,
+            (do_trans_A) ? ( is_cx<eT>::yes ? atlas_CblasConjTrans : atlas_CblasTrans ) : atlas_CblasNoTrans,
             A.n_rows,
             A.n_cols,
             (use_alpha) ? alpha : eT(1),
@@ -364,9 +440,9 @@ class gemv
         }
       #elif defined(ARMA_USE_BLAS)
         {
-        arma_extra_debug_print("blas::gemv()");
+        arma_debug_print("blas::gemv()");
         
-        arma_debug_assert_blas_size(A);
+        arma_conform_assert_blas_size(A);
         
         const char      trans_A     = (do_trans_A) ? ( is_cx<eT>::yes ? 'C' : 'T' ) : 'N';
         const blas_int  m           = blas_int(A.n_rows);
@@ -376,7 +452,7 @@ class gemv
         const blas_int  inc         = blas_int(1);
         const eT        local_beta  = (use_beta) ? beta : eT(0);
         
-        arma_extra_debug_print( arma_str::format("blas::gemv(): trans_A = %c") % trans_A );
+        arma_debug_print( arma_str::format("blas::gemv(): trans_A: %c") % trans_A );
         
         blas::gemv<eT>
           (

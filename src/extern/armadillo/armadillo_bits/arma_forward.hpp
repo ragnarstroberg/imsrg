@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,14 +29,14 @@ template<typename eT> class Mat;
 template<typename eT> class Col;
 template<typename eT> class Row;
 template<typename eT> class Cube;
-template<typename eT> class xvec_htrans;
 template<typename oT> class field;
 
-template<typename eT, bool do_conj> class xtrans_mat;
-
+template<typename eT>               struct xvec_htrans;
+template<typename eT, bool do_conj> struct xtrans_mat;
 
 template<typename eT> class subview;
 template<typename eT> class subview_col;
+template<typename eT> class subview_cols;
 template<typename eT> class subview_row;
 template<typename eT> class subview_row_strans;
 template<typename eT> class subview_row_htrans;
@@ -70,74 +72,98 @@ template<typename eT, typename T1> class subview_cube_slices;
 template<typename eT, typename T1> class SpSubview_col_list;
 
 
-class SizeMat;
-class SizeCube;
-
-class arma_empty_class {};
-
-class diskio;
-
-class op_strans;
-class op_htrans;
-class op_htrans2;
-class op_inv;
-class op_inv_sympd;
-class op_diagmat;
-class op_trimat;
-class op_vectorise_row;
-class op_vectorise_col;
-class glue_times;
-class glue_times_diag;
-
-class glue_rel_lt;
-class glue_rel_gt;
-class glue_rel_lteq;
-class glue_rel_gteq;
-class glue_rel_eq;
-class glue_rel_noteq;
-class glue_rel_and;
-class glue_rel_or;
-
-class op_rel_lt_pre;
-class op_rel_lt_post;
-class op_rel_gt_pre;
-class op_rel_gt_post;
-class op_rel_lteq_pre;
-class op_rel_lteq_post;
-class op_rel_gteq_pre;
-class op_rel_gteq_post;
-class op_rel_eq;
-class op_rel_noteq;
-
-class gen_eye;
-class gen_ones;
-class gen_zeros;
-class gen_randu;
-class gen_randn;
+template<typename eT> class   Mat_noalias;
+template<typename eT> class SpMat_noalias;
 
 
+struct SizeMat;
+struct SizeCube;
 
-class spop_strans;
-class spop_htrans;
-class spop_vectorise_row;
-class spop_vectorise_col;
+struct arma_empty_class {};
 
-class spglue_plus;
-class spglue_minus;
-class spglue_schur;
-class spglue_times;
-class spglue_max;
-class spglue_min;
-class spglue_rel_lt;
-class spglue_rel_gt;
+struct diskio;
+
+struct op_strans;
+struct op_htrans;
+struct op_htrans2;
+struct op_inv_gen_default;
+struct op_inv_spd_default;
+struct op_inv_gen_full;
+struct op_inv_spd_full;
+struct op_diagmat;
+struct op_trimat;
+struct op_vectorise_row;
+struct op_vectorise_col;
+struct op_symmatu;
+struct op_symmatl;
+struct op_omit;
+struct op_permute;
+
+struct op_row_as_mat;
+struct op_col_as_mat;
+
+struct glue_times;
+struct glue_times_diag;
+
+struct glue_rel_lt;
+struct glue_rel_gt;
+struct glue_rel_lteq;
+struct glue_rel_gteq;
+struct glue_rel_eq;
+struct glue_rel_noteq;
+struct glue_rel_and;
+struct glue_rel_or;
+
+struct op_rel_lt_pre;
+struct op_rel_lt_post;
+struct op_rel_gt_pre;
+struct op_rel_gt_post;
+struct op_rel_lteq_pre;
+struct op_rel_lteq_post;
+struct op_rel_gteq_pre;
+struct op_rel_gteq_post;
+struct op_rel_eq;
+struct op_rel_noteq;
+
+struct gen_eye;
+struct gen_ones;
+struct gen_zeros;
 
 
 
-class op_internal_equ;
-class op_internal_plus;
-class op_internal_minus;
-class op_internal_schur;
-class op_internal_div;
+struct spop_strans;
+struct spop_htrans;
+struct spop_vectorise_row;
+struct spop_vectorise_col;
+struct spop_square;
+
+struct spop_rel_lt_pre;
+struct spop_rel_lt_post;
+struct spop_rel_gt_pre;
+struct spop_rel_gt_post;
+struct spop_rel_lteq_pre;
+struct spop_rel_lteq_post;
+struct spop_rel_gteq_pre;
+struct spop_rel_gteq_post;
+struct spop_rel_eq;
+struct spop_rel_noteq;
+
+struct spglue_plus;
+struct spglue_minus;
+struct spglue_schur;
+struct spglue_times;
+struct spglue_max;
+struct spglue_min;
+struct spglue_rel_lt;
+struct spglue_rel_gt;
+
+struct op_sp_as_dense;
+
+struct op_internal_equ;
+struct op_internal_plus;
+struct op_internal_minus;
+struct op_internal_schur;
+struct op_internal_div;
 
 
 
@@ -226,42 +252,44 @@ struct traits_glue_or
 
 
 
-template<const bool, const bool, const bool, const bool> class gemm;
-template<const bool, const bool, const bool>             class gemv;
+template<const bool, const bool, const bool, const bool> struct gemm;
+template<const bool, const bool, const bool>             struct gemv;
 
 
-template<                 typename eT, typename gen_type> class  Gen; 
+template<                 typename eT, typename gen_type> struct         Gen; 
 
-template<                 typename T1, typename  op_type> class          Op; 
-template<                 typename T1, typename eop_type> class         eOp;
-template<                 typename T1, typename  op_type> class     SpToDOp; 
-template<                 typename T1, typename  op_type> class CubeToMatOp;
-template<typename out_eT, typename T1, typename  op_type> class        mtOp;
+template<                 typename T1, typename  op_type> struct          Op; 
+template<                 typename T1, typename eop_type> struct         eOp;
+template<                 typename T1, typename  op_type> struct     SpToDOp; 
+template<                 typename T1, typename  op_type> struct CubeToMatOp;
+template<typename out_eT, typename T1, typename  op_type> struct        mtOp;
 
-template<                 typename T1, typename T2, typename  glue_type> class   Glue;
-template<                 typename T1, typename T2, typename eglue_type> class  eGlue;
-template<typename out_eT, typename T1, typename T2, typename  glue_type> class mtGlue;
-
-
-
-template<                 typename eT, typename gen_type> class  GenCube; 
-
-template<                 typename T1, typename  op_type> class   OpCube; 
-template<                 typename T1, typename eop_type> class  eOpCube; 
-template<typename out_eT, typename T1, typename  op_type> class mtOpCube;
-
-template<                 typename T1, typename T2, typename  glue_type> class   GlueCube;
-template<                 typename T1, typename T2, typename eglue_type> class  eGlueCube;
-template<typename out_eT, typename T1, typename T2, typename  glue_type> class mtGlueCube;
+template<                 typename T1, typename T2, typename  glue_type> struct      Glue;
+template<                 typename T1, typename T2, typename eglue_type> struct     eGlue;
+template<                 typename T1, typename T2, typename  glue_type> struct SpToDGlue;
+template<typename out_eT, typename T1, typename T2, typename  glue_type> struct    mtGlue;
 
 
-template<typename T1> class Proxy;
-template<typename T1> class ProxyCube;
 
-template<typename T1> class diagmat_proxy;
+template<                 typename eT, typename gen_type> struct  GenCube; 
 
-template<typename T1> struct unwrap;
+template<                 typename T1, typename  op_type> struct   OpCube; 
+template<                 typename T1, typename eop_type> struct  eOpCube; 
+template<typename out_eT, typename T1, typename  op_type> struct mtOpCube;
+
+template<                 typename T1, typename T2, typename  glue_type> struct   GlueCube;
+template<                 typename T1, typename T2, typename eglue_type> struct  eGlueCube;
+template<typename out_eT, typename T1, typename T2, typename  glue_type> struct mtGlueCube;
+
+
+template<typename T1> struct Proxy;
+template<typename T1> struct ProxyCube;
+
+template<typename T1> struct diagmat_proxy;
+
+template<typename T1> struct plain_unwrap;
 template<typename T1> struct quasi_unwrap;
+
 template<typename T1> struct unwrap_cube;
 template<typename T1> struct unwrap_spmat;
 
@@ -272,7 +300,7 @@ struct state_type
   {
   #if   defined(ARMA_USE_OPENMP)
                 int  state;
-  #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+  #elif defined(ARMA_USE_STD_MUTEX)
     std::atomic<int> state;
   #else
                 int  state;
@@ -289,9 +317,9 @@ struct state_type
     int out;
     
     #if   defined(ARMA_USE_OPENMP)
-      #pragma omp atomic read
+      #pragma omp atomic read seq_cst
       out = state;
-    #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+    #elif defined(ARMA_USE_STD_MUTEX)
       out = state.load();
     #else
       out = state;
@@ -305,9 +333,9 @@ struct state_type
   operator= (const int in_state)
     {
     #if   defined(ARMA_USE_OPENMP)
-      #pragma omp atomic write
+      #pragma omp atomic write seq_cst
       state = in_state;
-    #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
+    #elif defined(ARMA_USE_STD_MUTEX)
       state.store(in_state);
     #else
       state = in_state;
@@ -316,14 +344,15 @@ struct state_type
   };
 
 
-template<                 typename T1, typename spop_type> class   SpOp;
-template<typename out_eT, typename T1, typename spop_type> class mtSpOp;
+template<                 typename T1, typename spop_type> struct   SpOp;
+template<typename out_eT, typename T1, typename spop_type> struct mtSpOp;
+template<typename out_eT, typename T1, typename   op_type> struct mtSpReduceOp;
 
-template<                 typename T1, typename T2, typename spglue_type> class   SpGlue;
-template<typename out_eT, typename T1, typename T2, typename spglue_type> class mtSpGlue;
+template<                 typename T1, typename T2, typename spglue_type> struct   SpGlue;
+template<typename out_eT, typename T1, typename T2, typename spglue_type> struct mtSpGlue;
 
 
-template<typename T1> class SpProxy;
+template<typename T1> struct SpProxy;
 
 
 
@@ -338,11 +367,19 @@ struct arma_zeros_indicator   : public arma_initmode_indicator<true > {};
 struct arma_nozeros_indicator : public arma_initmode_indicator<false> {};
 
 
+template<int vec_mode> struct arma_vec_mode_indicator {};
+
+struct arma_colvec_indicator : public arma_vec_mode_indicator<1> {};
+struct arma_rowvec_indicator : public arma_vec_mode_indicator<2> {};
+
+
+
 //! \addtogroup injector
 //! @{
 
 template<typename Dummy = int> struct injector_end_of_row {};
 
+// DEPRECATED: DO NOT USE IN NEW CODE
 static const injector_end_of_row<> endr = injector_end_of_row<>();
 //!< endr indicates "end of row" when using the << operator;
 //!< similar conceptual meaning to std::endl

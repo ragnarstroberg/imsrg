@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +27,7 @@ inline
 void
 spop_vectorise_col::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_vectorise_col>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spop_vectorise_col::apply_direct(out, in.m);
   }
@@ -37,7 +39,7 @@ inline
 void
 spop_vectorise_col::apply_direct(SpMat<typename T1::elem_type>& out, const T1& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -64,7 +66,7 @@ inline
 void
 spop_vectorise_row::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_vectorise_row>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   spop_vectorise_row::apply_direct(out, in.m);
   }
@@ -76,7 +78,7 @@ inline
 void
 spop_vectorise_row::apply_direct(SpMat<typename T1::elem_type>& out, const T1& expr)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -105,7 +107,7 @@ inline
 void
 spop_vectorise_all::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_vectorise_all>& in)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword dim = in.aux_uword_a;
   

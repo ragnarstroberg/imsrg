@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +32,8 @@ class SpSubview_col_list : public SpBase< eT, SpSubview_col_list<eT,T1> >
   static constexpr bool is_row  = false;
   static constexpr bool is_col  = false;
   static constexpr bool is_xvec = false;
+  
+  static constexpr bool has_subview = true;
   
   const SpMat<eT>&       m;
   const quasi_unwrap<T1> U_ci;
@@ -85,6 +89,8 @@ class SpSubview_col_list : public SpBase< eT, SpSubview_col_list<eT,T1> >
   inline static void schur_inplace(SpMat<eT>& out, const SpSubview_col_list& in);
   inline static void   div_inplace(SpMat<eT>& out, const SpSubview_col_list& in);
   
+  template<typename eT2>
+  arma_inline bool is_alias(const SpMat<eT2>& X) const;
   
   friend class SpMat<eT>;
   };

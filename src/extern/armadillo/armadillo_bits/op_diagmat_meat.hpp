@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ inline
 void
 op_diagmat::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_diagmat>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -32,8 +34,8 @@ op_diagmat::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_diagmat>& X)
     {
     // allow detection of in-place operation
     
-    const unwrap<T1>   U(X.m);
-    const Mat<eT>& A = U.M;
+    const plain_unwrap<T1> U(X.m);
+    const Mat<eT>& A     = U.M;
     
     if(&out != &A)  // no aliasing
       {
@@ -105,9 +107,23 @@ op_diagmat::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_diagmat>& X)
 template<typename T1>
 inline
 void
+op_diagmat::apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1, op_diagmat>& X)
+  {
+  arma_debug_sigprint();
+  
+  const Proxy<T1> P(X.m);
+  
+  op_diagmat::apply(out, P);
+  }
+
+
+
+template<typename T1>
+inline
+void
 op_diagmat::apply(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows = P.get_n_rows();
   const uword n_cols = P.get_n_cols();
@@ -156,7 +172,32 @@ inline
 void
 op_diagmat::apply(Mat<typename T1::elem_type>& out, const Op< Glue<T1,T2,glue_times>, op_diagmat>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  if(X.m.is_alias(out))
+    {
+    Mat<eT> tmp;
+    
+    op_diagmat::apply_times(tmp, X.m.A, X.m.B);
+    
+    out.steal_mem(tmp);
+    }
+  else
+    {
+    op_diagmat::apply_times(out, X.m.A, X.m.B);
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+inline
+void
+op_diagmat::apply(Mat_noalias<typename T1::elem_type>& out, const Op< Glue<T1,T2,glue_times>, op_diagmat>& X)
+  {
+  arma_debug_sigprint();
   
   op_diagmat::apply_times(out, X.m.A, X.m.B);
   }
@@ -166,9 +207,9 @@ op_diagmat::apply(Mat<typename T1::elem_type>& out, const Op< Glue<T1,T2,glue_ti
 template<typename T1, typename T2>
 inline
 void
-op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, const T2& Y, const typename arma_not_cx<typename T1::elem_type>::result* junk)
+op_diagmat::apply_times(Mat<typename T1::elem_type>& out, const T1& X, const T2& Y, const typename arma_not_cx<typename T1::elem_type>::result* junk)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename T1::elem_type eT;
@@ -179,10 +220,10 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   const typename partial_unwrap<T1>::stored_type& A = UA.M;
   const typename partial_unwrap<T2>::stored_type& B = UB.M;
   
-  arma_debug_assert_trans_mul_size< partial_unwrap<T1>::do_trans, partial_unwrap<T2>::do_trans >(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "matrix multiplication");
+  arma_conform_assert_trans_mul_size< partial_unwrap<T1>::do_trans, partial_unwrap<T2>::do_trans >(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "matrix multiplication");
   
-  const bool use_alpha = partial_unwrap<T1>::do_times || partial_unwrap<T2>::do_times;
-  const eT       alpha = use_alpha ? (UA.get_val() * UB.get_val()) : eT(0);
+  constexpr bool use_alpha = partial_unwrap<T1>::do_times || partial_unwrap<T2>::do_times;
+  const     eT       alpha = use_alpha ? (UA.get_val() * UB.get_val()) : eT(0);
   
   const uword A_n_rows = A.n_rows;
   const uword A_n_cols = A.n_cols;
@@ -196,15 +237,15 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_rows == 1) || (B_n_cols == 1))
       {
-      arma_extra_debug_print("trans_A = false; trans_B = false; vector result");
+      arma_debug_print("trans_A = false; trans_B = false; vector result");
       
       const Mat<eT> C     = A*B;
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
@@ -214,15 +255,15 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_cols == 1) || (B_n_cols == 1))
       {
-      arma_extra_debug_print("trans_A = true; trans_B = false; vector result");
+      arma_debug_print("trans_A = true; trans_B = false; vector result");
       
       const Mat<eT> C     = trans(A)*B;
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
@@ -232,15 +273,15 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_rows == 1) || (B_n_rows == 1))
       {
-      arma_extra_debug_print("trans_A = false; trans_B = true; vector result");
+      arma_debug_print("trans_A = false; trans_B = true; vector result");
       
       const Mat<eT> C     = A*trans(B);
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
@@ -250,30 +291,25 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_cols == 1) || (B_n_rows == 1))
       {
-      arma_extra_debug_print("trans_A = true; trans_B = true; vector result");
+      arma_debug_print("trans_A = true; trans_B = true; vector result");
       
       const Mat<eT> C     = trans(A)*trans(B);
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
     }
   
   // if we got to this point, the multiplication results in a matrix
-
-  const bool is_alias = (UA.is_alias(actual_out) || UB.is_alias(actual_out));
-  
-  Mat<eT>  tmp;
-  Mat<eT>& out = (is_alias) ? tmp : actual_out;
   
   if( (partial_unwrap<T1>::do_trans == false) && (partial_unwrap<T2>::do_trans == false) )
     {
-    arma_extra_debug_print("trans_A = false; trans_B = false; matrix result");
+    arma_debug_print("trans_A = false; trans_B = false; matrix result");
     
     out.zeros(A_n_rows, B_n_cols);
     
@@ -316,7 +352,7 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   else
   if( (partial_unwrap<T1>::do_trans == true ) && (partial_unwrap<T2>::do_trans == false) )
     {
-    arma_extra_debug_print("trans_A = true; trans_B = false; matrix result");
+    arma_debug_print("trans_A = true; trans_B = false; matrix result");
     
     out.zeros(A_n_cols, B_n_cols);
     
@@ -337,7 +373,7 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   else
   if( (partial_unwrap<T1>::do_trans == false) && (partial_unwrap<T2>::do_trans == true ) )
     {
-    arma_extra_debug_print("trans_A = false; trans_B = true; matrix result");
+    arma_debug_print("trans_A = false; trans_B = true; matrix result");
     
     out.zeros(A_n_rows, B_n_rows);
     
@@ -360,7 +396,7 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   else
   if( (partial_unwrap<T1>::do_trans == true ) && (partial_unwrap<T2>::do_trans == true ) )
     {
-    arma_extra_debug_print("trans_A = true; trans_B = true; matrix result");
+    arma_debug_print("trans_A = true; trans_B = true; matrix result");
     
     out.zeros(A_n_cols, B_n_rows);
     
@@ -382,8 +418,6 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
       out.at(k,k) = (use_alpha) ? eT(alpha * acc) : eT(acc);
       }
     }
-  
-  if(is_alias)  { actual_out.steal_mem(tmp); }
   }
 
 
@@ -391,9 +425,9 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
 template<typename T1, typename T2>
 inline
 void
-op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, const T2& Y, const typename arma_cx_only<typename T1::elem_type>::result* junk)
+op_diagmat::apply_times(Mat<typename T1::elem_type>& out, const T1& X, const T2& Y, const typename arma_cx_only<typename T1::elem_type>::result* junk)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   arma_ignore(junk);
   
   typedef typename T1::pod_type   T;
@@ -405,10 +439,10 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   const typename partial_unwrap<T1>::stored_type& A = UA.M;
   const typename partial_unwrap<T2>::stored_type& B = UB.M;
   
-  arma_debug_assert_trans_mul_size< partial_unwrap<T1>::do_trans, partial_unwrap<T2>::do_trans >(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "matrix multiplication");
+  arma_conform_assert_trans_mul_size< partial_unwrap<T1>::do_trans, partial_unwrap<T2>::do_trans >(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "matrix multiplication");
   
-  const bool use_alpha = partial_unwrap<T1>::do_times || partial_unwrap<T2>::do_times;
-  const eT       alpha = use_alpha ? (UA.get_val() * UB.get_val()) : eT(0);
+  constexpr bool use_alpha = partial_unwrap<T1>::do_times || partial_unwrap<T2>::do_times;
+  const     eT       alpha = use_alpha ? (UA.get_val() * UB.get_val()) : eT(0);
   
   const uword A_n_rows = A.n_rows;
   const uword A_n_cols = A.n_cols;
@@ -422,15 +456,15 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_rows == 1) || (B_n_cols == 1))
       {
-      arma_extra_debug_print("trans_A = false; trans_B = false; vector result");
+      arma_debug_print("trans_A = false; trans_B = false; vector result");
       
       const Mat<eT> C     = A*B;
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
@@ -440,15 +474,15 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_cols == 1) || (B_n_cols == 1))
       {
-      arma_extra_debug_print("trans_A = true; trans_B = false; vector result");
+      arma_debug_print("trans_A = true; trans_B = false; vector result");
       
       const Mat<eT> C     = trans(A)*B;
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
@@ -458,15 +492,15 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_rows == 1) || (B_n_rows == 1))
       {
-      arma_extra_debug_print("trans_A = false; trans_B = true; vector result");
+      arma_debug_print("trans_A = false; trans_B = true; vector result");
       
       const Mat<eT> C     = A*trans(B);
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
@@ -476,30 +510,25 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
     {
     if((A_n_cols == 1) || (B_n_rows == 1))
       {
-      arma_extra_debug_print("trans_A = true; trans_B = true; vector result");
+      arma_debug_print("trans_A = true; trans_B = true; vector result");
       
       const Mat<eT> C     = trans(A)*trans(B);
       const eT*     C_mem = C.memptr();
       const uword   N     = C.n_elem;
       
-      actual_out.zeros(N,N);
+      out.zeros(N,N);
       
-      for(uword i=0; i<N; ++i)  { actual_out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
+      for(uword i=0; i<N; ++i)  { out.at(i,i) = (use_alpha) ? eT(alpha * C_mem[i]) : eT(C_mem[i]); }
       
       return;
       }
     }
   
   // if we got to this point, the multiplication results in a matrix
-
-  const bool is_alias = (UA.is_alias(actual_out) || UB.is_alias(actual_out));
-  
-  Mat<eT>  tmp;
-  Mat<eT>& out = (is_alias) ? tmp : actual_out;
   
   if( (partial_unwrap<T1>::do_trans == false) && (partial_unwrap<T2>::do_trans == false) )
     {
-    arma_extra_debug_print("trans_A = false; trans_B = false; matrix result");
+    arma_debug_print("trans_A = false; trans_B = false; matrix result");
     
     out.zeros(A_n_rows, B_n_cols);
     
@@ -539,7 +568,7 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   else
   if( (partial_unwrap<T1>::do_trans == true) && (partial_unwrap<T2>::do_trans == false) )
     {
-    arma_extra_debug_print("trans_A = true; trans_B = false; matrix result");
+    arma_debug_print("trans_A = true; trans_B = false; matrix result");
     
     out.zeros(A_n_cols, B_n_cols);
     
@@ -582,7 +611,7 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   else
   if( (partial_unwrap<T1>::do_trans == false) && (partial_unwrap<T2>::do_trans == true) )
     {
-    arma_extra_debug_print("trans_A = false; trans_B = true; matrix result");
+    arma_debug_print("trans_A = false; trans_B = true; matrix result");
     
     out.zeros(A_n_rows, B_n_rows);
     
@@ -620,7 +649,7 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
   else
   if( (partial_unwrap<T1>::do_trans == true) && (partial_unwrap<T2>::do_trans == true) )
     {
-    arma_extra_debug_print("trans_A = true; trans_B = true; matrix result");
+    arma_debug_print("trans_A = true; trans_B = true; matrix result");
     
     out.zeros(A_n_cols, B_n_rows);
     
@@ -657,8 +686,6 @@ op_diagmat::apply_times(Mat<typename T1::elem_type>& actual_out, const T1& X, co
       out.at(k,k) = (use_alpha) ? eT(alpha * acc) : eT(acc);
       }
     }
-  
-  if(is_alias)  { actual_out.steal_mem(tmp); }
   }
 
 
@@ -674,7 +701,7 @@ inline
 void
 op_diagmat2::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_diagmat2>& X)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
@@ -702,9 +729,26 @@ op_diagmat2::apply(Mat<typename T1::elem_type>& out, const Op<T1, op_diagmat2>& 
 template<typename T1>
 inline
 void
+op_diagmat2::apply(Mat_noalias<typename T1::elem_type>& out, const Op<T1, op_diagmat2>& X)
+  {
+  arma_debug_sigprint();
+  
+  const uword row_offset = X.aux_uword_a;
+  const uword col_offset = X.aux_uword_b;
+  
+  const Proxy<T1> P(X.m);
+  
+  op_diagmat2::apply(out, P, row_offset, col_offset);
+  }
+
+
+
+template<typename T1>
+inline
+void
 op_diagmat2::apply(Mat<typename T1::elem_type>& out, const Proxy<T1>& P, const uword row_offset, const uword col_offset)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   const uword n_rows = P.get_n_rows();
   const uword n_cols = P.get_n_cols();
@@ -740,7 +784,7 @@ op_diagmat2::apply(Mat<typename T1::elem_type>& out, const Proxy<T1>& P, const u
     }
   else  // P represents a matrix 
     {
-    arma_debug_check_bounds
+    arma_conform_check_bounds
       (
       ((row_offset > 0) && (row_offset >= n_rows)) || ((col_offset > 0) && (col_offset >= n_cols)),
       "diagmat(): requested diagonal out of bounds"

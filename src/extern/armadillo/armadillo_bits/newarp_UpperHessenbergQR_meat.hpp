@@ -1,10 +1,12 @@
-// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// SPDX-License-Identifier: Apache-2.0
+// 
+// Copyright 2008-2016 Conrad Sanderson (https://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 // 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +26,7 @@ UpperHessenbergQR<eT>::UpperHessenbergQR()
   : n(0)
   , computed(false)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -38,7 +40,7 @@ UpperHessenbergQR<eT>::UpperHessenbergQR(const Mat<eT>& mat_obj)
   , rot_sin(n - 1)
   , computed(false)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   compute(mat_obj);
   }
@@ -49,7 +51,7 @@ template<typename eT>
 void
 UpperHessenbergQR<eT>::compute(const Mat<eT>& mat_obj)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   n = mat_obj.n_rows;
   mat_T.set_size(n, n);
@@ -109,9 +111,9 @@ template<typename eT>
 Mat<eT>
 UpperHessenbergQR<eT>::matrix_RQ()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (computed == false), "newarp::UpperHessenbergQR::matrix_RQ(): need to call compute() first" );
+  arma_conform_check( (computed == false), "newarp::UpperHessenbergQR::matrix_RQ(): need to call compute() first" );
 
   // Make a copy of the R matrix
   Mat<eT> RQ = trimatu(mat_T);
@@ -148,9 +150,9 @@ inline
 void
 UpperHessenbergQR<eT>::apply_YQ(Mat<eT>& Y)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (computed == false), "newarp::UpperHessenbergQR::apply_YQ(): need to call compute() first" );
+  arma_conform_check( (computed == false), "newarp::UpperHessenbergQR::apply_YQ(): need to call compute() first" );
 
   eT *Y_col_i, *Y_col_i1;
   uword nrow = Y.n_rows;
@@ -176,7 +178,7 @@ inline
 TridiagQR<eT>::TridiagQR()
   : UpperHessenbergQR<eT>()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   }
 
 
@@ -186,7 +188,7 @@ inline
 TridiagQR<eT>::TridiagQR(const Mat<eT>& mat_obj)
   : UpperHessenbergQR<eT>()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   this->compute(mat_obj);
   }
@@ -198,7 +200,7 @@ inline
 void
 TridiagQR<eT>::compute(const Mat<eT>& mat_obj)
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
   this->n = mat_obj.n_rows;
   this->mat_T.set_size(this->n, this->n);
@@ -268,9 +270,9 @@ template<typename eT>
 Mat<eT>
 TridiagQR<eT>::matrix_RQ()
   {
-  arma_extra_debug_sigprint();
+  arma_debug_sigprint();
   
-  arma_debug_check( (this->computed == false), "newarp::TridiagQR::matrix_RQ(): need to call compute() first" );
+  arma_conform_check( (this->computed == false), "newarp::TridiagQR::matrix_RQ(): need to call compute() first" );
 
   // Make a copy of the R matrix
   Mat<eT> RQ(this->n, this->n, arma_zeros_indicator());

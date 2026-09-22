@@ -260,7 +260,7 @@ void RPA::SolveRPA()
    Energies = Etmp(ordered_indices);
    X = Xtmp.cols(ordered_indices);
    Y = Ytmp.cols(ordered_indices);
-   std::cout << "eigvals = " << std::endl << eigvals << std::endl;
+//   std::cout << "eigvals = " << std::endl << eigvals << std::endl;
    for (size_t mu=0; mu<len; mu++)
    {
 //      std::cout << "X" << std::endl << X.col(mu) << std::endl;
@@ -274,7 +274,7 @@ void RPA::SolveRPA()
       double ymin = Y.col(mu).min();
 //      double y2 = Y.col(mu).t()*Y.col(mu);
 //      double nxy = x2 - y2;
-      std::cout << " mu = " << mu << "  norm = " << nxy  << "   Xmin/max " << xmin << " " << xmax << "   Ymin/max " << ymin << " " << ymax << "  E = " << Energies(mu) << "  vs  "<< Etmp(mu)  << std::endl;
+//      std::cout << " mu = " << mu << "  norm = " << nxy  << "   Xmin/max " << xmin << " " << xmax << "   Ymin/max " << ymin << " " << ymax << "  E = " << Energies(mu) << "  vs  "<< Etmp(mu)  << std::endl;
 //      if ( std::abs(xmin)>std::abs(xmax)   and xmin<0)
 //      {
 //          X.col(mu) *= -1;
@@ -490,31 +490,6 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 
 
 
-////         B(ai,bj)
-////	     int phase_ib = AngMom::phase( ji + jb + Jph);
-////         if ( AngMom::Triangle(jj,jb,Jph) and AngMom::Triangle(ji,ja,Jph))
-////         {
-////          for (int J1=J1min;J1<=J1max;++J1)  //Pandya 1: <ai`| V |bj`>_Jtot
-////          {
-////            V_aibj += AngMom::phase(J1) * (2*J1 + 1) *  modelspace->GetSixJ(ja,ji,Jph,jj,jb,J1)  * H.TwoBody.GetTBME_J(J1,a,b,i,j);
-////          }
-////         }
-////         B(I_ph,II_ph) =  V_aibj *phase_ib *  phase_ai *phase_bj;
-
-
-//         // I Still don't fully understand these SQRT2 factors...
-//         if (m==k)
-//         {
-//           VB_milk *= SQRT2;
-//           VB_mikl *= SQRT2;
-//         }
-//         if (i==l)
-//         {
-//           VB_milk *= SQRT2;
-//           VB_mikl *= SQRT2;
-//         }
-
-
          // Ring and Schuck (9.151)
          gamma_mu_kl +=  X(I_mi,mu) * VA_milk  + Y(I_mi,mu) * VB_milk;
          gamma_mu_lk +=  X(I_mi,mu) * VA_mikl  + Y(I_mi,mu) * VB_mikl;
@@ -523,16 +498,7 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 //         T_mu += OpIn.OneBody(m,i) * X(I_mi,mu) + OpIn.OneBody(i,m)* Y(I_mi,mu);
          T_mu += Omi * X(I_mi,mu) + Oim* Y(I_mi,mu);
 
-//         if ( X(I_mi,mu)== )
-//         if ( I_mi == X.col(mu).index_max() )
-//         {
-//            e_mu = H.OneBody(m,m) - H.OneBody(i,i);
-////            std::cout << "mu=" << mu << " -> mi = " << m << " " << i << std::endl;
-////            std::cout << " Tmu = " << Omi << " * " << X(I_mi,mu) << "  flipped is " << Oim << std::endl;
-////            std::cout << " gamma_mu_kl = " << X(I_mi,mu) << " * " << VA_milk << std::endl;
-////            std::cout << " gamma_mu_lk = " << X(I_mi,mu) << " * " << VA_mikl << std::endl;
-//         }
-         std::cout << "milk = " << m << " " << i << " " << l << " " << k << "   Omi = " << Omi << "  Vmilk = " << VA_milk << "  Vmikl = " << VA_mikl << std::endl;
+//         std::cout << "milk = " << m << " " << i << " " << l << " " << k << "   Omi = " << Omi << "  Vmilk = " << VA_milk << "  Vmikl = " << VA_mikl << std::endl;
          I_mi++;
      }// for iket_mi
 
@@ -541,9 +507,9 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 
      Teff += gamma_mu_kl * T_mu / ( el-ek-Omega_mu);
      Teff += gamma_mu_lk * T_mu / ( ek-el-Omega_mu);
-     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << el << " - " << ek << " - " << Omega_mu << " ) " << std::endl;
-     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << ek << " - " << el << " - " << Omega_mu << " ) " << std::endl;
-     std::cout << "    => Teff = " << Teff << std::endl;
+//     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << el << " - " << ek << " - " << Omega_mu << " ) " << std::endl;
+//     std::cout << "    Teff += " << gamma_mu_kl << " * " << T_mu << "  / ( " << ek << " - " << el << " - " << Omega_mu << " ) " << std::endl;
+//     std::cout << "    => Teff = " << Teff << std::endl;
   }// for mu
 
   return Teff;
@@ -567,3 +533,43 @@ arma::vec RPA::GetEnergies()
 }
 
 
+double RPA::StraightforwardCPEffectiveCharge( Operator& OpIn, size_t i, size_t j)
+{
+   int lambda = OpIn.GetJRank();
+   double Oij = 0;
+   Orbit& oi = modelspace->GetOrbit(i);
+   Orbit& oj = modelspace->GetOrbit(j);
+   for (auto a : modelspace->particles )
+   {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : OpIn.GetOneBodyChannel( oa.l, oa.j2, oa.tz2) )
+     {
+        Orbit& ob = modelspace->GetOrbit(b);
+        if ( ob.occ < 0.9 ) continue; // it should be a hole
+
+        double Vbarijba = 0;
+        int Jmin = AngMom::Jmin({ {oi.j2, oa.j2}, {oj.j2,ob.j2} } )/2;
+        int Jmax = AngMom::Jmax({ {oi.j2, oa.j2}, {oj.j2,ob.j2} } )/2;
+        for (int J=Jmin; J<=Jmax; J++)
+        {
+          Vbarijba -= (2*J+1) * modelspace->GetSixJ( oi.j2/2., oj.j2/2., lambda, ob.j2/2., oa.j2/2., J) * H.TwoBody.GetTBME_J(J,J, i,a,b,j) ;
+        }
+
+        double Vbarijab = 0;
+        Jmin = AngMom::Jmin({ {oi.j2, ob.j2}, {oj.j2,oa.j2} } )/2;
+        Jmax = AngMom::Jmax({ {oi.j2, ob.j2}, {oj.j2,oa.j2} } )/2;
+        for (int J=Jmin; J<=Jmax; J++)
+        {
+          Vbarijab -= (2*J+1) * modelspace->GetSixJ( oi.j2/2., oj.j2/2., lambda, oa.j2/2., ob.j2/2., J) * H.TwoBody.GetTBME_J(J,J, i,b,a,j) ;
+        }
+
+        double Diabj = H.OneBody(i,i) + H.OneBody(a,a) - H.OneBody(b,b) - H.OneBody(j,j);
+        double Dibaj = H.OneBody(i,i) + H.OneBody(b,b) - H.OneBody(a,a) - H.OneBody(j,j);
+        double Oab = OpIn.OneBody(a,b);
+        double Oba = OpIn.OneBody(b,a);
+        Oij += Vbarijba * Oba / Diabj - Vbarijab * Oab / Dibaj;
+     }
+   }
+   return Oij;
+
+}
