@@ -2142,12 +2142,12 @@ double HFMBPT::GetMP4_F9( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F9)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -2236,12 +2236,12 @@ double HFMBPT::GetMP4_F10( const Operator& H) const
 //   #pragma omp parallel for
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -2331,12 +2331,12 @@ double HFMBPT::GetMP4_F11( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F11)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -3283,12 +3283,12 @@ double HFMBPT::GetMP4_F20( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F20)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto i: H.modelspace->holes )
          {
@@ -3377,12 +3377,12 @@ double HFMBPT::GetMP4_F21( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F21)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -3690,12 +3690,12 @@ double HFMBPT::GetMP4_F25( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F25)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -4222,12 +4222,12 @@ double HFMBPT::GetMP4_F32( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F32)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
