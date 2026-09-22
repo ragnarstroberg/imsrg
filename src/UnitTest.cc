@@ -15,6 +15,7 @@
 #include "Generator.hh"
 
 #include <omp.h>
+#include <iomanip> // for setprecision
 
 uint64_t UnitTest::random_seed = 1;
 
