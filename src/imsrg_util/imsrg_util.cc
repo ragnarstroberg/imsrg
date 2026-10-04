@@ -1639,6 +1639,14 @@ Operator RpSpinOrbitCorrection(ModelSpace& modelspace)
   for (int i=0;i<norb;i++)
   {
     Orbit& oi = modelspace.GetOrbit(i);
+    // mu_i  - Q_i -> mu_i - Q_i / 2 fixes error in Ong et al.
+    // where m_i is the magnetic moment of the nucleon
+    // (not the anomalous magnetic moment)
+    // and Q_i is the charge of the nucleon
+    // (
+    //   solution from M. Hoferichter,
+    //   also seen in Bertozzi et al., Phys. Lett. 41, 408 (1972)
+    // )
     double mu_i = oi.tz2<0 ? mup-1./2 : mun;
     int kappa = oi.j2 < 2*oi.l ? oi.l : -(oi.l+1);
     dr_so.OneBody(i,i) = -mu_i/M2*(kappa+1);
