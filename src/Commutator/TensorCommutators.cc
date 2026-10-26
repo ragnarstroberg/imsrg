@@ -2707,8 +2707,8 @@ namespace Commutator
                   if ( ( (oi.l+oj.l+od.l+oa.l+ob.l+oc.l + X.GetParity()) %2 !=0)  and ( (oa.l+ob.l+oc.l+ok.l+ol.l+od.l + X.GetParity() )%2 !=0 ) ) continue;
                   if ( ( (oi.l+oj.l+od.l+oa.l+ob.l+oc.l + Y.GetParity()) %2 !=0)  and ( (oa.l+ob.l+oc.l+ok.l+ol.l+od.l + Y.GetParity() )%2 !=0 ) ) continue;
 
-                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != X.GetTRank())  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != X.GetTRank() ) ) continue;
-                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != Y.GetTRank())  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != Y.GetTRank() ) ) continue;
+                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != X.GetTRank()*2)  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != X.GetTRank()*2 ) ) continue;
+                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != Y.GetTRank()*2)  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != Y.GetTRank()*2 ) ) continue;
 
                   int twoj1min = AngMom::Jmin({ {2*J1, od.j2} });
                   int twoj1max = AngMom::Jmax({ {2*J1, od.j2} });
@@ -2878,10 +2878,10 @@ namespace Commutator
                   bool Parity_good_abjcdk = ( ( tbc_ab.parity + bra.oq->l + tbc_cd.parity + ket.op->l )%2 == X.GetParity() )    and ( (tbc_cd.parity + bra.op->l + tbc_ab.parity + ket.oq->l)%2 == Y.GetParity() );
                   bool Parity_good_abicdl = ( ( tbc_ab.parity + bra.op->l + tbc_cd.parity + ket.oq->l )%2 == X.GetParity() )    and ( (tbc_cd.parity + bra.oq->l + tbc_ab.parity + ket.op->l)%2 == Y.GetParity() );
                   bool Parity_good_abjcdl = ( ( tbc_ab.parity + bra.oq->l + tbc_cd.parity + ket.oq->l )%2 == X.GetParity() )    and ( (tbc_cd.parity + bra.op->l + tbc_ab.parity + ket.op->l)%2 == Y.GetParity() );
-                  bool Tz_good_abicdk = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==X.GetTRank()/2) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==Y.GetTRank()/2);
-                  bool Tz_good_abjcdk = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==X.GetTRank()/2) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==Y.GetTRank()/2);
-                  bool Tz_good_abicdl = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==X.GetTRank()/2) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==Y.GetTRank()/2);
-                  bool Tz_good_abjcdl = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==X.GetTRank()/2) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==Y.GetTRank()/2);
+                  bool Tz_good_abicdk = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==(Y.GetTRank()*2));
+                  bool Tz_good_abjcdk = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==(Y.GetTRank()*2));
+                  bool Tz_good_abicdl = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==(Y.GetTRank()*2));
+                  bool Tz_good_abjcdl = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==(Y.GetTRank()*2));
 
 
                   int twoj1min = AngMom::Jmin({ {2*J3,ji2} });
@@ -3431,7 +3431,7 @@ namespace Commutator
                     Orbit &ob = Z.modelspace->GetOrbit(b);
 
                     double occupation_factor = oa.occ - ob.occ;
-                    if (std::abs(occupation_factor) < 1e-7)  continue;
+                    if (std::abs(occupation_factor) < 1e-8)  continue;
 
                     // check parity and Tz
                     bool parity_X_3ba6   = (o3.l + ob.l + oa.l + o6.l ) % 2 == X.GetParity();
@@ -3473,7 +3473,7 @@ namespace Commutator
                                     sixj1 *= Z.modelspace->GetSixJ(o3.j2 / 2.,  ob.j2 / 2.,    Jb3,
                                                           twoj4 / 2.,  twoj1 / 2.,    J1p);
 
-                              if (std::abs(sixj1) < 1e-7)  continue;
+                              if (std::abs(sixj1) < 1e-8)  continue;
 
                             int Ja6_min = AngMom::Jmin({ {oa.j2, o6.j2}, {twoj4,twoj2}, {2*Lambda,2*Jb3} })/2;
                             int Ja6_max = AngMom::Jmax({ {oa.j2, o6.j2}, {twoj4,twoj2}, {2*Lambda,2*Jb3} })/2;
@@ -3485,7 +3485,7 @@ namespace Commutator
                                       sixj2 *= Z.modelspace->GetSixJ(Lambda,      Ja6,           Jb3,
                                                                      twoj4 / 2.,  twoj1 / 2.,    twoj2 / 2.);
 
-                              if (std::abs(sixj2) < 1e-7)  continue;
+                              if (std::abs(sixj2) < 1e-8)  continue;
                               int phasefactor = Z.modelspace->phase(( o3.j2  + o6.j2 + twoj2 + twoj4) / 2 + J1p + J2p + Ja6 + Lambda);
                               double hatfactor =  (twoj3 + 1) * (twoj4 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * (2 * Ja6 + 1) * (2 * Jb3 + 1) );
                               double yb3a6 = Y2.GetTBME_J(Jb3, Ja6, b, I3, a, I6);
@@ -3513,7 +3513,7 @@ namespace Commutator
                                        sixj1 *= Z.modelspace->GetSixJ( J1p,         Lambda,        J3,
                                                                      twoj2 / 2.,  o3.j2 / 2.,    twoj1 / 2.);
 
-                                if (std::abs(sixj1) < 1e-7)  continue;
+                                if (std::abs(sixj1) < 1e-8)  continue;
 
                               int J4_min = AngMom::Jmin({ {2*J3,2*J2p}, {o6.j2,o3.j2}, {oa.j2,ob.j2} })/2;
                               int J4_max = AngMom::Jmax({ {2*J3,2*J2p}, {o6.j2,o3.j2}, {oa.j2,ob.j2} })/2;
@@ -3529,7 +3529,7 @@ namespace Commutator
                                        sixj2 *= Z.modelspace->GetSixJ( J4,          J3,            J2p,
                                                                       twoj2 / 2.,  o6.j2 / 2.,    o3.j2 / 2.);
 
-                                if (std::abs(sixj2) < 1e-7)   continue;
+                                if (std::abs(sixj2) < 1e-8)   continue;
                                 int phasefactor = Z.modelspace->phase(( o3.j2  + ob.j2 ) / 2 + Jb3 );
                                 double hatfactor = (2 * Jb3 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * (twoj3 + 1) * (twoj4 + 1) );
                                 

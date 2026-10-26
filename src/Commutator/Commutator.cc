@@ -333,8 +333,6 @@ namespace Commutator
     Operator Z(ms, z_Jrank, z_Trank, z_parity, z_particlerank);
 
 
-    if (Z.IsReduced())
-       Z.MakeNotReduced();
 
     if ((X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()))
       Z.SetAntiHermitian();
@@ -345,6 +343,9 @@ namespace Commutator
 
     if ( z_particlerank>2)
        Z.ThreeBody.SetMode("pn");
+
+    if (Z.IsReduced())
+       Z.MakeNotReduced();
 
     bool save_single_thread = single_thread;
 

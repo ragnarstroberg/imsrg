@@ -1537,6 +1537,61 @@ double HFMBPT::GetDenom(const Operator& H, const std::vector<index_t>& holes, co
 
 }
 
+
+double HFMBPT::GetMP4_term( const Operator& H, int id) const
+{
+   if ( id<1 or id > 39)
+   {
+      std::cout << "There is no 4th order diagram " << id << ". Returning zero." << std::endl;
+      return 0;
+   }
+
+   std::array< std::function<double(const Operator&)>,39> MBPT4diagrams = {
+   [=](const Operator& H){ return this->GetMP4_F1(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F2(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F3(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F4(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F5(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F6(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F7(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F8(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F9(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F10(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F11(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F12(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F13(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F14(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F15(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F16(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F17(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F18(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F19(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F20(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F21(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F22(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F23(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F24(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F25(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F26(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F27(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F28(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F29(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F30(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F31(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F32(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F33(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F34(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F35(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F36(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F37(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F38(H);} ,
+   [=](const Operator& H){ return this->GetMP4_F39(H);} 
+   };
+
+
+   return MBPT4diagrams[id-1](H);
+}
+/*
 double HFMBPT::GetMP4_term( const Operator& H, int diagram) const
 {
    double E = 0;
@@ -1585,6 +1640,7 @@ double HFMBPT::GetMP4_term( const Operator& H, int diagram) const
    }
    return E;
 }
+*/
 
 // Diagram F1 (as numbered by ADG)   corresponds to diagram 4 from Shavitt & Bartlett
 // mscheme expression: F1 = 1/4 sum_abcijklm (v_abij v_ijak v_kclm v_lmbc) / (eps_abij eps_bk eps_bclm)
@@ -2177,12 +2233,12 @@ double HFMBPT::GetMP4_F9( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F9)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -2453,12 +2509,12 @@ double HFMBPT::GetMP4_F10( const Operator& H) const
 //   #pragma omp parallel for
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -2548,12 +2604,12 @@ double HFMBPT::GetMP4_F11( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F11)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -3153,12 +3209,12 @@ double HFMBPT::GetMP4_F20( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F20)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto i: H.modelspace->holes )
          {
@@ -3247,12 +3303,12 @@ double HFMBPT::GetMP4_F21( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F21)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -3810,12 +3866,12 @@ double HFMBPT::GetMP4_F32( const Operator& H) const
    #pragma omp parallel for  collapse(3) reduction(+:F32)
    for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
        for ( auto c: part_vec )
        {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         Orbit& ob = H.modelspace->GetOrbit(b);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {

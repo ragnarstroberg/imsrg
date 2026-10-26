@@ -783,7 +783,8 @@ namespace DM_NREFT
     else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
     else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Phip_op(modelspace, J, Tz, parity, 2);
-    Phip_op.SetAntiHermitian();
+    std::cout << "Warning: Phi' is neither Hermitian nor anti-Hermitian!" << std::endl;
+    std::cout << "Warning: Check that you are using Tilde Phi ' (Phitp) for correct behavior." << std::endl;
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
     {
@@ -826,6 +827,7 @@ namespace DM_NREFT
   Operator Phitp( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
     Operator Phitp_op = Phip(modelspace,IsoSV,J,q) + 0.5 * Ms(modelspace, IsoSV, J, J, q);
+    Phitp_op.SetHermitian();
     return Phitp_op;
   }
 

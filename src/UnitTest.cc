@@ -16,6 +16,7 @@
 #include "HFMBPT.hh"
 
 #include <omp.h>
+#include <iomanip> // for setprecision
 
 uint64_t UnitTest::random_seed = 1;
 
@@ -1684,8 +1685,8 @@ bool UnitTest::Test_comm333_ppp_hhhss(const Operator &X, const Operator &Y)
 /// THIS IS SO SLOW....
 bool UnitTest::Test_comm233_phss(const Operator &X, const Operator &Y)
 {
-  //  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
-  return Test_against_ref_impl(X, Y, Commutator::comm233_phss, Commutator::comm233_phss, "comm233_phss");
+    return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
+ // return Test_against_ref_impl(X, Y, Commutator::comm233_phss, Commutator::comm233_phss, "comm233_phss");
 }
 
 bool UnitTest::Test_comm232ss(const Operator &X, const Operator &Y)
@@ -7900,13 +7901,13 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   Z_J.ThreeBody.Erase();
 
   Operator Y_copy(Y);
-  if (Lambda == 0)
+  if (Lambda == 0 and (not Y.IsReduced()) )
   {
     Y_copy.MakeReduced();
     Z_J.MakeReduced();
   }
   ReferenceImplementations::comm233_phst(X, Y_copy, Z_J);
-  if (Lambda == 0)
+  if (Lambda == 0 and (not Y.IsReduced()) )
   {
     // Y_copy.MakeNotReduced();
     Z_J.MakeNotReduced();

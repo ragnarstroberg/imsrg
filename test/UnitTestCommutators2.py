@@ -10,6 +10,8 @@ jx,tx,px,prx,hx = 0,0,0,2,-1
 jy,ty,py,pry,hy = 0,0,0,2,+1
 X = ut.RandomOp(ms, jx, tx, px, prx,hx)
 Y = ut.RandomOp(ms, jy, ty, py, pry,hy)
+X.MakeNotReduced()
+Y.MakeNotReduced()
 passed = ut.TestCommutators(X,Y)
 
 
