@@ -7900,13 +7900,13 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   Z_J.ThreeBody.Erase();
 
   Operator Y_copy(Y);
-  if (Lambda == 0)
+  if (Lambda == 0 and TzY == 0 and parityY == 0)
   {
     Y_copy.MakeReduced();
     Z_J.MakeReduced();
   }
   ReferenceImplementations::comm233_phst(X, Y_copy, Z_J);
-  if (Lambda == 0)
+  if (Lambda == 0 and !Y.IsReduced())
   {
     // Y_copy.MakeNotReduced();
     Z_J.MakeNotReduced();
