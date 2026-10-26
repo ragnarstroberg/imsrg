@@ -13,6 +13,7 @@
 #include "ReferenceImplementations.hh" // for commutators
 #include "IMSRGSolver.hh"              // for Perturbative Triples
 #include "Generator.hh"
+#include "HFMBPT.hh"
 
 #include <omp.h>
 #include <iomanip> // for setprecision
@@ -1684,8 +1685,8 @@ bool UnitTest::Test_comm333_ppp_hhhss(const Operator &X, const Operator &Y)
 /// THIS IS SO SLOW....
 bool UnitTest::Test_comm233_phss(const Operator &X, const Operator &Y)
 {
-  //  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
-  return Test_against_ref_impl(X, Y, Commutator::comm233_phss, Commutator::comm233_phss, "comm233_phss");
+    return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
+ // return Test_against_ref_impl(X, Y, Commutator::comm233_phss, Commutator::comm233_phss, "comm233_phss");
 }
 
 bool UnitTest::Test_comm232ss(const Operator &X, const Operator &Y)
@@ -7900,13 +7901,13 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   Z_J.ThreeBody.Erase();
 
   Operator Y_copy(Y);
-  if (Lambda == 0)
+  if (Lambda == 0 and (not Y.IsReduced()) )
   {
     Y_copy.MakeReduced();
     Z_J.MakeReduced();
   }
   ReferenceImplementations::comm233_phst(X, Y_copy, Z_J);
-  if (Lambda == 0)
+  if (Lambda == 0 and (not Y.IsReduced()) )
   {
     // Y_copy.MakeNotReduced();
     Z_J.MakeNotReduced();
@@ -8616,6 +8617,28 @@ bool UnitTest::Test3BGenerator( Operator& H, Operator& Hdenom)
 }
 
 
+bool UnitTest::TestMBPT4( Operator& H )
+{
+   bool pass = true;
+   H.modelspace->PreCalculateSixJ();
+   HFMBPT hf(H);;
+   for (int i=1;i<=39;i++)
+   {
+      
+     double term_ref = ReferenceImplementations::GetMP4_term(  H, i);
+     double term_opt = hf.GetMP4_term(  H, i);
+     double diff = term_ref - term_opt;
+        std::cout << "Diagram " << i << "  ref = " << term_ref << "  opt = " << term_opt << "  diff = " << diff << std::endl;
+     if (std::abs(diff)>1e-6)
+     {
+        std::cout << " !!!!  FAIL !!!! " << std::endl;
+        pass = false;
+     }
+
+   }
+
+   return pass;
+}
 
 
 

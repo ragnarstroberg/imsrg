@@ -173,6 +173,8 @@ class UnitTest
 
   bool Test3BGenerator( Operator& H, Operator& Hdenom);
 
+  bool TestMBPT4( Operator& H );
+
   bool SanityCheck();
 
 };
