@@ -6420,7 +6420,7 @@ namespace Commutator
                     {
                       index_36 = tbc_CC.GetLocalIndex(I6, I3);
                       key_4512 = hash_key_lmij(std::min(I1, I2), std::max(I1, I2), (size_t)J1p, std::min(I4, I5), std::max(I4, I5), (size_t)J2p);
-                      flip_phase = Z.modelspace->phase((o3.j2 - o6.j2) / 2);
+                      flip_phase = -hX * hY * Z.modelspace->phase((o3.j2 - o6.j2) / 2); // include hZ = -hX*hY
                     }
                     size_t index_4512 = ph_kets3_lookup[ch_ph].at(key_4512);
 
