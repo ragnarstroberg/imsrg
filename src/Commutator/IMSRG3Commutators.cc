@@ -4551,10 +4551,10 @@ namespace Commutator
       size_t ch_internal_xy = bra_ket_channels[ich_bra_ket][2];
       size_t ch_internal_yx = bra_ket_channels[ich_bra_ket][3];
 
-      auto Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch_bra);
-      auto Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch_ket);
-      auto Tbc_xy = Z.modelspace->GetThreeBodyChannel(ch_internal_xy);
-      auto Tbc_yx = Z.modelspace->GetThreeBodyChannel(ch_internal_yx);
+      auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch_bra);
+      auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch_ket);
+      auto& Tbc_xy = Z.modelspace->GetThreeBodyChannel(ch_internal_xy);
+      auto& Tbc_yx = Z.modelspace->GetThreeBodyChannel(ch_internal_yx);
 
       int twoJ = Tbc_bra.twoJ;
 
