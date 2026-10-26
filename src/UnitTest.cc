@@ -13,6 +13,7 @@
 #include "ReferenceImplementations.hh" // for commutators
 #include "IMSRGSolver.hh"              // for Perturbative Triples
 #include "Generator.hh"
+#include "HFMBPT.hh"
 
 #include <omp.h>
 
@@ -8615,6 +8616,28 @@ bool UnitTest::Test3BGenerator( Operator& H, Operator& Hdenom)
 }
 
 
+bool UnitTest::TestMBPT4( Operator& H )
+{
+   bool pass = true;
+   H.modelspace->PreCalculateSixJ();
+   HFMBPT hf(H);;
+   for (int i=1;i<=39;i++)
+   {
+      
+     double term_ref = ReferenceImplementations::GetMP4_term(  H, i);
+     double term_opt = hf.GetMP4_term(  H, i);
+     double diff = term_ref - term_opt;
+        std::cout << "Diagram " << i << "  ref = " << term_ref << "  opt = " << term_opt << "  diff = " << diff << std::endl;
+     if (std::abs(diff)>1e-6)
+     {
+        std::cout << " !!!!  FAIL !!!! " << std::endl;
+        pass = false;
+     }
+
+   }
+
+   return pass;
+}
 
 
 

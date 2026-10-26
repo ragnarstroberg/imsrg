@@ -1589,130 +1589,195 @@ double HFMBPT::GetMP4_term( const Operator& H, int diagram) const
 // Diagram F1 (as numbered by ADG)   corresponds to diagram 4 from Shavitt & Bartlett
 // mscheme expression: F1 = 1/4 sum_abcijklm (v_abij v_ijak v_kclm v_lmbc) / (eps_abij eps_bk eps_bclm)
 // agrees.
+
+// Diagram F1 (as numbered by ADG)
+// Factorized version: build two one-body-like intermediate matrices,
+//   chi_A(b,k) = sum_J0 Jhat0^2 sum_{a,i,j} V_abij^J0 V_ijak^J0 / e_ijab
+//   chi_B(k,b) = sum_J1 Jhat1^2 sum_{c,l,m} V_kclm^J1 V_lmbc^J1 / e_lmbc
+// then F1 = 1/4 * jhat_b^-2 * sum_{b,k} delta_{jb,jk} chi_A(b,k) chi_B(k,b) / e_kb
 double HFMBPT::GetMP4_F1( const Operator& H) const
 {
    double t_start = omp_get_wtime();
 
-   double F1 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
+   size_t norb = H.modelspace->GetNumberOrbits();
+   arma::mat chi_A(norb,norb,arma::fill::zeros);  // indexed chi_A(b,k)
+   arma::mat chi_B(norb,norb,arma::fill::zeros);  // indexed chi_B(k,b)
+
+   // Build chi_A(b,k)
+   for ( auto b : H.modelspace->particles )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
+     Orbit& ob = H.modelspace->GetOrbit(b);
+     for ( auto k : H.modelspace->holes )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
+       Orbit& ok = H.modelspace->GetOrbit(k);
+       double chi = 0;
+       for ( auto a : H.modelspace->particles )
        {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         for ( auto i : H.modelspace->holes )
          {
            Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
+           for ( auto j : H.modelspace->holes )
            {
              Orbit& oj = H.modelspace->GetOrbit(j);
-             for ( auto k: H.modelspace->holes )
+             double e_ijab = GetDenom(H,{i,j},{a,b});
+             int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
+             int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
+             for (int J0=J0_min; J0<=J0_max; J0++)
              {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               if ( ok.j2 != ob.j2) continue;
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_kb = GetDenom(H,{k},{b});
-                   double e_lmbc = GetDenom(H,{l,m},{b,c});
-                   double denom = e_ijab * e_kb * e_lmbc;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{ok.j2,oc.j2},{ol.j2,om.j2},{ob.j2,oc.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{ok.j2,oc.j2},{ol.j2,om.j2},{ob.j2,oc.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vijak = H.TwoBody.GetTBME_J(J0,J0,i,j,a,k);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vkclm = H.TwoBody.GetTBME_J(J1,J1,k,c,l,m);
-                       double vlmbc = H.TwoBody.GetTBME_J(J1,J1,l,m,b,c);
-                       F1 += 1./4 * (2*J0+1) * (2*J1+1) / (ob.j2+1) * vabij * vijak * vkclm * vlmbc / denom;
-                     }// for J1
-                   }// for J0
-                 }// for m
-               }// for l
-             }// for k
+               double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
+               double vijak = H.TwoBody.GetTBME_J(J0,J0,i,j,a,k);
+               chi += (2*J0+1) * vabij * vijak / e_ijab;
+             }// for J0
            }// for j
          }// for i
-       }//for c
-     }//for b
-   }//for a
+       }// for a
+       chi_A(b,k) = chi;
+     }// for k
+   }// for b
+
+   // Build chi_B(k,b)
+   for ( auto k : H.modelspace->holes )
+   {
+     Orbit& ok = H.modelspace->GetOrbit(k);
+     for ( auto b : H.modelspace->particles )
+     {
+       Orbit& ob = H.modelspace->GetOrbit(b);
+       double chi = 0;
+       for ( auto c : H.modelspace->particles )
+       {
+         Orbit& oc = H.modelspace->GetOrbit(c);
+         for ( auto l : H.modelspace->holes )
+         {
+           Orbit& ol = H.modelspace->GetOrbit(l);
+           for ( auto m : H.modelspace->holes )
+           {
+             Orbit& om = H.modelspace->GetOrbit(m);
+             double e_lmbc = GetDenom(H,{l,m},{b,c});
+             int J1_min = AngMom::Jmin( {{ok.j2,oc.j2},{ol.j2,om.j2},{ob.j2,oc.j2}} ) /2;
+             int J1_max = AngMom::Jmax( {{ok.j2,oc.j2},{ol.j2,om.j2},{ob.j2,oc.j2}} ) /2;
+             for (int J1=J1_min; J1<=J1_max; J1++)
+             {
+               double vkclm = H.TwoBody.GetTBME_J(J1,J1,k,c,l,m);
+               double vlmbc = H.TwoBody.GetTBME_J(J1,J1,l,m,b,c);
+               chi += (2*J1+1) * vkclm * vlmbc / e_lmbc;
+             }// for J1
+           }// for m
+         }// for l
+       }// for c
+       chi_B(k,b) = chi;
+     }// for b
+   }// for k
+
+   // Contract the two intermediates over the shared (b,k) pair
+   double F1 =0;
+   for ( auto b : H.modelspace->particles )
+   {
+     Orbit& ob = H.modelspace->GetOrbit(b);
+     for ( auto k : H.modelspace->holes )
+     {
+       Orbit& ok = H.modelspace->GetOrbit(k);
+       if ( ok.j2 != ob.j2) continue;
+       double e_kb = GetDenom(H,{k},{b});
+       F1 += 1./4 * chi_A(b,k) * chi_B(k,b) / ( e_kb * (ob.j2+1) );
+     }// for k
+   }// for b
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F1;
 }
 
-// Diagram F2 (as numbered by ADG)   complex conjugate diagram: F3
-// mscheme expression: F2 = -1/4 sum_abcdijkl (v_abij v_ijak v_cdbl v_klcd) / (eps_ijab eps_kb eps_klcd)
-// agrees.
+// Factorized version:
+//   chi_A(b,k) = sum_J0 Jhat0^2 sum_{a,i,j} V_abij^J0 V_ijak^J0 / e_ijab
+//   chi_C(b,k) = sum_J1 Jhat1^2 sum_{c,d,l} V_cdbl^J1 V_klcd^J1 / e_klcd
+// then F2 = -1/4 * jhat_b^-2 * sum_{b,k} delta_{jb,jk} chi_A(b,k) chi_C(b,k) / e_kb
 double HFMBPT::GetMP4_F2( const Operator& H) const
 {
    double t_start = omp_get_wtime();
 
-   double F2 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
+   size_t norb = H.modelspace->GetNumberOrbits();
+   arma::mat chi_A(norb,norb,arma::fill::zeros);  // indexed chi_A(b,k)
+   arma::mat chi_C(norb,norb,arma::fill::zeros);  // indexed chi_C(b,k)
+
+   // Build chi_A(b,k)
+   for ( auto b : H.modelspace->particles )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
+     Orbit& ob = H.modelspace->GetOrbit(b);
+     for ( auto k : H.modelspace->holes )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
+       Orbit& ok = H.modelspace->GetOrbit(k);
+       double chi = 0;
+       for ( auto a : H.modelspace->particles )
+       {
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         for ( auto i : H.modelspace->holes )
+         {
+           Orbit& oi = H.modelspace->GetOrbit(i);
+           for ( auto j : H.modelspace->holes )
+           {
+             Orbit& oj = H.modelspace->GetOrbit(j);
+             double e_ijab = GetDenom(H,{i,j},{a,b});
+             int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
+             int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
+             for (int J0=J0_min; J0<=J0_max; J0++)
+             {
+               double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
+               double vijak = H.TwoBody.GetTBME_J(J0,J0,i,j,a,k);
+               chi += (2*J0+1) * vabij * vijak / e_ijab;
+             }// for J0
+           }// for j
+         }// for i
+       }// for a
+       chi_A(b,k) = chi;
+     }// for k
+   }// for b
+
+   // Build chi_C(b,k)
+   for ( auto b : H.modelspace->particles )
+   {
+     Orbit& ob = H.modelspace->GetOrbit(b);
+     for ( auto k : H.modelspace->holes )
+     {
+       Orbit& ok = H.modelspace->GetOrbit(k);
+       double chi = 0;
+       for ( auto c : H.modelspace->particles )
        {
          Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
+         for ( auto d : H.modelspace->particles )
          {
            Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
+           for ( auto l : H.modelspace->holes )
            {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
+             Orbit& ol = H.modelspace->GetOrbit(l);
+             double e_klcd = GetDenom(H,{k,l},{c,d});
+             int J1_min = AngMom::Jmin( {{oc.j2,od.j2},{ob.j2,ol.j2},{ok.j2,ol.j2}} ) /2;
+             int J1_max = AngMom::Jmax( {{oc.j2,od.j2},{ob.j2,ol.j2},{ok.j2,ol.j2}} ) /2;
+             for (int J1=J1_min; J1<=J1_max; J1++)
              {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 if ( ok.j2 != ob.j2) continue;
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_kb = GetDenom(H,{k},{b});
-                   double e_klcd = GetDenom(H,{k,l},{c,d});
-                   double denom = e_ijab * e_kb * e_klcd;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oa.j2,ok.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oc.j2,od.j2},{ob.j2,ol.j2},{ok.j2,ol.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oc.j2,od.j2},{ob.j2,ol.j2},{ok.j2,ol.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vijak = H.TwoBody.GetTBME_J(J0,J0,i,j,a,k);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vcdbl = H.TwoBody.GetTBME_J(J1,J1,c,d,b,l);
-                       double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
-                       F2 += -1./4 * (2*J0+1) * (2*J1+1) / (ob.j2+1) * vabij * vijak * vcdbl * vklcd / denom;
-                     }// for J1
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
+               double vcdbl = H.TwoBody.GetTBME_J(J1,J1,c,d,b,l);
+               double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
+               chi += (2*J1+1) * vcdbl * vklcd / e_klcd;
+             }// for J1
+           }// for l
+         }// for d
+       }// for c
+       chi_C(b,k) = chi;
+     }// for k
+   }// for b
+
+   // Contract the two intermediates over the shared (b,k) pair
+   double F2 =0;
+   for ( auto b : H.modelspace->particles )
+   {
+     Orbit& ob = H.modelspace->GetOrbit(b);
+     for ( auto k : H.modelspace->holes )
+     {
+       Orbit& ok = H.modelspace->GetOrbit(k);
+       if ( ok.j2 != ob.j2) continue;
+       double e_kb = GetDenom(H,{k},{b});
+       F2 += -1./4 * chi_A(b,k) * chi_C(b,k) / ( e_kb * (ob.j2+1) );
+     }// for k
+   }// for b
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F2;
@@ -1721,138 +1786,116 @@ double HFMBPT::GetMP4_F2( const Operator& H) const
 
 
 // Diagram F3 (as numbered by ADG)   complex conjugate diagram: F2
-// mscheme expression: F3 = -1/4 sum_abcdijkl (v_abij v_icab v_jdkl v_klcd) / (eps_ijab eps_jc eps_klcd)
-// agrees.
+// Factorized version:
+//   chi_D(j,c) = sum_J0 Jhat0^2 sum_{a,b,i} V_abij^J0 V_icab^J0 / e_ijab
+//   chi_E(j,c) = sum_J1 Jhat1^2 sum_{d,k,l} V_jdkl^J1 V_klcd^J1 / e_klcd
+// then F3 = -1/4 * jhat_c^-2 * sum_{j,c} delta_{jj,jc} chi_D(j,c) chi_E(j,c) / e_jc
 double HFMBPT::GetMP4_F3( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F3 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               if ( oj.j2 != oc.j2) continue;
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jc = GetDenom(H,{j},{c});
-                   double e_klcd = GetDenom(H,{k,l},{c,d});
-                   double denom = e_ijab * e_jc * e_klcd;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oi.j2,oc.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oi.j2,oc.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oj.j2,od.j2},{ok.j2,ol.j2},{oc.j2,od.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oj.j2,od.j2},{ok.j2,ol.j2},{oc.j2,od.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vicab = H.TwoBody.GetTBME_J(J0,J0,i,c,a,b);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vjdkl = H.TwoBody.GetTBME_J(J1,J1,j,d,k,l);
-                       double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
-                       F3 += -1./4 * (2*J0+1) * (2*J1+1) / (oc.j2+1) * vabij * vicab * vjdkl * vklcd / denom;
-                     }// for J1
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F3;
+   double F3 = GetMP4_F2(H); // conjugate diagram
+   return F3;
 }
 
-
-
 // Diagram F4 (as numbered by ADG)
-// mscheme expression: F4 = 1/4 sum_abcdeijk (v_abij v_icab v_deck v_jkde) / (eps_ijab eps_jc eps_jkde)
-// agrees.
+// Factorized version:
+//   chi_D(j,c) = sum_J0 Jhat0^2 sum_{a,b,i} V_abij^J0 V_icab^J0 / e_ijab
+//   chi_F(j,c) = sum_J1 Jhat1^2 sum_{d,e,k} V_deck^J1 V_jkde^J1 / e_jkde
+// then F4 = 1/4 * jhat_c^-2 * sum_{j,c} delta_{jj,jc} chi_D(j,c) chi_F(j,c) / e_jc
 double HFMBPT::GetMP4_F4( const Operator& H) const
 {
    double t_start = omp_get_wtime();
 
-   double F4 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
+   size_t norb = H.modelspace->GetNumberOrbits();
+   arma::mat chi_D(norb,norb,arma::fill::zeros);  // indexed chi_D(j,c)
+   arma::mat chi_F(norb,norb,arma::fill::zeros);  // indexed chi_F(j,c)
+
+   // Build chi_D(j,c)
+   for ( auto j : H.modelspace->holes )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
+     Orbit& oj = H.modelspace->GetOrbit(j);
+     for ( auto c : H.modelspace->particles )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
+       Orbit& oc = H.modelspace->GetOrbit(c);
+       double chi = 0;
+       for ( auto a : H.modelspace->particles )
        {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
+         Orbit& oa = H.modelspace->GetOrbit(a);
+         for ( auto b : H.modelspace->particles )
          {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto e: H.modelspace->particles )
+           Orbit& ob = H.modelspace->GetOrbit(b);
+           for ( auto i : H.modelspace->holes )
            {
-             Orbit& oe = H.modelspace->GetOrbit(e);
-             for ( auto i: H.modelspace->holes )
+             Orbit& oi = H.modelspace->GetOrbit(i);
+             double e_ijab = GetDenom(H,{i,j},{a,b});
+             int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oi.j2,oc.j2}} ) /2;
+             int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oi.j2,oc.j2}} ) /2;
+             for (int J0=J0_min; J0<=J0_max; J0++)
              {
-               Orbit& oi = H.modelspace->GetOrbit(i);
-               for ( auto j: H.modelspace->holes )
-               {
-                 Orbit& oj = H.modelspace->GetOrbit(j);
-                 if ( oj.j2 != oc.j2) continue;
-                 for ( auto k: H.modelspace->holes )
-                 {
-                   Orbit& ok = H.modelspace->GetOrbit(k);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jc = GetDenom(H,{j},{c});
-                   double e_jkde = GetDenom(H,{j,k},{d,e});
-                   double denom = e_ijab * e_jc * e_jkde;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oi.j2,oc.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oi.j2,oc.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{od.j2,oe.j2},{oc.j2,ok.j2},{oj.j2,ok.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{od.j2,oe.j2},{oc.j2,ok.j2},{oj.j2,ok.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vicab = H.TwoBody.GetTBME_J(J0,J0,i,c,a,b);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vdeck = H.TwoBody.GetTBME_J(J1,J1,d,e,c,k);
-                       double vjkde = H.TwoBody.GetTBME_J(J1,J1,j,k,d,e);
-                       F4 += 1./4 * (2*J0+1) * (2*J1+1) / (oc.j2+1) * vabij * vicab * vdeck * vjkde / denom;
-                     }// for J1
-                   }// for J0
-                 }// for k
-               }// for j
-             }// for i
-           }//for e
-         }//for d
-       }//for c
-     }//for b
-   }//for a
+               double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
+               double vicab = H.TwoBody.GetTBME_J(J0,J0,i,c,a,b);
+               chi += (2*J0+1) * vabij * vicab / e_ijab;
+             }// for J0
+           }// for i
+         }// for b
+       }// for a
+       chi_D(j,c) = chi;
+     }// for c
+   }// for j
+
+   // Build chi_F(j,c)
+   for ( auto j : H.modelspace->holes )
+   {
+     Orbit& oj = H.modelspace->GetOrbit(j);
+     for ( auto c : H.modelspace->particles )
+     {
+       Orbit& oc = H.modelspace->GetOrbit(c);
+       double chi = 0;
+       for ( auto d : H.modelspace->particles )
+       {
+         Orbit& od = H.modelspace->GetOrbit(d);
+         for ( auto e : H.modelspace->particles )
+         {
+           Orbit& oe = H.modelspace->GetOrbit(e);
+           for ( auto k : H.modelspace->holes )
+           {
+             Orbit& ok = H.modelspace->GetOrbit(k);
+             double e_jkde = GetDenom(H,{j,k},{d,e});
+             int J1_min = AngMom::Jmin( {{od.j2,oe.j2},{oc.j2,ok.j2},{oj.j2,ok.j2}} ) /2;
+             int J1_max = AngMom::Jmax( {{od.j2,oe.j2},{oc.j2,ok.j2},{oj.j2,ok.j2}} ) /2;
+             for (int J1=J1_min; J1<=J1_max; J1++)
+             {
+               double vdeck = H.TwoBody.GetTBME_J(J1,J1,d,e,c,k);
+               double vjkde = H.TwoBody.GetTBME_J(J1,J1,j,k,d,e);
+               chi += (2*J1+1) * vdeck * vjkde / e_jkde;
+             }// for J1
+           }// for k
+         }// for e
+       }// for d
+       chi_F(j,c) = chi;
+     }// for c
+   }// for j
+
+   // Contract the two intermediates over the shared (j,c) pair
+   double F4 =0;
+   for ( auto j : H.modelspace->holes )
+   {
+     Orbit& oj = H.modelspace->GetOrbit(j);
+     for ( auto c : H.modelspace->particles )
+     {
+       Orbit& oc = H.modelspace->GetOrbit(c);
+       if ( oj.j2 != oc.j2) continue;
+       double e_jc = GetDenom(H,{j},{c});
+       F4 += 1./4 * chi_D(j,c) * chi_F(j,c) / ( e_jc * (oc.j2+1) );
+     }// for c
+   }// for j
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F4;
 }
+
+
+
+
 
 
 // Diagram F5 (as numbered by ADG)
@@ -1863,54 +1906,75 @@ double HFMBPT::GetMP4_F5( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F5 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto i: H.modelspace->holes )
-       {
-         Orbit& oi = H.modelspace->GetOrbit(i);
-         for ( auto j: H.modelspace->holes )
-         {
-           Orbit& oj = H.modelspace->GetOrbit(j);
-           for ( auto k: H.modelspace->holes )
-           {
-             Orbit& ok = H.modelspace->GetOrbit(k);
-             for ( auto l: H.modelspace->holes )
-             {
-               Orbit& ol = H.modelspace->GetOrbit(l);
-               for ( auto m: H.modelspace->holes )
-               {
-                 Orbit& om = H.modelspace->GetOrbit(m);
-                 for ( auto n: H.modelspace->holes )
-                 {
-                   Orbit& on = H.modelspace->GetOrbit(n);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_klab = GetDenom(H,{k,l},{a,b});
-                   double e_mnab = GetDenom(H,{m,n},{a,b});
-                   double denom = e_ijab * e_klab * e_mnab;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ok.j2,ol.j2},{om.j2,on.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ok.j2,ol.j2},{om.j2,on.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vijkl = H.TwoBody.GetTBME_J(J0,J0,i,j,k,l);
-                     double vklmn = H.TwoBody.GetTBME_J(J0,J0,k,l,m,n);
-                     double vmnab = H.TwoBody.GetTBME_J(J0,J0,m,n,a,b);
-                     F5 += 1./16 * (2*J0+1) * vabij * vijkl * vklmn * vmnab / denom;
-                   }// for J0
-                 }// for n
-               }// for m
-             }// for l
-           }// for k
-         }// for j
-       }// for i
-     }//for b
-   }//for a
 
+   size_t nch = H.modelspace->GetNumberTwoBodyChannels();
+   for (size_t ch=0; ch<nch; ch++)
+   {
+      TwoBodyChannel& tbc = H.modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      arma::uvec hh = tbc.GetKetIndex_hh();
+      arma::uvec pp = tbc.GetKetIndex_pp();
+      const arma::mat& V = H.TwoBody.MatEl.at({ch,ch});
+      arma::mat Vpphh = V.submat(pp,hh);
+      arma::mat Vhhhh = V.submat(hh,hh);
+      arma::mat S = Vpphh;
+      size_t npp = pp.n_rows;
+      size_t nhh = hh.n_rows;
+      for ( size_t ipp=0;ipp<npp; ipp++ )
+      {
+        auto& ab = pp(ipp);
+        Ket& ket_ab = tbc.GetKet(ab);
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        for ( size_t ihh=0;ihh<nhh; ihh++ )
+        {
+           auto& ij = hh(ihh);
+           Ket& ket_ij = tbc.GetKet(ij);
+           size_t i = ket_ij.p;
+           size_t j = ket_ij.q;
+           double e_ijab = GetDenom(H,{i,j},{a,b});
+           S(ipp,ihh) /= e_ijab;
+        }
+      }
+      S *= Vhhhh;
+      for ( size_t ipp=0;ipp<npp; ipp++ )
+      {
+        auto& ab = pp(ipp);
+        Ket& ket_ab = tbc.GetKet(ab);
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        for ( size_t ihh=0;ihh<nhh; ihh++ )
+        {
+           auto& ij = hh(ihh);
+           Ket& ket_ij = tbc.GetKet(ij);
+           size_t i = ket_ij.p;
+           size_t j = ket_ij.q;
+           double e_ijab = GetDenom(H,{i,j},{a,b});
+           S(ipp,ihh) /= e_ijab;
+        }
+      }
+      S *= Vhhhh;
+      for ( size_t ipp=0;ipp<npp; ipp++ )
+      {
+        auto& ab = pp(ipp);
+        Ket& ket_ab = tbc.GetKet(ab);
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        for ( size_t ihh=0;ihh<nhh; ihh++ )
+        {
+           auto& ij = hh(ihh);
+           Ket& ket_ij = tbc.GetKet(ij);
+           size_t i = ket_ij.p;
+           size_t j = ket_ij.q;
+           double e_ijab = GetDenom(H,{i,j},{a,b});
+           S(ipp,ihh) /= e_ijab;
+        }
+      }
+      S *= Vpphh.t(); // multiply by transpose
+      // no factor 1/16 becase we store normalized matrix elements
+      // and we only store kets |pq> with p<=q
+      F5 += (2*J+1) * arma::trace(S);   
+   }
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F5;
 }
@@ -1990,140 +2054,111 @@ double HFMBPT::GetMP4_F6( const Operator& H) const
   return F6;
 }
 
-
-
 // Diagram F7 (as numbered by ADG)   complex conjugate diagram: F14
-// mscheme expression: F7 = 1/16 sum_abcdijkl (v_abij v_ijkl v_cdab v_klcd) / (eps^ij_ab eps^kl_ab eps^kl_cd)
-// agrees.
+// Factorized version, following the same matrix-chain approach as F5.
+// F7 = 1/16 sum_J0 Jhat0^2 sum_{ab,ij,kl,cd} V_abij V_ijkl V_cdab V_klcd
+//                                            / (e_ijab e_klab e_klcd)
+// Chain (spectator pp pair ab through the hole-ladder step, then a
+// particle-ladder step ab->cd with kl as the new spectator):
+//   S1(ab,ij) = V_abij / e_ijab
+//   S2(ab,kl) = [sum_ij S1(ab,ij) V_ijkl] / e_klab
+//   S3(cd,kl) = [sum_ab V_cdab S2(ab,kl)] / e_klcd
+//   F7 = sum_J0 Jhat0^2 sum_{cd,kl} S3(cd,kl) V_klcd(kl,cd)
+// Since diagram 14 is the complex conjugate of this one, no separate
+// routine is needed for F14.
 double HFMBPT::GetMP4_F7( const Operator& H) const
 {
    double t_start = omp_get_wtime();
 
    double F7 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_klab = GetDenom(H,{k,l},{a,b});
-                   double e_klcd = GetDenom(H,{k,l},{c,d});
-                   double denom = e_ijab * e_klab * e_klcd;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ok.j2,ol.j2},{oc.j2,od.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ok.j2,ol.j2},{oc.j2,od.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vijkl = H.TwoBody.GetTBME_J(J0,J0,i,j,k,l);
-                     double vcdab = H.TwoBody.GetTBME_J(J0,J0,c,d,a,b);
-                     double vklcd = H.TwoBody.GetTBME_J(J0,J0,k,l,c,d);
-                     F7 += 1./16 * (2*J0+1) * vabij * vijkl * vcdab * vklcd / denom;
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
 
+   size_t nch = H.modelspace->GetNumberTwoBodyChannels();
+   for (size_t ch=0; ch<nch; ch++)
+   {
+      TwoBodyChannel& tbc = H.modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      arma::uvec hh = tbc.GetKetIndex_hh();
+      arma::uvec pp = tbc.GetKetIndex_pp();
+      const arma::mat& V = H.TwoBody.MatEl.at({ch,ch});
+      arma::mat Vpphh = V.submat(pp,hh);
+      arma::mat Vhhhh = V.submat(hh,hh);
+      arma::mat Vpppp = V.submat(pp,pp);
+      arma::mat S = Vpphh;
+      size_t npp = pp.n_rows;
+      size_t nhh = hh.n_rows;
+
+      // Stage 1: S(ab,ij) = V_abij / e_ijab
+      for ( size_t ipp=0;ipp<npp; ipp++ )
+      {
+        auto& ab = pp(ipp);
+        Ket& ket_ab = tbc.GetKet(ab);
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        for ( size_t ihh=0;ihh<nhh; ihh++ )
+        {
+           auto& ij = hh(ihh);
+           Ket& ket_ij = tbc.GetKet(ij);
+           size_t i = ket_ij.p;
+           size_t j = ket_ij.q;
+           double e_ijab = GetDenom(H,{i,j},{a,b});
+           S(ipp,ihh) /= e_ijab;
+        }
+      }
+
+      // Stage 2: S(ab,kl) = [sum_ij S(ab,ij) V_ijkl] / e_klab
+      S *= Vhhhh;
+      for ( size_t ipp=0;ipp<npp; ipp++ )
+      {
+        auto& ab = pp(ipp);
+        Ket& ket_ab = tbc.GetKet(ab);
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        for ( size_t ihh=0;ihh<nhh; ihh++ )
+        {
+           auto& kl = hh(ihh);
+           Ket& ket_kl = tbc.GetKet(kl);
+           size_t k = ket_kl.p;
+           size_t l = ket_kl.q;
+           double e_klab = GetDenom(H,{k,l},{a,b});
+           S(ipp,ihh) /= e_klab;
+        }
+      }
+
+      // Stage 3: S(cd,kl) = [sum_ab V_cdab S(ab,kl)] / e_klcd
+      S = Vpppp * S;
+      for ( size_t ipp=0;ipp<npp; ipp++ )
+      {
+        auto& cd = pp(ipp);
+        Ket& ket_cd = tbc.GetKet(cd);
+        size_t c = ket_cd.p;
+        size_t d = ket_cd.q;
+        for ( size_t ihh=0;ihh<nhh; ihh++ )
+        {
+           auto& kl = hh(ihh);
+           Ket& ket_kl = tbc.GetKet(kl);
+           size_t k = ket_kl.p;
+           size_t l = ket_kl.q;
+           double e_klcd = GetDenom(H,{k,l},{c,d});
+           S(ipp,ihh) /= e_klcd;
+        }
+      }
+
+      // Close the ring: sum_{cd,kl} S(cd,kl) V_klcd(kl,cd)
+      S *= Vpphh.t();
+      // no factor 1/16 because we store normalized matrix elements
+      // and we only store kets |pq> with p<=q
+      F7 += (2*J+1) * arma::trace(S);
+   }
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F7;
 }
-
-
 
 // Diagram F8 (as numbered by ADG)   complex conjugate diagram: F6
 // mscheme expression: F8 = 1/2 sum_abcijklm (v_abij v_icak v_jklm v_lmbc) / (eps^ij_ab eps^jk_bc eps^lm_bc)
 // agrees.
 double HFMBPT::GetMP4_F8( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F8 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jkbc = GetDenom(H,{j,k},{b,c});
-                   double e_lmbc = GetDenom(H,{l,m},{b,c});
-                   double denom = e_ijab * e_jkbc * e_lmbc;
-                   int phase_exponent = (ob.j2+oj.j2)/2;  // + J0+J1+J2, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oi.j2,oc.j2},{oa.j2,ok.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oi.j2,oc.j2},{oa.j2,ok.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oj.j2,ok.j2},{ol.j2,om.j2},{ob.j2,oc.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oj.j2,ok.j2},{ol.j2,om.j2},{ob.j2,oc.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vicak = H.TwoBody.GetTBME_J(J1,J1,i,c,a,k);
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vjklm = H.TwoBody.GetTBME_J(J2,J2,j,k,l,m);
-                         double vlmbc = H.TwoBody.GetTBME_J(J2,J2,l,m,b,c);
-                         double ninej = H.modelspace->GetNineJ( ob.j2/2., oa.j2/2., J0, oc.j2/2., J1, oi.j2/2., J2, ok.j2/2., oj.j2/2. );
-                         double phase = ( (J0+J1+J2+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                         F8 += 1./2 * phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * ninej * vabij * vicak * vjklm * vlmbc / denom;
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  double F8 =GetMP4_F6(H); // conjugate diagram
   return F8;
 }
 
@@ -2220,6 +2255,188 @@ double HFMBPT::GetMP4_F9( const Operator& H) const
   return F9;
 }
 
+/*
+// Implementation by Claude. It's very wrong.
+// Diagram F9 (as numbered by ADG)
+//
+// Factorized (Pandya-transformed) version. Comparing the AMC-generated
+// "cc" (cross-coupled) form of this diagram,
+//   F9cc = sum_{abcdijkl,J4} Jhat4^2 * Vtilde_baik^{J4} Vtilde_icja^{J4}
+//                                    * Vtilde_jdlc^{J4} Vtilde_lkbd^{J4}
+// against the standard-coupled form (obtained from the original F9 by
+// swapping index order within each vertex and using antisymmetry,
+// V_abik = -V_baik etc.) term by term fixes each Vtilde uniquely:
+//
+//   Vtilde_baik(J4) = sum_J0 (2J0+1) * sixj(jk,jb,J4;ja,ji,J0) * V_baik^{J0J0}
+//   Vtilde_icja(J4) = sum_J1 (2J1+1) * sixj(jc,jj,J4;ja,ji,J1) * V_icja^{J1J1}
+//   Vtilde_jdlc(J4) = sum_J2 (2J2+1) * sixj(jl,jd,J4;jj,jc,J2) * V_jdlc^{J2J2}
+//   Vtilde_lkbd(J4) = sum_J3 (2J3+1) * sixj(jd,jl,J4;jk,jb,J3) * V_lkbd^{J3J3}
+//
+// Each Vtilde is a matrix in the ph-channel space of pairs coupled to
+// J4: Vtilde_baik has rows=(b,k), cols=(a,i); Vtilde_icja has
+// rows=(a,i), cols=(c,j); Vtilde_jdlc has rows=(c,j), cols=(d,l);
+// Vtilde_lkbd has rows=(d,l), cols=(b,k), closing the ring. So
+//   F9 = sum_J4 Jhat4^2 * trace( Vtilde_baik * Vtilde_icja * Vtilde_jdlc * Vtilde_lkbd )
+double HFMBPT::GetMP4_F9( const Operator& H) const
+{
+   double t_start = omp_get_wtime();
+
+   double F9 =0;
+
+   H.modelspace->PreCalculateSixJ();
+
+   int nch_CC = H.modelspace->GetNumberTwoBodyChannels_CC();
+
+   for (int ich_CC=0; ich_CC<nch_CC; ich_CC++)
+   {
+      TwoBodyChannel_CC& tbc_CC = H.modelspace->GetTwoBodyChannel_CC(ich_CC);
+      int J4 = tbc_CC.J;
+      size_t nkets_ph = tbc_CC.GetKetIndex_ph().size();
+
+      // Collect the (particle,hole) orbital for every ph-ket in this
+      // channel once, so all four matrices below share one basis.
+      std::vector<index_t> ph_particle(nkets_ph);
+      std::vector<index_t> ph_hole(nkets_ph);
+      size_t idx=0;
+      for ( auto iket : tbc_CC.GetKetIndex_ph() )
+      {
+        Ket& ket = tbc_CC.GetKet(iket);
+        index_t p = ket.p;
+        index_t q = ket.q;
+        // occ=0 for particles, occ=1 for holes -- pick out which is which.
+        if ( H.modelspace->GetOrbit(p).occ < H.modelspace->GetOrbit(q).occ )
+        {
+          ph_particle[idx] = p;
+          ph_hole[idx] = q;
+        }
+        else
+        {
+          ph_particle[idx] = q;
+          ph_hole[idx] = p;
+        }
+        idx++;
+      }
+
+      arma::mat Vtilde_baik(nkets_ph,nkets_ph,arma::fill::zeros); // rows=(b,k), cols=(a,i)
+      arma::mat Vtilde_icja(nkets_ph,nkets_ph,arma::fill::zeros); // rows=(a,i), cols=(c,j)
+      arma::mat Vtilde_jdlc(nkets_ph,nkets_ph,arma::fill::zeros); // rows=(c,j), cols=(d,l)
+      arma::mat Vtilde_lkbd(nkets_ph,nkets_ph,arma::fill::zeros); // rows=(d,l), cols=(b,k)
+
+      for ( size_t irow=0; irow<nkets_ph; irow++ )
+      {
+        for ( size_t icol=0; icol<nkets_ph; icol++ )
+        {
+          // --- Vtilde_baik(b,k;a,i) ---
+                   double denom = e_ikab * e_jkcb * e_klbd;
+          {
+            index_t b = ph_particle[irow];
+            index_t k = ph_hole[irow];
+            index_t a = ph_particle[icol];
+            index_t i = ph_hole[icol];
+            Orbit& oa = H.modelspace->GetOrbit(a);
+            Orbit& ob = H.modelspace->GetOrbit(b);
+            Orbit& oi = H.modelspace->GetOrbit(i);
+            Orbit& ok = H.modelspace->GetOrbit(k);
+            double ja=oa.j2/2., jb=ob.j2/2., ji=oi.j2/2., jk=ok.j2/2.;
+            int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,ok.j2}} ) /2;
+            int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,ok.j2}} ) /2;
+            double val = 0;
+            for (int J0=J0_min; J0<=J0_max; J0++)
+            {
+              double sixj = H.modelspace->GetSixJ(jk,jb,J4,ja,ji,J0);
+              double v = H.TwoBody.GetTBME_J(J0,J0,b,a,i,k);
+              val += (2*J0+1) * sixj * v;
+            }
+            Vtilde_baik(irow,icol) = val / e_ikab;
+          }
+
+          // --- Vtilde_icja(a,i;c,j) ---
+          {
+            index_t a = ph_particle[irow];
+            index_t i = ph_hole[irow];
+            index_t c = ph_particle[icol];
+            index_t j = ph_hole[icol];
+            Orbit& oa = H.modelspace->GetOrbit(a);
+            Orbit& oi = H.modelspace->GetOrbit(i);
+            Orbit& oc = H.modelspace->GetOrbit(c);
+            Orbit& oj = H.modelspace->GetOrbit(j);
+            double ja=oa.j2/2., ji=oi.j2/2., jc=oc.j2/2., jj=oj.j2/2.;
+            int J1_min = AngMom::Jmin( {{oi.j2,oc.j2},{oj.j2,oa.j2}} ) /2;
+            int J1_max = AngMom::Jmax( {{oi.j2,oc.j2},{oj.j2,oa.j2}} ) /2;
+            double val = 0;
+            for (int J1=J1_min; J1<=J1_max; J1++)
+            {
+              double sixj = H.modelspace->GetSixJ(jc,jj,J4,ja,ji,J1);
+              double v = H.TwoBody.GetTBME_J(J1,J1,i,c,j,a);
+              val += (2*J1+1) * sixj * v;
+            }
+            Vtilde_icja(irow,icol) = val;
+          }
+
+          // --- Vtilde_jdlc(c,j;d,l) ---
+          {
+            index_t c = ph_particle[irow];
+            index_t j = ph_hole[irow];
+            index_t d = ph_particle[icol];
+            index_t l = ph_hole[icol];
+            Orbit& oc = H.modelspace->GetOrbit(c);
+            Orbit& oj = H.modelspace->GetOrbit(j);
+            Orbit& od = H.modelspace->GetOrbit(d);
+            Orbit& ol = H.modelspace->GetOrbit(l);
+            double jc=oc.j2/2., jj=oj.j2/2., jd=od.j2/2., jl=ol.j2/2.;
+            int J2_min = AngMom::Jmin( {{oj.j2,od.j2},{ol.j2,oc.j2}} ) /2;
+            int J2_max = AngMom::Jmax( {{oj.j2,od.j2},{ol.j2,oc.j2}} ) /2;
+            double val = 0;
+            for (int J2=J2_min; J2<=J2_max; J2++)
+            {
+              double sixj = H.modelspace->GetSixJ(jl,jd,J4,jj,jc,J2);
+              double v = H.TwoBody.GetTBME_J(J2,J2,j,d,l,c);
+              val += (2*J2+1) * sixj * v;
+            }
+            Vtilde_jdlc(irow,icol) = val;
+          }
+
+                   double e_jkcb = GetDenom(H,{j,k},{c,b});
+          // --- Vtilde_lkbd(d,l;b,k) ---
+          {
+            index_t d = ph_particle[irow];
+            index_t l = ph_hole[irow];
+            index_t b = ph_particle[icol];
+            index_t k = ph_hole[icol];
+            Orbit& od = H.modelspace->GetOrbit(d);
+            Orbit& ol = H.modelspace->GetOrbit(l);
+            Orbit& ob = H.modelspace->GetOrbit(b);
+            Orbit& ok = H.modelspace->GetOrbit(k);
+            double e_klbd = GetDenom(H,{k,l},{b,d});
+            double jd=od.j2/2., jl=ol.j2/2., jb=ob.j2/2., jk=ok.j2/2.;
+            int J3_min = AngMom::Jmin( {{ok.j2,ol.j2},{ob.j2,od.j2}} ) /2;
+            int J3_max = AngMom::Jmax( {{ok.j2,ol.j2},{ob.j2,od.j2}} ) /2;
+            double val = 0;
+            for (int J3=J3_min; J3<=J3_max; J3++)
+            {
+              double sixj = H.modelspace->GetSixJ(jd,jl,J4,jk,jb,J3);
+              double v = H.TwoBody.GetTBME_J(J3,J3,l,k,b,d);
+              val += (2*J3+1) * sixj * v;
+            }
+            Vtilde_lkbd(irow,icol) = val / e_klbd;
+          }
+
+        }// for icol
+      }// for irow
+      std::cout << " ich_CC = " << ich_CC << "  four Pandya-transformed matrices: " << std::endl
+                << Vtilde_baik << std::endl << std::endl
+                << Vtilde_icja << std::endl << std::endl
+                << Vtilde_jdlc << std::endl << std::endl
+                << Vtilde_lkbd << std::endl;
+
+      F9 += (2*J4+1) * arma::trace( Vtilde_baik * Vtilde_icja * Vtilde_jdlc * Vtilde_lkbd );
+
+   }// for ich_CC
+
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  return F9;
+}
+*/
 
 
 // Diagram F10 (as numbered by ADG)
@@ -2418,15 +2635,17 @@ double HFMBPT::GetMP4_F12( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F12 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
+   std::vector<size_t> part_vec;
+   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
+   #pragma omp parallel for  collapse(3) reduction(+:F12)
+   for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
+     for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
+       for ( auto c: part_vec )
        {
+         Orbit& ob = H.modelspace->GetOrbit(b);
+         Orbit& oa = H.modelspace->GetOrbit(a);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -2583,61 +2802,9 @@ double HFMBPT::GetMP4_F13( const Operator& H) const
 // agrees.
 double HFMBPT::GetMP4_F14( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F14 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_ijcd = GetDenom(H,{i,j},{c,d});
-                   double e_klcd = GetDenom(H,{k,l},{c,d});
-                   double denom = e_ijab * e_ijcd * e_klcd;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,od.j2},{ok.j2,ol.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,od.j2},{ok.j2,ol.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vcdab = H.TwoBody.GetTBME_J(J0,J0,c,d,a,b);
-                     double vijkl = H.TwoBody.GetTBME_J(J0,J0,i,j,k,l);
-                     double vklcd = H.TwoBody.GetTBME_J(J0,J0,k,l,c,d);
-                     F14 += 1./16 * (2*J0+1) * vabij * vcdab * vijkl * vklcd / denom;
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F14;
+   double F14 = GetMP4_F7(H); // conjugate diagram
+   return F14;
 }
-
 
 
 // Diagram F15 (as numbered by ADG)   complex conjugate diagram: F13
@@ -2645,135 +2812,111 @@ double HFMBPT::GetMP4_F14( const Operator& H) const
 // agrees.
 double HFMBPT::GetMP4_F15( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
 
-   double F15 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto e: H.modelspace->particles )
-           {
-             Orbit& oe = H.modelspace->GetOrbit(e);
-             for ( auto i: H.modelspace->holes )
-             {
-               Orbit& oi = H.modelspace->GetOrbit(i);
-               for ( auto j: H.modelspace->holes )
-               {
-                 Orbit& oj = H.modelspace->GetOrbit(j);
-                 for ( auto k: H.modelspace->holes )
-                 {
-                   Orbit& ok = H.modelspace->GetOrbit(k);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_ijcd = GetDenom(H,{i,j},{c,d});
-                   double e_jkde = GetDenom(H,{j,k},{d,e});
-                   double denom = e_ijab * e_ijcd * e_jkde;
-                   int phase_exponent = (od.j2+oj.j2)/2;  // + J0+J1+J2, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,od.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,od.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vcdab = H.TwoBody.GetTBME_J(J0,J0,c,d,a,b);
-                     int J1_min = AngMom::Jmin( {{oi.j2,oe.j2},{oc.j2,ok.j2}} ) /2;
-                     int J1_max = AngMom::Jmax( {{oi.j2,oe.j2},{oc.j2,ok.j2}} ) /2;
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vieck = H.TwoBody.GetTBME_J(J1,J1,i,e,c,k);
-                       int J2_min = AngMom::Jmin( {{oj.j2,ok.j2},{od.j2,oe.j2}} ) /2;
-                       int J2_max = AngMom::Jmax( {{oj.j2,ok.j2},{od.j2,oe.j2}} ) /2;
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vjkde = H.TwoBody.GetTBME_J(J2,J2,j,k,d,e);
-                         double ninej = H.modelspace->GetNineJ( oj.j2/2., oi.j2/2., J0, ok.j2/2., J1, oc.j2/2., J2, oe.j2/2., od.j2/2. );
-                         double phase = ( (J0+J1+J2+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                         F15 += 1./2 * phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * ninej * vabij * vcdab * vieck * vjkde / denom;
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for k
-               }// for j
-             }// for i
-           }//for e
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F15;
+   double F15 = GetMP4_F13(H); // conjugate diagram
+   return F15;
 }
 
 
 
 // Diagram F16 (as numbered by ADG)
-// mscheme expression: F16 = 1/16 sum_abcdefij (v_abij v_cdab v_efcd v_ijef) / (eps^ij_ab eps^ij_cd eps^ij_ef)
-// agrees.
+// Factorized version, following the same matrix-chain approach as F5,
+// but with the hole pair ij as the spectator throughout, and a chain
+// of three particle-particle ladder steps ab->cd->ef.
+// F16 = 1/16 sum_J0 Jhat0^2 sum_{ab,cd,ef,ij} V_abij V_cdab V_efcd V_ijef
+//                                             / (e_ijab e_ijcd e_ijef)
+// Chain:
+//   S1(ij,ab) = V_abij / e_ijab
+//   S2(ij,cd) = [sum_ab S1(ij,ab) V_abcd] / e_ijcd
+//   S3(ij,ef) = [sum_cd S2(ij,cd) V_cdef] / e_ijef
+//   F16 = sum_J0 Jhat0^2 sum_{ij,ef} S3(ij,ef) V_ijef(ij,ef)
 double HFMBPT::GetMP4_F16( const Operator& H) const
 {
    double t_start = omp_get_wtime();
 
    double F16 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto e: H.modelspace->particles )
-           {
-             Orbit& oe = H.modelspace->GetOrbit(e);
-             for ( auto f: H.modelspace->particles )
-             {
-               Orbit& of = H.modelspace->GetOrbit(f);
-               for ( auto i: H.modelspace->holes )
-               {
-                 Orbit& oi = H.modelspace->GetOrbit(i);
-                 for ( auto j: H.modelspace->holes )
-                 {
-                   Orbit& oj = H.modelspace->GetOrbit(j);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_ijcd = GetDenom(H,{i,j},{c,d});
-                   double e_ijef = GetDenom(H,{i,j},{e,f});
-                   double denom = e_ijab * e_ijcd * e_ijef;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,od.j2},{oe.j2,of.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,od.j2},{oe.j2,of.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vcdab = H.TwoBody.GetTBME_J(J0,J0,c,d,a,b);
-                     double vefcd = H.TwoBody.GetTBME_J(J0,J0,e,f,c,d);
-                     double vijef = H.TwoBody.GetTBME_J(J0,J0,i,j,e,f);
-                     F16 += 1./16 * (2*J0+1) * vabij * vcdab * vefcd * vijef / denom;
-                   }// for J0
-                 }// for j
-               }// for i
-             }//for f
-           }//for e
-         }//for d
-       }//for c
-     }//for b
-   }//for a
 
+   size_t nch = H.modelspace->GetNumberTwoBodyChannels();
+   for (size_t ch=0; ch<nch; ch++)
+   {
+      TwoBodyChannel& tbc = H.modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      arma::uvec hh = tbc.GetKetIndex_hh();
+      arma::uvec pp = tbc.GetKetIndex_pp();
+      const arma::mat& V = H.TwoBody.MatEl.at({ch,ch});
+      arma::mat Vpphh = V.submat(pp,hh);
+      arma::mat Vpppp = V.submat(pp,pp);
+      arma::mat S = Vpphh.t();  // S(ij,ab) = V_abij
+      size_t npp = pp.n_rows;
+      size_t nhh = hh.n_rows;
+
+      // Stage 1: S(ij,ab) = V_abij / e_ijab
+      for ( size_t ihh=0;ihh<nhh; ihh++ )
+      {
+        auto& ij = hh(ihh);
+        Ket& ket_ij = tbc.GetKet(ij);
+        size_t i = ket_ij.p;
+        size_t j = ket_ij.q;
+        for ( size_t ipp=0;ipp<npp; ipp++ )
+        {
+           auto& ab = pp(ipp);
+           Ket& ket_ab = tbc.GetKet(ab);
+           size_t a = ket_ab.p;
+           size_t b = ket_ab.q;
+           double e_ijab = GetDenom(H,{i,j},{a,b});
+           S(ihh,ipp) /= e_ijab;
+        }
+      }
+
+      // Stage 2: S(ij,cd) = [sum_ab S(ij,ab) V_abcd] / e_ijcd
+      S = S * Vpppp;
+      for ( size_t ihh=0;ihh<nhh; ihh++ )
+      {
+        auto& ij = hh(ihh);
+        Ket& ket_ij = tbc.GetKet(ij);
+        size_t i = ket_ij.p;
+        size_t j = ket_ij.q;
+        for ( size_t ipp=0;ipp<npp; ipp++ )
+        {
+           auto& cd = pp(ipp);
+           Ket& ket_cd = tbc.GetKet(cd);
+           size_t c = ket_cd.p;
+           size_t d = ket_cd.q;
+           double e_ijcd = GetDenom(H,{i,j},{c,d});
+           S(ihh,ipp) /= e_ijcd;
+        }
+      }
+
+      // Stage 3: S(ij,ef) = [sum_cd S(ij,cd) V_cdef] / e_ijef
+      S = S * Vpppp;
+      for ( size_t ihh=0;ihh<nhh; ihh++ )
+      {
+        auto& ij = hh(ihh);
+        Ket& ket_ij = tbc.GetKet(ij);
+        size_t i = ket_ij.p;
+        size_t j = ket_ij.q;
+        for ( size_t ipp=0;ipp<npp; ipp++ )
+        {
+           auto& ef = pp(ipp);
+           Ket& ket_ef = tbc.GetKet(ef);
+           size_t e = ket_ef.p;
+           size_t f = ket_ef.q;
+           double e_ijef = GetDenom(H,{i,j},{e,f});
+           S(ihh,ipp) /= e_ijef;
+        }
+      }
+
+      // Close the ring: sum_{ij,ef} S(ij,ef) V_ijef(ij,ef)
+      S = S * Vpphh;
+      // no factor 1/16 because we store normalized matrix elements
+      // and we only store kets |pq> with p<=q
+      F16 += (2*J+1) * arma::trace(S);
+   }
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F16;
 }
+
+
 
 
 
@@ -2919,279 +3062,6 @@ double HFMBPT::GetMP4_F18( const Operator& H) const
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F18;
 }
-
-/*
-// Diagram F18 (as numbered by ADG)
-// mscheme expression: F18 = 1/2 sum_abcijklm (v_abij v_ickl v_jkcm v_lmab) / (eps^ij_ab eps^jkl_cab eps^lm_ab)
-// Minus sign error due to bug in AMC code
-double HFMBPT::GetMP4_F18( const Operator& H) const
-{
-   double t_start = omp_get_wtime();
-
-   double F18 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F18)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jklcab = GetDenom(H,{j,k,l},{c,a,b});
-                   double e_lmab = GetDenom(H,{l,m},{a,b});
-                   double denom = e_ijab * e_jklcab * e_lmab;
-                   int phase_exponent = (oc.j2+oj.j2+ok.j2+ol.j2)/2;  // + J0, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vlmab = H.TwoBody.GetTBME_J(J0,J0,l,m,a,b);
-                     double phase = ( (J0+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vickl = H.TwoBody.GetTBME_J(J1,J1,i,c,k,l);
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vjkcm = H.TwoBody.GetTBME_J(J2,J2,j,k,c,m);
-                         double ninej = H.modelspace->GetNineJ( oj.j2/2., oi.j2/2., J0, ok.j2/2., J1, ol.j2/2., J2, oc.j2/2., om.j2/2. );
-                         F18 -= 1./2 * phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * ninej * vabij * vickl * vjkcm * vlmab / denom;
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F18;
-}
-*/
-
-/*
-double HFMBPT::GetMP4_F18( const Operator& H) const
-{
-   double t_start = omp_get_wtime();
-
-   double F18 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F18)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-               if ( (oa.l+ob.l+oi.l+oj.l)%2 !=0) continue;
-               if ( (oa.tz2+ob.tz2) != (oi.tz2+oj.tz2) ) continue;
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                   if ( (oi.l+oc.l+ol.l+ok.l)%2 !=0) continue;
-                   if ( (oi.tz2+oc.tz2) != (ol.tz2+ok.tz2) ) continue;
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-                   if ( (oa.l+ob.l+ol.l+om.l)%2 !=0) continue;
-                   if ( (oa.tz2+ob.tz2) != (ol.tz2+om.tz2) ) continue;
-                   if ( (oj.l+ok.l+oc.l+om.l)%2 !=0) continue;
-                   if ( (oj.tz2+ok.tz2) != (oc.tz2+om.tz2) ) continue;
-
-
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jklcab = GetDenom(H,{j,k,l},{c,a,b});
-                   double e_lmab = GetDenom(H,{l,m},{a,b});
-                   double denom = e_ijab * e_jklcab * e_lmab;
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ol.j2,om.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oi.j2,ol.j2},{om.j2,oj.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oi.j2,ol.j2},{om.j2,oj.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oi.j2,oc.j2},{ok.j2,ol.j2}} ) /2;
-                   int J3_min = AngMom::Jmin( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   int J3_max = AngMom::Jmax( {{oj.j2,ok.j2},{oc.j2,om.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vmlab = H.TwoBody.GetTBME_J(J0,J0,m,l,a,b);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                        double vbar_ilkc=0;
-                        double vbar_kcmj=0;
-                        for ( int J2=J2_min; J2<=J2_max; J2++)
-                        {
-                           double sixj1 = H.modelspace->GetSixJ(oi.j2/2.,ol.j2/2.,J1, ok.j2/2.,oc.j2/2.,J2);
-                           vbar_ilkc -= (2*J2+1) * sixj1 * H.TwoBody.GetTBME_J(J2,J2,i,c,k,l);
-                        }
-                        for ( int J3=J3_min; J3<=J3_max; J3++)
-                        {
-                           double sixj2 = H.modelspace->GetSixJ(ok.j2/2.,oc.j2/2.,J1, om.j2/2.,oj.j2/2.,J3);
-                           vbar_kcmj -= (2*J3+1) * sixj2 * H.TwoBody.GetTBME_J(J3,J3,k,j,m,c);
-                        }
-                        double sixj3 = H.modelspace->GetSixJ(om.j2/2.,ol.j2/2.,J0,oi.j2/2.,oj.j2/2.,J1);
-                        F18 -= 1./2 * (2*J0+1) * (2*J1+1) * sixj3 * vabij * vmlab * vbar_ilkc * vbar_kcmj / denom;
-                     }// for J1
-                   }// for J0
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F18;
-}
-*/
-
-/*
-///MSCHEME version will be SLOW...
-double HFMBPT::GetMP4_F18( const Operator& H) const
-{
-   double t_start = omp_get_wtime();
-   UnitTest ut(*(H.modelspace));
-
-   double F18 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F18)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto i: H.modelspace->holes )
-         {
-           Orbit& oi = H.modelspace->GetOrbit(i);
-           for ( auto j: H.modelspace->holes )
-           {
-             Orbit& oj = H.modelspace->GetOrbit(j);
-               if ( (oa.l+ob.l+oi.l+oj.l)%2 !=0) continue;
-               if ( (oa.tz2+ob.tz2) != (oi.tz2+oj.tz2) ) continue;
-             for ( auto k: H.modelspace->holes )
-             {
-               Orbit& ok = H.modelspace->GetOrbit(k);
-               for ( auto l: H.modelspace->holes )
-               {
-                 Orbit& ol = H.modelspace->GetOrbit(l);
-                   if ( (oi.l+oc.l+ol.l+ok.l)%2 !=0) continue;
-                   if ( (oi.tz2+oc.tz2) != (ol.tz2+ok.tz2) ) continue;
-                 for ( auto m: H.modelspace->holes )
-                 {
-                   Orbit& om = H.modelspace->GetOrbit(m);
-
-                   if ( (oa.l+ob.l+ol.l+om.l)%2 !=0) continue;
-                   if ( (oa.tz2+ob.tz2) != (ol.tz2+om.tz2) ) continue;
-                   if ( (oj.l+ok.l+oc.l+om.l)%2 !=0) continue;
-                   if ( (oj.tz2+ok.tz2) != (oc.tz2+om.tz2) ) continue;
-
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_jklcab = GetDenom(H,{j,k,l},{c,a,b});
-                   double e_lmab = GetDenom(H,{l,m},{a,b});
-                   double denom = e_ijab * e_jklcab * e_lmab;
-                   for (int two_ma=-oa.j2; two_ma<=oa.j2; two_ma+=2)
-                   {
-                   for (int two_mb=-ob.j2; two_mb<=ob.j2; two_mb+=2)
-                   {
-                   for (int two_mc=-oc.j2; two_mc<=oc.j2; two_mc+=2)
-                   {
-                   for (int two_mi=-oi.j2; two_mi<=oi.j2; two_mi+=2)
-                   {
-                   for (int two_mj=-oj.j2; two_mj<=oj.j2; two_mj+=2)
-                   {
-                      if ( (two_mi + two_mj) != (two_ma+two_mb) ) continue;
-                   for (int two_mk=-ok.j2; two_mk<=ok.j2; two_mk+=2)
-                   {
-                   for (int two_ml=-ol.j2; two_ml<=ol.j2; two_ml+=2)
-                   {
-                      if ( (two_mi + two_mc) != (two_mk+two_ml) ) continue;
-                   for (int two_mm=-om.j2; two_mm<=om.j2; two_mm+=2)
-                   {
-                      if ( (two_ml + two_mm) != (two_ma+two_mb) ) continue;
-                      if ( (two_mj + two_mk) != (two_mc+two_mm) ) continue;
-
-//                      double vabij = ut.GetMschemeMatrixElement_2b( H, a, two_ma, b, two_mb, i, two_mi, j, two_mj );
-//                      double vlmab = ut.GetMschemeMatrixElement_2b( H, l, two_ml, m, two_mm , a, two_ma, b, two_mb);
-//                      double vickl = ut.GetMschemeMatrixElement_2b( H, i, two_mi, c, two_mc , k, two_mk, l, two_ml);
-//                      double vjkcm = ut.GetMschemeMatrixElement_2b( H, j, two_mj, k, two_mk , c, two_mc, m, two_mm);
-//                      F18 += 1./2 * vabij * vickl * vjkcm * vlmab / denom;
-                      double vabij = ut.GetMschemeMatrixElement_2b( H, a, two_ma, b, two_mb, i, two_mi, j, two_mj );
-                      double vickl = ut.GetMschemeMatrixElement_2b( H, i, two_mi, c, two_mc, k, two_mk, l, two_ml);
-                      double vkjmc = ut.GetMschemeMatrixElement_2b( H, k, two_mk, j, two_mj, m, two_mm, c, two_mc );
-                      double vmlab = ut.GetMschemeMatrixElement_2b( H, m, two_mm, l, two_ml, a, two_ma, b, two_mb);
-                      F18 -= 1./2 * vabij * vickl * vkjmc * vmlab / denom;
-                   }
-                   }
-                   }
-                   }
-                   }
-                   }
-                   }
-                   }
-                 }// for m
-               }// for l
-             }// for k
-           }// for j
-         }// for i
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F18;
-}
-*/
 
 
 
@@ -3617,6 +3487,7 @@ double HFMBPT::GetMP4_F24( const Operator& H) const
 //   #pragma omp parallel for
    for ( auto a : H.modelspace->particles )
    {
+     double a_sum = 0;
      Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: H.modelspace->particles )
      {
@@ -3659,6 +3530,7 @@ double HFMBPT::GetMP4_F24( const Operator& H) const
                        double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
                        double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
                        F24 += 1./4 * phase * (2*J0+1) * (2*J1+1) / (od.j2+1) * vabij * vickl * vjdab * vklcd / denom;
+                       a_sum += 1./4 * phase * (2*J0+1) * (2*J1+1) / (od.j2+1) * vabij * vickl * vjdab * vklcd / denom;
                      }// for J1
                    }// for J0
                  }// for l
@@ -3668,179 +3540,24 @@ double HFMBPT::GetMP4_F24( const Operator& H) const
          }//for d
        }//for c
      }//for b
+     std::cout << "    " << a << "  " << a_sum << "  " << oa.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return F24;
 }
 
-
-
-// Diagram F25 (as numbered by ADG)   complex conjugate diagram: F21
-// mscheme expression: F25 = -sum_abcdijkl (v_abik v_cdaj v_ijcl v_klbd) / (eps^ik_ab eps^ijk_cbd eps^kl_bd)
-// agrees.
 double HFMBPT::GetMP4_F25( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F25 =0;
-//   #pragma omp parallel for
-   std::vector<size_t> part_vec;
-   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
-   #pragma omp parallel for  collapse(3) reduction(+:F25)
-   for ( auto a : part_vec )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: part_vec )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: part_vec )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ikab = GetDenom(H,{i,k},{a,b});
-                   double e_ijkcbd = GetDenom(H,{i,j,k},{c,b,d});
-                   double e_klbd = GetDenom(H,{k,l},{b,d});
-                   double denom = e_ikab * e_ijkcbd * e_klbd;
-                   int phase_exponent = (oa.j2+ob.j2+oc.j2+od.j2+oi.j2+oj.j2+ok.j2+ol.j2)/2;  // + J0+J1+J2+J3, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,ok.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,ok.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oc.j2,od.j2},{oa.j2,oj.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oc.j2,od.j2},{oa.j2,oj.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oi.j2,oj.j2},{oc.j2,ol.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oi.j2,oj.j2},{oc.j2,ol.j2}} ) /2;
-                   int J3_min = AngMom::Jmin( {{ok.j2,ol.j2},{ob.j2,od.j2}} ) /2;
-                   int J3_max = AngMom::Jmax( {{ok.j2,ol.j2},{ob.j2,od.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabik = H.TwoBody.GetTBME_J(J0,J0,a,b,i,k);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vcdaj = H.TwoBody.GetTBME_J(J1,J1,c,d,a,j);
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vijcl = H.TwoBody.GetTBME_J(J2,J2,i,j,c,l);
-                         for (int J3=J3_min; J3<=J3_max; J3++)
-                         {
-                           double vklbd = H.TwoBody.GetTBME_J(J3,J3,k,l,b,d);
-                           double phase = ( (J0+J1+J2+J3+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                           // J4 is tied to two single-particle pairs and to J1,J2 directly.
-                           int J4_min = AngMom::Jmin( {{ok.j2,ob.j2},{od.j2,ol.j2},{2*J1,2*J2}} ) /2;
-                           int J4_max = AngMom::Jmax( {{ok.j2,ob.j2},{od.j2,ol.j2},{2*J1,2*J2}} ) /2;
-                           for (int J4=J4_min; J4<=J4_max; J4++)
-                           {
-                             double sixj1 = H.modelspace->GetSixJ( ok.j2/2., ob.j2/2., J4, oa.j2/2., oi.j2/2., J0 );
-                             double sixj2 = H.modelspace->GetSixJ( J2, J1, J4, oa.j2/2., oi.j2/2., oj.j2/2. );
-                             double sixj3 = H.modelspace->GetSixJ( od.j2/2., ol.j2/2., J4, ok.j2/2., ob.j2/2., J3 );
-                             double sixj4 = H.modelspace->GetSixJ( J1, J2, J4, ol.j2/2., od.j2/2., oc.j2/2. );
-                             F25 += -phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * (2*J3+1) * (2*J4+1)
-                                    * sixj1 * sixj2 * sixj3 * sixj4 * vabik * vcdaj * vijcl * vklbd / denom;
-                           }// for J4
-                         }// for J3
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F25;
+   double F25 = GetMP4_F21(H); // conjugate diagram
+   return F25;
 }
-
-
-
-// Diagram F26 (as numbered by ADG)   complex conjugate diagram: F22
-// mscheme expression: F26 = 1/2 sum_abcdijkl (v_abij v_cdak v_ijcl v_klbd) / (eps^ij_ab eps^ijk_cbd eps^kl_bd)
-// Off by a minus sign. not sure why
 double HFMBPT::GetMP4_F26( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F26 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_ijkcbd = GetDenom(H,{i,j,k},{c,b,d});
-                   double e_klbd = GetDenom(H,{k,l},{b,d});
-                   double denom = e_ijab * e_ijkcbd * e_klbd;
-                   int phase_exponent = (ob.j2+ok.j2)/2;  // + J0+J1, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,ol.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{oc.j2,ol.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oc.j2,od.j2},{oa.j2,ok.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oc.j2,od.j2},{oa.j2,ok.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{ok.j2,ol.j2},{ob.j2,od.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{ok.j2,ol.j2},{ob.j2,od.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vijcl = H.TwoBody.GetTBME_J(J0,J0,i,j,c,l);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vcdak = H.TwoBody.GetTBME_J(J1,J1,c,d,a,k);
-                       double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vklbd = H.TwoBody.GetTBME_J(J2,J2,k,l,b,d);
-                         double ninej = H.modelspace->GetNineJ( ob.j2/2., oa.j2/2., J0, od.j2/2., J1, oc.j2/2., J2, ok.j2/2., ol.j2/2. );
-                         F26 -= 1./2 * phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * ninej * vabij * vcdak * vijcl * vklbd / denom;
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F26;
+   double F26 = GetMP4_F22(H); // conjugate diagram
+   return F26;
 }
+
 
 
 
@@ -3853,6 +3570,10 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
 
    double F27 =0;
 //   #pragma omp parallel for
+             for ( auto i: H.modelspace->holes )
+             {
+               double a_sum=0;
+               Orbit& oi = H.modelspace->GetOrbit(i);
    for ( auto a : H.modelspace->particles )
    {
      Orbit& oa = H.modelspace->GetOrbit(a);
@@ -3869,9 +3590,9 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
            {
              Orbit& oe = H.modelspace->GetOrbit(e);
              if ( oe.j2 != oa.j2) continue;
-             for ( auto i: H.modelspace->holes )
-             {
-               Orbit& oi = H.modelspace->GetOrbit(i);
+//             for ( auto i: H.modelspace->holes )
+//             {
+//               Orbit& oi = H.modelspace->GetOrbit(i);
                for ( auto j: H.modelspace->holes )
                {
                  Orbit& oj = H.modelspace->GetOrbit(j);
@@ -3897,6 +3618,7 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
                        double viecd = H.TwoBody.GetTBME_J(J1,J1,i,e,c,d);
                        double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
                        F27 -= 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabjk * vcdai * viecd * vjkbe / denom;
+                       a_sum -= 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabjk * vcdai * viecd * vjkbe / denom;
                      }// for J1
                    }// for J0
                  }// for k
@@ -3906,6 +3628,7 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
          }//for d
        }//for c
      }//for b
+     std::cout << "    " << i << "  " << a_sum << "  " << oi.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
@@ -3987,151 +3710,16 @@ double HFMBPT::GetMP4_F28( const Operator& H) const
   return F28;
 }
 
-
-
-// Diagram F29 (as numbered by ADG)   complex conjugate diagram: F23
-// mscheme expression: F29 = 1/2 sum_abcdijkl (v_abik v_cdaj v_ijbl v_klcd) / (eps^ik_ab eps^ijk_bcd eps^kl_cd)
-// minus sign was missing. fixed it.
 double HFMBPT::GetMP4_F29( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F29 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   double e_ikab = GetDenom(H,{i,k},{a,b});
-                   double e_ijkbcd = GetDenom(H,{i,j,k},{b,c,d});
-                   double e_klcd = GetDenom(H,{k,l},{c,d});
-                   double denom = e_ikab * e_ijkbcd * e_klcd;
-                   int phase_exponent = (ob.j2+ok.j2)/2;  // + J1+J2, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,ok.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,ok.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oc.j2,od.j2},{oa.j2,oj.j2},{ok.j2,ol.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oc.j2,od.j2},{oa.j2,oj.j2},{ok.j2,ol.j2}} ) /2;
-                   int J2_min = AngMom::Jmin( {{oi.j2,oj.j2},{ob.j2,ol.j2}} ) /2;
-                   int J2_max = AngMom::Jmax( {{oi.j2,oj.j2},{ob.j2,ol.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabik = H.TwoBody.GetTBME_J(J0,J0,a,b,i,k);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vcdaj = H.TwoBody.GetTBME_J(J1,J1,c,d,a,j);
-                       double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
-                       for (int J2=J2_min; J2<=J2_max; J2++)
-                       {
-                         double vijbl = H.TwoBody.GetTBME_J(J2,J2,i,j,b,l);
-                         double ninej = H.modelspace->GetNineJ( oa.j2/2., ob.j2/2., J0, oj.j2/2., J2, oi.j2/2., J1, ol.j2/2., ok.j2/2. );
-                         double phase = ( (J1+J2+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                         F29 -= 1./2 * phase * (2*J0+1) * (2*J1+1) * (2*J2+1) * ninej * vabik * vcdaj * vijbl * vklcd / denom;
-                       }// for J2
-                     }// for J1
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F29;
+   double F29 = GetMP4_F23(H); // conjugate diagram
+   return F29;
 }
-
-
-
-// Diagram F30 (as numbered by ADG)   complex conjugate diagram: F24
-// mscheme expression: F30 = -1/4 sum_abcdijkl (v_abij v_cdak v_ijbl v_klcd) / (eps^ij_ab eps^ijk_bcd eps^kl_cd)
-// missing minus sign? yep. fixed it.
 double HFMBPT::GetMP4_F30( const Operator& H) const
 {
-   double t_start = omp_get_wtime();
-
-   double F30 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
-   {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
-     {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
-       {
-         Orbit& oc = H.modelspace->GetOrbit(c);
-         for ( auto d: H.modelspace->particles )
-         {
-           Orbit& od = H.modelspace->GetOrbit(d);
-           for ( auto i: H.modelspace->holes )
-           {
-             Orbit& oi = H.modelspace->GetOrbit(i);
-             for ( auto j: H.modelspace->holes )
-             {
-               Orbit& oj = H.modelspace->GetOrbit(j);
-               for ( auto k: H.modelspace->holes )
-               {
-                 Orbit& ok = H.modelspace->GetOrbit(k);
-                 for ( auto l: H.modelspace->holes )
-                 {
-                   Orbit& ol = H.modelspace->GetOrbit(l);
-                   if ( ol.j2 != oa.j2) continue;
-                   double e_ijab = GetDenom(H,{i,j},{a,b});
-                   double e_ijkbcd = GetDenom(H,{i,j,k},{b,c,d});
-                   double e_klcd = GetDenom(H,{k,l},{c,d});
-                   double denom = e_ijab * e_ijkbcd * e_klcd;
-                   int phase_exponent = (ob.j2+ok.j2)/2;  // + J0+J1, added inside the loops below
-                   int J0_min = AngMom::Jmin( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ob.j2,ol.j2}} ) /2;
-                   int J0_max = AngMom::Jmax( {{oa.j2,ob.j2},{oi.j2,oj.j2},{ob.j2,ol.j2}} ) /2;
-                   int J1_min = AngMom::Jmin( {{oc.j2,od.j2},{oa.j2,ok.j2},{ok.j2,ol.j2}} ) /2;
-                   int J1_max = AngMom::Jmax( {{oc.j2,od.j2},{oa.j2,ok.j2},{ok.j2,ol.j2}} ) /2;
-                   for (int J0=J0_min; J0<=J0_max; J0++)
-                   {
-                     double vabij = H.TwoBody.GetTBME_J(J0,J0,a,b,i,j);
-                     double vijbl = H.TwoBody.GetTBME_J(J0,J0,i,j,b,l);
-                     for (int J1=J1_min; J1<=J1_max; J1++)
-                     {
-                       double vcdak = H.TwoBody.GetTBME_J(J1,J1,c,d,a,k);
-                       double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
-                       double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
-                       F30 += 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabij * vcdak * vijbl * vklcd / denom;
-                     }// for J1
-                   }// for J0
-                 }// for l
-               }// for k
-             }// for j
-           }// for i
-         }//for d
-       }//for c
-     }//for b
-   }//for a
-
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
-  return F30;
+   double F30 = GetMP4_F24(H); // conjugate diagram
+   return F30;
 }
-
 
 
 // Diagram F31 (as numbered by ADG)
@@ -4368,7 +3956,6 @@ double HFMBPT::GetMP4_F33( const Operator& H) const
 }
 
 
-
 // Diagram F34 (as numbered by ADG)
 // mscheme expression: F34 = 1/16 sum_abcdijkl (v_abij v_cdkl v_ijcd v_klab) / (eps^ij_ab eps^ijkl_cdab eps^kl_ab)
 // agrees.
@@ -4430,7 +4017,6 @@ double HFMBPT::GetMP4_F34( const Operator& H) const
 }
 
 
-
 // Diagram F35 (as numbered by ADG)
 // mscheme expression: F35 = -1/4 sum_abcdijkl (v_abkl v_cdij v_ijac v_klbd) / (eps^kl_ab eps^ijkl_acbd eps^kl_bd)
 // minus sign error. Fixed.
@@ -4442,6 +4028,7 @@ double HFMBPT::GetMP4_F35( const Operator& H) const
 //   #pragma omp parallel for
    for ( auto a : H.modelspace->particles )
    {
+     double a_sum = 0;
      Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: H.modelspace->particles )
      {
@@ -4484,6 +4071,7 @@ double HFMBPT::GetMP4_F35( const Operator& H) const
                        double vijac = H.TwoBody.GetTBME_J(J1,J1,i,j,a,c);
                        double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
                        F35 += 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabkl * vcdij * vijac * vklbd / denom;
+                       a_sum += 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabkl * vcdij * vijac * vklbd / denom;
                      }// for J1
                    }// for J0
                  }// for l
@@ -4493,6 +4081,7 @@ double HFMBPT::GetMP4_F35( const Operator& H) const
          }//for d
        }//for c
      }//for b
+     std::cout << "    " << a << "  " << a_sum << "  " << oa.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
@@ -4733,6 +4322,7 @@ double HFMBPT::GetMP4_F39( const Operator& H) const
 //   #pragma omp parallel for
    for ( auto a : H.modelspace->particles )
    {
+     double a_sum =0;
      Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: H.modelspace->particles )
      {
@@ -4773,6 +4363,7 @@ double HFMBPT::GetMP4_F39( const Operator& H) const
                        double vcdjl = H.TwoBody.GetTBME_J(J1,J1,c,d,j,l);
                        double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
                        F39 += -1./4 * (2*J0+1) * (2*J1+1) / (oj.j2+1) * vabik * vcdjl * vijab * vklcd / denom;
+                       a_sum += -1./4 * (2*J0+1) * (2*J1+1) / (oj.j2+1) * vabik * vcdjl * vijab * vklcd / denom;
                      }// for J1
                    }// for J0
                  }// for l
@@ -4782,6 +4373,7 @@ double HFMBPT::GetMP4_F39( const Operator& H) const
          }//for d
        }//for c
      }//for b
+     std::cout << "    " << a << "  " << a_sum << "  " << oa.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
