@@ -253,7 +253,7 @@ size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_
   if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max) return ch;
 
   if (ch < 0 ) return ch;
-  auto Tbc = modelspace->GetThreeBodyChannel(ch);
+  auto &Tbc = modelspace->GetThreeBodyChannel(ch); // was a full copy of the channel (KetList + KetMap) per call
 
   int Jab_min = std::max( std::abs(oa.j2-ob.j2), std::abs(oc.j2-twoJ) )/2;
   int Jab_max = std::min( oa.j2+ob.j2, oc.j2+twoJ)/2;
@@ -312,10 +312,10 @@ std::vector<ThreeBodyStorage::ME_type> ThreeBodyStorage::GetME_pn_TwoOps(int Jab
      }
   }
   if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return me_out;
-  std::vector<double> recouple_bra;
-  std::vector<double> recouple_ket;
-  std::vector<size_t> ibra;
-  std::vector<size_t> iket;
+  // thread-local scratch instead of four heap allocations per call
+  static thread_local std::vector<double> recouple_bra, recouple_ket;
+  static thread_local std::vector<size_t> ibra, iket;
+  recouple_bra.clear(); recouple_ket.clear(); ibra.clear(); iket.clear();
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
   // if ( ch_bra != ch_ket) return me_out;  // remove this and let it also works for tensor  B.C.

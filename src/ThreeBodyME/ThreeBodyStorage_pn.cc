@@ -135,10 +135,10 @@ void ThreeBodyStorage_pn::Allocate()
 ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) const
 {
   if (!IsKetValid(Jab_in, twoJ, a, b, c) || !IsKetValid(Jde_in, twoJ, d, e, f)) return 0.0;
-  std::vector<double> recouple_bra;
-  std::vector<double> recouple_ket;
-  std::vector<size_t> index_bra;
-  std::vector<size_t> index_ket;
+  // thread-local scratch instead of four heap allocations per matrix element
+  static thread_local std::vector<double> recouple_bra, recouple_ket;
+  static thread_local std::vector<size_t> index_bra, index_ket;
+  recouple_bra.clear(); recouple_ket.clear(); index_bra.clear(); index_ket.clear();
   size_t ch_bra = GetKetIndex_withRecoupling( Jab_in, twoJ, a,b,c, index_bra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde_in, twoJ, d,e,f, index_ket, recouple_ket );
   if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
@@ -151,14 +151,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int Jde_in
 
 
 
-  double me_out = 0;
-  for ( size_t I=0; I<index_bra.size(); I++)
-  {
-    for (size_t J=0; J<index_ket.size(); J++)
-    {
-      me_out += recouple_bra[I] * recouple_ket[J] * GetME_pn_ch( ch_bra, ch_ket, index_bra[I], index_ket[J] );
-    }
-  }
+  double me_out = SumRecoupled(ch_bra, ch_ket, index_bra, recouple_bra, index_ket, recouple_ket);
 
   return me_out;
 }
@@ -167,10 +160,10 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int Jde_in
 ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int j0, int Jde_in, int j1, int a, int b, int c, int d, int e, int f) const
 {
   if (!IsKetValid(Jab_in, j0, a, b, c) || !IsKetValid(Jde_in, j1, d, e, f)) return 0.0;
-  std::vector<double> recouple_bra;
-  std::vector<double> recouple_ket;
-  std::vector<size_t> index_bra;
-  std::vector<size_t> index_ket;
+  // thread-local scratch instead of four heap allocations per matrix element
+  static thread_local std::vector<double> recouple_bra, recouple_ket;
+  static thread_local std::vector<size_t> index_bra, index_ket;
+  recouple_bra.clear(); recouple_ket.clear(); index_bra.clear(); index_ket.clear();
   size_t ch_bra = GetKetIndex_withRecoupling( Jab_in, j0, a,b,c, index_bra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde_in, j1, d,e,f, index_ket, recouple_ket );
   if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
@@ -182,14 +175,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab_in, int j0, in
   if ( std::abs( Tbc_bra.twoTz - Tbc_ket.twoTz) != 2*rank_T ) return 0;
   //TODO: Should we also throw an exception if j0 and j1 are even?
 
-  double me_out = 0;
-  for ( size_t I=0; I<index_bra.size(); I++)
-  {
-    for (size_t J=0; J<index_ket.size(); J++)
-    {
-      me_out += recouple_bra[I] * recouple_ket[J] * GetME_pn_ch( ch_bra, ch_ket, index_bra[I], index_ket[J] );
-    }
-  }
+  double me_out = SumRecoupled(ch_bra, ch_ket, index_bra, recouple_bra, index_ket, recouple_ket);
 
   return me_out;
 }
@@ -275,6 +261,72 @@ void ThreeBodyStorage_pn::AddToME_iso(int Jab_in, int Jde_in, int twoJ, int tab_
 
 
 
+
+
+// sum_IJ rb[I] rk[J] <ib[I]|V|ik[J]> with one block lookup (same arithmetic as GetME_pn_ch/AccessME)
+double ThreeBodyStorage_pn::SumRecoupled(size_t ch_bra, size_t ch_ket, const std::vector<size_t> &ib, const std::vector<double> &rb,
+                                         const std::vector<size_t> &ik, const std::vector<double> &rk) const
+{
+  double me_out = 0;
+  if (ib.empty() or ik.empty())
+    return me_out;
+  if (not is_allocated)
+    return me_out; // GetME_pn_ch returns 0 for every term
+  size_t ch_1 = std::min(ch_bra, ch_ket);
+  size_t ch_2 = std::max(ch_bra, ch_ket);
+  auto iter_ch_start = ch_start.find({ch_1, ch_2});
+  if (iter_ch_start == ch_start.end())
+  {
+    // not stored: keep the original behaviour (AccessME throws)
+    for (size_t I = 0; I < ib.size(); I++)
+      for (size_t J = 0; J < ik.size(); J++)
+        me_out += rb[I] * rk[J] * GetME_pn_ch(ch_bra, ch_ket, ib[I], ik[J]);
+    return me_out;
+  }
+  const size_t start = iter_ch_start->second;
+  const size_t dim1 = ch_dim[ch_1];
+  const size_t dim2 = ch_dim[ch_2];
+  int phase_rev = 1;
+  if (ch_bra > ch_ket)
+  {
+    ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
+    ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
+    phase_rev = modelspace->phase((Tbc_bra.twoJ - Tbc_ket.twoJ) / 2);
+  }
+  for (size_t I = 0; I < ib.size(); I++)
+  {
+    for (size_t J = 0; J < ik.size(); J++)
+    {
+      size_t ibra = ib[I], iket = ik[J];
+      ME_type v;
+      if (ch_bra == ch_ket and ibra == iket and herm == -1)
+        v = 0;
+      else
+      {
+        int herm_flip = ((ch_bra < ch_ket) or ((ch_ket == ch_bra) and (ibra >= iket))) ? 1 : herm;
+        size_t iket_1 = (ch_bra == ch_ket) ? std::min(ibra, iket) : ((ch_bra < ch_ket) ? ibra : iket);
+        size_t iket_2 = (ch_bra == ch_ket) ? std::max(ibra, iket) : ((ch_bra < ch_ket) ? iket : ibra);
+        if (iket_1 > dim1 or iket_2 > dim2)
+          v = GetME_pn_ch(ch_bra, ch_ket, ibra, iket); // let AccessME report it
+        else
+        {
+          size_t index;
+          if (ch_1 == ch_2)
+            index = start + (2 * dim2 - iket_1 - 1) * iket_1 / 2 + iket_2;
+          else
+          {
+            index = start + dim2 * iket_1 + iket_2;
+            if (ch_bra > ch_ket)
+              herm_flip *= phase_rev;
+          }
+          v = MatEl.at(index) * herm_flip;
+        }
+      }
+      me_out += rb[I] * rk[J] * v;
+    }
+  }
+  return me_out;
+}
 
 ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
