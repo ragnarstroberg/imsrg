@@ -253,7 +253,7 @@ size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_
   if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max) return ch;
 
   if (ch < 0 ) return ch;
-  auto Tbc = modelspace->GetThreeBodyChannel(ch);
+  auto & Tbc = modelspace->GetThreeBodyChannel(ch);
 
   int Jab_min = std::max( std::abs(oa.j2-ob.j2), std::abs(oc.j2-twoJ) )/2;
   int Jab_max = std::min( oa.j2+ob.j2, oc.j2+twoJ)/2;

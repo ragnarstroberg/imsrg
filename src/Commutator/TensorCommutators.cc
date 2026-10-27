@@ -3431,7 +3431,7 @@ namespace Commutator
                     Orbit &ob = Z.modelspace->GetOrbit(b);
 
                     double occupation_factor = oa.occ - ob.occ;
-                    if (std::abs(occupation_factor) < 1e-7)  continue;
+                    if (std::abs(occupation_factor) < 1e-8)  continue;
 
                     // check parity and Tz
                     bool parity_X_3ba6   = (o3.l + ob.l + oa.l + o6.l ) % 2 == X.GetParity();
@@ -3473,7 +3473,7 @@ namespace Commutator
                                     sixj1 *= Z.modelspace->GetSixJ(o3.j2 / 2.,  ob.j2 / 2.,    Jb3,
                                                           twoj4 / 2.,  twoj1 / 2.,    J1p);
 
-                              if (std::abs(sixj1) < 1e-7)  continue;
+                              if (std::abs(sixj1) < 1e-8)  continue;
 
                             int Ja6_min = AngMom::Jmin({ {oa.j2, o6.j2}, {twoj4,twoj2}, {2*Lambda,2*Jb3} })/2;
                             int Ja6_max = AngMom::Jmax({ {oa.j2, o6.j2}, {twoj4,twoj2}, {2*Lambda,2*Jb3} })/2;
@@ -3485,7 +3485,7 @@ namespace Commutator
                                       sixj2 *= Z.modelspace->GetSixJ(Lambda,      Ja6,           Jb3,
                                                                      twoj4 / 2.,  twoj1 / 2.,    twoj2 / 2.);
 
-                              if (std::abs(sixj2) < 1e-7)  continue;
+                              if (std::abs(sixj2) < 1e-8)  continue;
                               int phasefactor = Z.modelspace->phase(( o3.j2  + o6.j2 + twoj2 + twoj4) / 2 + J1p + J2p + Ja6 + Lambda);
                               double hatfactor =  (twoj3 + 1) * (twoj4 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * (2 * Ja6 + 1) * (2 * Jb3 + 1) );
                               double yb3a6 = Y2.GetTBME_J(Jb3, Ja6, b, I3, a, I6);
@@ -3513,7 +3513,7 @@ namespace Commutator
                                        sixj1 *= Z.modelspace->GetSixJ( J1p,         Lambda,        J3,
                                                                      twoj2 / 2.,  o3.j2 / 2.,    twoj1 / 2.);
 
-                                if (std::abs(sixj1) < 1e-7)  continue;
+                                if (std::abs(sixj1) < 1e-8)  continue;
 
                               int J4_min = AngMom::Jmin({ {2*J3,2*J2p}, {o6.j2,o3.j2}, {oa.j2,ob.j2} })/2;
                               int J4_max = AngMom::Jmax({ {2*J3,2*J2p}, {o6.j2,o3.j2}, {oa.j2,ob.j2} })/2;
@@ -3529,7 +3529,7 @@ namespace Commutator
                                        sixj2 *= Z.modelspace->GetSixJ( J4,          J3,            J2p,
                                                                       twoj2 / 2.,  o6.j2 / 2.,    o3.j2 / 2.);
 
-                                if (std::abs(sixj2) < 1e-7)   continue;
+                                if (std::abs(sixj2) < 1e-8)   continue;
                                 int phasefactor = Z.modelspace->phase(( o3.j2  + ob.j2 ) / 2 + Jb3 );
                                 double hatfactor = (2 * Jb3 + 1) * (2 * J3 + 1) * (2 * J4 + 1) * sqrt( (twoj1 + 1) * ( twoj2 + 1) * (twoj3 + 1) * (twoj4 + 1) );
                                 

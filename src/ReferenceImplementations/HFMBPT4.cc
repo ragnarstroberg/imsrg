@@ -72,7 +72,7 @@ double GetMP4_term( const Operator& H, int diagram)
    else if (diagram==39)   E = GetMP4_F39(H);
    else
    {
-      std::cout << __func__ << " Term " << diagram << " not yet implemented." << std::endl;
+      std::cout << "Ref_"+std::string(__func__) << " Term " << diagram << " not yet implemented." << std::endl;
    }
    return E;
 }
@@ -139,7 +139,7 @@ double GetMP4_F1( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F1;
 }
 
@@ -206,7 +206,7 @@ double GetMP4_F2( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F2;
 }
 
@@ -275,7 +275,7 @@ double GetMP4_F3( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F3;
 }
 
@@ -344,7 +344,7 @@ double GetMP4_F4( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F4;
 }
 
@@ -406,7 +406,7 @@ double GetMP4_F5( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F5;
 }
 
@@ -482,7 +482,7 @@ double GetMP4_F6( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F6;
 }
 
@@ -545,7 +545,7 @@ double GetMP4_F7( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F7;
 }
 
@@ -621,7 +621,7 @@ double GetMP4_F8( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F8;
 }
 
@@ -715,7 +715,7 @@ double GetMP4_F9( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F9;
 }
 
@@ -810,7 +810,7 @@ double GetMP4_F10( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F10;
 }
 
@@ -903,7 +903,7 @@ double GetMP4_F11( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F11;
 }
 
@@ -918,15 +918,17 @@ double GetMP4_F12( const Operator& H)
    double t_start = omp_get_wtime();
 
    double F12 =0;
-//   #pragma omp parallel for
-   for ( auto a : H.modelspace->particles )
+   std::vector<size_t> part_vec;
+   for ( auto a : H.modelspace->particles) part_vec.push_back(a);
+   #pragma omp parallel for  collapse(3) reduction(+:F12)
+   for ( auto a : part_vec )
    {
-     Orbit& oa = H.modelspace->GetOrbit(a);
-     for ( auto b: H.modelspace->particles )
+     for ( auto b: part_vec )
      {
-       Orbit& ob = H.modelspace->GetOrbit(b);
-       for ( auto c: H.modelspace->particles )
+       for ( auto c: part_vec )
        {
+         Orbit& ob = H.modelspace->GetOrbit(b);
+         Orbit& oa = H.modelspace->GetOrbit(a);
          Orbit& oc = H.modelspace->GetOrbit(c);
          for ( auto d: H.modelspace->particles )
          {
@@ -997,7 +999,7 @@ double GetMP4_F12( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F12;
 }
 
@@ -1073,7 +1075,7 @@ double GetMP4_F13( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F13;
 }
 
@@ -1136,7 +1138,7 @@ double GetMP4_F14( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F14;
 }
 
@@ -1212,7 +1214,7 @@ double GetMP4_F15( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F15;
 }
 
@@ -1275,7 +1277,7 @@ double GetMP4_F16( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F16;
 }
 
@@ -1346,7 +1348,7 @@ double GetMP4_F17( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F17;
 }
 
@@ -1422,7 +1424,7 @@ double GetMP4_F18( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F18;
 }
 
@@ -1497,7 +1499,7 @@ double GetMP4_F19( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F19;
 }
 
@@ -1591,7 +1593,7 @@ double GetMP4_F20( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F20;
 }
 
@@ -1685,7 +1687,7 @@ double GetMP4_F21( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F21;
 }
 
@@ -1761,7 +1763,7 @@ double GetMP4_F22( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F22;
 }
 
@@ -1837,7 +1839,7 @@ double GetMP4_F23( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F23;
 }
 
@@ -1908,7 +1910,7 @@ double GetMP4_F24( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F24;
 }
 
@@ -2002,7 +2004,7 @@ double GetMP4_F25( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F25;
 }
 
@@ -2078,7 +2080,7 @@ double GetMP4_F26( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F26;
 }
 
@@ -2149,7 +2151,7 @@ double GetMP4_F27( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F27;
 }
 
@@ -2225,7 +2227,7 @@ double GetMP4_F28( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F28;
 }
 
@@ -2301,7 +2303,7 @@ double GetMP4_F29( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F29;
 }
 
@@ -2372,7 +2374,7 @@ double GetMP4_F30( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F30;
 }
 
@@ -2448,7 +2450,7 @@ double GetMP4_F31( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F31;
 }
 
@@ -2541,7 +2543,7 @@ double GetMP4_F32( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F32;
 }
 
@@ -2610,7 +2612,7 @@ double GetMP4_F33( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F33;
 }
 
@@ -2673,7 +2675,7 @@ double GetMP4_F34( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F34;
 }
 
@@ -2744,7 +2746,7 @@ double GetMP4_F35( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F35;
 }
 
@@ -2836,7 +2838,7 @@ double GetMP4_F36( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F36;
 }
 
@@ -2905,7 +2907,7 @@ double GetMP4_F37( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F37;
 }
 
@@ -2968,7 +2970,7 @@ double GetMP4_F38( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F38;
 }
 
@@ -3037,7 +3039,7 @@ double GetMP4_F39( const Operator& H)
      }//for b
    }//for a
 
-  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Ref_"+std::string(__func__)] += omp_get_wtime() - t_start;
   return F39;
 }
 
