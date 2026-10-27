@@ -5182,6 +5182,10 @@ namespace Commutator
 
                   int ch6a = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o6.l + parity_a) % 2, (o6.tz2 + tz2a) / 2);
                   TwoBodyChannel &tbc6a = Z.modelspace->GetTwoBodyChannel(ch6a);
+
+                  auto& Xmat_126a = X.TwoBody.GetMatrix(ch12,ch6a);
+                  auto& Ymat_126a = Y.TwoBody.GetMatrix(ch12,ch6a);
+
                   size_t nkets_6a = tbc6a.GetNumberKets();
 
                   int j2pmin = J2;
@@ -5205,10 +5209,13 @@ namespace Commutator
                     //                 int ch2 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
                     int ch45 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l + o5.l) % 2, (o4.tz2 + o5.tz2) / 2);
                     int ch3a = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o3.l + parity_a) % 2, (o3.tz2 + tz2a) / 2);
-
                     //                 TwoBodyChannel& tbc2 = Z.modelspace->GetTwoBodyChannel(ch2);
                     TwoBodyChannel &tbc45 = Z.modelspace->GetTwoBodyChannel(ch45);
                     TwoBodyChannel &tbc3a = Z.modelspace->GetTwoBodyChannel(ch3a);
+
+                    auto& Xmat_3a45 = X.TwoBody.GetMatrix(ch3a,ch45);
+                    auto& Ymat_3a45 = Y.TwoBody.GetMatrix(ch3a,ch45);
+
                     //                 size_t nkets_2 = tbc2.GetNumberKets();
                     size_t nkets_45 = tbc45.GetNumberKets();
                     size_t nkets_3a = tbc3a.GetNumberKets();
@@ -5257,20 +5264,32 @@ namespace Commutator
                       {
 
                         // This should be the straighforward but maybe less efficient way to do it.
-                        double phase_6a = phase_12;
-                        double phase_3a = phase_45;
+//                        double phase_6a = phase_12;
+//                        double phase_3a = phase_45;
+                       double phase_6a = I6 > a ? -Z.modelspace->phase((o6.j2 + j2a - 2 * J1p) / 2) : 1;
+                       double phase_3a = I3 > a ? -Z.modelspace->phase((o3.j2 + j2a - 2 * J2p) / 2) : 1;
                         if (I3 == a)// sqrt(2) factor for converting to un-normalized TBMEs. See below.
                           phase_3a *= PhysConst::SQRT2;
                         if (I6 == a)// sqrt(2) factor for converting to un-normalized TBMEs. See below.
                           phase_6a *= PhysConst::SQRT2;
 
+                       size_t ind_6a = tbc6a.GetLocalIndex(std::min(I6, a), std::max(I6, a));
+                       if ( ind_6a > nkets_6a ) continue;
+                       size_t ind_3a = tbc3a.GetLocalIndex(std::min(I3, a), std::max(I3, a));
+                       if ( ind_3a > nkets_3a ) continue;
+
                         // We want un-normalized TBMEs. But since GetTBME just calls GetTBME_norm and adds the sqrt(2) factors
                         // for this routine we figure out the sqrt(2) factors in the outer loops to speed up the look up
                         // in the deeply nested loop.
-                        double x_126a = X_126a_good ? X.TwoBody.GetTBME_norm(ch12, ch6a, I1, I2, I6, a) : 0;
-                        double y_126a = Y_126a_good ? Y.TwoBody.GetTBME_norm(ch12, ch6a, I1, I2, I6, a) : 0;
-                        double x_3a45 = X_3a45_good ? X.TwoBody.GetTBME_norm(ch3a, ch45, I3, a, I4, I5) : 0;
-                        double y_3a45 = Y_3a45_good ? Y.TwoBody.GetTBME_norm(ch3a, ch45, I3, a, I4, I5) : 0;
+                        double x_126a = X_126a_good ? Xmat_126a(ind_12,ind_6a) : 0;
+                        double y_126a = Y_126a_good ? Ymat_126a(ind_12,ind_6a) : 0;
+                        double x_3a45 = X_3a45_good ? Xmat_3a45(ind_3a,ind_45) : 0;
+                        double y_3a45 = Y_3a45_good ? Ymat_3a45(ind_3a,ind_45) : 0;
+
+//                        double x_126a = X_126a_good ? X.TwoBody.GetTBME_norm(ch12, ch6a, I1, I2, I6, a) : 0;
+//                        double y_126a = Y_126a_good ? Y.TwoBody.GetTBME_norm(ch12, ch6a, I1, I2, I6, a) : 0;
+//                        double x_3a45 = X_3a45_good ? X.TwoBody.GetTBME_norm(ch3a, ch45, I3, a, I4, I5) : 0;
+//                        double y_3a45 = Y_3a45_good ? Y.TwoBody.GetTBME_norm(ch3a, ch45, I3, a, I4, I5) : 0;
 
                         zijklmn += prefactor * phase_6a * phase_3a * (x_126a * y_3a45 - y_126a * x_3a45);
 
