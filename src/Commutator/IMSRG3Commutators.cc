@@ -5964,6 +5964,7 @@ namespace Commutator
   void comm233_phss(const Operator &X, const Operator &Y, Operator &Z)
   {
 
+    Z.modelspace->PreCalculateSixJ();
     double tstart = omp_get_wtime();
     if (Commutator::verbose)
       std::cout << __func__ << std::endl;
@@ -6156,16 +6157,20 @@ namespace Commutator
           double xjiab = 0;
           double yijab = 0;
           double yjiab = 0;
-          int Jprime_min = std::max(std::abs(oi.j2 - ob.j2), std::abs(oa.j2 - oj.j2)) / 2;
-          int Jprime_max = std::min(oi.j2 + ob.j2, oa.j2 + oj.j2) / 2;
+//          int Jprime_min = std::max(std::abs(oi.j2 - ob.j2), std::abs(oa.j2 - oj.j2)) / 2;
+//          int Jprime_max = std::min(oi.j2 + ob.j2, oa.j2 + oj.j2) / 2;
+          int Jprime_min = AngMom::Jmin( {{oi.j2,ob.j2} , {oa.j2,oj.j2}} ) / 2;
+          int Jprime_max = AngMom::Jmax( {{oi.j2,ob.j2} , {oa.j2,oj.j2}} ) / 2;
           for (int Jprime = Jprime_min; Jprime <= Jprime_max; Jprime++)
           {
             double sixj_ij = Z.modelspace->GetSixJ(ji, jj, Jph, ja, jb, Jprime);
             xijab -= (2 * Jprime + 1) * sixj_ij * X2.GetTBME_J(Jprime, i, b, a, j);
             yijab -= (2 * Jprime + 1) * sixj_ij * Y2.GetTBME_J(Jprime, i, b, a, j);
           }
-          Jprime_min = std::max(std::abs(oj.j2 - ob.j2), std::abs(oa.j2 - oi.j2)) / 2;
-          Jprime_max = std::min(oj.j2 + ob.j2, oa.j2 + oi.j2) / 2;
+//          Jprime_min = std::max(std::abs(oj.j2 - ob.j2), std::abs(oa.j2 - oi.j2)) / 2;
+//          Jprime_max = std::min(oj.j2 + ob.j2, oa.j2 + oi.j2) / 2;
+          Jprime_min = AngMom::Jmin( {{oj.j2,ob.j2} , {oa.j2,oi.j2}} ) / 2;
+          Jprime_max = AngMom::Jmax( {{oj.j2,ob.j2} , {oa.j2,oi.j2}} ) / 2;
           for (int Jprime = Jprime_min; Jprime <= Jprime_max; Jprime++)
           {
             double sixj_ji = Z.modelspace->GetSixJ(jj, ji, Jph, ja, jb, Jprime);
@@ -6175,12 +6180,12 @@ namespace Commutator
           int phase_X = hX * Z.modelspace->phase((oi.j2 + oj.j2 + oa.j2 + ob.j2) / 2);
           int phase_Y = hY * Z.modelspace->phase((oi.j2 + oj.j2 + oa.j2 + ob.j2) / 2);
 
-          X2_ph(ibra_ij, iket_ab) = xijab * occ_factor;
-          Y2_ph(ibra_ij, iket_ab) = yijab * occ_factor;
-          X2_ph(ibra_ij + nkets_CC, iket_ab) = xjiab * occ_factor;
-          Y2_ph(ibra_ij + nkets_CC, iket_ab) = yjiab * occ_factor;
-          X2_ph(ibra_ij, iket_ab + nkets_ph) = phase_X * xjiab * (-occ_factor);
-          Y2_ph(ibra_ij, iket_ab + nkets_ph) = phase_Y * yjiab * (-occ_factor);
+          X2_ph(ibra_ij           , iket_ab           ) =           xijab * occ_factor;
+          Y2_ph(ibra_ij           , iket_ab           ) =           yijab * occ_factor;
+          X2_ph(ibra_ij + nkets_CC, iket_ab           ) =           xjiab * occ_factor;
+          Y2_ph(ibra_ij + nkets_CC, iket_ab           ) =           yjiab * occ_factor;
+          X2_ph(ibra_ij           , iket_ab + nkets_ph) = phase_X * xjiab * (-occ_factor);
+          Y2_ph(ibra_ij           , iket_ab + nkets_ph) = phase_Y * yjiab * (-occ_factor);
           X2_ph(ibra_ij + nkets_CC, iket_ab + nkets_ph) = phase_X * xijab * (-occ_factor);
           Y2_ph(ibra_ij + nkets_CC, iket_ab + nkets_ph) = phase_Y * yijab * (-occ_factor);
 
@@ -6305,43 +6310,14 @@ namespace Commutator
       size_t nkets3 = Tbc.GetNumberKets();
       int twoJ = Tbc.twoJ;
       double Jtot = 0.5 * twoJ;
-      for (size_t ibra = 0; ibra < nkets3; ibra++)
+      // precalculate the ket bookkeeping stuff before looping over bra,ket.
+      std::vector<bool> ket_keep(nkets3,0);
+      std::vector<std::array<std::array<size_t, 3>,3>> ket_lmn(nkets3);
+      std::vector<std::array<int,3>> ket_J2p_min(nkets3);
+      std::vector<std::array<int,3>> ket_J2p_max(nkets3);
+      std::vector<std::array<std::vector<double>,3>> ket_recouple(nkets3);
+      for (size_t iket = 0; iket < nkets3; iket++)
       {
-        auto &bra = Tbc.GetKet(ibra);
-        size_t i = bra.p;
-        size_t j = bra.q;
-        size_t k = bra.r;
-        Orbit &oi = Z.modelspace->GetOrbit(i);
-        Orbit &oj = Z.modelspace->GetOrbit(j);
-        Orbit &ok = Z.modelspace->GetOrbit(k);
-        double ji = 0.5 * oi.j2;
-        double jj = 0.5 * oj.j2;
-        double jk = 0.5 * ok.j2;
-        double d_ei = std::abs(2 * oi.n + oi.l - e_fermi[oi.tz2]);
-        double d_ej = std::abs(2 * oj.n + oj.l - e_fermi[oj.tz2]);
-        double d_ek = std::abs(2 * ok.n + ok.l - e_fermi[ok.tz2]);
-        double occnat_i = oi.occ_nat;
-        double occnat_j = oj.occ_nat;
-        double occnat_k = ok.occ_nat;
-        if ((d_ei + d_ej + d_ek) > Z.modelspace->dE3max)
-          continue;
-        if ((occnat_i * (1 - occnat_i) * occnat_j * (1 - occnat_j) * occnat_k * (1 - occnat_k)) < Z.modelspace->GetOccNat3Cut())
-          continue;
-        int J1 = bra.Jpq;
-
-        std::vector<std::array<size_t, 3>> ijk = {{i, j, k}, {k, j, i}, {i, k, j}};
-
-        std::vector<int> J1p_min = {J1, std::max(std::abs(ok.j2 - oj.j2), std::abs(twoJ - oi.j2)) / 2, std::max(std::abs(oi.j2 - ok.j2), std::abs(twoJ - oj.j2)) / 2};
-        std::vector<int> J1p_max = {J1, std::min(ok.j2 + oj.j2, twoJ + oi.j2) / 2, std::min(oi.j2 + ok.j2, twoJ + oj.j2) / 2};
-        std::vector<std::vector<double>> recouple_ijk = {{1}, {}, {}};
-        for (int J1p = J1p_min[1]; J1p <= J1p_max[1]; J1p++)
-          recouple_ijk[1].push_back(sqrt((2 * J1 + 1) * (2 * J1p + 1)) * Z.modelspace->GetSixJ(ji, jj, J1, jk, Jtot, J1p));
-
-        for (int J1p = J1p_min[2]; J1p <= J1p_max[2]; J1p++)
-          recouple_ijk[2].push_back(-Z.modelspace->phase((oj.j2 + ok.j2) / 2 + J1 + J1p) * sqrt((2 * J1 + 1) * (2 * J1p + 1)) * Z.modelspace->GetSixJ(jj, ji, J1, jk, Jtot, J1p));
-
-        for (size_t iket = ibra; iket < nkets3; iket++)
-        {
           auto &ket = Tbc.GetKet(iket);
           size_t l = ket.p;
           size_t m = ket.q;
@@ -6364,16 +6340,80 @@ namespace Commutator
             continue;
           int J2 = ket.Jpq;
 
-          std::vector<std::array<size_t, 3>> lmn = {{l, m, n}, {n, m, l}, {l, n, m}};
-          std::vector<int> J2p_min = {J2, std::max(std::abs(on.j2 - om.j2), std::abs(twoJ - ol.j2)) / 2, std::max(std::abs(ol.j2 - on.j2), std::abs(twoJ - om.j2)) / 2};
-          std::vector<int> J2p_max = {J2, std::min(on.j2 + om.j2, twoJ + ol.j2) / 2, std::min(ol.j2 + on.j2, twoJ + om.j2) / 2};
-          std::vector<std::vector<double>> recouple_lmn = {{1}, {}, {}};
+//          std::vector<std::array<size_t, 3>> lmn = {{l, m, n}, {n, m, l}, {l, n, m}};
+          std::array<std::array<size_t, 3>,3> lmn = {{{l, m, n}, {n, m, l}, {l, n, m}}};
+          std::array<int,3> J2p_min = {J2, AngMom::Jmin({{on.j2,om.j2},{twoJ,ol.j2}})/2, AngMom::Jmin({{ol.j2,on.j2},{twoJ,om.j2}})/2 };
+          std::array<int,3> J2p_max = {J2, AngMom::Jmax({{on.j2,om.j2},{twoJ,ol.j2}})/2, AngMom::Jmax({{ol.j2,on.j2},{twoJ,om.j2}})/2 };
+//          std::array<int,3> J2p_min = {J2, std::max(std::abs(on.j2 - om.j2), std::abs(twoJ - ol.j2)) / 2, std::max(std::abs(ol.j2 - on.j2), std::abs(twoJ - om.j2)) / 2};
+//          std::array<int,3> J2p_max = {J2, std::min(on.j2 + om.j2, twoJ + ol.j2) / 2, std::min(ol.j2 + on.j2, twoJ + om.j2) / 2};
+          std::array<std::vector<double>,3> recouple_lmn = {{{1.}, {}, {}}};
 
           for (int J2p = J2p_min[1]; J2p <= J2p_max[1]; J2p++)
             recouple_lmn[1].push_back(sqrt((2 * J2 + 1) * (2 * J2p + 1)) * Z.modelspace->GetSixJ(jl, jm, J2, jn, Jtot, J2p));
 
           for (int J2p = J2p_min[2]; J2p <= J2p_max[2]; J2p++)
             recouple_lmn[2].push_back(-Z.modelspace->phase((om.j2 + on.j2) / 2 + J2 + J2p) * sqrt((2 * J2 + 1) * (2 * J2p + 1)) * Z.modelspace->GetSixJ(jm, jl, J2, jn, Jtot, J2p));
+
+          ket_keep[iket] = 1; // if we made it through the dE3max and OccNat3 cuts
+          ket_lmn[iket] = lmn;
+          ket_J2p_min[iket] = J2p_min;
+          ket_J2p_max[iket] = J2p_max;
+          ket_recouple[iket] = recouple_lmn;
+
+      }
+
+
+      for (size_t ibra = 0; ibra < nkets3; ibra++)
+      {
+//        auto &bra = Tbc.GetKet(ibra);
+//        size_t i = bra.p;
+//        size_t j = bra.q;
+//        size_t k = bra.r;
+//        Orbit &oi = Z.modelspace->GetOrbit(i);
+//        Orbit &oj = Z.modelspace->GetOrbit(j);
+//        Orbit &ok = Z.modelspace->GetOrbit(k);
+//        double ji = 0.5 * oi.j2;
+//        double jj = 0.5 * oj.j2;
+//        double jk = 0.5 * ok.j2;
+//        double d_ei = std::abs(2 * oi.n + oi.l - e_fermi[oi.tz2]);
+//        double d_ej = std::abs(2 * oj.n + oj.l - e_fermi[oj.tz2]);
+//        double d_ek = std::abs(2 * ok.n + ok.l - e_fermi[ok.tz2]);
+//        double occnat_i = oi.occ_nat;
+//        double occnat_j = oj.occ_nat;
+//        double occnat_k = ok.occ_nat;
+//        if ((d_ei + d_ej + d_ek) > Z.modelspace->dE3max)
+//          continue;
+//        if ((occnat_i * (1 - occnat_i) * occnat_j * (1 - occnat_j) * occnat_k * (1 - occnat_k)) < Z.modelspace->GetOccNat3Cut())
+//          continue;
+//        int J1 = bra.Jpq;
+//
+//        std::vector<std::array<size_t, 3>> ijk = {{i, j, k}, {k, j, i}, {i, k, j}};
+//
+//        std::vector<int> J1p_min = {J1, std::max(std::abs(ok.j2 - oj.j2), std::abs(twoJ - oi.j2)) / 2, std::max(std::abs(oi.j2 - ok.j2), std::abs(twoJ - oj.j2)) / 2};
+//        std::vector<int> J1p_max = {J1, std::min(ok.j2 + oj.j2, twoJ + oi.j2) / 2, std::min(oi.j2 + ok.j2, twoJ + oj.j2) / 2};
+//        std::vector<std::vector<double>> recouple_ijk = {{1}, {}, {}};
+//        for (int J1p = J1p_min[1]; J1p <= J1p_max[1]; J1p++)
+//          recouple_ijk[1].push_back(sqrt((2 * J1 + 1) * (2 * J1p + 1)) * Z.modelspace->GetSixJ(ji, jj, J1, jk, Jtot, J1p));
+//
+//        for (int J1p = J1p_min[2]; J1p <= J1p_max[2]; J1p++)
+//          recouple_ijk[2].push_back(-Z.modelspace->phase((oj.j2 + ok.j2) / 2 + J1 + J1p) * sqrt((2 * J1 + 1) * (2 * J1p + 1)) * Z.modelspace->GetSixJ(jj, ji, J1, jk, Jtot, J1p));
+
+
+          if ( not ket_keep[ibra] ) continue;
+          auto& ijk = ket_lmn[ibra];
+          auto& J1p_min = ket_J2p_min[ibra];
+          auto& J1p_max = ket_J2p_max[ibra];
+          auto& recouple_ijk = ket_recouple[ibra];
+
+
+        for (size_t iket = ibra; iket < nkets3; iket++)
+        {
+
+          if ( not ket_keep[iket] ) continue;
+          auto& lmn = ket_lmn[iket];
+          auto& J2p_min = ket_J2p_min[iket];
+          auto& J2p_max = ket_J2p_max[iket];
+          auto& recouple_lmn = ket_recouple[iket];
 
           double z_ijklmn = 0;
 
@@ -6385,10 +6425,6 @@ namespace Commutator
             Orbit &o1 = Z.modelspace->GetOrbit(I1);
             Orbit &o2 = Z.modelspace->GetOrbit(I2);
             Orbit &o3 = Z.modelspace->GetOrbit(I3);
-            //          double occnat_1 = o1.occ_nat;
-            //          double occnat_2 = o2.occ_nat;
-            //          double d_e1 = std::abs( 2*o1.n + o1.l - e_fermi[o1.tz2]);
-            //          double d_e2 = std::abs( 2*o2.n + o2.l - e_fermi[o2.tz2]);
             double j3 = 0.5 * o3.j2;
             for (int J1p = J1p_min[perm_ijk]; J1p <= J1p_max[perm_ijk]; J1p++)
             {
@@ -6403,10 +6439,6 @@ namespace Commutator
                 Orbit &o4 = Z.modelspace->GetOrbit(I4);
                 Orbit &o5 = Z.modelspace->GetOrbit(I5);
                 Orbit &o6 = Z.modelspace->GetOrbit(I6);
-                //              double occnat_4 = o4.occ_nat;
-                //              double occnat_5 = o5.occ_nat;
-                //              double d_e4 = std::abs( 2*o4.n + o4.l - e_fermi[o4.tz2]);
-                //              double d_e5 = std::abs( 2*o5.n + o5.l - e_fermi[o5.tz2]);
                 double j6 = 0.5 * o6.j2;
                 for (int J2p = J2p_min[perm_lmn]; J2p <= J2p_max[perm_lmn]; J2p++)
                 {
@@ -6415,8 +6447,10 @@ namespace Commutator
                   double rec_lmn = recouple_lmn[perm_lmn].at(J2p - J2p_min[perm_lmn]);
 
                   double z_123456 = 0;
-                  int Jph_min = std::max(std::abs(2 * J1p - 2 * J2p), std::abs(o3.j2 - o6.j2)) / 2;
-                  int Jph_max = std::min(2 * J1p + 2 * J2p, o3.j2 + o6.j2) / 2;
+//                  int Jph_min = std::max(std::abs(2 * J1p - 2 * J2p), std::abs(o3.j2 - o6.j2)) / 2;
+//                  int Jph_max = std::min(2 * J1p + 2 * J2p, o3.j2 + o6.j2) / 2;
+                  int Jph_min = AngMom::Jmin({ {2*J1p,2*J2p},{o3.j2,o6.j2} })/2;
+                  int Jph_max = AngMom::Jmax({ {2*J1p,2*J2p},{o3.j2,o6.j2} })/2;
                   int Tz_ph = std::abs(o3.tz2 - o6.tz2) / 2;
                   int parity_ph = (o3.l + o6.l) % 2;
 
@@ -6441,15 +6475,17 @@ namespace Commutator
                       key_4512 = hash_key_lmij(std::min(I1, I2), std::max(I1, I2), (size_t)J1p, std::min(I4, I5), std::max(I4, I5), (size_t)J2p);
                       flip_phase = -hX*hY*Z.modelspace->phase((o3.j2 - o6.j2) / 2);
                     }
+                    // Getting this far is cheap. This lookup is expensive
                     size_t index_4512 = ph_kets3_lookup[ch_ph].at(key_4512);
 
                     // < 36` Jph | Z | 45 J2p  (12 J1p)` ; Jph >
                     double z_364512 = flip_phase * phase_45 * phase_12 * Z3_ph[ch_ph](index_36, index_4512);
 
                     // Swapped the ordering here to match with what's done in PreCalculateSixJ()
-                    //                   double sixj_ph = Z.modelspace->GetSixJ(J1p,j3,Jtot,  j6,J2p,Jph);
+                    // This 6j is expensive
                     double sixj_ph = Z.modelspace->GetSixJ(J1p, J2p, Jph, j6, j3, Jtot);
                     int phase_ph = -Z.modelspace->phase((twoJ + o3.j2) / 2);
+                    // This multiplication is a little expensive???
                     z_123456 -= phase_ph * (2 * Jph + 1) * sixj_ph * z_364512;
                   } // for Jph
 
@@ -6471,6 +6507,11 @@ namespace Commutator
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
   void comm233_phss_debug(const Operator &X, const Operator &Y, Operator &Z)
   {
 
