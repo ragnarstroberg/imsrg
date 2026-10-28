@@ -431,7 +431,7 @@ class ModelSpace
    size_t GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
    size_t GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    size_t GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
-   size_t GetKet3Index(int p, int q, int r, int Jpq) {  return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));};
+   size_t GetKet3Index(int p, int q, int r, int Jpq) {return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));};
    size_t Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq);
    size_t ThreeBodyChannelHash( int twoJ, int parity, int twoTz);
 
