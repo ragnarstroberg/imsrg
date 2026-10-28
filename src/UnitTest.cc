@@ -1,4 +1,3 @@
-#include <cstdlib>
 
 #include "UnitTest.hh"
 #include "AngMom.hh"
@@ -7900,21 +7899,7 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   Z_J.ThreeBody.SetMode("pn");
   Z_J.ThreeBody.Erase();
 
-  const char *env_prod = std::getenv("IMSRG_MSCHEME_PROD"); // test only: IMSRG_MSCHEME_PROD=1 checks Commutator::comm233_phss instead of the reference
-  if (Lambda == 0 and env_prod != nullptr and std::string(env_prod) == "1")
-  {
-    std::cout << __func__ << "  testing the production kernel Commutator::comm233_phss" << std::endl;
-    Operator Yn(Y);
-    if (Yn.IsReduced())
-      Yn.MakeNotReduced();
-    if (Z_J.IsReduced())
-      Z_J.MakeNotReduced();
-    Commutator::comm233_phss(X, Yn, Z_J);
-    if (Y.IsReduced())
-      Z_J.MakeReduced(); // the m-scheme converter expects reduced MEs for non-scalar Y
-  }
-  else
-  {
+
   Operator Y_copy(Y);
   if (Lambda == 0 and TzY == 0 and parityY == 0)
   {
@@ -7926,7 +7911,6 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   {
     // Y_copy.MakeNotReduced();
     Z_J.MakeNotReduced();
-  }
   }
 
   if (Z_J.IsHermitian())
