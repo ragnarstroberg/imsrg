@@ -934,8 +934,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       m.def("FillFactorialLists", AngMom::FillFactorialLists);
       m.def("factorial", AngMom::factorial);
       m.def("double_fact", AngMom::double_fact);
-      m.def("AngMomJmin", AngMom::Jmin);
-      m.def("AngMomJmax", AngMom::Jmax);
+      m.def("AngMomJmin",AngMom::Jmin);
+      m.def("AngMomJmax",AngMom::Jmax);
 
       m.attr("HBARC") = py::float_(PhysConst::HBARC);
       m.attr("M_PROTON") = py::float_(PhysConst::M_PROTON);
