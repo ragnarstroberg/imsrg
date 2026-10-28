@@ -87,7 +87,7 @@ ModelSpace::ModelSpace(const ModelSpace &ms)
       OneBodyChannels(ms.OneBodyChannels), nTwoBodyChannels(ms.nTwoBodyChannels),
       TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC),
       nThreeBodyChannels(ms.nThreeBodyChannels), ThreeBodyChannels(ms.ThreeBodyChannels),
-      Ket3IndexLookup(ms.Ket3IndexLookup), Ket3IndexDense(ms.Ket3IndexDense), k3_norb(ms.k3_norb), k3_nJ(ms.k3_nJ), ThreeBodyChannelLookup(ms.ThreeBodyChannelLookup), ThreeBodyChannelDense(ms.ThreeBodyChannelDense),
+      Ket3IndexLookup(ms.Ket3IndexLookup), ThreeBodyChannelLookup(ms.ThreeBodyChannelLookup),
       PandyaLookup(ms.PandyaLookup), OrbitLookup(ms.OrbitLookup),
       holes(ms.holes), particles(ms.particles),
       core(ms.core), valence(ms.valence), qspace(ms.qspace),
@@ -125,7 +125,7 @@ ModelSpace::ModelSpace(ModelSpace &&ms)
       OneBodyChannels(std::move(ms.OneBodyChannels)), nTwoBodyChannels(std::move(ms.nTwoBodyChannels)),
       TwoBodyChannels(std::move(ms.TwoBodyChannels)), TwoBodyChannels_CC(std::move(ms.TwoBodyChannels_CC)),
       nThreeBodyChannels(std::move(ms.nThreeBodyChannels)), ThreeBodyChannels(std::move(ms.ThreeBodyChannels)),
-      Ket3IndexLookup(std::move(ms.Ket3IndexLookup)), Ket3IndexDense(std::move(ms.Ket3IndexDense)), k3_norb(ms.k3_norb), k3_nJ(ms.k3_nJ), ThreeBodyChannelLookup(std::move(ms.ThreeBodyChannelLookup)), ThreeBodyChannelDense(std::move(ms.ThreeBodyChannelDense)),
+      Ket3IndexLookup(std::move(ms.Ket3IndexLookup)), ThreeBodyChannelLookup(std::move(ms.ThreeBodyChannelLookup)),
       PandyaLookup(std::move(ms.PandyaLookup)), OrbitLookup(ms.OrbitLookup),
       holes(std::move(ms.holes)), particles(std::move(ms.particles)),
       core(std::move(ms.core)), valence(std::move(ms.valence)), qspace(std::move(ms.qspace)),
@@ -1308,32 +1308,6 @@ void ModelSpace::Setup3bKets()
       }
     }
   }
-  // dense reverse lookup, kept consistent with Ket3IndexLookup (built from the same Kets3)
-  Ket3IndexDense.clear();
-  k3_norb = 0;
-  k3_nJ = 0;
-  {
-    size_t maxorb = 0, maxJ = 0;
-    for (auto &k : Kets3)
-    {
-      maxorb = std::max({maxorb, k.p, k.q, k.r});
-      maxJ = std::max(maxJ, (size_t)k.Jpq);
-    }
-    size_t norb_d = maxorb + 1, nJ_d = maxJ + 1;
-    if (not Kets3.empty() and norb_d * norb_d * norb_d * nJ_d <= (size_t(1) << 24))
-    {
-      Ket3IndexDense.assign(norb_d * norb_d * norb_d * nJ_d, size_t(-1));
-      for (size_t i = 0; i < Kets3.size(); i++)
-      {
-        auto &k = Kets3[i];
-        if (Ket3IndexLookup.at(Ket3IndexHash(k.p, k.q, k.r, k.Jpq)) != i)
-          continue; // keep the map semantics if a hash were ever shared
-        Ket3IndexDense[((k.p * norb_d + k.q) * norb_d + k.r) * nJ_d + k.Jpq] = i;
-      }
-      k3_norb = norb_d;
-      k3_nJ = nJ_d;
-    }
-  }
 
   int twoJ_min = 1;
   int twoJ_max = 6 * GetEMax3Body() + 1; // 2 * (3*(Emax+1/2)-1)
@@ -1354,14 +1328,6 @@ void ModelSpace::Setup3bKets()
     ThreeBodyChannelLookup[ThreeBodyChannelHash(JPT[0], JPT[1], JPT[2])] = ThreeBodyChannels.size() - 1;
   }
   nThreeBodyChannels = ThreeBodyChannels.size();
-  // dense copy of ThreeBodyChannelLookup
-  ThreeBodyChannelDense.clear();
-  if (not ThreeBodyChannelLookup.empty() and ThreeBodyChannelLookup.rbegin()->first < (size_t(1) << 20))
-  {
-    ThreeBodyChannelDense.assign(ThreeBodyChannelLookup.rbegin()->first + 1, size_t(-1));
-    for (auto &kv : ThreeBodyChannelLookup)
-      ThreeBodyChannelDense[kv.first] = kv.second;
-  }
 }
 
 // Turn p,q,r,Jpq into a single index
@@ -1385,10 +1351,7 @@ ThreeBodyChannel &ModelSpace::GetThreeBodyChannel(int ch) const
 
 size_t ModelSpace::GetThreeBodyChannelIndex(int twoJ, int parity, int twoTz)
 {
-  size_t hash = ThreeBodyChannelHash(twoJ, parity, twoTz);
-  if (hash < ThreeBodyChannelDense.size() and ThreeBodyChannelDense[hash] != size_t(-1))
-    return ThreeBodyChannelDense[hash];
-  auto iter = ThreeBodyChannelLookup.find(hash);
+  auto iter = ThreeBodyChannelLookup.find(ThreeBodyChannelHash(twoJ, parity, twoTz));
   if (iter == ThreeBodyChannelLookup.end())
     return -1; // THIS IS PROBABLY NOT SAFE. (Actually, this is guaranteed by the standard to give the max unsigned int.)
   return iter->second;
@@ -1735,34 +1698,7 @@ void ModelSpace::MoshinskyUnHash(uint64_t key, uint64_t &N, uint64_t &Lam, uint6
 
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
 {
-  // { j1 j2 j3 }
-  // { J1 J2 J3 }
-  // cheap (integer) triangle test first; forbidden couplings are exactly zero (GSL returns 0 as well),
-  // so we avoid hashing and the hash-table lookup for them.
-  const long a6 = (long)(2*j1 + 0.5), b6 = (long)(2*j2 + 0.5), c6 = (long)(2*j3 + 0.5);
-  const long A6 = (long)(2*J1 + 0.5), B6 = (long)(2*J2 + 0.5), C6 = (long)(2*J3 + 0.5);
-  {
-    auto tri = [](long x, long y, long z) { return (x + y >= z) and (std::labs(x - y) <= z); };
-    if (not (tri(a6, b6, c6) and tri(A6, B6, c6) and tri(a6, B6, C6) and tri(A6, b6, C6)))
-      return 0;
-  }
-  // per-thread direct-mapped cache in front of the shared hash map.
-  constexpr int TL6J_BITS = 14;
-  static thread_local std::vector<uint64_t> tl6j_keys;
-  static thread_local std::vector<double> tl6j_vals;
-  if (tl6j_keys.empty()) { tl6j_keys.assign(1 << TL6J_BITS, UINT64_MAX); tl6j_vals.assign(1 << TL6J_BITS, 0.0); }
-  const bool tl6j_ok = (a6 | b6 | c6 | A6 | B6 | C6) < 1024;
-  const uint64_t tl6j_key = (uint64_t)a6 | ((uint64_t)b6 << 10) | ((uint64_t)c6 << 20) | ((uint64_t)A6 << 30) | ((uint64_t)B6 << 40) | ((uint64_t)C6 << 50);
-  const size_t tl6j_idx = (size_t)((tl6j_key * 0x9E3779B97F4A7C15ULL) >> (64 - TL6J_BITS));
-  if (tl6j_ok and tl6j_keys[tl6j_idx] == tl6j_key)
-    return tl6j_vals[tl6j_idx];
-  const double tl6j_result = GetSixJ_uncached_perf(j1, j2, j3, J1, J2, J3);
-  if (tl6j_ok) { tl6j_keys[tl6j_idx] = tl6j_key; tl6j_vals[tl6j_idx] = tl6j_result; }
-  return tl6j_result;
-}
-
-double ModelSpace::GetSixJ_uncached_perf(double j1, double j2, double j3, double J1, double J2, double J3)
-{
+    //TODO: Check Triangle condition before doing the hash?
   uint64_t key = SixJHash(j1, j2, j3, J1, J2, J3);
 
   const auto it = SixJList.find(key);
