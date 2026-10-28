@@ -300,10 +300,8 @@ class ModelSpace
    int nThreeBodyChannels;  // number of three body channels J,parity,Tz
    std::vector<ThreeBodyChannel> ThreeBodyChannels; // vector of ThreeBodyChannel structs
    std::map<size_t,size_t> Ket3IndexLookup;
-   std::vector<size_t> Ket3IndexDense; // dense (p,q,r,Jpq) -> index; empty = use the map
    size_t k3_norb = 0, k3_nJ = 0;
    std::map<size_t,size_t> ThreeBodyChannelLookup;
-   std::vector<size_t> ThreeBodyChannelDense; // hash -> channel index (size_t(-1) = absent); empty = use the map
 
 //   std::map< std::array<int,3>, std::map< std::array<size_t,2>,std::array<std::vector<size_t>,2> > > PandyaLookup; // I'm not sure how necessary this is...
    std::map< std::array<int,3>, std::vector<size_t> > PandyaLookup; // I'm not sure how necessary this is...
@@ -433,18 +431,7 @@ class ModelSpace
    size_t GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
    size_t GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    size_t GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
-   size_t GetKet3Index(int p, int q, int r, int Jpq)
-   {
-     // dense table first, original map as fallback (same results and exceptions)
-     if (not Ket3IndexDense.empty() and p >= 0 and q >= 0 and r >= 0 and Jpq >= 0 and (size_t)p < k3_norb and (size_t)q < k3_norb
-         and (size_t)r < k3_norb and (size_t)Jpq < k3_nJ)
-     {
-       size_t v = Ket3IndexDense[(((size_t)p * k3_norb + q) * k3_norb + r) * k3_nJ + Jpq];
-       if (v != size_t(-1))
-         return v;
-     }
-     return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));
-   };
+   size_t GetKet3Index(int p, int q, int r, int Jpq) {  return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));};
    size_t Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq);
    size_t ThreeBodyChannelHash( int twoJ, int parity, int twoTz);
 
