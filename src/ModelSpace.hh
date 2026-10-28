@@ -510,7 +510,6 @@ class ModelSpace
       return six_j_cache_2b_.SixJ(jj1, jj2, j_3, jj4, jj5, j_6);
    }
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
-   double GetSixJ_uncached_perf(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
    bool SixJ_is_empty(){ return SixJList.empty(); };
