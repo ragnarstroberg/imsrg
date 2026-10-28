@@ -47,8 +47,6 @@ namespace AngMom
    int phase(int x);
    double Tri(double j1, double j2, double j3);
    bool Triangle(double j1, double j2, double j3);
-   int Jmin( std::vector< std::array<int,2>> jpairs);
-   int Jmax( std::vector< std::array<int,2>> jpairs);
    // allocation-free overloads, preferred by overload resolution for brace-initialised calls Jmin({{a,b},{c,d}})
    int Jmin( std::initializer_list< std::array<int,2>> jpairs);
    int Jmax( std::initializer_list< std::array<int,2>> jpairs);
