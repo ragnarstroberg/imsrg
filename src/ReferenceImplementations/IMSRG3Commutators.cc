@@ -1349,7 +1349,7 @@ namespace ReferenceImplementations
       double jk = 0.5 * ok.j2;
 
       int J1 = bra.Jpq;
-      size_t iket_max = nkets3-1;
+      size_t iket_max = nkets3 - 1;
       if (ch3bra == ch3ket)
         iket_max = ibra;
       for (size_t iket = 0; iket <= iket_max; iket++)

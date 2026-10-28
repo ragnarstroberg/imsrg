@@ -343,6 +343,10 @@ namespace Commutator
 
     if ( z_particlerank>2)
        Z.ThreeBody.SetMode("pn");
+    // freshly allocated 3B storage of a channel-changing operator is flagged reduced by the ThreeBodyStorage
+    // constructor, but Z was made non-reduced above and all ss kernels write non-reduced matrix elements
+    if (z_particlerank > 2 and Z.ThreeBody.IsReduced() and not Z.IsReduced())
+       Z.ThreeBody.MakeNotReduced(); // storage is all zeros here: only fixes the flag
 
     if (Z.IsReduced())
        Z.MakeNotReduced();
