@@ -300,7 +300,6 @@ class ModelSpace
    int nThreeBodyChannels;  // number of three body channels J,parity,Tz
    std::vector<ThreeBodyChannel> ThreeBodyChannels; // vector of ThreeBodyChannel structs
    std::map<size_t,size_t> Ket3IndexLookup;
-   size_t k3_norb = 0, k3_nJ = 0;
    std::map<size_t,size_t> ThreeBodyChannelLookup;
 
 //   std::map< std::array<int,3>, std::map< std::array<size_t,2>,std::array<std::vector<size_t>,2> > > PandyaLookup; // I'm not sure how necessary this is...
