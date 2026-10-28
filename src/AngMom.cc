@@ -75,13 +75,8 @@ namespace AngMom
  // Check the triangle condition, i.e. can j1 and j2 be coupled to j3?
  bool Triangle(double j1, double j2, double j3)
  {
-   // integer arithmetic on 2j. Identical to the original round()-based test for half-integer j.
-   // j are non-negative half-integers, so 2j+0.5 truncates to the exact integer 2j (no libm call).
-   long a = (long)(2*j1 + 0.5);
-   long b = (long)(2*j2 + 0.5);
-   long c = (long)(2*j3 + 0.5);
-   if ( a+b < c ) return false;
-   if ( std::labs(a-b) > c ) return false;
+   if (round(2*(j1+j2))<round(2*j3)) return false;
+   if (std::abs(round(2*(j1-j2)))>round(2*j3)) return false;
    return true;
  }
 
