@@ -5183,8 +5183,8 @@ namespace Commutator
                   int ch6a = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o6.l + parity_a) % 2, (o6.tz2 + tz2a) / 2);
                   TwoBodyChannel &tbc6a = Z.modelspace->GetTwoBodyChannel(ch6a);
 
-                  auto& Xmat_126a = X.TwoBody.GetMatrix(ch12,ch6a);
-                  auto& Ymat_126a = Y.TwoBody.GetMatrix(ch12,ch6a);
+                  auto& Xmat_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a) : arma::mat() ;
+                  auto& Ymat_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a) : arma::mat() ;
 
                   size_t nkets_6a = tbc6a.GetNumberKets();
 
@@ -5213,8 +5213,8 @@ namespace Commutator
                     TwoBodyChannel &tbc45 = Z.modelspace->GetTwoBodyChannel(ch45);
                     TwoBodyChannel &tbc3a = Z.modelspace->GetTwoBodyChannel(ch3a);
 
-                    auto& Xmat_3a45 = X.TwoBody.GetMatrix(ch3a,ch45);
-                    auto& Ymat_3a45 = Y.TwoBody.GetMatrix(ch3a,ch45);
+                    auto& Xmat_3a45 = X_3a45_good ? X.TwoBody.GetMatrix(ch3a,ch45)  :  arma::mat() ;
+                    auto& Ymat_3a45 = Y_3a45_good ? Y.TwoBody.GetMatrix(ch3a,ch45)  :  arma::mat() ;
 
                     //                 size_t nkets_2 = tbc2.GetNumberKets();
                     size_t nkets_45 = tbc45.GetNumberKets();
