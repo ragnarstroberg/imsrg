@@ -760,6 +760,8 @@ PYBIND11_MODULE(pyIMSRG, m)
        ReferenceImplementations.def("comm333_ppp_hhhst", &ReferenceImplementations::comm333_ppp_hhhst);  
        ReferenceImplementations.def("comm333_pph_hhpst", &ReferenceImplementations::comm333_pph_hhpst); 
        ReferenceImplementations.def("TriplesGuess", &ReferenceImplementations::TriplesGuess);
+//       ReferenceImplementations.def("TestMBPT6", &ReferenceImplementations::TestMBPT6);
+//       ReferenceImplementations.def("TestMBPT6_2", &ReferenceImplementations::TestMBPT6_2);
 
 
       py::class_<RPA>(m, "RPA")
@@ -880,6 +882,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("GetMschemeMatrixElement_2b", &UnitTest::GetMschemeMatrixElement_2b)  
           .def("GetMschemeMatrixElement_3b", &UnitTest::GetMschemeMatrixElement_3b) 
           .def("Test3BGenerator",&UnitTest::Test3BGenerator)
+          .def("TestMBPT4",&UnitTest::TestMBPT4)
           ;
 
 

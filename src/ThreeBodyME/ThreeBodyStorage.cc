@@ -312,10 +312,15 @@ std::vector<ThreeBodyStorage::ME_type> ThreeBodyStorage::GetME_pn_TwoOps(int Jab
      }
   }
   if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return me_out;
-  // thread-local scratch instead of four heap allocations per call
-  static thread_local std::vector<double> recouple_bra, recouple_ket;
-  static thread_local std::vector<size_t> ibra, iket;
-  recouple_bra.clear(); recouple_ket.clear(); ibra.clear(); iket.clear();
+  // Thread local to reduce heap allocations. Seems to speed things up a little.
+  thread_local std::vector<double> recouple_bra;
+  thread_local std::vector<double> recouple_ket;
+  thread_local std::vector<size_t> ibra;
+  thread_local std::vector<size_t> iket;
+  recouple_bra.clear();
+  recouple_ket.clear();
+  ibra.clear();
+  iket.clear();
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
   // if ( ch_bra != ch_ket) return me_out;  // remove this and let it also works for tensor  B.C.

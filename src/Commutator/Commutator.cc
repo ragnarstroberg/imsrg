@@ -334,7 +334,6 @@ namespace Commutator
 
 
 
-
     if ((X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()))
       Z.SetAntiHermitian();
     else if ((X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()))

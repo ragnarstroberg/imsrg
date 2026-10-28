@@ -82,7 +82,8 @@ namespace AngMom
 
 
  // Get minimum value of J that satisfies triangle condition for all pairs provided
- int Jmin( std::vector< std::array<int,2>> jpairs)
+ //int Jmin( std::vector< std::array<int,2>> jpairs)
+ int Jmin( std::initializer_list< std::array<int,2>> jpairs)
  {
      int jmin = 0;
      for (auto p : jpairs )
@@ -112,7 +113,8 @@ namespace AngMom
  }
 
  // Get minimum value of J that satisfies triangle condition for all pairs provided
- int Jmax( std::vector< std::array<int,2>> jpairs)
+// int Jmax( std::vector< std::array<int,2>> jpairs)
+ int Jmax( std::initializer_list< std::array<int,2>> jpairs)
  {
      int jmax = 1000;
      for (auto p : jpairs )
