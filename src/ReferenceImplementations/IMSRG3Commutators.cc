@@ -1422,7 +1422,7 @@ namespace ReferenceImplementations
 
                     if ((o3.l + ob.l + o6.l + oa.l + X.parity) % 2 > 0 and (o3.l + ob.l + o6.l + oa.l + Y.parity) % 2 > 0)
                       continue;
-                    if (std::abs(o3.tz2 + ob.tz2 - o6.tz2 - oa.tz2) != X.GetTRank() and std::abs(o3.tz2 + ob.tz2 - o6.tz2 - oa.tz2) != Y.GetTRank())
+                    if (std::abs(o3.tz2 + ob.tz2 - o6.tz2 - oa.tz2) != 2*X.GetTRank() and std::abs(o3.tz2 + ob.tz2 - o6.tz2 - oa.tz2) != 2*Y.GetTRank())
                       continue;
 
                     int Ja6_min = std::max(std::abs(oa.j2 - o6.j2), std::abs(ob.j2 - o3.j2)) / 2;

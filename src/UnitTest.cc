@@ -4618,7 +4618,7 @@ bool UnitTest::Mscheme_Test_comm233_pp_hhss(const Operator &X, const Operator &Y
 //                           - Xbian Yajkbml + Ybian Xajkbml  +  Xbjan Yaikbml - Ybjan Xaikbml  +  Xbkan Yajibml - Ybkan Xajibml  ]
 //
 //
-bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) 
 {
   std::cout << __func__ << std::endl;
   Operator Z_J(Y);
@@ -4626,7 +4626,8 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) /
   Z_J.Erase();
   Z_J.ThreeBody.Allocate();
 
-  Commutator::comm233_phss(X, Y, Z_J);
+//  Commutator::comm233_phss(X, Y, Z_J);
+  ReferenceImplementations::comm233_phss(X, Y, Z_J);
 
   if (Z_J.IsHermitian())
     Z_J.Symmetrize();
@@ -4668,9 +4669,11 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y) /
               if (n > m)
                 continue;
               Orbit &on = X.modelspace->GetOrbit(n);
-              if ((oi.l + oj.l + ok.l + ol.l + om.l + on.l) % 2 != 0)
+//              if ((oi.l + oj.l + ok.l + ol.l + om.l + on.l) % 2 != 0)
+              if ((oi.l + oj.l + ok.l + ol.l + om.l + on.l) % 2 != Z_J.GetParity() )
                 continue;
-              if ((oi.tz2 + oj.tz2 + ok.tz2) != (ol.tz2 + om.tz2 + on.tz2))
+//              if ((oi.tz2 + oj.tz2 + ok.tz2) != (ol.tz2 + om.tz2 + on.tz2))
+              if ( std::abs( (oi.tz2 + oj.tz2 + ok.tz2) - (ol.tz2 + om.tz2 + on.tz2)) != 2*Z_J.GetTRank() )
                 continue;
 
               //              if ( not (i==5 and j==4 and k==0 and l==5 and m==4 and n==0) ) continue;
@@ -7899,7 +7902,6 @@ bool UnitTest::Mscheme_Test_comm233_phst(const Operator &X, const Operator &Y)
   Z_J.SetParticleRank(3);
   Z_J.ThreeBody.SetMode("pn");
   Z_J.ThreeBody.Erase();
-
 
   Operator Y_copy(Y);
   if (Lambda == 0 and (not Y.IsReduced()) )

@@ -230,45 +230,16 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_iso( int Jab_in, int Jde_in
 }
 
 
-/*
-void ThreeBodyStorage_pn::SetME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyStorage::ME_type V)
-{
-  std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
-  std::exit(EXIT_FAILURE);
-}
-
-
-void ThreeBodyStorage_pn::AddToME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyStorage::ME_type V)
-{
-  std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
-  std::exit(EXIT_FAILURE);
-}
-
-
-
-void ThreeBodyStorage_pn::SetME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ThreeBodyStorage_pn::ME_type V)
-{
-  std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
-  std::exit(EXIT_FAILURE);
-}
-
-void ThreeBodyStorage_pn::AddToME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ThreeBodyStorage_pn::ME_type V)
-{
-  std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
-  std::exit(EXIT_FAILURE);
-}
-*/
-
 
 
 
 
 // sum_IJ rb[I] rk[J] <ib[I]|V|ik[J]> with one block lookup (same arithmetic as GetME_pn_ch/AccessME)
-double ThreeBodyStorage_pn::SumRecoupled(size_t ch_bra, size_t ch_ket, const std::vector<size_t> &ib, const std::vector<double> &rb,
-                                         const std::vector<size_t> &ik, const std::vector<double> &rk) const
+double ThreeBodyStorage_pn::SumRecoupled(size_t ch_bra, size_t ch_ket, const std::vector<size_t> &index_bra, const std::vector<double> &recouple_bra,
+                                                                       const std::vector<size_t> &index_ket, const std::vector<double> &recouple_ket) const
 {
   double me_out = 0;
-  if (ib.empty() or ik.empty())
+  if (index_bra.empty() or index_ket.empty())
     return me_out;
   if (not is_allocated)
     return me_out; // GetME_pn_ch returns 0 for every term
@@ -277,28 +248,28 @@ double ThreeBodyStorage_pn::SumRecoupled(size_t ch_bra, size_t ch_ket, const std
   auto iter_ch_start = ch_start.find({ch_1, ch_2});
   if (iter_ch_start == ch_start.end())
   {
-    // not stored: keep the original behaviour (AccessME throws)
-    for (size_t I = 0; I < ib.size(); I++)
-      for (size_t J = 0; J < ik.size(); J++)
-        me_out += rb[I] * rk[J] * GetME_pn_ch(ch_bra, ch_ket, ib[I], ik[J]);
-    return me_out;
+    std::ostringstream oss;
+    oss << __FILE__ << " " << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket ;
+    throw std::domain_error( oss.str() );
   }
   const size_t start = iter_ch_start->second;
   const size_t dim1 = ch_dim[ch_1];
   const size_t dim2 = ch_dim[ch_2];
-  int phase_rev = 1;
+  int flip_phase = 1;
   if (ch_bra > ch_ket)
   {
     ThreeBodyChannel &Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
     ThreeBodyChannel &Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
-    phase_rev = modelspace->phase((Tbc_bra.twoJ - Tbc_ket.twoJ) / 2);
+    flip_phase = modelspace->phase((Tbc_bra.twoJ - Tbc_ket.twoJ) / 2);
   }
-  for (size_t I = 0; I < ib.size(); I++)
+  for (size_t I = 0; I < index_bra.size(); I++)
   {
-    for (size_t J = 0; J < ik.size(); J++)
+    for (size_t J = 0; J < index_ket.size(); J++)
     {
-      size_t ibra = ib[I], iket = ik[J];
+      size_t ibra = index_bra[I];
+      size_t iket = index_ket[J];
       ME_type v;
+
       if (ch_bra == ch_ket and ibra == iket and herm == -1)
         v = 0;
       else
@@ -307,7 +278,7 @@ double ThreeBodyStorage_pn::SumRecoupled(size_t ch_bra, size_t ch_ket, const std
         size_t iket_1 = (ch_bra == ch_ket) ? std::min(ibra, iket) : ((ch_bra < ch_ket) ? ibra : iket);
         size_t iket_2 = (ch_bra == ch_ket) ? std::max(ibra, iket) : ((ch_bra < ch_ket) ? iket : ibra);
         if (iket_1 > dim1 or iket_2 > dim2)
-          v = GetME_pn_ch(ch_bra, ch_ket, ibra, iket); // let AccessME report it
+          v = GetME_pn_ch(ch_bra, ch_ket, ibra, iket); // bad index. let AccessME report it
         else
         {
           size_t index;
@@ -317,16 +288,19 @@ double ThreeBodyStorage_pn::SumRecoupled(size_t ch_bra, size_t ch_ket, const std
           {
             index = start + dim2 * iket_1 + iket_2;
             if (ch_bra > ch_ket)
-              herm_flip *= phase_rev;
+              herm_flip *= flip_phase;
           }
           v = MatEl.at(index) * herm_flip;
         }
       }
-      me_out += rb[I] * rk[J] * v;
-    }
-  }
+      me_out += recouple_bra[I] * recouple_ket[J] * v;
+    }// for J
+  }// for I
   return me_out;
 }
+
+
+
 
 ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {

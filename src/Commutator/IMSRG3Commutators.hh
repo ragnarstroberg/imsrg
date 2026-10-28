@@ -66,25 +66,27 @@ namespace Commutator
     void comm232ss_mh_optimized(const Operator &X, const Operator &Y, Operator &Z);      // implemented and tested.
     void comm232ss_expand_full(const Operator &X, const Operator &Y, Operator &Z);       // implemented and tested.
     void comm232ss_expand_reduced(const Operator &X, const Operator &Y, Operator &Z);    // implemented and tested.
-    void comm232ss_debug(const Operator &X, const Operator &Y, Operator &Z);             // implemented and tested.
+//    void comm232ss_debug(const Operator &X, const Operator &Y, Operator &Z);             // implemented and tested.
     void comm232ss_slow(const Operator &X, const Operator &Y, Operator &Z);              // implemented and tested.
+
     void comm332_ppph_hhhpss(const Operator &X, const Operator &Y, Operator &Z);         // implemented and tested.
-                                                                                         //  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
-    void comm332_pphhss(const Operator &X, const Operator &Y, Operator &Z);              // implemented and tested.
-    void comm332_pphhss_debug(const Operator &X, const Operator &Y, Operator &Z);        // implemented and tested.
+                                                                                         //
+    void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
 
     void comm133ss(const Operator &X, const Operator &Y, Operator &Z);             // implemented and tested.
     void comm223ss(const Operator &X, const Operator &Y, Operator &Z);             // implemented and tested.
-    void comm223ss_new(const Operator &X, const Operator &Y, Operator &Z);         // implemented and tested.
-    void comm223ss_debug(const Operator &X, const Operator &Y, Operator &Z);       // implemented and tested.
     void comm233_pp_hhss(const Operator &X, const Operator &Y, Operator &Z);       // implemented and tested.
-    void comm233_pp_hhss_debug(const Operator &X, const Operator &Y, Operator &Z); // implemented and tested.
     void comm233_phss(const Operator &X, const Operator &Y, Operator &Z);          // implemented and tested.
-    void comm233_phss_debug(const Operator &X, const Operator &Y, Operator &Z);    // implemented and tested.
 
     void comm333_ppp_hhhss(const Operator &X, const Operator &Y, Operator &Z); // implemented. andtested.
     void comm333_pph_hhpss(const Operator &X, const Operator &Y, Operator &Z); // implemented. and tested.
-    void comm333_pph_hhpss_debug(const Operator &X, const Operator &Y, Operator &Z);
+
+    void comm332_ppph_hhhpss_tz(const Operator &X, const Operator &Y, Operator &Z);      // implemented by AI. Passed unit test.
+    void comm332_pphhss_tz(const Operator &X, const Operator &Y, Operator &Z);           // implemented by AI. Passed unit test.
+    void comm233_pp_hhss_tz(const Operator &X, const Operator &Y, Operator &Z);          // implemented by AI. Passed unit test.
+    void comm233_phss_tz(const Operator &X, const Operator &Y, Operator &Z);             // implemented by AI. FAILED unit test.
+    void comm333_ppp_hhhss_tz(const Operator &X, const Operator &Y, Operator &Z);        // implemented by AI. Passed unit test.
+    void comm333_pph_hhpss_tz(const Operator &X, const Operator &Y, Operator &Z);        // implemented by AI. Passed unit test.
 
 
 }
