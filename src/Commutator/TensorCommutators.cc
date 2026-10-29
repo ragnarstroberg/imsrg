@@ -3492,6 +3492,7 @@ namespace Commutator
                               if ( std::abs(yb3a6)<1e-8 ) continue;
                               double x12a45b = X3.GetME_pn(J1p, J2p, twoj3, I1, I2, a, I4, I5, b);
                               zijklmn += occupation_factor * phasefactor * hatfactor * sixj1*sixj2 * Pijk * Plmn * ( x12a45b * yb3a6 );
+
                             } // Ja6
                           } // twoj4
                         }// parity Tz check

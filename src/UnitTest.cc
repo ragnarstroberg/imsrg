@@ -1265,7 +1265,8 @@ double UnitTest::GetMschemeMatrixElement_3b(const Operator &Op, int a, int ma, i
   if (std::abs(oa.tz2 + ob.tz2 + oc.tz2 - od.tz2 - oe.tz2 - of.tz2) != 2 * Tzop)
     return 0;
 
-  if (Jop == 0 and Tzop == 0 and Pop == 0)
+//  if (Jop == 0 and Tzop == 0 and Pop == 0)
+  if (not Op.IsReduced() ) // scalar operator
   {
     if ((ma + mb + mc) != (md + me + mf))
       return 0;
@@ -4628,11 +4629,17 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y)
 
 //  Commutator::comm233_phss(X, Y, Z_J);
   ReferenceImplementations::comm233_phss(X, Y, Z_J);
+//  {
+//    Operator Ycp(Y);
+//    Ycp.MakeReduced();
+//    Z_J.MakeReduced();
+//    Commutator::comm233_phst(X,Ycp,Z_J);
+//  }
 
-  if (Z_J.IsHermitian())
-    Z_J.Symmetrize();
-  else if (Z_J.IsAntiHermitian())
-    Z_J.AntiSymmetrize();
+//  if (Z_J.IsHermitian())
+//    Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian())
+//    Z_J.AntiSymmetrize();
 
   double summed_error = 0;
   double sum_m = 0;
@@ -4789,16 +4796,16 @@ bool UnitTest::Mscheme_Test_comm233_phss(const Operator &X, const Operator &Y)
                                   // xijalmn = xaijblm = xajibml
                                   //                          z_ijklmn -= occfactor * (xbkan * yajibml - ybkan * xajibml);
                                   //                           z_ijklmn -= occfactor * (xbkan * yijalmb - ybkan*xijalmb);
-                                  double dz = -occfactor * 1 * (xbkan * yijalmb - ybkan * xijalmb);
-                                  dz += occfactor * 1 * (xbian * ykjalmb - ybian * xkjalmb);
-                                  dz += occfactor * 1 * (xbjan * yikalmb - ybjan * xikalmb);
-                                  dz += occfactor * 1 * (xbkal * yijanmb - ybkal * xijanmb);
-                                  dz += occfactor * 1 * (xbkam * yijalnb - ybkam * xijalnb);
-                                  dz -= occfactor * 1 * (xbial * ykjanmb - ybial * xkjanmb);
-                                  dz -= occfactor * 1 * (xbjal * yikanmb - ybjal * xikanmb);
-                                  dz -= occfactor * 1 * (xbiam * ykjalnb - ybiam * xkjalnb);
-                                  dz -= occfactor * 1 * (xbjam * yikalnb - ybjam * xikalnb);
-                                  z_ijklmn += dz;
+                                  double dz = -(xbkan * yijalmb - ybkan * xijalmb);
+                                        dz +=  (xbian * ykjalmb - ybian * xkjalmb); // Pik
+                                        dz +=  (xbjan * yikalmb - ybjan * xikalmb); // Pjk
+                                        dz +=  (xbkal * yijanmb - ybkal * xijanmb); // Pln
+                                        dz +=  (xbkam * yijalnb - ybkam * xijalnb); // Pmn
+                                        dz -=  (xbial * ykjanmb - ybial * xkjanmb); // Pik Pln
+                                        dz -=  (xbjal * yikanmb - ybjal * xikanmb); // Pjk Pln
+                                        dz -=  (xbiam * ykjalnb - ybiam * xkjalnb); // Pik Pmn
+                                        dz -=  (xbjam * yikalnb - ybjam * xikalnb); // Pjk Pmn
+                                  z_ijklmn += occfactor * dz;
 
                                 } // for m_b
                               } // for m_a

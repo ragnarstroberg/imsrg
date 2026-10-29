@@ -2,6 +2,7 @@
 #include "ReferenceImplementations.hh"
 #include "ModelSpace.hh"
 #include "AngMom.hh"
+#include <sstream> // for ostringstream to make useful error messages
 
 
 /// Straightforward implementation of J-coupled commutator expressions
@@ -25,6 +26,13 @@ namespace ReferenceImplementations
       return; // zero body term has Tz=0
     if (Z.GetParity() != 0)
       return; // zero body term has even parity
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
 
     size_t norb = Z.modelspace->GetNumberOrbits();
 //   for ( size_t a : Z.modelspace->all_orbits )
@@ -102,6 +110,13 @@ namespace ReferenceImplementations
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z1 = Z.OneBody;
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
 
     size_t norb = Z.modelspace->GetNumberOrbits();
 #pragma omp parallel for schedule(dynamic, 1)
@@ -187,6 +202,12 @@ namespace ReferenceImplementations
     auto &Y3 = Y.ThreeBody;
     auto &Z1 = Z.OneBody;
 
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
     size_t norb = Z.modelspace->GetNumberOrbits();
     //   for ( size_t i : Z.modelspace->all_orbits )
     //   #pragma omp parallel for schedule(dynamic,1)
@@ -268,6 +289,13 @@ namespace ReferenceImplementations
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
 
     std::vector<size_t> ch_bra_list, ch_ket_list;
 
@@ -351,6 +379,13 @@ namespace ReferenceImplementations
     auto &Y2 = Y.TwoBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
 
     int nch = Z.modelspace->GetNumberTwoBodyChannels();
 
@@ -527,6 +562,13 @@ namespace ReferenceImplementations
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
 
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
+
     // int nch2 = Z.modelspace->GetNumberTwoBodyChannels();
     Z.modelspace->PreCalculateSixJ();
     std::vector<int> bra_channels;
@@ -635,6 +677,13 @@ namespace ReferenceImplementations
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
 
     std::vector<int> bra_channels;
     std::vector<int> ket_channels;
@@ -810,6 +859,13 @@ namespace ReferenceImplementations
     size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
     Z.modelspace->PreCalculateSixJ();
 
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
+
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
     {
@@ -927,6 +983,14 @@ namespace ReferenceImplementations
     auto &Z3 = Z.ThreeBody;
     auto &X2 = X.TwoBody;
     auto &Y2 = Y.TwoBody;
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
+
     Z.modelspace->PreCalculateSixJ();
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
@@ -1113,6 +1177,13 @@ namespace ReferenceImplementations
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
 
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
+
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
 
@@ -1296,6 +1367,13 @@ namespace ReferenceImplementations
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
 
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
+
     // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
     const std::array<ThreeBodyStorage::Permutation, 3> index_perms = {ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
 
@@ -1367,11 +1445,11 @@ namespace ReferenceImplementations
         int J2 = ket.Jpq;
 
         double zijklmn = 0;
+//        std::cout << "ijklmn " << i << " " << j << " " << k << " " << l << " " << m <<  " " << n << std::endl;
 
         // Now we need to loop over the permutations in ijk and then lmn
         for (auto perm_ijk : index_perms) // {ijk} -> {123}
         {
-          // if (perm_ijk != index_perms[0]) continue;
           size_t I1, I2, I3;
           Z3.Permute(perm_ijk, i, j, k, I1, I2, I3);
           Orbit &o1 = Z.modelspace->GetOrbit(I1);
@@ -1382,8 +1460,8 @@ namespace ReferenceImplementations
           int J1p_max = J1;
           if (perm_ijk != ThreeBodyStorage::ABC)
           {
-            J1p_min = std::max(std::abs(o1.j2 - o2.j2), std::abs(twoJ - o3.j2)) / 2;
-            J1p_max = std::min(o1.j2 + o2.j2, twoJ + o3.j2) / 2;
+            J1p_min = AngMom::Jmin({ {o1.j2,o2.j2},{twoJ,o3.j2}}) / 2;
+            J1p_max = AngMom::Jmax({ {o1.j2,o2.j2},{twoJ,o3.j2}}) / 2;
           }
 
           for (int J1p = J1p_min; J1p <= J1p_max; J1p++)
@@ -1392,7 +1470,6 @@ namespace ReferenceImplementations
 
             for (auto perm_lmn : index_perms) // {lmn} -> {456}
             {
-              // if (perm_lmn != index_perms[0]) continue;
               size_t I4, I5, I6;
               Z3.Permute(perm_lmn, l, m, n, I4, I5, I6);
               Orbit &o4 = Z.modelspace->GetOrbit(I4);
@@ -1403,8 +1480,8 @@ namespace ReferenceImplementations
               int J2p_max = J2;
               if (perm_lmn != ThreeBodyStorage::ABC)
               {
-                J2p_min = std::max(std::abs(o4.j2 - o5.j2), std::abs(twoJ - o6.j2)) / 2;
-                J2p_max = std::min(o4.j2 + o5.j2, twoJ + o6.j2) / 2;
+                J2p_min = AngMom::Jmin({ {o4.j2,o5.j2},{twoJ,o6.j2} })/2;
+                J2p_max = AngMom::Jmax({ {o4.j2,o5.j2},{twoJ,o6.j2} })/2;
               }
               for (int J2p = J2p_min; J2p <= J2p_max; J2p++)
               {
@@ -1425,13 +1502,12 @@ namespace ReferenceImplementations
                     if (std::abs(o3.tz2 + ob.tz2 - o6.tz2 - oa.tz2) != 2*X.GetTRank() and std::abs(o3.tz2 + ob.tz2 - o6.tz2 - oa.tz2) != 2*Y.GetTRank())
                       continue;
 
-                    int Ja6_min = std::max(std::abs(oa.j2 - o6.j2), std::abs(ob.j2 - o3.j2)) / 2;
-                    int Ja6_max = std::min(oa.j2 + o6.j2, ob.j2 + o3.j2) / 2;
+                    int Ja6_min = AngMom::Jmin({ {oa.j2,o6.j2},{ob.j2,o3.j2} })/2;
+                    int Ja6_max = AngMom::Jmax({ {oa.j2,o6.j2},{ob.j2,o3.j2} })/2;
 
-                    int twoJp_min = std::max(std::abs(oa.j2 - 2 * J1p), std::abs(ob.j2 - 2 * J2p));
-                    int twoJp_max = std::min(oa.j2 + 2 * J1p, ob.j2 + 2 * J2p);
+                    int twoJp_min = AngMom::Jmin({ {oa.j2,2*J1p},{ob.j2,2*J2p} });
+                    int twoJp_max = AngMom::Jmax({ {oa.j2,2*J1p},{ob.j2,2*J2p} });
 
-                    //          if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
 
                     for (int twoJp = twoJp_min; twoJp <= twoJp_max; twoJp += 2)
                     {
@@ -1443,10 +1519,10 @@ namespace ReferenceImplementations
                         double xb3a6 = X2.GetTBME_J(Ja6, b, I3, a, I6);
                         double yb3a6 = Y2.GetTBME_J(Ja6, b, I3, a, I6);
 
-                        //                        double ninej = Z.modelspace->GetNineJ(ob.j2 * 0.5, twoJp * 0.5, J2p, o3.j2 * 0.5, J1p, twoJ * 0.5, Ja6, oa.j2 * 0.5, o6.j2 * 0.5);
                         double ninej = AngMom::NineJ(ob.j2 * 0.5, twoJp * 0.5, J2p, o3.j2 * 0.5, J1p, twoJ * 0.5, Ja6, oa.j2 * 0.5, o6.j2 * 0.5);
                         int phase = AngMom::phase((o3.j2 + o6.j2) / 2 + J1p + J2p + twoJ);
                         zijklmn -= (oa.occ - ob.occ) * Pijk * Plmn * (2 * Ja6 + 1) * (twoJp + 1) * phase * ninej * (xb3a6 * y12a45b - yb3a6 * x12a45b);
+
                       } // Ja6
                     } // twoJp
                   } // b
@@ -1473,6 +1549,13 @@ namespace ReferenceImplementations
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
+
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
 
     std::vector<std::array<size_t, 3>> bra_ket_channels;
     for (auto &it : Z.ThreeBody.Get_ch_start())
