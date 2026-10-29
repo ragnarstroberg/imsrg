@@ -70,6 +70,8 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   // Internal implementation methods
  private:
   void AccessME(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, size_t& index, int& herm_flip) const;
+  double SumRecoupled(size_t ch_bra, size_t ch_ket, const std::vector<size_t>& ib, const std::vector<double>& rb,
+                      const std::vector<size_t>& ik, const std::vector<double>& rk) const;
 
 };
 

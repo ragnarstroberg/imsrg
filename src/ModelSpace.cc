@@ -1700,6 +1700,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 {
   // { j1 j2 j3 }
   // { J1 J2 J3 }
+  //TODO: Check Triangle condition before doing the hash?
   uint64_t key = SixJHash(j1, j2, j3, J1, J2, J3);
 
   const auto it = SixJList.find(key);

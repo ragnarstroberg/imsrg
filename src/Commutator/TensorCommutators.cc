@@ -2707,8 +2707,8 @@ namespace Commutator
                   if ( ( (oi.l+oj.l+od.l+oa.l+ob.l+oc.l + X.GetParity()) %2 !=0)  and ( (oa.l+ob.l+oc.l+ok.l+ol.l+od.l + X.GetParity() )%2 !=0 ) ) continue;
                   if ( ( (oi.l+oj.l+od.l+oa.l+ob.l+oc.l + Y.GetParity()) %2 !=0)  and ( (oa.l+ob.l+oc.l+ok.l+ol.l+od.l + Y.GetParity() )%2 !=0 ) ) continue;
 
-                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != X.GetTRank()*2)  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != X.GetTRank()*2 ) ) continue;
-                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != Y.GetTRank()*2)  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != Y.GetTRank()*2 ) ) continue;
+                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != 2*X.GetTRank())  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != 2*X.GetTRank() ) ) continue;
+                  if ( ( std::abs(oi.tz2+oj.tz2+od.tz2-oa.tz2-ob.tz2-oc.tz2) != 2*Y.GetTRank())  and ( std::abs(oa.tz2+ob.tz2+oc.tz2-ok.tz2-ol.tz2-od.tz2) != 2*Y.GetTRank() ) ) continue;
 
                   int twoj1min = AngMom::Jmin({ {2*J1, od.j2} });
                   int twoj1max = AngMom::Jmax({ {2*J1, od.j2} });
@@ -2878,10 +2878,10 @@ namespace Commutator
                   bool Parity_good_abjcdk = ( ( tbc_ab.parity + bra.oq->l + tbc_cd.parity + ket.op->l )%2 == X.GetParity() )    and ( (tbc_cd.parity + bra.op->l + tbc_ab.parity + ket.oq->l)%2 == Y.GetParity() );
                   bool Parity_good_abicdl = ( ( tbc_ab.parity + bra.op->l + tbc_cd.parity + ket.oq->l )%2 == X.GetParity() )    and ( (tbc_cd.parity + bra.oq->l + tbc_ab.parity + ket.op->l)%2 == Y.GetParity() );
                   bool Parity_good_abjcdl = ( ( tbc_ab.parity + bra.oq->l + tbc_cd.parity + ket.oq->l )%2 == X.GetParity() )    and ( (tbc_cd.parity + bra.op->l + tbc_ab.parity + ket.op->l)%2 == Y.GetParity() );
-                  bool Tz_good_abicdk = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==(Y.GetTRank()*2));
-                  bool Tz_good_abjcdk = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==(Y.GetTRank()*2));
-                  bool Tz_good_abicdl = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==(Y.GetTRank()*2));
-                  bool Tz_good_abjcdl = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==(X.GetTRank()*2)) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==(Y.GetTRank()*2));
+                  bool Tz_good_abicdk = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==2*X.GetTRank()) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==2*Y.GetTRank());
+                  bool Tz_good_abjcdk = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.op->tz2)==2*X.GetTRank()) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.oq->tz2)==2*Y.GetTRank());
+                  bool Tz_good_abicdl = ( std::abs(tbc_ab.Tz*2 + bra.op->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==2*X.GetTRank()) and ( std::abs(tbc_cd.Tz*2 + bra.oq->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==2*Y.GetTRank());
+                  bool Tz_good_abjcdl = ( std::abs(tbc_ab.Tz*2 + bra.oq->tz2 - tbc_cd.Tz*2 - ket.oq->tz2)==2*X.GetTRank()) and ( std::abs(tbc_cd.Tz*2 + bra.op->tz2 - tbc_ab.Tz*2 - ket.op->tz2)==2*Y.GetTRank());
 
 
                   int twoj1min = AngMom::Jmin({ {2*J3,ji2} });
