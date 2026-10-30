@@ -5070,6 +5070,8 @@ namespace Commutator
     }
     size_t n_bra_ket_ch = bra_ket_channels.size();
 
+    arma::mat null_matrix;
+
     double Emp2 = 0;
 #pragma omp parallel for schedule(dynamic, 1) reduction(+ : Emp2)
     for (size_t ibra_ket = 0; ibra_ket < n_bra_ket_ch; ibra_ket++)
@@ -5233,8 +5235,8 @@ namespace Commutator
                   int ch6a = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o6.l + parity_a) % 2, (o6.tz2 + tz2a) / 2);
                   TwoBodyChannel &tbc6a = Z.modelspace->GetTwoBodyChannel(ch6a);
 
-                  auto& Xmat_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a) : X.TwoBody.MatEl.begin()->second ;
-                  auto& Ymat_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a) : Y.TwoBody.MatEl.begin()->second ;
+                  auto& Xmat_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a) : null_matrix ;
+                  auto& Ymat_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a) : null_matrix ;
 
                   size_t nkets_6a = tbc6a.GetNumberKets();
 
@@ -5259,8 +5261,8 @@ namespace Commutator
                     TwoBodyChannel &tbc45 = Z.modelspace->GetTwoBodyChannel(ch45);
                     TwoBodyChannel &tbc3a = Z.modelspace->GetTwoBodyChannel(ch3a);
 
-                    auto& Xmat_3a45 = X_3a45_good ? X.TwoBody.GetMatrix(ch3a,ch45)  : X.TwoBody.MatEl.begin()->second   ;
-                    auto& Ymat_3a45 = Y_3a45_good ? Y.TwoBody.GetMatrix(ch3a,ch45)  : Y.TwoBody.MatEl.begin()->second   ;
+                    auto& Xmat_3a45 = X_3a45_good ? X.TwoBody.GetMatrix(ch3a,ch45)  : null_matrix   ;
+                    auto& Ymat_3a45 = Y_3a45_good ? Y.TwoBody.GetMatrix(ch3a,ch45)  : null_matrix   ;
 
                     size_t nkets_45 = tbc45.GetNumberKets();
                     size_t nkets_3a = tbc3a.GetNumberKets();
@@ -5315,9 +5317,8 @@ namespace Commutator
                        size_t ind_3a = tbc3a.GetLocalIndex(std::min(I3, a), std::max(I3, a));
                        if ( ind_3a > nkets_3a ) continue;
 
-                        // We want un-normalized TBMEs. But since GetTBME just calls GetTBME_norm and adds the sqrt(2) factors
-                        // for this routine we figure out the sqrt(2) factors in the outer loops to speed up the look up
-                        // in the deeply nested loop.
+                        // Instead of just calling GetTBME(), we find the correct channel matrix
+                        // higher up, so we're not doing the lookup in the deepest nested loop. Noticeable speeup.
                         double x_126a = X_126a_good ? Xmat_126a(ind_12,ind_6a) : 0;
                         double y_126a = Y_126a_good ? Ymat_126a(ind_12,ind_6a) : 0;
                         double x_3a45 = X_3a45_good ? Xmat_3a45(ind_3a,ind_45) : 0;
