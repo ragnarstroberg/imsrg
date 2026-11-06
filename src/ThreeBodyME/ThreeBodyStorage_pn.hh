@@ -49,6 +49,8 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   void SetME_pn_ch(  size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ME_type V) override;
 
   ME_type GetME_pn_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const override;
+  void GetChannelMatrix_pn(size_t ch, arma::mat &M) const override;
+  void AddChannelMatrix_pn(size_t ch, const arma::mat &M, int tri) override;
 
 
   double Norm() const override;
