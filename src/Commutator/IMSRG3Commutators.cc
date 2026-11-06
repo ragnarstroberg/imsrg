@@ -290,6 +290,11 @@ namespace Commutator
               continue;
             if ((occnat_a * (1 - occnat_a) * occnat_b * (1 - occnat_b) * occnat_j * (1 - occnat_j)) < Z.modelspace->GetOccNat3Cut())
               continue;
+            // the same cut on (a b i): every term has one matrix element with (a b i) and one with (a b j)
+            if ((std::abs(ea - e_fermi[tza]) + std::abs(eb - e_fermi[tzb]) + std::abs(ei - e_fermi[tzi])) > Z.modelspace->GetdE3max())
+              continue;
+            if ((occnat_a * (1 - occnat_a) * occnat_b * (1 - occnat_b) * occnat_i * (1 - occnat_i)) < Z.modelspace->GetOccNat3Cut())
+              continue;
 
             int parity_abi = (tbc_ab.parity + oi.l) % 2;
             int twoTz_abi = tbc_ab.Tz * 2 + oi.tz2;
@@ -541,9 +546,9 @@ namespace Commutator
               int ec = 2 * ket.op->n + ket.op->l;
               int ed = 2 * ket.oq->n + ket.oq->l;
               double d_ec = std::abs(ec - e_fermi[ket.op->tz2]);
-              double d_ed = std::abs(ec - e_fermi[ket.oq->tz2]);
-              double occnat_c = bra.op->occ_nat;
-              double occnat_d = bra.oq->occ_nat;
+              double d_ed = std::abs(ed - e_fermi[ket.oq->tz2]);
+              double occnat_c = ket.op->occ_nat;
+              double occnat_d = ket.oq->occ_nat;
 
               double occnat_cdj = occnat_c * (1 - occnat_c) * occnat_d * (1 - occnat_d) * occnat_j * (1 - occnat_j);
               double occnat_cdi = occnat_c * (1 - occnat_c) * occnat_d * (1 - occnat_d) * occnat_i * (1 - occnat_i);
@@ -2064,6 +2069,16 @@ namespace Commutator
   //  The fast implementation should be updated to do that...
   void comm232ss_slow(const Operator &X, const Operator &Y, Operator &Z)
   {
+    // dE3max / occnat3 cut on the 3-body states, as in the other IMSRG(3) terms (1 if |abc> passes, else 0)
+    std::map<int, double> e_fermi_cut = Z.modelspace->GetEFermi();
+    auto cut3_ok = [&](int o1, int o2, int o3) -> double
+    {
+      Orbit &p1 = Z.modelspace->GetOrbit(o1); Orbit &p2 = Z.modelspace->GetOrbit(o2); Orbit &p3 = Z.modelspace->GetOrbit(o3);
+      double de = std::abs(2 * p1.n + p1.l - e_fermi_cut[p1.tz2]) + std::abs(2 * p2.n + p2.l - e_fermi_cut[p2.tz2]) + std::abs(2 * p3.n + p3.l - e_fermi_cut[p3.tz2]);
+      double on = p1.occ_nat * (1 - p1.occ_nat) * p2.occ_nat * (1 - p2.occ_nat) * p3.occ_nat * (1 - p3.occ_nat);
+      return (de > Z.modelspace->GetdE3max() or on < Z.modelspace->GetOccNat3Cut()) ? 0.0 : 1.0;
+    };
+
     auto &X2 = X.TwoBody;
     auto &X3 = X.ThreeBody;
     auto &Y2 = Y.TwoBody;
@@ -2162,8 +2177,8 @@ namespace Commutator
                     double Jtot = 0.5 * twoJ;
                     double sixj = Z.modelspace->GetSixJ(jj, ji, J, jc, Jtot, Jab);
                     double hatfactor = (twoJ + 1) * sqrt((2 * Jab + 1.) / (2 * J + 1));
-                    double xabjklc = yicab_good ? X3.GetME_pn(Jab, J, twoJ, a, b, j, k, l, c) : 0;
-                    double yabjklc = xicab_good ? Y3.GetME_pn(Jab, J, twoJ, a, b, j, k, l, c) : 0;
+                    double xabjklc = yicab_good ? X3.GetME_pn(Jab, J, twoJ, a, b, j, k, l, c) * cut3_ok(a, b, j) * cut3_ok(k, l, c) : 0;
+                    double yabjklc = xicab_good ? Y3.GetME_pn(Jab, J, twoJ, a, b, j, k, l, c) * cut3_ok(a, b, j) * cut3_ok(k, l, c) : 0;
                     zijkl += occfactor * hatfactor * phasefactor * sixj * (xciab * yabjklc - yciab * xabjklc);
                   }
                 }
@@ -2181,8 +2196,8 @@ namespace Commutator
                     double Jtot = 0.5 * twoJ;
                     double sixj = Z.modelspace->GetSixJ(ji, jj, J, jc, Jtot, Jab);
                     double hatfactor = (twoJ + 1) * sqrt((2 * Jab + 1.) / (2 * J + 1));
-                    double xabiklc = yjcab_good ? X3.GetME_pn(Jab, J, twoJ, a, b, i, k, l, c) : 0;
-                    double yabiklc = xjcab_good ? Y3.GetME_pn(Jab, J, twoJ, a, b, i, k, l, c) : 0;
+                    double xabiklc = yjcab_good ? X3.GetME_pn(Jab, J, twoJ, a, b, i, k, l, c) * cut3_ok(a, b, i) * cut3_ok(k, l, c) : 0;
+                    double yabiklc = xjcab_good ? Y3.GetME_pn(Jab, J, twoJ, a, b, i, k, l, c) * cut3_ok(a, b, i) * cut3_ok(k, l, c) : 0;
                     zijkl -= occfactor * hatfactor * phasefactor * sixj * (xcjab * yabiklc - ycjab * xabiklc);
                   }
                 }
@@ -2200,8 +2215,8 @@ namespace Commutator
                     double Jtot = 0.5 * twoJ;
                     double sixj = Z.modelspace->GetSixJ(jl, jk, J, jc, Jtot, Jab);
                     double hatfactor = (twoJ + 1) * sqrt((2 * Jab + 1.) / (2 * J + 1));
-                    double xijcabl = yabck_good ? X3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, l) : 0;
-                    double yijcabl = xabck_good ? Y3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, l) : 0;
+                    double xijcabl = yabck_good ? X3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, l) * cut3_ok(i, j, c) * cut3_ok(a, b, l) : 0;
+                    double yijcabl = xabck_good ? Y3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, l) * cut3_ok(i, j, c) * cut3_ok(a, b, l) : 0;
                     zijkl -= occfactor * hatfactor * phasefactor * sixj * (yijcabl * xabck - xijcabl * yabck);
                   }
                 }
@@ -2219,8 +2234,8 @@ namespace Commutator
                     double Jtot = 0.5 * twoJ;
                     double sixj = Z.modelspace->GetSixJ(jk, jl, J, jc, Jtot, Jab);
                     double hatfactor = (twoJ + 1) * sqrt((2 * Jab + 1.) / (2 * J + 1));
-                    double xijcabk = yabcl_good ? X3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, k) : 0;
-                    double yijcabk = xabcl_good ? Y3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, k) : 0;
+                    double xijcabk = yabcl_good ? X3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, k) * cut3_ok(i, j, c) * cut3_ok(a, b, k) : 0;
+                    double yijcabk = xabcl_good ? Y3.GetME_pn(J, Jab, twoJ, i, j, c, a, b, k) * cut3_ok(i, j, c) * cut3_ok(a, b, k) : 0;
                     zijkl += occfactor * hatfactor * phasefactor * sixj * (yijcabk * xabcl - xijcabk * yabcl);
                   }
                 }
@@ -5532,7 +5547,7 @@ namespace Commutator
               size_t a = ket_ab.p;
               size_t b = ket_ab.q;
               double d_ea = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
-              double d_eb = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
+              double d_eb = std::abs(2 * ket_ab.oq->n + ket_ab.oq->l - e_fermi[ket_ab.oq->tz2]);
               double occnat_a = ket_ab.op->occ_nat;
               double occnat_b = ket_ab.oq->occ_nat;
               if ((d_ea + d_eb + d_ek) > Z.modelspace->dE3max)
@@ -5582,7 +5597,7 @@ namespace Commutator
                 size_t a = ket_ab.p;
                 size_t b = ket_ab.q;
                 double d_ea = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
-                double d_eb = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
+                double d_eb = std::abs(2 * ket_ab.oq->n + ket_ab.oq->l - e_fermi[ket_ab.oq->tz2]);
                 double occnat_a = ket_ab.op->occ_nat;
                 double occnat_b = ket_ab.oq->occ_nat;
                 if ((d_ea + d_eb + d_ei) > Z.modelspace->dE3max)
@@ -5636,7 +5651,7 @@ namespace Commutator
                 size_t a = ket_ab.p;
                 size_t b = ket_ab.q;
                 double d_ea = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
-                double d_eb = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
+                double d_eb = std::abs(2 * ket_ab.oq->n + ket_ab.oq->l - e_fermi[ket_ab.oq->tz2]);
                 double occnat_a = ket_ab.op->occ_nat;
                 double occnat_b = ket_ab.oq->occ_nat;
                 if ((d_ea + d_eb + d_ej) > Z.modelspace->dE3max)
@@ -5848,7 +5863,7 @@ namespace Commutator
               auto &ket_ab = tbc_ab.GetKet(iket_ab);
               size_t a = ket_ab.p, b = ket_ab.q;
               double d_ea = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
-              double d_eb = std::abs(2 * ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]); // (sic) as in original
+              double d_eb = std::abs(2 * ket_ab.oq->n + ket_ab.oq->l - e_fermi[ket_ab.oq->tz2]);
               double occnat_a = ket_ab.op->occ_nat, occnat_b = ket_ab.oq->occ_nat;
               if ((d_ea + d_eb + d_esp) > Z.modelspace->GetdE3max())
                 continue;
