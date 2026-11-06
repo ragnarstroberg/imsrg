@@ -588,10 +588,28 @@ Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
     std::cout << " Uh oh. Trying to call " << __func__ << "  on an operator with rank_J = " << rank_J << "   you should probably implement that first..." << std::endl;
     std::exit(EXIT_FAILURE);
   }
+  if (is_reduced)
+  {
+    // The 3B -> 2B contraction below weights the stored 3B MEs with (2Jt+1)/(2J+1), which is only valid for
+    // non-reduced MEs. For a reduced (e.g. isospin-changing) operator, normal order a non-reduced copy instead.
+    Operator tmp = *this;
+    tmp.MakeNotReduced();
+    Operator out = tmp.DoNormalOrdering3(sign, occupied);
+    if (not out.IsReduced())
+      out.MakeReduced();
+    return out;
+  }
   int herm = IsHermitian() ? +1 : -1;
   if (IsNonHermitian()) herm = 0;
   Operator opNO3 = Operator(*modelspace, rank_J, rank_T, parity, 2);
-  opNO3.is_reduced = this->is_reduced;
+  if (this->IsReduced() and (not opNO3.IsReduced()) )
+  {
+      opNO3.MakeReduced();
+  }
+  if ((not this->IsReduced()) and opNO3.IsReduced() )
+  {
+      opNO3.MakeNotReduced();
+  }
   opNO3.hermitian = this->hermitian;
   opNO3.antihermitian = this->antihermitian;
   std::vector<int> ch_bra_list, ch_ket_list;
