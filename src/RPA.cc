@@ -243,23 +243,59 @@ void RPA::SolveRPA()
 		                    arma::join_horiz(-B,-A) );
    arma::eig_gen(eigvals,eigvecs,AB);
 
+//   std::cout << "IN " << __func__ << "Got eigs of AB matrix. vals:" << std::endl << eigvals << std::endl << "vecs " << std::endl << eigvecs << std::endl;
+
    // now deal with the fact that we get spurious copies of each eigenvector with a negative eigenvalue
    double normimag = arma::norm( arma::imag(eigvals),"fro");
    if (normimag>1e-3)
    {
       std::cout << "WARNING: non-zero imaginary part of eigenvalues! " << __FILE__ << " " << __func__ << " " << __LINE__ << std::endl;
    }
-   arma::uvec positive_indices = arma::find( arma::real(eigvals) + arma::imag(eigvals) >0 );
-   arma::vec tmp = arma::real( eigvals(positive_indices) );
-   size_t len = positive_indices.n_rows;
-   arma::mat good_vecs = arma::real ( eigvecs.cols( positive_indices) );
-   arma::mat Xtmp = good_vecs.head_rows(len);
-   arma::mat Ytmp = good_vecs.tail_rows(len);
-   arma::vec Etmp = arma::real( eigvals(positive_indices) );
+
+   /// We get two copies of every solution, with +- eigenvalues. We want the ones where the X norm is bigger than the Y norm.
+   size_t nr = eigvals.n_rows;
+   std::vector<unsigned long long> keep_indices;
+   for (size_t i=0; i<nr; i++)
+   {
+      arma::cx_vec vec = eigvecs.col(i);
+      double xnorm = arma::norm( vec.head_rows(nr/2), "fro");
+      double ynorm = arma::norm( vec.tail_rows(nr/2), "fro");
+//      std::cout << " " << i << " :  " << eigvals(i) << " xnorm,ynorm " << xnorm << " " << ynorm << std::endl;  
+      if ( xnorm > ynorm)
+      {
+        keep_indices.push_back(i);
+      }
+   }
+   arma::uvec valid_indices(keep_indices);
+   size_t len = valid_indices.n_rows;
+   arma::vec Etmp = arma::real( eigvals(valid_indices) );
+   
+   arma::mat good_vecs = arma::real( eigvecs.cols(valid_indices)) ;
+
    arma::uvec ordered_indices = arma::sort_index(Etmp);
    Energies = Etmp(ordered_indices);
-   X = Xtmp.cols(ordered_indices);
-   Y = Ytmp.cols(ordered_indices);
+   arma::mat ordered_vecs = good_vecs.cols(ordered_indices);
+   X = ordered_vecs.head_rows(len);
+   Y = ordered_vecs.tail_rows(len);
+
+//   arma::mat ordered_vecs = arma::real ( eigvecs.cols( ordered_indices) );
+//   X = ordered_vecs.head_rows(len);
+//   Y = ordered_vecs.tail_rows(len);
+
+
+
+////   arma::uvec positive_indices = arma::find( arma::real(eigvals) + arma::imag(eigvals) >0 );
+//   arma::vec tmp = arma::real( eigvals(positive_indices) );
+//   size_t len = positive_indices.n_rows;
+//   arma::mat good_vecs = arma::real ( eigvecs.cols( positive_indices) );
+//   arma::mat Xtmp = good_vecs.head_rows(len);
+//   arma::mat Ytmp = good_vecs.tail_rows(len);
+//   arma::vec Etmp = arma::real( eigvals(positive_indices) );
+//   arma::uvec ordered_indices = arma::sort_index(Etmp);
+//   Energies = Etmp(ordered_indices);
+//   X = Xtmp.cols(ordered_indices);
+//   Y = Ytmp.cols(ordered_indices);
+//   std::cout << "Part way done. X looks like " << std::endl << X << std::endl;
 //   std::cout << "eigvals = " << std::endl << eigvals << std::endl;
    for (size_t mu=0; mu<len; mu++)
    {
@@ -280,6 +316,7 @@ void RPA::SolveRPA()
 //          X.col(mu) *= -1;
 //          Y.col(mu) *= -1;
 //      }
+//      std::cout << "   mu = " << mu << "  nxy = " << nxy << "  because xnorm = " << xnorm << " ynorm = " << ynorm << std::endl;
       X.col(mu) /= sqrt(nxy);
       Y.col(mu) /= sqrt(nxy);
    }
