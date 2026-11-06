@@ -5009,6 +5009,18 @@ namespace Commutator
   //
   //// Trying the more straighforward way again
   /////////////////////////////////////////////////
+  // Only 2B channel blocks with ch_bra <= ch_ket are stored. For a J = 0 operator the block with
+  // ch_bra > ch_ket is the transpose of the stored one, times -1 if the operator is anti-Hermitian.
+  static const arma::mat &TwoBodyBlockAnyOrder(const Operator &Op, size_t ch_bra, size_t ch_ket, arma::mat &tmp)
+  {
+    if (ch_bra <= ch_ket)
+      return Op.TwoBody.GetMatrix(ch_bra, ch_ket);
+    tmp = Op.TwoBody.GetMatrix(ch_ket, ch_bra).t();
+    if (Op.IsAntiHermitian())
+      tmp *= -1;
+    return tmp;
+  }
+
   void comm223ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
@@ -5235,8 +5247,9 @@ namespace Commutator
                   int ch6a = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o6.l + parity_a) % 2, (o6.tz2 + tz2a) / 2);
                   TwoBodyChannel &tbc6a = Z.modelspace->GetTwoBodyChannel(ch6a);
 
-                  auto& Xmat_126a = X_126a_good ?  X.TwoBody.GetMatrix(ch12,ch6a) : null_matrix ;
-                  auto& Ymat_126a = Y_126a_good ?  Y.TwoBody.GetMatrix(ch12,ch6a) : null_matrix ;
+                  arma::mat Xtmp_126a, Ytmp_126a;
+                  const arma::mat& Xmat_126a = X_126a_good ?  TwoBodyBlockAnyOrder(X, ch12, ch6a, Xtmp_126a) : null_matrix ;
+                  const arma::mat& Ymat_126a = Y_126a_good ?  TwoBodyBlockAnyOrder(Y, ch12, ch6a, Ytmp_126a) : null_matrix ;
 
                   size_t nkets_6a = tbc6a.GetNumberKets();
 
@@ -5261,8 +5274,9 @@ namespace Commutator
                     TwoBodyChannel &tbc45 = Z.modelspace->GetTwoBodyChannel(ch45);
                     TwoBodyChannel &tbc3a = Z.modelspace->GetTwoBodyChannel(ch3a);
 
-                    auto& Xmat_3a45 = X_3a45_good ? X.TwoBody.GetMatrix(ch3a,ch45)  : null_matrix   ;
-                    auto& Ymat_3a45 = Y_3a45_good ? Y.TwoBody.GetMatrix(ch3a,ch45)  : null_matrix   ;
+                    arma::mat Xtmp_3a45, Ytmp_3a45;
+                    const arma::mat& Xmat_3a45 = X_3a45_good ? TwoBodyBlockAnyOrder(X, ch3a, ch45, Xtmp_3a45)  : null_matrix   ;
+                    const arma::mat& Ymat_3a45 = Y_3a45_good ? TwoBodyBlockAnyOrder(Y, ch3a, ch45, Ytmp_3a45)  : null_matrix   ;
 
                     size_t nkets_45 = tbc45.GetNumberKets();
                     size_t nkets_3a = tbc3a.GetNumberKets();
