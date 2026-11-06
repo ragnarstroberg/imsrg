@@ -602,11 +602,14 @@ Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
   int herm = IsHermitian() ? +1 : -1;
   if (IsNonHermitian()) herm = 0;
   Operator opNO3 = Operator(*modelspace, rank_J, rank_T, parity, 2);
-  opNO3.is_reduced = this->is_reduced;
-  // A new operator with rank_T > 0 (or rank_J, parity) has TwoBody.is_reduced == true. Keep the flags consistent,
-  // otherwise a later MakeReduced()/MakeNotReduced() silently skips the two-body part.
-  if (opNO3.TwoBody.IsReduced() and not opNO3.is_reduced)
-    opNO3.TwoBody.MakeNotReduced();
+  if (this->IsReduced() and (not opNO3.IsReduced()) )
+  {
+      opNO3.MakeReduced();
+  }
+  if ((not this->IsReduced()) and opNO3.IsReduced() )
+  {
+      opNO3.MakeNotReduced();
+  }
   opNO3.hermitian = this->hermitian;
   opNO3.antihermitian = this->antihermitian;
   std::vector<int> ch_bra_list, ch_ket_list;
