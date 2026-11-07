@@ -67,6 +67,11 @@ if(IMSRG_BUILD_PYTHON_BINDINGS)
         
     )
     add_test (
+        NAME UnitTestPerfPlan
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/UnitTestPerfPlan.py
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    )
+    add_test (
         NAME UnitTestFactorized
         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/UnitTestFactorized.py 
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
