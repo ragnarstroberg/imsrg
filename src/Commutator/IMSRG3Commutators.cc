@@ -2,6 +2,12 @@
 #include <cstdlib>
 #include <unordered_set>
 #include <algorithm>
+#include <mutex>
+#include <set>
+#include <cstring>
+#if defined(__GLIBC__)
+#include <malloc.h>   // malloc_trim: the perf-plan kernels give freed intermediates back to the OS
+#endif
 
 #include "IMSRG3Commutators.hh"
 #include "Commutator.hh"
@@ -212,6 +218,29 @@ namespace Commutator
       std::ostringstream oss;
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
+    }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      static int plan_depth = 0;   // the plan kernel falls back to this function for unsupported cases
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1" and plan_depth == 0)
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          plan_depth++;
+          comm331ss_plan(X, Y, Z);
+          plan_depth--;
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          plan_depth++;
+          comm331ss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          plan_depth--;
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
     }
 
     if (X.GetParticleRank() < 3)
@@ -442,6 +471,29 @@ namespace Commutator
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
     }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      static int plan_depth = 0;   // the plan kernel falls back to this function for unsupported cases
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1" and plan_depth == 0)
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          plan_depth++;
+          comm231ss_plan(X, Y, Z);
+          plan_depth--;
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          plan_depth++;
+          comm231ss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          plan_depth--;
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
 //    int herm = Z.IsHermitian() ? 1 : -1;
 
@@ -615,6 +667,30 @@ namespace Commutator
   void comm132ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+        // (placed before the 3B norms below, which the plan kernel does not need; reduced inputs go to the check below)
+      static int plan_depth = 0;   // the plan kernel falls back to this function for unsupported cases
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1" and plan_depth == 0)
+      {
+        if (not X.IsReduced() and not Y.IsReduced() and X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          plan_depth++;
+          comm132ss_plan(X, Y, Z);
+          plan_depth--;
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (not X.IsReduced() and not Y.IsReduced() and not Z.IsReduced() and X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0))
+        {
+          plan_depth++;
+          comm132ss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          plan_depth--;
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
     auto &X1 = X.OneBody;
     auto &X3 = X.ThreeBody;
     auto &Y1 = Y.OneBody;
@@ -814,6 +890,24 @@ namespace Commutator
   void comm232ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm232ss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced() and not imsrg3_valence_2b)
+        {
+          comm232ss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
     //  comm232ss_expand_full(X, Y, Z);
     comm232ss_srs_optimized(X, Y, Z);
@@ -3309,6 +3403,24 @@ namespace Commutator
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
     }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm332_ppph_hhhpss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          comm332_ppph_hhhpss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
     bool x3_allocated = X3.IsAllocated();
     bool y3_allocated = Y3.IsAllocated();
@@ -3939,6 +4051,24 @@ namespace Commutator
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
     }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm332_pphhss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          comm332_pphhss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
     bool x3_allocated = X3.IsAllocated();
     bool y3_allocated = Y3.IsAllocated();
@@ -4531,6 +4661,24 @@ namespace Commutator
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
     }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm133ss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          comm133ss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
     int hermX = X.IsHermitian() ? 1 : -1;
     int hermY = Y.IsHermitian() ? 1 : -1;
@@ -5026,6 +5174,24 @@ namespace Commutator
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
     }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm223ss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced() and not perturbative_triples and not imsrg3_no_qqq and not imsrg3_only_vvv)
+        {
+          comm223ss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
 
     Z.modelspace->PreCalculateSixJ(); // If we already did this, this does nothing.
@@ -5412,6 +5578,24 @@ namespace Commutator
       std::ostringstream oss;
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
+    }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm233_pp_hhss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          comm233_pp_hhss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
     }
 //    if ( X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
 //    {
@@ -6003,6 +6187,24 @@ namespace Commutator
       std::ostringstream oss;
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
+    }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm233_phss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          comm233_phss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
     }
 //    if ( X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
 //    {
@@ -7040,6 +7242,18 @@ namespace Commutator
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
     }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm333_ppp_hhhss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
+    }
 
     bool x3_allocated = X3.IsAllocated();
     bool y3_allocated = Y3.IsAllocated();
@@ -7321,6 +7535,24 @@ namespace Commutator
       std::ostringstream oss;
       oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
       throw std::runtime_error( oss.str() );
+    }
+    {   // precompiled-bookkeeping (plan) kernels, IMSRG_PERF_PLAN=1: same matrix elements, see PerfPlan*.inc
+      const char *plan_env = std::getenv("IMSRG_PERF_PLAN");
+      if (plan_env != nullptr and std::string(plan_env) == "1")
+      {
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetTRank() == 0 and Y.GetParity() == 0 and Y.GetJRank() == 0)
+        {
+          comm333_pph_hhpss_plan(X, Y, Z);
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+        if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0 and (Y.GetParity() != 0 or Y.GetTRank() > 0) and not Y.IsReduced() and not Z.IsReduced())
+        {
+          comm333_pph_hhpss_plan_tz(X, Y, Z);   // scalar X, channel-changing J=0 Y
+          Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+          return;
+        }
+      }
     }
 
     int hX = X.IsHermitian() ? 1 : -1;
@@ -8140,5 +8372,29 @@ namespace Commutator
   }
 
 
+
+// precompiled-bookkeeping (plan) kernels
+#include "PerfPlan.inc"
+#include "PerfPlan233.inc"
+#include "PerfPlan223.inc"
+#include "PerfPlan332.inc"
+#include "PerfPlan232.inc"
+#include "PerfPlan332p.inc"
+#include "PerfPlan233pp.inc"
+#include "PerfPlan133.inc"
+#include "PerfPlan331.inc"
+#include "PerfPlan132.inc"
+#include "PerfPlan333ppp.inc"
+#include "PerfPlan333tz.inc"
+#include "PerfPlan223tz.inc"
+#include "PerfPlan233tz.inc"
+#include "PerfPlan232tz.inc"
+#include "PerfPlan332tz.inc"
+#include "PerfPlan233pptz.inc"
+#include "PerfPlan332ptz.inc"
+#include "PerfPlan133tz.inc"
+#include "PerfPlan331tz.inc"
+#include "PerfPlan132tz.inc"
+#include "PerfPlan231tz.inc"
 
 }// namespace Commutator
