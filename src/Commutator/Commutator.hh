@@ -77,7 +77,9 @@ namespace Commutator
     void comm222_pp_hh_221ss(const Operator &X, const Operator &Y, Operator &Z);
 
     void comm122ss_slower(const Operator &X, const Operator &Y, Operator &Z);
+    void comm122ss_blocks(const Operator &X, const Operator &Y, Operator &Z);   // perf plan: scalar X, J = 0 channel-changing Y
     void comm222_phss_slower(const Operator &X, const Operator &Y, Operator &Z);
+    void comm222_phss_blocks(const Operator &X, const Operator &Y, Operator &Z);   // perf plan: scalar X, J = 0 channel-changing Y
 
     void ConstructScalarMpp_Mhh(const Operator &X, const Operator &Y, const Operator &Z, TwoBodyME &Mpp, TwoBodyME &Mhh);
 

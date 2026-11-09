@@ -315,6 +315,48 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn_ch(size_t ch_bra, size_t
 
 
 
+// PERF: bulk access to a channel-diagonal block (packed upper triangle, row i1 <= column i2), same values as the
+// element-wise GetME_pn_ch / AddToME_pn_ch but with a single channel lookup.
+void ThreeBodyStorage_pn::GetChannelMatrix_pn(size_t ch, arma::mat &M) const
+{
+  size_t n = ch_dim[ch];
+  M.set_size(n, n);
+  if (not is_allocated) { M.zeros(); return; }
+  auto it = ch_start.find({ch, ch});
+  if (it == ch_start.end()) throw std::domain_error("GetChannelMatrix_pn: channel not stored");
+  const pnME_type *base = MatEl.data() + it->second;
+  for (size_t i1 = 0; i1 < n; i1++)
+  {
+    const pnME_type *row = base + (2 * n - i1 - 1) * i1 / 2;
+    for (size_t i2 = i1; i2 < n; i2++)
+    {
+      double v = row[i2];
+      M(i2, i1) = v;          // ibra >= iket: herm_flip = 1
+      M(i1, i2) = herm * v;   // ibra <  iket: herm_flip = herm
+    }
+    if (herm == -1) M(i1, i1) = 0;
+  }
+}
+
+void ThreeBodyStorage_pn::AddChannelMatrix_pn(size_t ch, const arma::mat &M, int tri)
+{
+  size_t n = ch_dim[ch];
+  auto it = ch_start.find({ch, ch});
+  if (it == ch_start.end()) throw std::domain_error("AddChannelMatrix_pn: channel not stored");
+  pnME_type *base = MatEl.data() + it->second;
+  for (size_t i1 = 0; i1 < n; i1++)
+  {
+    pnME_type *row = base + (2 * n - i1 - 1) * i1 / 2;
+    if (tri > 0)   // elements (ibra, iket) = (i2, i1), iket <= ibra: herm_flip = 1
+      for (size_t i2 = i1; i2 < n; i2++) row[i2] += M(i2, i1);
+    else           // elements (ibra, iket) = (i1, i2), iket >= ibra: herm_flip = herm for i2 > i1, 1 on the diagonal
+    {
+      row[i1] += M(i1, i1);
+      for (size_t i2 = i1 + 1; i2 < n; i2++) row[i2] += herm * M(i1, i2);
+    }
+  }
+}
+
 void ThreeBodyStorage_pn::SetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyStorage::ME_type V)
 {
 //  std::cout << " IN " << __FILE__ << " " << __func__ << "  is_allocated = " << is_allocated << std::endl;
