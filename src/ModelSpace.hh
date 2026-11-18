@@ -307,18 +307,29 @@ class ModelSpace
    std::unordered_map<size_t,index_t> OrbitLookup; // Map to help look up the orbit index based on its quantum numbers
 
 
-   std::set<index_t> holes;           // in the reference Slater determinant
-   std::set<index_t> particles;       // above the reference Slater determinant
-   std::set<index_t> core;            // core for decoupling
-   std::set<index_t> valence;         // valence space for decoupling
-   std::set<index_t> qspace;          // above the valence space for decoupling
-   std::set<index_t> proton_orbits;   // all of the orbits with tz<0
-   std::set<index_t> neutron_orbits;  // all the orbits with tz>0
-   std::set<index_t> all_orbits;      // all of the orbits, for convenient looping
+
+//   std::set<index_t> holes;           // in the reference Slater determinant
+//   std::set<index_t> particles;       // above the reference Slater determinant
+//   std::set<index_t> core;            // core for decoupling
+//   std::set<index_t> valence;         // valence space for decoupling
+//   std::set<index_t> qspace;          // above the valence space for decoupling
+//   std::set<index_t> proton_orbits;   // all of the orbits with tz<0
+//   std::set<index_t> neutron_orbits;  // all the orbits with tz>0
+//   std::set<index_t> all_orbits;      // all of the orbits, for convenient looping
+
+   std::vector<index_t> holes;           // in the reference Slater determinant
+   std::vector<index_t> particles;       // above the reference Slater determinant
+   std::vector<index_t> core;            // core for decoupling
+   std::vector<index_t> valence;         // valence space for decoupling
+   std::vector<index_t> qspace;          // above the valence space for decoupling
+   std::vector<index_t> proton_orbits;   // all of the orbits with tz<0
+   std::vector<index_t> neutron_orbits;  // all the orbits with tz>0
+   std::vector<index_t> all_orbits;      // all of the orbits, for convenient looping
    // All the orbits used to span the 3-body space.
    //
    // Initialized by Init version 0 (map, set, set).
-   std::set<index_t> orbits_3body_space_;
+//   std::set<index_t> orbits_3body_space_;
+   std::vector<index_t> orbits_3body_space_;
 
    std::set<std::array<int,2>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
 
@@ -452,8 +463,10 @@ class ModelSpace
 
    // Two helper functions for counting the number of particles in various sets of orbits, e.g. protons in the core.
    std::set<index_t> IntersectionOfSets( const std::set<index_t>& set1, const std::set<index_t>& set2) const ;
+   std::vector<index_t> IntersectionOfSets( const std::vector<index_t>& vector1, const std::vector<index_t>& vector2) const ;
 //   double CountInSet( const std::set<index_t>& orbits ) const ;
    double CountInSet( const std::set<index_t>& orbits, bool occupation_weights=true ) const ;
+   double CountInSet( const std::vector<index_t>& orbits, bool occupation_weights=true ) const ;
    double GetAref() const ;
    double GetZref() const ;
    double GetNref() const ;

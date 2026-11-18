@@ -1691,8 +1691,8 @@ Operator E0Op(ModelSpace& modelspace)
 
 // Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R)
 // providing an index list allows us to select e.g. just protons or just neutrons
-// Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
-Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list)
+//Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list)
+ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
 {
   Operator a_nu(modelspace,0,0,0,2);
 

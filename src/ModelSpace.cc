@@ -435,23 +435,42 @@ double ModelSpace::CountInSet(const std::set<index_t> &orbits, bool occupation_w
   double count = 0;
   for (auto &i : orbits)
   {
-    const Orbit &oi = GetOrbit(i);
-    if (occupation_weights)
-    {
-      count += (oi.j2 + 1) * oi.occ;
-    }
-    else
-    {
-      count += (oi.j2 + 1);
-    }
+    auto &oi = GetOrbit(i);
+    count += occupation_weights ?  (oi.j2+1)*oi.occ  :  oi.j2+1;
+//    if (occupation_weights)
+//    {
+//      count += (oi.j2 + 1) * oi.occ;
+//    }
+//    else
+//    {
+//      count += (oi.j2 + 1);
+//    }
   }
   return count;
 }
+
+double ModelSpace::CountInSet(const std::vector<index_t> &orbits, bool occupation_weights) const
+{
+  double count = 0;
+  for (auto &i : orbits)
+  {
+    auto &oi = GetOrbit(i);
+    count += occupation_weights ?  (oi.j2+1)*oi.occ  :  oi.j2+1;
+  }
+  return count;
+}
+
 
 std::set<index_t> ModelSpace::IntersectionOfSets(const std::set<index_t> &set1, const std::set<index_t> &set2) const
 {
   std::set<index_t> set3;
   std::set_intersection(set1.begin(), set1.end(), set2.begin(), set2.end(), std::inserter(set3, set3.end()));
+  return set3;
+}
+std::vector<index_t> ModelSpace::IntersectionOfSets(const std::vector<index_t> &set1, const std::vector<index_t> &set2) const
+{
+  std::vector<index_t> set3;
+  std::set_intersection(set1.begin(), set1.end(), set2.begin(), set2.end(), std::back_inserter(set3));
   return set3;
 }
 
@@ -1004,28 +1023,53 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
       nTwoBodyChannels = 2 * (TwoBodyJmax + 1);
   }
 
+  auto vec_insert = [this](std::vector<index_t> &V, index_t ind){ if(std::find(V.begin(),V.end(),ind) == V.end()){  V.push_back(ind);}} ;
+  auto vec_erase  = [this](std::vector<size_t> &V, size_t ind){ V.erase(std::remove(V.begin(), V.end(), ind), V.end()); }; // "Erase-remove idiom"
   for (auto orbitlist : {&particles, &holes, &core, &valence, &qspace, &proton_orbits, &neutron_orbits, &all_orbits, &orbits_3body_space_})
-    orbitlist->erase(ind); //
+    orbitlist->erase(std::remove(orbitlist->begin(), orbitlist->end(), ind), orbitlist->end());
+//    orbitlist->erase(ind); //
+
 
   if (occ < OCC_CUT)
-    particles.insert(ind);
+    vec_insert( particles, ind);
   else
-    holes.insert(ind);
+    vec_insert(holes, ind);
   if (cvq == 0)
-    core.insert(ind);
+    vec_insert(core, ind);
   if (cvq == 1)
-    valence.insert(ind);
+    vec_insert(valence,ind);
   if (cvq == 2)
-    qspace.insert(ind);
+    vec_insert(qspace,ind);
   if (tz2 < 0)
-    proton_orbits.insert(ind);
+    vec_insert(proton_orbits,ind);
   if (tz2 > 0)
-    neutron_orbits.insert(ind);
-  all_orbits.insert(ind);
+    vec_insert(neutron_orbits,ind);
+  vec_insert(all_orbits,ind);
   if (2 * n + l <= emax_3body_)
   {
-    orbits_3body_space_.insert(ind);
+    vec_insert(orbits_3body_space_,ind);
   }
+
+//  if (occ < OCC_CUT)
+////    particles.insert(ind);
+//    vec_insert( particles, ind);
+//  else
+//    holes.insert(ind);
+//  if (cvq == 0)
+//    core.insert(ind);
+//  if (cvq == 1)
+//    valence.insert(ind);
+//  if (cvq == 2)
+//    qspace.insert(ind);
+//  if (tz2 < 0)
+//    proton_orbits.insert(ind);
+//  if (tz2 > 0)
+//    neutron_orbits.insert(ind);
+//  all_orbits.insert(ind);
+//  if (2 * n + l <= emax_3body_)
+//  {
+//    orbits_3body_space_.insert(ind);
+//  }
 
   norbits = all_orbits.size();
   norbits_3body_ = orbits_3body_space_.size();

@@ -412,13 +412,21 @@ Operator Operator::UndoNormalOrderingCore() const
 // with a negative occupation on all hole orbits that aren't in the core.
 Operator Operator::ReNormalOrderCore(bool copy_3body) const
 {
-  auto orbit_set = modelspace->holes;
-  for (auto c : modelspace->core)
+//  auto orbit_set = modelspace->holes;
+//  for (auto c : modelspace->core)
+//  {
+//     auto it = orbit_set.find(c);
+//     if (it != orbit_set.end() )
+//     {
+//        orbit_set.erase(it);
+//     }
+//  }
+  std::vector<index_t> orbit_set;
+  for (auto h : modelspace->holes )
   {
-     auto it = orbit_set.find(c);
-     if (it != orbit_set.end() )
+     if ( std::find( modelspace->core.begin(), modelspace->core.end(), h) == modelspace->core.end())
      {
-        orbit_set.erase(it);
+        orbit_set.push_back(h);
      }
   }
   
@@ -473,7 +481,8 @@ Operator Operator::DoNormalOrderingFilledValence() const
 ///  the tensor part hasn't been tested
 //*************************************************************
 // Operator Operator::DoNormalOrdering2(int sign) const
-Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
+//Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
+Operator Operator::DoNormalOrdering2(int sign, std::vector<index_t> occupied) const
 {
   Operator opNO(*this);
   bool scalar = (opNO.rank_J == 0 and opNO.rank_T == 0 and opNO.parity == 0);
@@ -579,7 +588,8 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied) const
 ///   Right now, this is only set up for scalar operators, but I don't anticipate
 ///   handling 3body tensor operators in the near future.
 //*******************************************************************************
-Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
+//Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
+Operator Operator::DoNormalOrdering3(int sign, std::vector<index_t> occupied) const
 {
   double t_start = omp_get_wtime();
 //  std::cout << "begin " << __func__ << "   norm of 3b is " << ThreeBodyNorm() << std::endl;
@@ -676,7 +686,8 @@ Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied) const
 ///  The normal ordering is slightly different if the operator is a
 ///  dagger operator.
 ///
-Operator Operator::DoNormalOrderingDagger(int sign, std::set<index_t> occupied) const
+//Operator Operator::DoNormalOrderingDagger(int sign, std::set<index_t> occupied) const
+Operator Operator::DoNormalOrderingDagger(int sign, std::vector<index_t> occupied) const
 {
   Operator opNO(*this);
 

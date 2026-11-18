@@ -156,11 +156,14 @@ class Operator
   // Undoing normal ordering is equivalent to doing normal ordering with negative occupations.
   // So the occupations na,nb etc are all multiplied by the sign passed to the methods.
   Operator DoNormalOrdering() const; ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
-  Operator DoNormalOrdering2(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered two-body operator
-  Operator DoNormalOrdering3(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered three-body operator
+//  Operator DoNormalOrdering2(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered two-body operator
+//  Operator DoNormalOrdering3(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered three-body operator
+  Operator DoNormalOrdering2(int sign, std::vector<index_t> occupied) const; ///< Returns the normal ordered two-body operator
+  Operator DoNormalOrdering3(int sign, std::vector<index_t> occupied) const; ///< Returns the normal ordered three-body operator
   Operator DoNormalOrderingCore() const; ///< Normal order with respect to core
   Operator DoNormalOrderingFilledValence() const; ///< Normal order with respect to a filled valence space
-  Operator DoNormalOrderingDagger(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered dagger operator
+//  Operator DoNormalOrderingDagger(int sign, std::set<index_t> occupied) const; ///< Returns the normal ordered dagger operator
+  Operator DoNormalOrderingDagger(int sign, std::vector<index_t> occupied) const; ///< Returns the normal ordered dagger operator
   Operator UndoNormalOrdering() const; ///< Returns the operator normal-ordered wrt the vacuum
   Operator UndoNormalOrderingCore() const; ///< Returns the operator normal-ordered wrt the vacuum
   Operator ReNormalOrderCore(bool copy_3body=false) const; ///< Normal order wrt core. By default, discard 3-body, but we can copy it over if copy_3body=true.

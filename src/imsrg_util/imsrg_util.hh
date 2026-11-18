@@ -77,8 +77,8 @@ namespace imsrg_util
 // Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
 // Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
  Operator RpSpinOrbitCorrection(ModelSpace& modelspace);
- //Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
- Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list);
+ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
+// Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list);
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator TzSquared_Op(ModelSpace& modelspace);
