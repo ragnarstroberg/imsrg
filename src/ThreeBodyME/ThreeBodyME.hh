@@ -115,6 +115,9 @@ class ThreeBodyME
   void SetME_pn_ch(  size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBME_type V);
 
   ThreeBME_type GetME_pn_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const;
+  // whole channel-diagonal block at once (see ThreeBodyStorage::GetChannelMatrix_pn / AddChannelMatrix_pn)
+  void GetChannelMatrix_pn(size_t ch, arma::mat &M) const { threebody_storage->GetChannelMatrix_pn(ch, M); }
+  void AddChannelMatrix_pn(size_t ch, const arma::mat &M, int tri) { threebody_storage->AddChannelMatrix_pn(ch, M, tri); }
 //  ThreeBME_type GetME_pn_ch(size_t chbra, size_t chket, Ket3& bra, Ket3& ket) const; // do we use this??
 
   // In commutator expressions it often comes up that we want the same matrix element from two operators. This saves an extra recoupling.
