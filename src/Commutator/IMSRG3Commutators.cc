@@ -4989,7 +4989,20 @@ namespace Commutator
   }
 
 
-
+  /////////////////////////////////////////////////
+  // Helper function, written by Claude, that properly treats partiy-changing operators.
+  // Checked for readability and correctness by Ragnar. Passes unit tests.
+  // Only 2B channel blocks with ch_bra <= ch_ket are stored. For a J = 0 operator the block with
+  // ch_bra > ch_ket is the transpose of the stored one, times -1 if the operator is anti-Hermitian.
+  static const arma::mat &TwoBodyBlockAnyOrder(const Operator &Op, size_t ch_bra, size_t ch_ket, arma::mat &tmp)
+  {
+    if (ch_bra <= ch_ket)
+      return Op.TwoBody.GetMatrix(ch_bra, ch_ket);
+    tmp = Op.TwoBody.GetMatrix(ch_ket, ch_bra).t();
+    if (Op.IsAntiHermitian())
+      tmp *= -1;
+    return tmp;
+  }
   //*****************************************************************************************
   //
   //  i|  j|  k|   Uncoupled expression:
@@ -5008,18 +5021,7 @@ namespace Commutator
   //  checked with UnitTest, and it looks good.
   //
   //// Trying the more straighforward way again
-  /////////////////////////////////////////////////
-  // Only 2B channel blocks with ch_bra <= ch_ket are stored. For a J = 0 operator the block with
-  // ch_bra > ch_ket is the transpose of the stored one, times -1 if the operator is anti-Hermitian.
-  static const arma::mat &TwoBodyBlockAnyOrder(const Operator &Op, size_t ch_bra, size_t ch_ket, arma::mat &tmp)
-  {
-    if (ch_bra <= ch_ket)
-      return Op.TwoBody.GetMatrix(ch_bra, ch_ket);
-    tmp = Op.TwoBody.GetMatrix(ch_ket, ch_bra).t();
-    if (Op.IsAntiHermitian())
-      tmp *= -1;
-    return tmp;
-  }
+
 
   void comm223ss(const Operator &X, const Operator &Y, Operator &Z)
   {
