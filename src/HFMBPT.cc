@@ -4137,7 +4137,6 @@ double HFMBPT::GetMP4_F35( const Operator& H) const
          }//for d
        }//for c
      }//for b
-     std::cout << "    " << a << "  " << a_sum << "  " << oa.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
@@ -4429,7 +4428,6 @@ double HFMBPT::GetMP4_F39( const Operator& H) const
          }//for d
        }//for c
      }//for b
-     std::cout << "    " << a << "  " << a_sum << "  " << oa.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;

@@ -1499,10 +1499,14 @@ void ModelSpace::ClearVectors()
   }
 
   Orbits.clear();
+  OrbitLookup.clear();
   Kets.clear();
   OneBodyChannels.clear();
   TwoBodyChannels.clear();
   TwoBodyChannels_CC.clear();
+  ThreeBodyChannels.clear();
+  Ket3IndexLookup.clear();
+  ThreeBodyChannelLookup.clear();
   SortedTwoBodyChannels.clear();
   SortedTwoBodyChannels_CC.clear();
   PandyaLookup.clear();
@@ -1769,7 +1773,8 @@ void ModelSpace::PreCalculateSixJ()
   std::vector<uint64_t> KEYS;
   SixJList.clear();
 
-  int jmax_1b = 2*Emax+1; // maximum j a single particle can have
+//  int jmax_1b = 2*Emax+1; // maximum j a single particle can have
+  int jmax_1b = OneBodyJmax;
   int jmax_2b = 2*jmax_1b; // max j two particles can have
   int jmax_3b = 3*jmax_1b; // max j three particles can have
 
