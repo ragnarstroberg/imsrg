@@ -2984,7 +2984,7 @@ double HFMBPT::GetMP4_F17( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F17 =0;
-//   #pragma omp parallel for
+   #pragma omp parallel for reduction(+:F17) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
      Orbit& oa = H.modelspace->GetOrbit(a);
@@ -3626,10 +3626,11 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
 
    double F27 =0;
 //   #pragma omp parallel for
-             for ( auto i: H.modelspace->holes )
-             {
-               double a_sum=0;
-               Orbit& oi = H.modelspace->GetOrbit(i);
+//             for ( auto i: H.modelspace->holes )
+//             {
+//               double a_sum=0;
+//               Orbit& oi = H.modelspace->GetOrbit(i);
+   #pragma omp parallel for reduction(+:F27) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
      Orbit& oa = H.modelspace->GetOrbit(a);
@@ -3646,9 +3647,9 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
            {
              Orbit& oe = H.modelspace->GetOrbit(e);
              if ( oe.j2 != oa.j2) continue;
-//             for ( auto i: H.modelspace->holes )
-//             {
-//               Orbit& oi = H.modelspace->GetOrbit(i);
+             for ( auto i: H.modelspace->holes )
+             {
+               Orbit& oi = H.modelspace->GetOrbit(i);
                for ( auto j: H.modelspace->holes )
                {
                  Orbit& oj = H.modelspace->GetOrbit(j);
@@ -3674,7 +3675,7 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
                        double viecd = H.TwoBody.GetTBME_J(J1,J1,i,e,c,d);
                        double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
                        F27 -= 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabjk * vcdai * viecd * vjkbe / denom;
-                       a_sum -= 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabjk * vcdai * viecd * vjkbe / denom;
+//                       a_sum -= 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabjk * vcdai * viecd * vjkbe / denom;
                      }// for J1
                    }// for J0
                  }// for k
@@ -3684,7 +3685,7 @@ double HFMBPT::GetMP4_F27( const Operator& H) const
          }//for d
        }//for c
      }//for b
-     std::cout << "    " << i << "  " << a_sum << "  " << oi.j2+1 << std::endl;
+//     std::cout << "    " << i << "  " << a_sum << "  " << oi.j2+1 << std::endl;
    }//for a
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
@@ -3701,7 +3702,7 @@ double HFMBPT::GetMP4_F28( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F28 =0;
-//   #pragma omp parallel for
+   #pragma omp parallel for reduction(+:F28) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
      Orbit& oa = H.modelspace->GetOrbit(a);
@@ -3951,7 +3952,7 @@ double HFMBPT::GetMP4_F33( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F33 =0;
-//   #pragma omp parallel for
+   #pragma omp parallel for reduction(+:F33) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
      Orbit& oa = H.modelspace->GetOrbit(a);
@@ -4081,10 +4082,9 @@ double HFMBPT::GetMP4_F35( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F35 =0;
-//   #pragma omp parallel for
+   #pragma omp parallel for reduction(+:F35) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
-     double a_sum = 0;
      Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: H.modelspace->particles )
      {
@@ -4127,7 +4127,7 @@ double HFMBPT::GetMP4_F35( const Operator& H) const
                        double vijac = H.TwoBody.GetTBME_J(J1,J1,i,j,a,c);
                        double phase = ( (J0+J1+phase_exponent)%2==0 ) ? 1.0 : -1.0;
                        F35 += 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabkl * vcdij * vijac * vklbd / denom;
-                       a_sum += 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabkl * vcdij * vijac * vklbd / denom;
+//                       a_sum += 1./4 * phase * (2*J0+1) * (2*J1+1) / (oa.j2+1) * vabkl * vcdij * vijac * vklbd / denom;
                      }// for J1
                    }// for J0
                  }// for l
@@ -4244,7 +4244,7 @@ double HFMBPT::GetMP4_F37( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F37 =0;
-//   #pragma omp parallel for
+   #pragma omp parallel for reduction(+:F37) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
      Orbit& oa = H.modelspace->GetOrbit(a);
@@ -4374,10 +4374,9 @@ double HFMBPT::GetMP4_F39( const Operator& H) const
    double t_start = omp_get_wtime();
 
    double F39 =0;
-//   #pragma omp parallel for
+   #pragma omp parallel for reduction(+:F39) collapse(3)
    for ( auto a : H.modelspace->particles )
    {
-     double a_sum =0;
      Orbit& oa = H.modelspace->GetOrbit(a);
      for ( auto b: H.modelspace->particles )
      {
@@ -4418,7 +4417,6 @@ double HFMBPT::GetMP4_F39( const Operator& H) const
                        double vcdjl = H.TwoBody.GetTBME_J(J1,J1,c,d,j,l);
                        double vklcd = H.TwoBody.GetTBME_J(J1,J1,k,l,c,d);
                        F39 += -1./4 * (2*J0+1) * (2*J1+1) / (oj.j2+1) * vabik * vcdjl * vijab * vklcd / denom;
-                       a_sum += -1./4 * (2*J0+1) * (2*J1+1) / (oj.j2+1) * vabik * vcdjl * vijab * vklcd / denom;
                      }// for J1
                    }// for J0
                  }// for l
