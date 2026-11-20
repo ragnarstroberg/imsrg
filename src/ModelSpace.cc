@@ -1308,6 +1308,23 @@ void ModelSpace::SetE3max(int e3)
   Setup3bKets();
 }
 
+void ModelSpace::SetEmax3Body(int emax_3body)
+{
+  emax_3body_ = emax_3body;
+  orbits_3body_space_.clear();
+  for (auto& i : all_orbits)
+  {
+    Orbit& oi = GetOrbit(i);
+    if (2 * oi.n + oi.l <= emax_3body_)
+    {
+      orbits_3body_space_.push_back(i);
+    }
+  }
+  norbits_3body_ = orbits_3body_space_.size();
+  Setup3bKets();
+
+}
+
 /// We keep things relatively simple (?) for now.
 /// Just make a vector of all the possible 3b kets
 void ModelSpace::Setup3bKets()
