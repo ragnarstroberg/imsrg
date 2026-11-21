@@ -88,6 +88,33 @@ namespace Commutator
     void comm333_ppp_hhhss_tz(const Operator &X, const Operator &Y, Operator &Z);        // implemented by AI. Passed unit test.
     void comm333_pph_hhpss_tz(const Operator &X, const Operator &Y, Operator &Z);        // implemented by AI. Passed unit test.
 
+    // precompiled-bookkeeping (plan) kernels, switch IMSRG_PERF_PLAN=1 (PerfPlan*.inc)
+    void perfplan_begin_commutator();   // plan kernels: start of a scope in which X, Y are fixed (unpacked-3B data shared between terms)
+    void perfplan_end_commutator();   // plan kernels: end of that scope (outside it, every kernel call unpacks afresh)
+    void comm333_pph_hhpss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm233_phss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm223ss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm332_pphhss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm232ss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm332_ppph_hhhpss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm233_pp_hhss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm133ss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm331ss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm132ss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm231ss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm333_ppp_hhhss_plan(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, Y
+    void comm331ss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, channel-changing J=0 Y
+    void comm132ss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, channel-changing J=0 Y
+    void comm231ss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, channel-changing J=0 Y
+    void comm333_pph_hhpss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm223ss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm233_phss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm232ss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm332_pphhss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm233_pp_hhss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm332_ppph_hhhpss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+    void comm133ss_plan_tz(const Operator &X, const Operator &Y, Operator &Z);   // scalar X, J=0 channel-changing Y
+
 
 }
 

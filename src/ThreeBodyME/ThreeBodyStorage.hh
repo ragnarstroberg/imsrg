@@ -145,6 +145,14 @@ class ThreeBodyStorage
   virtual void SetME_pn_ch(  size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ME_type V) {NotImplemented(__func__);};
 
   virtual ME_type GetME_pn_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const {return NotImplemented(__func__);};
+  // Bulk access to a channel-diagonal block (used by the perf-plan kernels): Get fills M(i,k) = GetME_pn_ch(ch,ch,i,k)
+  // for all stored kets i, k of channel ch (M must be n_k x n_k); Add adds M(i,k) to the stored elements, reading the
+  // lower triangle k <= i (tri = +1) or the upper triangle k >= i (tri = -1). These generic versions loop over the
+  // per-element accessors; ThreeBodyStorage_pn overrides them with a single ch_start lookup per block.
+  virtual void GetChannelMatrix_pn(size_t ch, arma::mat &M) const
+  { size_t n = M.n_rows; for (size_t i = 0; i < n; i++) for (size_t k = 0; k < n; k++) M(i, k) = GetME_pn_ch(ch, ch, i, k); };
+  virtual void AddChannelMatrix_pn(size_t ch, const arma::mat &M, int tri)
+  { size_t n = M.n_rows; for (size_t i = 0; i < n; i++) for (size_t k = (tri > 0 ? 0 : i); k < (tri > 0 ? i + 1 : n); k++) AddToME_pn_ch(ch, ch, i, k, M(i, k)); };
 //  virtual ME_type GetME_pn_ch(size_t chbra, size_t chket, Ket3& bra, Ket3& ket) const =0; // do we use this??
 
   // In commutator expressions it often comes up that we want the same matrix element from two operators. This saves an extra recoupling.

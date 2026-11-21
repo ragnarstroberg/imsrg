@@ -100,6 +100,7 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def(py::init<const ModelSpace &>())
           .def(py::init<int, const std::string &>(), py::arg("emax"), py::arg("reference"))
           .def(py::init<int, const std::string &, const std::string &>(), py::arg("emax"), py::arg("reference"), py::arg("valence"))
+          .def(py::init<int, int, std::string, std::string>(), py::arg("emax"), py::arg("emax_3body"), py::arg("reference"), py::arg("valence"))
           .def(py::init<int, std::vector<std::string>, std::vector<std::string>>(), py::arg("emax"), py::arg("hole_list"), py::arg("valence_list"))
           .def(py::init<int, std::vector<std::string>, std::vector<std::string>, std::vector<std::string>>(), py::arg("emax"), py::arg("hole_list"), py::arg("core_list"), py::arg("valence_list"))
           .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
@@ -116,6 +117,9 @@ PYBIND11_MODULE(pyIMSRG, m)
           .def("SetE2max", &ModelSpace::SetE2max)
           .def("SetE3max", &ModelSpace::SetE3max)
           .def("SetdE3max", &ModelSpace::SetdE3max)
+          .def("SetOccNat3Cut", &ModelSpace::SetOccNat3Cut)
+          .def("GetdE3max", &ModelSpace::GetdE3max)
+          .def("GetOccNat3Cut", &ModelSpace::GetOccNat3Cut)
           .def("SetLmax", &ModelSpace::SetLmax)
           .def("SetEmaxUnocc", &ModelSpace::SetEmaxUnocc)
           .def("SetEmax3Body", &ModelSpace::SetEmax3Body)
@@ -631,6 +635,29 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("comm332ss", [](Operator& X,Operator& Y, Operator& Z){ Commutator::comm332_ppph_hhhpss(X,Y,Z); Commutator::comm332_pphhss(X,Y,Z);}  );
        Commutator.def("comm223ss", &Commutator::comm223ss);
        Commutator.def("comm133ss", &Commutator::comm133ss);
+       Commutator.def("comm333_pph_hhpss_plan", &Commutator::comm333_pph_hhpss_plan);
+       Commutator.def("comm233_phss_plan", &Commutator::comm233_phss_plan);
+       Commutator.def("comm233_pp_hhss_plan", &Commutator::comm233_pp_hhss_plan);
+       Commutator.def("comm133ss_plan", &Commutator::comm133ss_plan);
+       Commutator.def("comm331ss_plan", &Commutator::comm331ss_plan);
+       Commutator.def("comm132ss_plan", &Commutator::comm132ss_plan);
+       Commutator.def("comm231ss_plan", &Commutator::comm231ss_plan);
+       Commutator.def("comm333_ppp_hhhss_plan", &Commutator::comm333_ppp_hhhss_plan);
+       Commutator.def("comm331ss_plan_tz", &Commutator::comm331ss_plan_tz);
+       Commutator.def("comm132ss_plan_tz", &Commutator::comm132ss_plan_tz);
+       Commutator.def("comm231ss_plan_tz", &Commutator::comm231ss_plan_tz);
+       Commutator.def("comm333_pph_hhpss_plan_tz", &Commutator::comm333_pph_hhpss_plan_tz);
+       Commutator.def("comm223ss_plan_tz", &Commutator::comm223ss_plan_tz);
+       Commutator.def("comm233_phss_plan_tz", &Commutator::comm233_phss_plan_tz);
+       Commutator.def("comm232ss_plan_tz", &Commutator::comm232ss_plan_tz);
+       Commutator.def("comm332_pphhss_plan_tz", &Commutator::comm332_pphhss_plan_tz);
+       Commutator.def("comm233_pp_hhss_plan_tz", &Commutator::comm233_pp_hhss_plan_tz);
+       Commutator.def("comm332_ppph_hhhpss_plan_tz", &Commutator::comm332_ppph_hhhpss_plan_tz);
+       Commutator.def("comm133ss_plan_tz", &Commutator::comm133ss_plan_tz);
+       Commutator.def("comm223ss_plan", &Commutator::comm223ss_plan);
+       Commutator.def("comm332_pphhss_plan", &Commutator::comm332_pphhss_plan);
+       Commutator.def("comm232ss_plan", &Commutator::comm232ss_plan);
+       Commutator.def("comm332_ppph_hhhpss_plan", &Commutator::comm332_ppph_hhhpss_plan);
        Commutator.def("comm233_pp_hhss", &Commutator::comm233_pp_hhss);
        Commutator.def("comm233_phss", &Commutator::comm233_phss);
        Commutator.def("comm333_ppp_hhhss", &Commutator::comm333_ppp_hhhss);
@@ -644,6 +671,8 @@ PYBIND11_MODULE(pyIMSRG, m)
        Commutator.def("comm222_phst", &Commutator::comm222_phst);
        Commutator.def("SetIMSRG3Noqqq", &Commutator::SetIMSRG3Noqqq);
        Commutator.def("SetIMSRG3Onlyvvv", &Commutator::SetIMSRG3Onlyvvv);
+       Commutator.def("SetIMSRG3valence2b", &Commutator::SetIMSRG3valence2b);
+       Commutator.def("SetPertTripNovvv", &Commutator::SetPertTripNovvv);
        Commutator.def("SetIMSRG3valence2b", &Commutator::SetIMSRG3valence2b);
        Commutator.def("SetPertTripNovvv", &Commutator::SetPertTripNovvv);
        Commutator.def("Discard0bFrom3b", &Commutator::Discard0bFrom3b);
