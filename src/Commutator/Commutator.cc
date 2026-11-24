@@ -507,7 +507,8 @@ namespace Commutator
     
     if (Z.GetParticleRank() > 2)
     {
-      Z.ThreeBody.SwitchToPN_and_discard();
+//      Z.ThreeBody.SwitchToPN_and_discard();
+       Z.ThreeBody.SetMode("pn");
     }
 
 
@@ -530,30 +531,15 @@ namespace Commutator
     {
       comm222_pp_hh_221st(X, Y, Z);
     }
-    //    else  // otherwise, just do the one that is turned on.
-    //    {
-    //      if (comm_term_on["comm222_pp_hhst"] )
-    //         comm222_pp_hhst(X, Y, Z);
-    //      if ( comm_term_on["comm221st"])
-    //         comm221st(X, Y, Z);
-    //    }
+    else  // otherwise, just do the one that is turned on.
+    {
+      if (comm_term_on["comm222_pp_hhst"] )
+         comm222_pp_hhst(X, Y, Z);
+      if ( comm_term_on["comm221st"])
+         comm221st(X, Y, Z);
+    }
     if (comm_term_on["comm222_phst"])
       comm222_phst(X, Y, Z);
-
-    //    // We shouldn't be here, because Commutator calls CommutatorScalar Scalar if Z had J Rank = 0.
-    //    if (use_imsrg3 and X.GetJRank() == 0 and Y.GetJRank() == 0 and Z.GetJRank() == 0)
-    //    {
-    //      if (Z.GetParticleRank() < 3)
-    //      {
-    //        Z.ThreeBody.SwitchToPN_and_discard();
-    //      }
-    //      std::cout << "tensor comm223ss" << std::endl;
-    //      comm223ss(X, Y, Z);
-    //      std::cout << "tensor comm232ss" << std::endl;
-    //      comm232ss_slow(X, Y, Z);
-    //      std::cout << "tensor comm231ss" << std::endl;
-    //      comm231ss_slow(X, Y, Z);
-    //    }
 
     if (use_imsrg3 and ((X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold)))
     {
@@ -818,13 +804,11 @@ namespace Commutator
   void comm121ss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double t_start = omp_get_wtime();
-    index_t norbits = Z.modelspace->all_orbits.size();
     int hZ = Z.IsHermitian() ? 1 : -1;
 
     #pragma omp parallel for schedule(dynamic,1)
-    for (index_t indexi = 0; indexi < norbits; ++indexi)
+    for ( auto& i : Z.modelspace->all_orbits )
     {
-      auto i = indexi;
       Orbit &oi = Z.modelspace->GetOrbit(i);
       index_t jmin = Z.IsNonHermitian() ? 0 : i;
       for (auto j : Z.GetOneBodyChannel(oi.l, oi.j2, oi.tz2))
@@ -912,27 +896,16 @@ namespace Commutator
 
     int hZ = Z.IsHermitian() ? 1 : -1;
 
-
-
-//    TwoBodyME Mpp(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
-//    TwoBodyME Mhh(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
     TwoBodyME Mpp = 0*Z.TwoBody;
     TwoBodyME Mhh = Mpp;
 
     ConstructScalarMpp_Mhh(X, Y, Z, Mpp, Mhh);
 
-
-    int norbits = Z.modelspace->all_orbits.size();
-    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
-    //   for (int i=0;i<norbits;++i)
     #pragma omp parallel for schedule(dynamic, 1)
-    for (int indexi = 0; indexi < norbits; ++indexi)
+    for  (auto &i : Z.modelspace->all_orbits )
     {
-      //      auto i = Z.modelspace->all_orbits[indexi];
-      auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
-      //      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       for (int j : Z.GetOneBodyChannel(oi.l, oi.j2, oi.tz2))
       {
         if (j < jmin)
@@ -969,8 +942,6 @@ namespace Commutator
       } // for j
     }
 
-    // Z.PrintOneBody();
-    // std::cout<<"=========================="<<std::endl;
     X.profiler.timer[__func__] += omp_get_wtime() - t_start;
   }
 
@@ -1398,19 +1369,11 @@ namespace Commutator
        t_internal = omp_get_wtime();
     }
 
-    //   int norbits = Z.modelspace->GetNumberOrbits();
-    int norbits = Z.modelspace->all_orbits.size();
-    // The one body part
-    std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
     #pragma omp parallel for schedule(dynamic, 1)
-    //   for (int i=0;i<norbits;++i)
-    for (int indexi = 0; indexi < norbits; ++indexi)
+    for (auto& i : Z.modelspace->all_orbits )
     {
-      //      auto i = Z.modelspace->all_orbits[indexi];
-      auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
-      //      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       for (int j : Z.GetOneBodyChannel(oi.l, oi.j2, oi.tz2))
       {
         if (j < jmin)
@@ -1448,7 +1411,6 @@ namespace Commutator
       } // for j
     } // for i
 
-//    Z.PrintOneBody();
     if (Commutator::verbose)
     {
        X.profiler.timer["_pphh One Body bit"] += omp_get_wtime() - t_internal;
