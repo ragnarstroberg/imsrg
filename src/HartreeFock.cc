@@ -292,30 +292,36 @@ void HartreeFock::SetUpMonopoleV3Keys()
   {
     Orbit& oi = modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
+    if ( ei > modelspace->GetEMax3Body() ) continue;
     for (uint64_t j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j<i) continue;
       Orbit& oj = modelspace->GetOrbit(j);
       int ej = 2*oj.n + oj.l;
+      if ( ej > modelspace->GetEMax3Body() ) continue;
 
       for (auto a : modelspace->all_orbits)
       {
         Orbit& oa = modelspace->GetOrbit(a);
         int ea = 2*oa.n + oa.l;
+        if ( ea > modelspace->GetEMax3Body() ) continue;
         for (uint64_t b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
         {
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
+          if ( eb > modelspace->GetEMax3Body() ) continue;
 
             for ( auto c : modelspace->all_orbits)
             {
               Orbit& oc = modelspace->GetOrbit(c);
               int ec = 2*oc.n + oc.l;
+              if ( ec > modelspace->GetEMax3Body() ) continue;
               if ( ea+ec+ei > modelspace->GetE3max() ) continue;
               for (uint64_t d : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
               {
                 Orbit& od = modelspace->GetOrbit(d);
                 int ed = 2*od.n + od.l;
+                if ( ed > modelspace->GetEMax3Body() ) continue;
 
                 if ( eb+ed+ej > modelspace->GetE3max() ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
@@ -1107,10 +1113,14 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
      {
        Ket & bra = tbc.GetKet(i);
        int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+       if ( 2*bra.op->n + bra.op->l > modelspace->GetEMax3Body() ) continue;
+       if ( 2*bra.oq->n + bra.oq->l > modelspace->GetEMax3Body() ) continue;
        for (int j=0; j<npq; ++j)
        {
          Ket & ket = tbc.GetKet(j);
          int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+         if ( 2*ket.op->n + ket.op->l > modelspace->GetEMax3Body() ) continue;
+         if ( 2*ket.oq->n + ket.oq->l > modelspace->GetEMax3Body() ) continue;
          D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
          if (bra.p!=bra.q)
          {
@@ -1127,10 +1137,12 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
          {
            Orbit & oa = modelspace->GetOrbit(a);
            if ( 2*oa.n+oa.l+e2bra > modelspace->GetE3max() ) continue;
+           if ( 2*oa.n + oa.l > modelspace->GetEMax3Body() ) continue;
            for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
            {
              Orbit & ob = modelspace->GetOrbit(b);
              if ( 2*ob.n+ob.l+e2ket > modelspace->GetE3max() ) continue;
+             if ( 2*ob.n + ob.l > modelspace->GetEMax3Body() ) continue;
              if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
              V3NO(i,j) += rho(a,b) * Hbare.ThreeBody.GetME_pn_no2b(bra.p,bra.q,a, ket.p,ket.q,b, J);
            }
