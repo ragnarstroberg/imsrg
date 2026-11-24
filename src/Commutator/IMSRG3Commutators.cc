@@ -37,6 +37,26 @@ namespace Commutator
     threebody_threshold = x;
   }
 
+  void CheckReduced(const Operator& X, const Operator& Y, const char* funcname)
+  {
+    if (X.IsReduced() or Y.IsReduced() )
+    {
+      std::ostringstream oss;
+      oss << __FILE__ <<  " : calling " << funcname << " with reduced matrix elements.";
+      throw std::runtime_error( oss.str() );
+    }
+  }
+
+  void CheckNonHermitian(const Operator& X, const Operator& Y, const char* funcname )
+  {
+    if ( X.IsNonHermitian() or Y.IsNonHermitian() )
+    {
+       std::ostringstream oss;
+      oss << __FILE__ << " : calling " << funcname << " with non-hermitian operators. This is not implemented.";
+      throw std::runtime_error( oss.str() );
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////
   ////////////   BEGIN SCALAR-SCALAR COMMUTATORS WITH 3-body ///////////////////////////////
@@ -76,12 +96,15 @@ namespace Commutator
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     if (X3.Norm() < 1e-8 or Y3.Norm() < 1e-8)
       return;
@@ -207,12 +230,15 @@ namespace Commutator
     int emax_3body = Z.modelspace->GetEMax3Body();
     int e3max = Z.modelspace->GetE3max();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     if (X.GetParticleRank() < 3)
       return;
@@ -225,14 +251,9 @@ namespace Commutator
     size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
     size_t norb = Z.modelspace->GetNumberOrbits();
     int num_threads = omp_get_max_threads();
-    std::vector<arma::mat> Z_mats;
-    Z_mats.reserve(num_threads);
-    for (int i = 0; i < num_threads; i += 1)
-    {
-      Z_mats.push_back(arma::zeros(norb, norb));
-    }
+    std::vector<arma::mat> Z_mats(num_threads, arma::zeros(norb,norb));
 #pragma omp parallel for schedule(dynamic, 1) collapse(2)
-    for (size_t i = 0; i < norb; i++)
+    for ( auto& i : Z.modelspace->all_orbits )
     {
       for (size_t ch_ab = 0; ch_ab < nch2; ch_ab++)
       {
@@ -436,18 +457,20 @@ namespace Commutator
     int x_particle_rank = X.GetParticleRank();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
 //    int herm = Z.IsHermitian() ? 1 : -1;
 
-    size_t norb = Z.modelspace->GetNumberOrbits();
+//    size_t norb = Z.modelspace->GetNumberOrbits();
     std::vector<std::array<size_t, 2>> ij_pairs;
-    for (size_t i = 0; i < norb; i++)
+    for ( auto& i : Z.modelspace->all_orbits )
     {
       Orbit &oi = Z.modelspace->GetOrbit(i);
       if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(oi))
@@ -624,24 +647,24 @@ namespace Commutator
     double x3norm = X.ThreeBodyNorm();
     double y3norm = Y.ThreeBodyNorm();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     int hZ = Z.IsHermitian() ? +1 : -1;
 
     bool x_channel_diag = X.GetParity() == 0 and X.GetTRank() == 0;
     bool y_channel_diag = Y.GetParity() == 0 and Y.GetTRank() == 0;
 
-    //  int x_particle_rank = X.GetParticleRank();
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
     Z.modelspace->PreCalculateSixJ(); // Presumably this has already been called. If so, this does nothing. But we want to make sure.
 
-    int norb = Z.modelspace->GetNumberOrbits();
     size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
     // The only potentially thread-unsafe part of this loop is the access to 3b matrix elements which might require
     // recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
@@ -655,13 +678,10 @@ namespace Commutator
       ch_ket_list.push_back(it_ch.first[1]);
     }
     size_t nbraket = ch_bra_list.size();
-//    for (auto &it_ch : Z.TwoBody.MatEl)
 // parallelize over channel blocks (each iteration writes only its own block)
 #pragma omp parallel for schedule(dynamic, 1)
     for (size_t ibraket=0; ibraket<nbraket; ibraket++)
     {
-//      size_t ch_bra = it_ch.first[0];
-//      size_t ch_ket = it_ch.first[1];
       size_t ch_bra = ch_bra_list[ibraket];
       size_t ch_ket = ch_ket_list[ibraket];
       auto &tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
@@ -705,7 +725,7 @@ namespace Commutator
           double zijkl = 0;
           // TODO loop over 1-body channels to do the 3-body recoupling in the outer loop
           // Then loop over a and b within that channel.
-          for (int a = 0; a < norb; a++)
+          for ( auto& a : Z.modelspace->all_orbits )
           {
             Orbit &oa = Z.modelspace->GetOrbit(a);
             if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa))
@@ -879,12 +899,14 @@ namespace Commutator
     bool y_channel_diag = Y.GetTRank() == 0 and Y.GetParity() == 0;
     bool z_channel_diag = Z.GetTRank() == 0 and Z.GetParity() == 0;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     if ( not ( x_has_3 or y_has_3) ) return;
 
@@ -1311,12 +1333,14 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     bool x_has_3 = X3.IsAllocated();
     bool y_has_3 = Y3.IsAllocated();
@@ -2070,12 +2094,14 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+//    if (X.IsReduced() or Y.IsReduced() )
+//    {
+//      std::ostringstream oss;
+//      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
+//      throw std::runtime_error( oss.str() );
+//    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     int nch = Z.modelspace->GetNumberTwoBodyChannels();
 
@@ -3137,6 +3163,181 @@ namespace Commutator
   //    Y_{c'<-L(c)}(kl, abcd) = Y_{kld,abc}   (kl in c', (abc,d) in L(c)).
   // For scalar Y it reproduces comm332_ppph_hhhpss (IMSRG_TZ_FORCE=1).
   //*****************************************************************************************
+  void comm332_ppph_hhhpss(const Operator &X, const Operator &Y, Operator &Z)
+  {
+    double tstart = omp_get_wtime();
+    auto &X3 = X.ThreeBody;
+    auto &Y3 = Y.ThreeBody;
+    auto &Z2 = Z.TwoBody;
+
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
+
+    bool x3_allocated = X3.IsAllocated();
+    bool y3_allocated = Y3.IsAllocated();
+    if (not(x3_allocated and y3_allocated))
+      return;
+
+    if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
+    {
+      // efficient path for J=0 channel-changing Y with scalar X
+      if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0)
+      {
+        comm332_ppph_hhhpss_tz(X, Y, Z);
+        Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+        return;
+      }
+      Operator Yred = Y;
+      Yred.MakeReduced();
+      Z.MakeReduced();
+      comm332_ppph_hhhpst(X,Yred,Z);
+      Z.MakeNotReduced();
+      return;
+    }
+
+    int hX = X.IsHermitian() ? 1 : -1;
+    int hY = Y.IsHermitian() ? 1 : -1;
+
+    std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
+
+    int nch = Z.modelspace->GetNumberTwoBodyChannels();
+    size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+    Z.modelspace->PreCalculateSixJ(); // if this is already done, then this does nothing.
+                                      //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+#pragma omp parallel for schedule(dynamic, 1)
+    for (int ch = 0; ch < nch; ch++)
+    {
+      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int nkets = tbc.GetNumberKets();
+
+      std::vector<size_t> ch3_abc_list;
+      std::vector<size_t> iket_abc_list;
+      std::vector<size_t> d_list;
+      std::vector<double> factor_list;
+
+      // figure out how big the abcd side of the matrices should be, and store some stuff for later lookup
+      for (size_t ch_abc = 0; ch_abc < nch3; ch_abc++)
+      {
+        ThreeBodyChannel &Tbc_abc = Z.modelspace->GetThreeBodyChannel(ch_abc);
+        if (std::abs(Tbc_abc.twoTz - 2 * tbc.Tz) > 1)
+          continue;
+        int twoJ = Tbc_abc.twoJ;
+        size_t nkets_abc = Tbc_abc.GetNumberKets();
+        for (size_t iket_abc = 0; iket_abc < nkets_abc; iket_abc++)
+        {
+          Ket3 &ket_abc = Tbc_abc.GetKet(iket_abc);
+          size_t a = ket_abc.p;
+          size_t b = ket_abc.q;
+          size_t c = ket_abc.r;
+          double occ_abc = ket_abc.op->occ * ket_abc.oq->occ * ket_abc.oR->occ;
+          double occ_abc_bar = (1 - ket_abc.op->occ) * (1 - ket_abc.oq->occ) * (1 - ket_abc.oR->occ);
+          double d_ea = std::abs(2 * ket_abc.op->n + ket_abc.op->l - e_fermi[ket_abc.op->tz2]);
+          double d_eb = std::abs(2 * ket_abc.oq->n + ket_abc.oq->l - e_fermi[ket_abc.oq->tz2]);
+          double d_ec = std::abs(2 * ket_abc.oR->n + ket_abc.oR->l - e_fermi[ket_abc.oR->tz2]);
+          double occnat_a = ket_abc.op->occ_nat;
+          double occnat_b = ket_abc.oq->occ_nat;
+          double occnat_c = ket_abc.oR->occ_nat;
+          if ((d_ea + d_eb + d_ec) > Z.modelspace->dE3max)
+            continue;
+          if ((occnat_a * (1 - occnat_a) * occnat_b * (1 - occnat_b) * occnat_c * (1 - occnat_c)) < Z.modelspace->GetOccNat3Cut())
+            continue;
+          if ((std::abs(occ_abc) == 0) and (std::abs(occ_abc_bar) == 0))
+            continue;
+          //        int Jab = ket_abc.Jpq;
+
+          double symm_factor = 6; // 6 possible orderings of abc. If a==b, then only 3 orderings, and if a==b==c, then only 1 ordering.
+          if (a == b and b == c)
+            symm_factor = 1;
+          else if (a == b or a == c or b == c)
+            symm_factor = 3;
+
+          for (auto d : Z.modelspace->all_orbits)
+          {
+            Orbit &od = Z.modelspace->GetOrbit(d);
+            double nd = od.occ;
+            //          double d_ed = std::abs( 2*od.n + od.l - e_fermi[od.tz2]);
+            //          double occnat_d = od.occ_nat;
+//            double occfactor = occ_abc * (1 - nd) - occ_abc_bar * nd;
+            double occfactor = occ_abc_bar * nd - occ_abc * (1 - nd) ;  // Minus sign error corrected Sep 3 2025 (SRS)
+            if (std::abs(occfactor) < 1e-6)
+              continue;
+            if ((std::abs(2 * J - od.j2) > twoJ) or (2 * J + od.j2) < twoJ)
+              continue;
+            if ((od.l + tbc.parity + Tbc_abc.parity) % 2 > 0)
+              continue;
+            if ((Tbc_abc.twoTz) != (od.tz2 + 2 * tbc.Tz))
+              continue;
+
+            ch3_abc_list.push_back(ch_abc);
+            iket_abc_list.push_back(iket_abc);
+            d_list.push_back(d);
+            factor_list.push_back((twoJ + 1.) / (2 * J + 1) * occfactor * symm_factor / 6.);
+          } // for d
+        }   // for iket_abc
+      }     // for ch_abc
+
+      // initialize the matrices
+      size_t dim_abcd = ch3_abc_list.size();
+      arma::mat XMAT(nkets, dim_abcd, arma::fill::zeros);
+      arma::mat YMAT(nkets, dim_abcd, arma::fill::zeros);
+
+      // fill the matrices  TODO: I think we can make this faster by first doing the recoupling lookup for ijd
+      for (size_t index_abcd = 0; index_abcd < dim_abcd; index_abcd++)
+      {
+        size_t ch_abc = ch3_abc_list[index_abcd];
+        size_t iket_abc = iket_abc_list[index_abcd];
+        double factor = factor_list[index_abcd];
+        ThreeBodyChannel &Tbc_abc = Z.modelspace->GetThreeBodyChannel(ch_abc);
+        Ket3 &ket_abc = Tbc_abc.GetKet(iket_abc);
+        int Jab = ket_abc.Jpq;
+        int twoJ = Tbc_abc.twoJ;
+        size_t a = ket_abc.p;
+        size_t b = ket_abc.q;
+        size_t c = ket_abc.r;
+        size_t d = d_list[index_abcd];
+        Orbit &od = Z.modelspace->GetOrbit(d);
+        double d_ed = std::abs(2 * od.n + od.l - e_fermi[od.tz2]);
+        double occnat_d = od.occ_nat;
+
+        for (int ibra = 0; ibra < nkets; ibra++)
+        {
+          Ket &bra = tbc.GetKet(ibra);
+          int i = bra.p;
+          int j = bra.q;
+          double d_ei = std::abs(2 * bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+          double d_ej = std::abs(2 * bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+          double occnat_i = bra.op->occ_nat;
+          double occnat_j = bra.oq->occ_nat;
+          if ((d_ei + d_ej + d_ed) > Z.modelspace->dE3max)
+            continue;
+          if ((occnat_i * (1 - occnat_i) * occnat_j * (1 - occnat_j) * occnat_d * (1 - occnat_d)) < Z.modelspace->GetOccNat3Cut())
+            continue;
+          double norm2b = (i == j) ? 1. / sqrt(2) : 1;
+
+          XMAT(ibra, index_abcd) = norm2b * X3.GetME_pn(J, Jab, twoJ, i, j, d, a, b, c);
+          YMAT(ibra, index_abcd) = norm2b * factor * Y3.GetME_pn(J, Jab, twoJ, i, j, d, a, b, c);
+
+        } // for ibra
+      }   // for index_abcd
+
+      // do the mat mult
+      arma::mat ZMAT = hY * XMAT * YMAT.t() - hX * YMAT * XMAT.t();
+
+      // now unpack
+      for (int ibra = 0; ibra < nkets; ibra++)
+      {
+        for (int iket = ibra; iket < nkets; iket++)
+        {
+          Z2.AddToTBME(ch, ch, ibra, iket, ZMAT(ibra, iket));
+        }
+      }
+    } // for ch
+    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+  }
+
+
+  // Specialized version for charge-changing, J-scalar operators. Written by AI.
   void comm332_ppph_hhhpss_tz(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
@@ -3145,12 +3346,8 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     if (not(X3.IsAllocated() and Y3.IsAllocated()))
       return;
@@ -3296,264 +3493,8 @@ namespace Commutator
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
-  void comm332_ppph_hhhpss(const Operator &X, const Operator &Y, Operator &Z)
-  {
-    double tstart = omp_get_wtime();
-    auto &X3 = X.ThreeBody;
-    auto &Y3 = Y.ThreeBody;
-    auto &Z2 = Z.TwoBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
 
-    bool x3_allocated = X3.IsAllocated();
-    bool y3_allocated = Y3.IsAllocated();
-    if (not(x3_allocated and y3_allocated))
-      return;
-
-//    if (X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
-//    {
-//      comm332_ppph_hhhpss_tz(X, Y, Z);
-//      return;
-//    }
-    if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
-    {
-      // efficient path for J=0 channel-changing Y with scalar X
-      if (X.GetTRank() == 0 and X.GetParity() == 0 and X.GetJRank() == 0 and Y.GetJRank() == 0)
-      {
-        comm332_ppph_hhhpss_tz(X, Y, Z);
-        Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
-        return;
-      }
-      Operator Yred = Y;
-      Yred.MakeReduced();
-      Z.MakeReduced();
-      comm332_ppph_hhhpst(X,Yred,Z);
-      Z.MakeNotReduced();
-      return;
-    }
-
-    int hX = X.IsHermitian() ? 1 : -1;
-    int hY = Y.IsHermitian() ? 1 : -1;
-    std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
-
-    int nch = Z.modelspace->GetNumberTwoBodyChannels();
-    size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-    Z.modelspace->PreCalculateSixJ(); // if this is already done, then this does nothing.
-                                      //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-#pragma omp parallel for schedule(dynamic, 1)
-    for (int ch = 0; ch < nch; ch++)
-    {
-      TwoBodyChannel &tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int nkets = tbc.GetNumberKets();
-
-      std::vector<size_t> ch3_abc_list;
-      std::vector<size_t> iket_abc_list;
-      std::vector<size_t> d_list;
-      std::vector<double> factor_list;
-
-      // figure out how big the abcd side of the matrices should be, and store some stuff for later lookup
-      for (size_t ch_abc = 0; ch_abc < nch3; ch_abc++)
-      {
-        ThreeBodyChannel &Tbc_abc = Z.modelspace->GetThreeBodyChannel(ch_abc);
-        if (std::abs(Tbc_abc.twoTz - 2 * tbc.Tz) > 1)
-          continue;
-        int twoJ = Tbc_abc.twoJ;
-        size_t nkets_abc = Tbc_abc.GetNumberKets();
-        for (size_t iket_abc = 0; iket_abc < nkets_abc; iket_abc++)
-        {
-          Ket3 &ket_abc = Tbc_abc.GetKet(iket_abc);
-          size_t a = ket_abc.p;
-          size_t b = ket_abc.q;
-          size_t c = ket_abc.r;
-          double occ_abc = ket_abc.op->occ * ket_abc.oq->occ * ket_abc.oR->occ;
-          double occ_abc_bar = (1 - ket_abc.op->occ) * (1 - ket_abc.oq->occ) * (1 - ket_abc.oR->occ);
-          double d_ea = std::abs(2 * ket_abc.op->n + ket_abc.op->l - e_fermi[ket_abc.op->tz2]);
-          double d_eb = std::abs(2 * ket_abc.oq->n + ket_abc.oq->l - e_fermi[ket_abc.oq->tz2]);
-          double d_ec = std::abs(2 * ket_abc.oR->n + ket_abc.oR->l - e_fermi[ket_abc.oR->tz2]);
-          double occnat_a = ket_abc.op->occ_nat;
-          double occnat_b = ket_abc.oq->occ_nat;
-          double occnat_c = ket_abc.oR->occ_nat;
-          if ((d_ea + d_eb + d_ec) > Z.modelspace->dE3max)
-            continue;
-          if ((occnat_a * (1 - occnat_a) * occnat_b * (1 - occnat_b) * occnat_c * (1 - occnat_c)) < Z.modelspace->GetOccNat3Cut())
-            continue;
-          if ((std::abs(occ_abc) == 0) and (std::abs(occ_abc_bar) == 0))
-            continue;
-          //        int Jab = ket_abc.Jpq;
-
-          double symm_factor = 6; // 6 possible orderings of abc. If a==b, then only 3 orderings, and if a==b==c, then only 1 ordering.
-          if (a == b and b == c)
-            symm_factor = 1;
-          else if (a == b or a == c or b == c)
-            symm_factor = 3;
-
-          for (auto d : Z.modelspace->all_orbits)
-          {
-            Orbit &od = Z.modelspace->GetOrbit(d);
-            double nd = od.occ;
-            //          double d_ed = std::abs( 2*od.n + od.l - e_fermi[od.tz2]);
-            //          double occnat_d = od.occ_nat;
-//            double occfactor = occ_abc * (1 - nd) - occ_abc_bar * nd;
-            double occfactor = occ_abc_bar * nd - occ_abc * (1 - nd) ;  // Minus sign error corrected Sep 3 2025 (SRS)
-            if (std::abs(occfactor) < 1e-6)
-              continue;
-            if ((std::abs(2 * J - od.j2) > twoJ) or (2 * J + od.j2) < twoJ)
-              continue;
-            if ((od.l + tbc.parity + Tbc_abc.parity) % 2 > 0)
-              continue;
-            if ((Tbc_abc.twoTz) != (od.tz2 + 2 * tbc.Tz))
-              continue;
-
-            ch3_abc_list.push_back(ch_abc);
-            iket_abc_list.push_back(iket_abc);
-            d_list.push_back(d);
-            factor_list.push_back((twoJ + 1.) / (2 * J + 1) * occfactor * symm_factor / 6.);
-          } // for d
-        }   // for iket_abc
-      }     // for ch_abc
-
-      // initialize the matrices
-      size_t dim_abcd = ch3_abc_list.size();
-      arma::mat XMAT(nkets, dim_abcd, arma::fill::zeros);
-      arma::mat YMAT(nkets, dim_abcd, arma::fill::zeros);
-
-      // fill the matrices  TODO: I think we can make this faster by first doing the recoupling lookup for ijd
-      for (size_t index_abcd = 0; index_abcd < dim_abcd; index_abcd++)
-      {
-        size_t ch_abc = ch3_abc_list[index_abcd];
-        size_t iket_abc = iket_abc_list[index_abcd];
-        double factor = factor_list[index_abcd];
-        ThreeBodyChannel &Tbc_abc = Z.modelspace->GetThreeBodyChannel(ch_abc);
-        Ket3 &ket_abc = Tbc_abc.GetKet(iket_abc);
-        int Jab = ket_abc.Jpq;
-        int twoJ = Tbc_abc.twoJ;
-        size_t a = ket_abc.p;
-        size_t b = ket_abc.q;
-        size_t c = ket_abc.r;
-        size_t d = d_list[index_abcd];
-        Orbit &od = Z.modelspace->GetOrbit(d);
-        double d_ed = std::abs(2 * od.n + od.l - e_fermi[od.tz2]);
-        double occnat_d = od.occ_nat;
-
-        for (int ibra = 0; ibra < nkets; ibra++)
-        {
-          Ket &bra = tbc.GetKet(ibra);
-          int i = bra.p;
-          int j = bra.q;
-          double d_ei = std::abs(2 * bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
-          double d_ej = std::abs(2 * bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
-          double occnat_i = bra.op->occ_nat;
-          double occnat_j = bra.oq->occ_nat;
-          if ((d_ei + d_ej + d_ed) > Z.modelspace->dE3max)
-            continue;
-          if ((occnat_i * (1 - occnat_i) * occnat_j * (1 - occnat_j) * occnat_d * (1 - occnat_d)) < Z.modelspace->GetOccNat3Cut())
-            continue;
-          double norm2b = (i == j) ? 1. / sqrt(2) : 1;
-
-          XMAT(ibra, index_abcd) = norm2b * X3.GetME_pn(J, Jab, twoJ, i, j, d, a, b, c);
-          YMAT(ibra, index_abcd) = norm2b * factor * Y3.GetME_pn(J, Jab, twoJ, i, j, d, a, b, c);
-
-        } // for ibra
-      }   // for index_abcd
-
-      // do the mat mult
-      arma::mat ZMAT = hY * XMAT * YMAT.t() - hX * YMAT * XMAT.t();
-
-      // now unpack
-      for (int ibra = 0; ibra < nkets; ibra++)
-      {
-        for (int iket = ibra; iket < nkets; iket++)
-        {
-          Z2.AddToTBME(ch, ch, ibra, iket, ZMAT(ibra, iket));
-        }
-      }
-    } // for ch
-    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
-  }
-
-  // the old slow way
-  /*
-  void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
-  {
-    double tstart = omp_get_wtime();
-    auto& X3 = X.ThreeBody;
-    auto& Y3 = Y.ThreeBody;
-    auto& Z2 = Z.TwoBody;
-
-    int nch = Z.modelspace->GetNumberTwoBodyChannels();
-    size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-    for (int ch=0; ch<nch; ch++)
-    {
-      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0; ibra<nkets; ibra++)
-      {
-        Ket& bra = tbc.GetKet(ibra);
-        int i = bra.p;
-        int j = bra.q;
-        for (int iket=ibra; iket<nkets; iket++)
-        {
-          Ket& ket = tbc.GetKet(iket);
-          int k = ket.p;
-          int l = ket.q;
-
-          double zijkl = 0;
-
-          for (size_t ch_abc=0; ch_abc<nch3; ch_abc++)
-          {
-            ThreeBodyChannel& Tbc_abc = Z.modelspace->GetThreeBodyChannel(ch_abc);
-            if ( std::abs( Tbc_abc.twoTz - 2*tbc.Tz) > 1) continue;
-            int twoJ = Tbc_abc.twoJ;
-            size_t nkets_abc = Tbc_abc.GetNumberKets();
-            for (size_t iket_abc=0; iket_abc<nkets_abc; iket_abc++)
-            {
-              Ket3& ket_abc = Tbc_abc.GetKet(iket_abc);
-              size_t a = ket_abc.p;
-              size_t b = ket_abc.q;
-              size_t c = ket_abc.r;
-              double occ_abc = ket_abc.op->occ * ket_abc.oq->occ * ket_abc.oR->occ;
-              double occ_abc_bar = (1-ket_abc.op->occ) * (1-ket_abc.oq->occ) * (1-ket_abc.oR->occ);
-              if ( (std::abs(occ_abc)==0) and (std::abs(occ_abc_bar)==0) ) continue;
-              int Jab = ket_abc.Jpq;
-
-                double symm_factor = 6;  // 6 possible orderings of abc. If a==b, then only 3 orderings, and if a==b==c, then only 1 ordering.
-                if ( a==b and b==c )
-                   symm_factor = 1;
-                else if (a==b or a==c or b==c )
-                   symm_factor = 3;
-
-                for ( auto d : Z.modelspace->all_orbits )
-                {
-                  Orbit& od = Z.modelspace->GetOrbit(d);
-                  double nd = od.occ;
-                  double occfactor = occ_abc*(1-nd) - occ_abc_bar*nd ;
-                  if (std::abs(occfactor)<1e-6) continue;
-                  if ( (std::abs( 2*J-od.j2) > twoJ) or (2*J+od.j2)<twoJ ) continue;
-                  if ( (od.l+tbc.parity + Tbc_abc.parity)%2>0) continue;
-                  if ( (Tbc_abc.twoTz)!=(od.tz2 + 2*tbc.Tz) ) continue;
-                  zijkl += symm_factor * 1./6  * (twoJ+1.)/(2*J+1) * occfactor
-                           *(  X3.GetME_pn(J,Jab,twoJ, i,j,d,a,b,c) * Y3.GetME_pn(Jab, J, twoJ, a,b,c,k,l,d)
-                             - Y3.GetME_pn(J,Jab,twoJ, i,j,d,a,b,c) * X3.GetME_pn(Jab, J, twoJ, a,b,c,k,l,d) );
-
-                }// for d
-            }// for iket_abc
-          }// for ch_abc
-          zijkl /=  sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
-          Z2.AddToTBME(ch,ch,ibra,iket,zijkl);
-        }// for iket
-      }// for ibra
-    }// for ch
-    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
-  }
-  */
 
   //*****************************************************************************************
   //
@@ -3594,12 +3535,9 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
+
     if (not(X3.IsAllocated() and Y3.IsAllocated()))
       return;
     const int parY = Y.GetParity();
@@ -3927,29 +3865,20 @@ namespace Commutator
   void comm332_pphhss(const Operator &X, const Operator &Y, Operator &Z)
   {
     double tstart = omp_get_wtime();
-    //  double t_internal = omp_get_wtime();
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z2 = Z.TwoBody;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
+
 
     bool x3_allocated = X3.IsAllocated();
     bool y3_allocated = Y3.IsAllocated();
     if (not(x3_allocated and y3_allocated))
       return;
 
-//    if ( X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
-//    {
-//      comm332_pphhss_tz(X, Y, Z);
-//      return;
-//    }
     if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
     {
       // efficient path for J=0 channel-changing Y with scalar X
@@ -4493,8 +4422,6 @@ namespace Commutator
       }   // for ibra
     }     // for ch
 
-    //  Z.profiler.timer["comm332_main_loop"] += omp_get_wtime() - t_internal;
-
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
@@ -4525,12 +4452,8 @@ namespace Commutator
     auto &X1 = X.OneBody;
     auto &Y1 = Y.OneBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     int hermX = X.IsHermitian() ? 1 : -1;
     int hermY = Y.IsHermitian() ? 1 : -1;
@@ -5032,13 +4955,8 @@ namespace Commutator
     if ((std::abs(X2.Norm() * Y2.Norm()) < 1e-6) and not Z.modelspace->scalar3b_transform_first_pass)
       return;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
-
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     Z.modelspace->PreCalculateSixJ(); // If we already did this, this does nothing.
 
@@ -5416,22 +5334,13 @@ namespace Commutator
   //*****************************************************************************************
   void comm233_pp_hhss(const Operator &X, const Operator &Y, Operator &Z)
   {
-    //  std::cout << "ENTER " <<__func__ << std::endl;
     double tstart = omp_get_wtime();
     if (Commutator::verbose )
       std::cout << __func__ << std::endl;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
-//    if ( X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
-//    {
-//      comm233_pp_hhss_tz(X, Y, Z);
-//      return;
-//    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
+
     if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
     {
       // efficient path for J=0 channel-changing Y with scalar X
@@ -5449,7 +5358,6 @@ namespace Commutator
       return;
     }
 
-
     auto &X3 = X.ThreeBody;
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
@@ -5461,14 +5369,8 @@ namespace Commutator
 
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    //  int norbs = Z.modelspace->GetNumberOrbits();
-    //  double X3NORM = X3.Norm();
-    //  double Y3NORM = Y3.Norm();
-    //  bool x3_allocated = X3.is_allocated;
-    //  bool y3_allocated = Y3.is_allocated;
     bool x3_allocated = X3.IsAllocated();
     bool y3_allocated = Y3.IsAllocated();
-    //  std::cout << "Begin the ch3 loop " << std::endl;
 
     Z.modelspace->PreCalculateSixJ();
 
@@ -5477,7 +5379,6 @@ namespace Commutator
 #pragma omp parallel for schedule(dynamic, 1) if (not Z.modelspace->scalar3b_transform_first_pass)
     for (size_t ch3 = 0; ch3 < nch3; ch3++)
     {
-//      std::cout << __func__ <<  "  ch3 = " << ch3 << std::endl;
       auto &Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
       int twoJ = Tbc.twoJ;
       double Jtot = 0.5 * twoJ;
@@ -5507,8 +5408,6 @@ namespace Commutator
       arma::mat X3MAT(nkets_kept, nkets_kept, arma::fill::zeros);
       arma::mat Y3MAT(nkets_kept, nkets_kept, arma::fill::zeros);
       arma::mat Z3MAT(nkets_kept, nkets_kept, arma::fill::zeros);
-
-//          std::cout << __func__<< "   fill the 2b matrices ch = " << ch3 << std::endl;
 
       for (size_t index_bra = 0; index_bra < nkets_kept; index_bra++)
       {
@@ -5754,12 +5653,8 @@ namespace Commutator
     const int hermY = Y.IsHermitian() ? 1 : -1;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     const bool x3_allocated = X3.IsAllocated();
     const bool y3_allocated = Y3.IsAllocated();
@@ -6012,17 +5907,10 @@ namespace Commutator
     double tstart = omp_get_wtime();
     if (Commutator::verbose)
       std::cout << __func__ << std::endl;
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
-//    if ( X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
-//    {
-//      comm233_phss_tz(X, Y, Z);
-//      return;
-//    }
+
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
+
     if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
     {
       // efficient path for J=0 channel-changing Y with scalar X
@@ -6591,12 +6479,8 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     const bool x3_allocated = X3.IsAllocated();
     const bool y3_allocated = Y3.IsAllocated();
@@ -7048,23 +6932,14 @@ namespace Commutator
     int hY = Y.IsHermitian() ? 1 : -1;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     bool x3_allocated = X3.IsAllocated();
     bool y3_allocated = Y3.IsAllocated();
     if (not(x3_allocated and y3_allocated))
       return;
 
-//    if ( X.GetJRank() == 0 and Y.GetJRank() == 0) // DEBUG: scalar Y through the tz path
-//    {
-//      comm333_ppp_hhhss_tz(X, Y, Z);
-//      return;
-//    }
     if ( X.GetTRank() != 0 or Y.GetTRank() !=0 or X.GetParity() !=0 or Y.GetParity() !=0 )
     {
       // efficient path for J=0 channel-changing Y with scalar X
@@ -7189,12 +7064,8 @@ namespace Commutator
     if (not(X3.IsAllocated() and Y3.IsAllocated()))
       return;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     std::map<int, double> e_fermi = ms->GetEFermi();
     const size_t nch3 = ms->GetNumberThreeBodyChannels();
@@ -7330,12 +7201,8 @@ namespace Commutator
     auto &Z3 = Z.ThreeBody;
     std::map<int, double> e_fermi = Z.modelspace->GetEFermi();
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     int hX = X.IsHermitian() ? 1 : -1;
     int hY = Y.IsHermitian() ? 1 : -1;
@@ -7801,12 +7668,8 @@ namespace Commutator
     auto &Y3 = Y.ThreeBody;
     auto &Z3 = Z.ThreeBody;
 
-    if (X.IsReduced() or Y.IsReduced() )
-    {
-      std::ostringstream oss;
-      oss << __FILE__ << " line " << __LINE__ << " : calling " << __func__ << " with reduced matrix elements.";
-      throw std::runtime_error( oss.str() );
-    }
+    CheckReduced(X,Y,__func__);
+    CheckNonHermitian(X,Y,__func__);
 
     int hX = X.IsHermitian() ? 1 : -1;
     int hY = Y.IsHermitian() ? 1 : -1;
