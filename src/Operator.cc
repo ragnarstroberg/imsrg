@@ -563,7 +563,8 @@ Operator Operator::DoNormalOrdering2(int sign, std::vector<index_t> occupied) co
               double ME = hatfactor * sign * oh.occ * modelspace->phase(ja + jh - J_ket - opNO.rank_J) * modelspace->GetSixJ(J_bra, J_ket, opNO.rank_J, jb, ja, jh) * TwoBody.GetTBME(ch_bra, ch_ket, a, h, b, h);
               if ( a==b and J_bra != J_ket)
               {
-                    ME *=2; // To account for both combinations < ah Jbra||Op|| bh Jket> and <ab Jket||Op|| bh Jbra>.  (Bug found by Antoine Belley, May 2025).
+//                    ME *=2; // To account for both combinations < ah Jbra||Op|| bh Jket> and <ab Jket||Op|| bh Jbra>.  (Bug found by Antoine Belley, May 2025).
+                    ME *= 1.0+herm; // To account for both combinations < ah Jbra||Op|| bh Jket> and <ah Jket||Op|| bh Jbra>.  (Bug found by Antoine Belley, May 2025).
               }
               opNO.OneBody(a,b) += ME;
               
